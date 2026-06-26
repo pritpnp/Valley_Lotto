@@ -1,0 +1,736 @@
+# Valley Lotto report — 2026-06-26T23:29:46Z
+
+## ⚠️ 692 new alert(s)
+
+- 🔵 A game ENDED sales: #1000 Wild Number Bingo.
+- 🔵 A game ENDED sales: #1019 Hot Million.
+- 🔵 A game ENDED sales: #1025 Hot $100s.
+- 🔵 A game ENDED sales: #1026 Triple Cash.
+- 🔵 A game ENDED sales: #1027 Million $$ Match.
+- 🔵 A game ENDED sales: #1029 Crossword Time.
+- 🔵 A game ENDED sales: #1030 $1,000 A Week For Life.
+- 🔵 A game ENDED sales: #1031 Mustache Cash.
+- 🔵 A game ENDED sales: #1032 Neon 9s.
+- 🔵 A game ENDED sales: #1033 $500 Frenzy.
+- 🔵 A game ENDED sales: #1034 I (Heart) Cash.
+- 🔵 A game ENDED sales: #1036 $1,000,000 Diamond Dazzler.
+- 🔵 A game ENDED sales: #1038 Pyramid Riches.
+- 🔵 A game ENDED sales: #1039 Double Match.
+- 🔵 A game ENDED sales: #1040 Cherry Doubler.
+- 🔵 A game ENDED sales: #1041 Gold Rush.
+- 🔵 A game ENDED sales: #1042 Hot Numbers®.
+- 🔵 A game ENDED sales: #1043 Crossword X5.
+- 🔵 A game ENDED sales: #1044 Lucky Horseshoe.
+- 🔵 A game ENDED sales: #1045 50 Bucks.
+- 🔵 A game ENDED sales: #1046 $1 Million Spectacular.
+- 🔵 A game ENDED sales: #1047 Aces and 8s.
+- 🔵 A game ENDED sales: #1048 Bingo Star.
+- 🔵 A game ENDED sales: #1049 Bullseye Bucks.
+- 🔵 A game ENDED sales: #1050 Strike It Rich.
+- 🔵 A game ENDED sales: #1051 Sweet 7s.
+- 🔵 A game ENDED sales: #1052 Win Win Win.
+- 🔵 A game ENDED sales: #1054 Match For Cash.
+- 🔵 A game ENDED sales: #1056 Money Bags.
+- 🔵 A game ENDED sales: #1057 Merry Millionaire.
+- 🔵 A game ENDED sales: #1058 Sleigh Ride.
+- 🔵 A game ENDED sales: #1059 Holiday Gifts.
+- 🔵 A game ENDED sales: #1060 Merry Multiplier.
+- 🔵 A game ENDED sales: #1061 Cashing Thru the Snow.
+- 🔵 A game ENDED sales: #1062 Snow Days.
+- 🔵 A game ENDED sales: #1063 Max-A-Million.
+- 🔵 A game ENDED sales: #1064 Lucky Hearts.
+- 🔵 A game ENDED sales: #1065 Bingo Plus.
+- 🔵 A game ENDED sales: #1066 Be My Cupcake.
+- 🔵 A game ENDED sales: #1067 Moola.
+- 🔵 A game ENDED sales: #1068 Three Million.
+- 🔵 A game ENDED sales: #1069 Crazy Wild Ca$h.
+- 🔵 A game ENDED sales: #1070 Leprechaun Loot.
+- 🔵 A game ENDED sales: #1071 Dublin Dollars.
+- 🔵 A game ENDED sales: #1072 Million Dollar Multiplier.
+- 🔵 A game ENDED sales: #1073 MONOPOLY Jackpot.
+- 🔵 A game ENDED sales: #1074 Gold Mine.
+- 🔵 A game ENDED sales: #1075 Three To Win.
+- 🔵 A game ENDED sales: #1076 Hot Shot.
+- 🔵 A game ENDED sales: #1077 Winning 777.
+- 🔵 A game ENDED sales: #1078 Mother's Day.
+- 🔵 A game ENDED sales: #1079 Spicy Hot Cash.
+- 🔵 A game ENDED sales: #1080 Wild 1.
+- 🔵 A game ENDED sales: #1081 Money Money Millionaire.
+- 🔵 A game ENDED sales: #1082 Lucky X20.
+- 🔵 A game ENDED sales: #1083 On A Roll.
+- 🔵 A game ENDED sales: #1084 Fabulous Fortune.
+- 🔵 A game ENDED sales: #1085 ROAD 2 RICHE$.
+- 🔵 A game ENDED sales: #1086 $1,000 Frenzy.
+- 🔵 A game ENDED sales: #1087 $500 Frenzy.
+- 🔵 A game ENDED sales: #1088 $100 Frenzy.
+- 🔵 A game ENDED sales: #1089 $25 Frenzy.
+- 🔵 A game ENDED sales: #1090 $1,000,000 Golden Ticket.
+- 🔵 A game ENDED sales: #1091 Funky 5s.
+- 🔵 A game ENDED sales: #1092 Red Hot Crossword.
+- 🔵 A game ENDED sales: #1093 Daily Crossword.
+- 🔵 A game ENDED sales: #1094 Super 7s.
+- 🔵 A game ENDED sales: #1095 Lightning Bucks.
+- 🔵 A game ENDED sales: #1096 Aces High.
+- 🔵 A game ENDED sales: #1097 Muscle Car Money®.
+- 🔵 A game ENDED sales: #1098 Bingo Extra.
+- 🔵 A game ENDED sales: #1099 5X The Fortune.
+- 🔵 A game ENDED sales: #1100 Triple Win.
+- 🔵 A game ENDED sales: #1101 $1,000,000 Instant Jackpot.
+- 🔵 A game ENDED sales: #1102 Win It All.
+- 🔵 A game ENDED sales: #1103 Winning Combination.
+- 🔵 A game ENDED sales: #1104 Pinball.
+- 🔵 A game ENDED sales: #1105 Money Craze.
+- 🔵 A game ENDED sales: #1106 10x the Money.
+- 🔵 A game ENDED sales: #1107 Frankenbucks.
+- 🔵 A game ENDED sales: #1108 Zombie Cash.
+- 🔵 A game ENDED sales: #1109 Super Hot 6s.
+- 🔵 A game ENDED sales: #1110 $1,000,000 Peppermint Payout.
+- 🔵 A game ENDED sales: #1111 Freezin' Greetings.
+- 🔵 A game ENDED sales: #1112 Holiday Gifts.
+- 🔵 A game ENDED sales: #1113 Merry & Bright.
+- 🔵 A game ENDED sales: #1114 Secret Santa.
+- 🔵 A game ENDED sales: #1115 Cookie Dough.
+- 🔵 A game ENDED sales: #1116 $1,000,000 Super Cash.
+- 🔵 A game ENDED sales: #1117 Love to Win.
+- 🔵 A game ENDED sales: #1118 Ca$h Up.
+- 🔵 A game ENDED sales: #1119 Lucky Valentine.
+- 🔵 A game ENDED sales: #1120 Cash Cow.
+- 🔵 A game ENDED sales: #1121 Triple Million.
+- 🔵 A game ENDED sales: #1122 $300,000 Buried Treasure.
+- 🔵 A game ENDED sales: #1123 Lucky Leprechaun.
+- 🔵 A game ENDED sales: #1124 Super Sizzling 7s*.
+- 🔵 A game ENDED sales: #1125 Pot of Gold.
+- 🔵 A game ENDED sales: #1126 Mad Money.
+- 🔵 A game ENDED sales: #1127 $1 Million Payout.
+- 🔵 A game ENDED sales: #1128 Cash Ka-Pow.
+- 🔵 A game ENDED sales: #1129 Big Money Bingo.
+- 🔵 A game ENDED sales: #1130 Beeline Bingo.
+- 🔵 A game ENDED sales: #1131 7-11-21®.
+- 🔵 A game ENDED sales: #1132 Give Me 5.
+- 🔵 A game ENDED sales: #1133 THE WIZARD OF OZ™.
+- 🔵 A game ENDED sales: #1134 Happy Mother's Day.
+- 🔵 A game ENDED sales: #1135 Solid Gold.
+- 🔵 A game ENDED sales: #1136 Scratch Some Cash.
+- 🔵 A game ENDED sales: #1137 Triple Cash.
+- 🔵 A game ENDED sales: #1138 Hot Streak.
+- 🔵 A game ENDED sales: #1139 MONOPOLY MILLIONAIRES' CLUB™.
+- 🔵 A game ENDED sales: #1140 Money Multiplier.
+- 🔵 A game ENDED sales: #1141 King of Cash.
+- 🔵 A game ENDED sales: #1142 Lucky Lines.
+- 🔵 A game ENDED sales: #1143 Wild Cherries.
+- 🔵 A game ENDED sales: #1144 Buckets of Cash.
+- 🔵 A game ENDED sales: #1145 Super $1,000 Frenzy.
+- 🔵 A game ENDED sales: #1146 Super $500 Frenzy.
+- 🔵 A game ENDED sales: #1147 Super $100 Frenzy.
+- 🔵 A game ENDED sales: #1148 Super $25 Frenzy.
+- 🔵 A game ENDED sales: #1149 $1,000,000 Big Money.
+- 🔵 A game ENDED sales: #1150 Trucks & Bucks®.
+- 🔵 A game ENDED sales: #1151 Bonus Word Crossword.
+- 🔵 A game ENDED sales: #1152 Triple Dip.
+- 🔵 A game ENDED sales: #1153 Cash Time.
+- 🔵 A game ENDED sales: #1154 Bankroll Doubler.
+- 🔵 A game ENDED sales: #1155 Chili Pepper Payout.
+- 🔵 A game ENDED sales: #1156 Crossword Doubler.
+- 🔵 A game ENDED sales: #1157 Pirate's Treasure.
+- 🔵 A game ENDED sales: #1158 Find The 9s.
+- 🔵 A game ENDED sales: #1159 $1 Million Fever.
+- 🔵 A game ENDED sales: #1160 Eagles.
+- 🔵 A game ENDED sales: #1161 Steelers.
+- 🔵 A game ENDED sales: #1162 Electric 8s.
+- 🔵 A game ENDED sales: #1163 Multiply Your Money.
+- 🔵 A game ENDED sales: #1164 777.
+- 🔵 A game ENDED sales: #1165 Bacon Bucks.
+- 🔵 A game ENDED sales: #1166 50X the Money.
+- 🔵 A game ENDED sales: #1167 Spooky Loot.
+- 🔵 A game ENDED sales: #1168 Ghostbusters™.
+- 🔵 A game ENDED sales: #1169 20X the Money.
+- 🔵 A game ENDED sales: #1170 10X the Money.
+- 🔵 A game ENDED sales: #1171 5X the Money.
+- 🔵 A game ENDED sales: #1172 Holiday Millionaire.
+- 🔵 A game ENDED sales: #1173 Season's Greetings.
+- 🔵 A game ENDED sales: #1174 $100,000 Wish List.
+- 🔵 A game ENDED sales: #1175 Frosty Fun.
+- 🔵 A game ENDED sales: #1176 Doughman Doubler.
+- 🔵 A game ENDED sales: #1177 The Perfect Gift.
+- 🔵 A game ENDED sales: #1178 Lucky You.
+- 🔵 A game ENDED sales: #1179 $100,000 a Year for Life.
+- 🔵 A game ENDED sales: #1180 $1,000 a Week for Life.
+- 🔵 A game ENDED sales: #1181 $1,000 a Month for Life.
+- 🔵 A game ENDED sales: #1182 Win It All Millionaire Edition.
+- 🔵 A game ENDED sales: #1183 Cupid's Cash.
+- 🔵 A game ENDED sales: #1184 Gus Bucks.
+- 🔵 A game ENDED sales: #1185 Yahtzee™.
+- 🔵 A game ENDED sales: #1186 Lucky Hearts.
+- 🔵 A game ENDED sales: #1187 Winner Winner Chicken Dinner.
+- 🔵 A game ENDED sales: #1188 $3,000,000 Extreme Green.
+- 🔵 A game ENDED sales: #1189 The Price Is Right®.
+- 🔵 A game ENDED sales: #1190 Spicy 9s.
+- 🔵 A game ENDED sales: #1191 Leprechaun Loot.
+- 🔵 A game ENDED sales: #1192 Lucky Shamrock.
+- 🔵 A game ENDED sales: #1193 Funky 5s.
+- 🔵 A game ENDED sales: #1194 7-11-21®.
+- 🔵 A game ENDED sales: #1195 $100,000,000 Blowout.
+- 🔵 A game ENDED sales: #1196 $75,000,000 Blowout.
+- 🔵 A game ENDED sales: #1197 $50,000,000 Blowout.
+- 🔵 A game ENDED sales: #1198 Bingo Night.
+- 🔵 A game ENDED sales: #1199 Buried Treasure.
+- 🔵 A game ENDED sales: #1200 Red Hot Tripler.
+- 🔵 A game ENDED sales: #1201 Moneybags.
+- 🔵 A game ENDED sales: #1202 $300,000 Crossword.
+- 🔵 A game ENDED sales: #1203 Escape to Margaritaville®.
+- 🔵 A game ENDED sales: #1204 Mother's Day.
+- 🔵 A game ENDED sales: #1205 Find $50.
+- 🔵 A game ENDED sales: #1206 Wild 10s.
+- 🔵 A game ENDED sales: #1207 Pennsylvania Millions.
+- 🔵 A game ENDED sales: #1208 All About the Bens.
+- 🔵 A game ENDED sales: #1209 Bonus Ca$hword.
+- 🔵 A game ENDED sales: #1210 $60,000 Bingo Frenzy.
+- 🔵 A game ENDED sales: #1211 Double Match.
+- 🔵 A game ENDED sales: #1212 Ca$htastic.
+- 🔵 A game ENDED sales: #1213 Fantastic 10s.
+- 🔵 A game ENDED sales: #1214 $100,000 Home Makeover.
+- 🔵 A game ENDED sales: #1215 X The Money.
+- 🔵 A game ENDED sales: #1216 Money Magnet.
+- 🔵 A game ENDED sales: #1217 Just A Buck.
+- 🔵 A game ENDED sales: #1218 $1,000,000 Fortune.
+- 🔵 A game ENDED sales: #1219 Mustang.
+- 🔵 A game ENDED sales: #1220 Fabulous $500.
+- 🔵 A game ENDED sales: #1221 Money Bag Crossword.
+- 🔵 A game ENDED sales: #1222 Stacks of Cash.
+- 🔵 A game ENDED sales: #1223 Match 3 Tripler.
+- 🔵 A game ENDED sales: #1224 Wonder Buck$.
+- 🔵 A game ENDED sales: #1225 Power 7s.
+- 🔵 A game ENDED sales: #1226 Wild 1.
+- 🔵 A game ENDED sales: #1227 Cash Bam Boom.
+- 🔵 A game ENDED sales: #1228 Million In An Instant.
+- 🔵 A game ENDED sales: #1229 Money Clip.
+- 🔵 A game ENDED sales: #1230 Family Feud®.
+- 🔵 A game ENDED sales: #1231 Diamond Mine.
+- 🔵 A game ENDED sales: #1232 Money Stash.
+- 🔵 A game ENDED sales: #1233 Lucky 13.
+- 🔵 A game ENDED sales: #1234 $1,000,000 Mad Money.
+- 🔵 A game ENDED sales: #1235 $300,000 Mad Money.
+- 🔵 A game ENDED sales: #1236 $100,000 Mad Money.
+- 🔵 A game ENDED sales: #1237 Creepy Cash.
+- 🔵 A game ENDED sales: #1238 Pumpkin Patch Scratch.
+- 🔵 A game ENDED sales: #1239 $50,000 Mad Money.
+- 🔵 A game ENDED sales: #1240 $10,000 Mad Money.
+- 🔵 A game ENDED sales: #1241 $1,000,000 Snow Bank.
+- 🔵 A game ENDED sales: #1242 Trim the Tree.
+- 🔵 A game ENDED sales: #1243 Frosty Ca$h.
+- 🔵 A game ENDED sales: #1244 Freezin' Greetings.
+- 🔵 A game ENDED sales: #1245 Unwrap the Cash.
+- 🔵 A game ENDED sales: #1246 Merry Money.
+- 🔵 A game ENDED sales: #1247 $3 Million Spectacular.
+- 🔵 A game ENDED sales: #1248 Diamonds & Gold.
+- 🔵 A game ENDED sales: #1249 Money to Burn.
+- 🔵 A game ENDED sales: #1250 7-11-21®.
+- 🔵 A game ENDED sales: #1251 Bags of Money.
+- 🔵 A game ENDED sales: #1252 All the Money Millionaire Edition.
+- 🔵 A game ENDED sales: #1253 Super $300,000 Crossword.
+- 🔵 A game ENDED sales: #1254 5 Times Lucky.
+- 🔵 A game ENDED sales: #1255 Cupid's Cash.
+- 🔵 A game ENDED sales: #1256 Match 3 Tripler.
+- 🔵 A game ENDED sales: #1257 Donut Doubler.
+- 🔵 A game ENDED sales: #1258 Road to Riches.
+- 🔵 A game ENDED sales: #1259 Red Hot 10s.
+- 🔵 A game ENDED sales: #1260 777.
+- 🔵 A game ENDED sales: #1261 Pot of Gold.
+- 🔵 A game ENDED sales: #1262 Lots O' Loot.
+- 🔵 A game ENDED sales: #1263 $50,000 Pay Day.
+- 🔵 A game ENDED sales: #1264 9s In A Line.
+- 🔵 A game ENDED sales: #1265 Million Dollar Gold Rush.
+- 🔵 A game ENDED sales: #1266 Triple Play.
+- 🔵 A game ENDED sales: #1267 Bingo X10.
+- 🔵 A game ENDED sales: #1268 Treasures of the Pyramid.
+- 🔵 A game ENDED sales: #1269 Fireball 7s.
+- 🔵 A game ENDED sales: #1270 $$$.
+- 🔵 A game ENDED sales: #1271 Bank on It.
+- 🔵 A game ENDED sales: #1272 Big Money.
+- 🔵 A game ENDED sales: #1273 Mother's Day.
+- 🔵 A game ENDED sales: #1274 Diamond Dazzler.
+- 🔵 A game ENDED sales: #1275 5X.
+- 🔵 A game ENDED sales: #1276 Millionaire.
+- 🔵 A game ENDED sales: #1277 $100,000 Club.
+- 🔵 A game ENDED sales: #1278 5 Star Crossword.
+- 🔵 A game ENDED sales: #1279 50 Buck$.
+- 🔵 A game ENDED sales: #1280 Quick Cash.
+- 🔵 A game ENDED sales: #1281 $100 or $1,000.
+- 🔵 A game ENDED sales: #1282 Spicy Hot Crossword.
+- 🔵 A game ENDED sales: #1283 Pay Me.
+- 🔵 A game ENDED sales: #1284 Money Multiplier.
+- 🔵 A game ENDED sales: #1285 Emerald 8s.
+- 🔵 A game ENDED sales: #1286 $1,000,000 Silver & Gold.
+- 🔵 A game ENDED sales: #1287 Stacks of Cash.
+- 🔵 A game ENDED sales: #1288 $cavenger Hunt.
+- 🔵 A game ENDED sales: #1289 Lucky 13.
+- 🔵 A game ENDED sales: #1290 Cash Splash.
+- 🔵 A game ENDED sales: #1291 Super 7.
+- 🔵 A game ENDED sales: #1292 Whole Lotta $500s.
+- 🔵 A game ENDED sales: #1293 Gold Fish®.
+- 🔵 A game ENDED sales: #1294 333.
+- 🔵 A game ENDED sales: #1295 $1 Million Pennsylvania Payout.
+- 🔵 A game ENDED sales: #1296 Gus.
+- 🔵 A game ENDED sales: #1297 Fruit Loot.
+- 🔵 A game ENDED sales: #1298 Crazy Wild Ca$h.
+- 🔵 A game ENDED sales: #1299 Hot Ticket.
+- 🔵 A game ENDED sales: #1300 WILLY WONKA AND THE CHOCOLATE FACTORY™.
+- 🔵 A game ENDED sales: #1301 Winning Vault.
+- 🔵 A game ENDED sales: #1302 Fang-Tastic Fortune.
+- 🔵 A game ENDED sales: #1303 Mummy Money.
+- 🔵 A game ENDED sales: #1304 Heads or Tails.
+- 🔵 A game ENDED sales: #1305 Merry Millions.
+- 🔵 A game ENDED sales: #1306 Holiday Gifts.
+- 🔵 A game ENDED sales: #1307 $100,000 Wish List.
+- 🔵 A game ENDED sales: #1308 Twelve Elves.
+- 🔵 A game ENDED sales: #1309 Candy Cane Cash.
+- 🔵 A game ENDED sales: #1310 Snow Me the Money.
+- 🔵 A game ENDED sales: #1311 $3 Million Mega Multiplier.
+- 🔵 A game ENDED sales: #1312 $300,000 Bonus Crossword.
+- 🔵 A game ENDED sales: #1313 Lucky Numbers.
+- 🔵 A game ENDED sales: #1314 Big Money Millionaire.
+- 🔵 A game ENDED sales: #1315 Jackpot Party®.
+- 🔵 A game ENDED sales: #1316 $weet Heart Ca$h.
+- 🔵 A game ENDED sales: #1317 Bingo.
+- 🔵 A game ENDED sales: #1318 Be Mine.
+- 🔵 A game ENDED sales: #1319 Golden Goose.
+- 🔵 A game ENDED sales: #1320 50X the Bucks.
+- 🔵 A game ENDED sales: #1321 20X the Bucks.
+- 🔵 A game ENDED sales: #1322 O'Lucky 7s.
+- 🔵 A game ENDED sales: #1323 10X the Bucks.
+- 🔵 A game ENDED sales: #1324 5X the Bucks.
+- 🔵 A game ENDED sales: #1325 $1,000,000 Power Payday.
+- 🔵 A game ENDED sales: #1326 Bingo Squared.
+- 🔵 A game ENDED sales: #1327 Silver & Gold.
+- 🔵 A game ENDED sales: #1328 Extreme 8s.
+- 🔵 A game ENDED sales: #1329 Easy as 123.
+- 🔵 A game ENDED sales: #1330 Loose Change.
+- 🔵 A game ENDED sales: #1331 $10 MONOPOLY™.
+- 🔵 A game ENDED sales: #1332 $5 MONOPOLY™.
+- 🔵 A game ENDED sales: #1333 Mother's Day Surprize.
+- 🔵 A game ENDED sales: #1334 $2 MONOPOLY™.
+- 🔵 A game ENDED sales: #1335 $1 MONOPOLY™.
+- 🔵 A game ENDED sales: #1336 My First Million.
+- 🔵 A game ENDED sales: #1337 Win It All.
+- 🔵 A game ENDED sales: #1338 Cash Adventure.
+- 🔵 A game ENDED sales: #1339 Double Match.
+- 🔵 A game ENDED sales: #1340 Great 8s.
+- 🔵 A game ENDED sales: #1341 $3,000,000 Pennsylvania Club.
+- 🔵 A game ENDED sales: #1342 $300,000 Nest Egg®.
+- 🔵 A game ENDED sales: #1343 Funky 5s.
+- 🔵 A game ENDED sales: #1344 $50 Cash Bla$t.
+- 🔵 A game ENDED sales: #1345 Money Mania.
+- 🔵 A game ENDED sales: #1346 Million Dollar Winner.
+- 🔵 A game ENDED sales: #1347 Right on the Money.
+- 🔵 A game ENDED sales: #1348 Ca$htastic Crossword.
+- 🔵 A game ENDED sales: #1349 Twisted.
+- 🔵 A game ENDED sales: #1350 It Takes 2.
+- 🔵 A game ENDED sales: #1351 Lucky Win.
+- 🔵 A game ENDED sales: #1352 Hit $1,000.
+- 🔵 A game ENDED sales: #1353 Neon.
+- 🔵 A game ENDED sales: #1354 Struck by Luck.
+- 🔵 A game ENDED sales: #1355 Match 3 Tripler.
+- 🔵 A game ENDED sales: #1356 Bonus Star Millions.
+- 🔵 A game ENDED sales: #1357 Wheel of Fortune®.
+- 🔵 A game ENDED sales: #1358 Top Secret Crossword.
+- 🔵 A game ENDED sales: #1359 Joker's Wild.
+- 🔵 A game ENDED sales: #1360 Goat Load of Cash.
+- 🔵 A game ENDED sales: #1361 Win Win Win.
+- 🔵 A game ENDED sales: #1362 Hot $100,000*.
+- 🔵 A game ENDED sales: #1363 Jack O' Lantern Jackpot.
+- 🔵 A game ENDED sales: #1364 Whole Lotta $20s.
+- 🔵 A game ENDED sales: #1365 Spooky Cash.
+- 🔵 A game ENDED sales: #1366 7-11-21®.
+- 🔵 A game ENDED sales: #1367 Merry Millionaire.
+- 🔵 A game ENDED sales: #1368 Money Tree.
+- 🔵 A game ENDED sales: #1369 Cash Kringle.
+- 🔵 A game ENDED sales: #1370 Sleigh Bell$.
+- 🔵 A game ENDED sales: #1371 Frosty the Doughman.
+- 🔵 A game ENDED sales: #1372 Reindeer Games.
+- 🔵 A game ENDED sales: #1373 $3 Million Cash.
+- 🔵 A game ENDED sales: #1374 $300,000 Crossword Explosion.
+- 🔵 A game ENDED sales: #1375 Power Shot Multiplier.
+- 🔵 A game ENDED sales: #1376 Icy Hot 7s.
+- 🔵 A game ENDED sales: #1377 $1,000,000 Cash Club.
+- 🔵 A game ENDED sales: #1378 $500 Loaded.
+- 🔵 A game ENDED sales: #1379 Love to Win.
+- 🔵 A game ENDED sales: #1380 Royal Riches.
+- 🔵 A game ENDED sales: #1381 Cupid's Cash.
+- 🔵 A game ENDED sales: #1382 Fantastic 10s.
+- 🔵 A game ENDED sales: #1383 Go for the Green.
+- 🔵 A game ENDED sales: #1384 Clover Ca$h.
+- 🔵 A game ENDED sales: #1385 Double Frenzy.
+- 🔵 A game ENDED sales: #1386 $1,000,000 Money Mania.
+- 🔵 A game ENDED sales: #1387 Golden 777.
+- 🔵 A game ENDED sales: #1388 Bingo Boogie.
+- 🔵 A game ENDED sales: #1389 Red Ball Tripler.
+- 🔵 A game ENDED sales: #1390 EZ Bucks.
+- 🔵 A game ENDED sales: #1391 Wild Numbers 50X.
+- 🔵 A game ENDED sales: #1392 Wild Numbers 20X.
+- 🔵 A game ENDED sales: #1393 Mother's Day.
+- 🔵 A game ENDED sales: #1394 Wild Numbers 10X.
+- 🔵 A game ENDED sales: #1395 Wild Numbers 5X.
+- 🔵 A game ENDED sales: #1396 Max-A-Million.
+- 🔵 A game ENDED sales: #1397 Money Money Money.
+- 🔵 A game ENDED sales: #1398 Bingo Extra.
+- 🔵 A game ENDED sales: #1399 Spicy Hot 7s.
+- 🔵 A game ENDED sales: #1400 Bonus Cash.
+- 🔵 A game ENDED sales: #1401 Win Pigs Fly.
+- 🔵 A game ENDED sales: #1402 $3,000,000 Diamond Dazzler.
+- 🔵 A game ENDED sales: #1403 Big Ol' Bens.
+- 🔵 A game ENDED sales: #1404 Winner Winner Chicken Dinner.
+- 🔵 A game ENDED sales: #1405 Fast $50.
+- 🔵 A game ENDED sales: #1406 Fast $25.
+- 🔵 A game ENDED sales: #1407 $1 Million Spectacular.
+- 🔵 A game ENDED sales: #1408 THE WIZARD OF OZ™.
+- 🔵 A game ENDED sales: #1409 GOLD FISH®.
+- 🔵 A game ENDED sales: #1410 9s in a Line.
+- 🔵 A game ENDED sales: #1411 7-11-21®.
+- 🔵 A game ENDED sales: #1412 Massive Money Match.
+- 🔵 A game ENDED sales: #1413 Break the Bank.
+- 🔵 A game ENDED sales: #1414 Multiplier Crossword.
+- 🔵 A game ENDED sales: #1415 Grumpy Cat®.
+- 🔵 A game ENDED sales: #1416 Double It.
+- 🔵 A game ENDED sales: #1417 Mega Millionaire.
+- 🔵 A game ENDED sales: #1418 Win Big.
+- 🔵 A game ENDED sales: #1419 Rocket Crossword.
+- 🔵 A game ENDED sales: #1420 My Best Life.
+- 🔵 A game ENDED sales: #1421 $1,000 Fully Loaded.
+- 🔵 A game ENDED sales: #1422 Fireball.
+- 🔵 A game ENDED sales: #1423 Boo Koo Bucks.
+- 🔵 A game ENDED sales: #1424 Monster Cash.
+- 🔵 A game ENDED sales: #1425 Mummy Money.
+- 🔵 A game ENDED sales: #1426 $1 Million Merry & Bright.
+- 🔵 A game ENDED sales: #1427 Secret Santa.
+- 🔵 A game ENDED sales: #1428 Holiday Cash Blowout.
+- 🔵 A game ENDED sales: #1429 Jingle All the Way.
+- 🔵 A game ENDED sales: #1430 Snowball Buck$.
+- 🔵 A game ENDED sales: #1431 Oh, What Fun.
+- 🔵 A game ENDED sales: #1432 $3 Million Limited.
+- 🔵 A game ENDED sales: #1433 $300,000 Xtreme Xword.
+- 🔵 A game ENDED sales: #1434 $500 MONEY MAYHEM™.
+- 🔵 A game ENDED sales: #1435 Super 7s.
+- 🔵 A game ENDED sales: #1436 $1 Million Cash Blowout.
+- 🔵 A game ENDED sales: #1437 5X the Money.
+- 🔵 A game ENDED sales: #1438 Love.
+- 🔵 A game ENDED sales: #1439 SLINGO®.
+- 🔵 A game ENDED sales: #1440 Hearts.
+- 🔵 A game ENDED sales: #1441 JAMES BOND 007™.
+- 🔵 A game ENDED sales: #1442 Dublin Dollars.
+- 🔵 A game ENDED sales: #1443 Lucky Bucks.
+- 🔵 A game ENDED sales: #1444 Bang Boom Ka-Pow.
+- 🔵 A game ENDED sales: #1445 $1,000,000 Riches.
+- 🔵 A game ENDED sales: #1446 Plu$ the Money.
+- 🔵 A game ENDED sales: #1447 Ca$h Craze.
+- 🔵 A game ENDED sales: #1448 Time to Get Paid.
+- 🔵 A game ENDED sales: #1449 Gnome Me the Money.
+- 🔵 A game ENDED sales: #1450 Extreme Green.
+- 🔵 A game ENDED sales: #1451 Power Shot.
+- 🔵 A game ENDED sales: #1452 Mom.
+- 🔵 A game ENDED sales: #1453 Max Money.
+- 🔵 A game ENDED sales: #1454 Win It All.
+- 🔵 A game ENDED sales: #1455 Magnificent Millions.
+- 🔵 A game ENDED sales: #1456 7.
+- 🔵 A game ENDED sales: #1457 Flamingo Bingo.
+- 🔵 A game ENDED sales: #1458 Gold.
+- 🔵 A game ENDED sales: #1459 Stinkin' Rich.
+- 🔵 A game ENDED sales: #1460 $3,000,000 Money Millionaire.
+- 🔵 A game ENDED sales: #1461 $50 or $100.
+- 🔵 A game ENDED sales: #1462 Bingo Bingo.
+- 🔵 A game ENDED sales: #1463 Cash Bonus.
+- 🔵 A game ENDED sales: #1464 SKEE-BALL®.
+- 🔵 A game ENDED sales: #1465 Great 8s.
+- 🔵 A game ENDED sales: #1466 $1,000,000 Extreme Cash.
+- 🔵 A game ENDED sales: #1467 LOTERIA™.
+- 🔵 A game ENDED sales: #1468 Hot & Cold Numbers.
+- 🔵 A game ENDED sales: #1469 Scratch and Match.
+- 🔵 A game ENDED sales: #1470 Lucky Ticket.
+- 🔵 A game ENDED sales: #1471 Hamilton.
+- 🔵 A game ENDED sales: #1472 Lincoln.
+- 🔵 A game ENDED sales: #1473 Jefferson.
+- 🔵 A game ENDED sales: #1474 Washington.
+- 🔵 A game ENDED sales: #1475 PA Millionaire's Club.
+- 🔵 A game ENDED sales: #1476 Winner Winner Chicken Dinner.
+- 🔵 A game ENDED sales: #1477 Super Crossword.
+- 🔵 A game ENDED sales: #1478 Lucky Horseshoe.
+- 🔵 A game ENDED sales: #1479 Electric 8s.
+- 🔵 A game ENDED sales: #1480 Cloud 9.
+- 🔵 A game ENDED sales: #1481 Boom.
+- 🔵 A game ENDED sales: #1482 Graveyard Green.
+- 🔵 A game ENDED sales: #1483 Eeek-A-Boo.
+- 🔵 A game ENDED sales: #1484 Make Me Witch.
+- 🔵 A game ENDED sales: #1485 $1,000,000 Merry Money.
+- 🔵 A game ENDED sales: #1486 Tree-Mendous Winnings.
+- 🔵 A game ENDED sales: #1487 Holiday Gifts.
+- 🔵 A game ENDED sales: #1488 Santa's Workshop.
+- 🔵 A game ENDED sales: #1489 Cash Kringle.
+- 🔵 A game ENDED sales: #1490 Oh, Snap.
+- 🔵 A game ENDED sales: #1491 $3 Million Extravaganza.
+- 🔵 A game ENDED sales: #1492 $500,000 Mega Crossword*.
+- 🔵 A game ENDED sales: #1493 $500 Cash Money.
+- 🔵 A game ENDED sales: #1494 Double Match.
+- 🔵 A game ENDED sales: #1495 $1,000,000 JACKPOT PARTY®.
+- 🔵 A game ENDED sales: #1496 White Hot Winnings.
+- 🔵 A game ENDED sales: #1497 Love You Forever.
+- 🔵 A game ENDED sales: #1498 Wild Ca$h Multiplier.
+- 🔵 A game ENDED sales: #1499 Love Birds.
+- 🔵 A game ENDED sales: #1500 Love Coupon.
+- 🔵 A game ENDED sales: #1501 Win Win Win.
+- 🔵 A game ENDED sales: #1502 Find the Leprechaun.
+- 🔵 A game ENDED sales: #1503 O'Lucky Coin.
+- 🔵 A game ENDED sales: #1504 CLOVER ALL OVER™.
+- 🔵 A game ENDED sales: #1505 Millionaire Maker.
+- 🔵 A game ENDED sales: #1506 Terrific 10s.
+- 🔵 A game ENDED sales: #1507 Color Block Crossword.
+- 🔵 A game ENDED sales: #1508 Money Roll.
+- 🔵 A game ENDED sales: #1509 Loaded with $20s.
+- 🔵 A game ENDED sales: #1510 MONOPOLY 100X.
+- 🔵 A game ENDED sales: #1511 MONOPOLY 50X.
+- 🔵 A game ENDED sales: #1512 Best Mother Ever.
+- 🔵 A game ENDED sales: #1513 MONOPOLY 20X.
+- 🔵 A game ENDED sales: #1514 MONOPOLY 10X®.
+- 🔵 A game ENDED sales: #1515 Mining for Millions.
+- 🔵 A game ENDED sales: #1516 The Money Game.
+- 🔵 A game ENDED sales: #1517 Bolt Bucks.
+- 🔵 A game ENDED sales: #1518 Cash Craze.
+- 🔵 A game ENDED sales: #1519 2 for $1.
+- 🔵 A game ENDED sales: #1520 $1,000 Dreamin'.
+- 🔵 A game ENDED sales: #1521 Bigger Money Bingo.
+- 🔵 A game ENDED sales: #1522 The Hunt for Cash.
+- 🔵 A game ENDED sales: #1523 7-11-21® LIVE!.
+- 🔵 A game ENDED sales: #1524 Wild Win.
+- 🔵 A game ENDED sales: #1525 Feelin’ Like a Million Bucks.
+- 🔵 A game ENDED sales: #1526 Digging for Treasure.
+- 🔵 A game ENDED sales: #1527 Triple 333.
+- 🔵 A game ENDED sales: #1528 Scoop Up Some Cash.
+- 🔵 A game ENDED sales: #1529 Bee Lucky.
+- 🔵 A game ENDED sales: #1530 $3,000,000 Payout.
+- 🔵 A game ENDED sales: #1531 Show Me $500,000.
+- 🔵 A game ENDED sales: #1532 On the Money.
+- 🔵 A game ENDED sales: #1533 Bonus Buck$.
+- 🔵 A game ENDED sales: #1534 Hot Ticket.
+- 🔵 A game ENDED sales: #1535 $1,000,000 Extreme Green.
+- 🔵 A game ENDED sales: #1536 Solid Gold.
+- 🔵 A game ENDED sales: #1537 Crossword X-tra™.
+- 🔵 A game ENDED sales: #1538 High Voltage Bingo.
+- 🔵 A game ENDED sales: #1539 Ca$h Incline.
+- 🔵 A game ENDED sales: #1540 WILLY WONKA GOLDEN TICKET™.
+- 🔵 A game ENDED sales: #1541 Jack-O-Lantern Jackpot.
+- 🔵 A game ENDED sales: #1542 777.
+- 🔵 A game ENDED sales: #1543 Monster Money.
+- 🔵 A game ENDED sales: #1544 Boo Buck$.
+- 🔵 A game ENDED sales: #1545 MONOPOLY 100X.
+- 🔵 A game ENDED sales: #1546 MONOPOLY 50X.
+- 🔵 A game ENDED sales: #1547 MONOPOLY 20X.
+- 🔵 A game ENDED sales: #1549 $1,000,000 Merry and Bright.
+- 🔵 A game ENDED sales: #1550 Snow Much Fun.
+- 🔵 A game ENDED sales: #1551 Ho Ho Whole Lotta $500s.
+- 🔵 A game ENDED sales: #1552 Naughty or Nice.
+- 🔵 A game ENDED sales: #1553 Gingerbread Dough.
+- 🔵 A game ENDED sales: #1554 Gnome for the Holidays.
+- 🔵 A game ENDED sales: #1555 $3 Million Xtreme Tripler.
+- 🔵 A game ENDED sales: #1557 All About the Benjamins.
+- 🔵 A game ENDED sales: #1558 Fast Ca$h.
+- 🔵 A game ENDED sales: #1559 $5 Million Money Maker.
+- 🔵 A game ENDED sales: #1560 $1,000,000 Power Payday.
+- 🔵 A game ENDED sales: #1561 Love 2 Win.
+- 🔵 A game ENDED sales: #1562 Top Dollar Cro$$word.
+- 🔵 A game ENDED sales: #1563 My Lucky Valentine.
+- 🔵 A game ENDED sales: #1564 Perfect Match.
+- 🔵 A game ENDED sales: #1565 THE WIZARD OF OZ™.
+- 🔵 A game ENDED sales: #1566 Cash.
+- 🔵 A game ENDED sales: #1567 Four Leaf Fortune.
+- 🔵 A game ENDED sales: #1568 Leprechaun Loot.
+- 🔵 A game ENDED sales: #1569 Shamrock Green.
+- 🔵 A game ENDED sales: #1570 $1,000,000 Cash King.
+- 🔵 A game ENDED sales: #1571 Hello 50.
+- 🔵 A game ENDED sales: #1572 $50,000 Count Up.
+- 🔵 A game ENDED sales: #1573 333.
+- 🔵 A game ENDED sales: #1574 Golden Egg.
+- 🔵 A game ENDED sales: #1575 My Three Million.
+- 🔵 A game ENDED sales: #1576 $50, $100 or $500.
+- 🔵 A game ENDED sales: #1577 The Best Mom Ever.
+- 🔵 A game ENDED sales: #1578 Cash Craze Double Doubler.
+- 🔵 A game ENDED sales: #1579 $20,000 Lucky Win.
+- 🔵 A game ENDED sales: #1580 $1 Million THE PRICE IS RIGHT™.
+- 🔵 A game ENDED sales: #1581 Bonus Money.
+- 🔵 A game ENDED sales: #1582 The Best Dad Ever.
+- 🔵 A game ENDED sales: #1583 Lucky Stars.
+- 🔵 A game ENDED sales: #1584 Multiplier Mania.
+- 🔵 A game ENDED sales: #1585 3-2-Won.
+- 🔵 A game ENDED sales: #1586 The Instant Lottery.
+- 🔵 A game ENDED sales: #1587 $250,000 Bingo Night.
+- 🔵 A game ENDED sales: #1588 Red Hot Blowout.
+- 🔵 A game ENDED sales: #1589 Find $50.
+- 🔵 A game ENDED sales: #1590 Lucky x5.
+- 🔵 A game ENDED sales: #1591 $1,000,000 Cash Corner$.
+- 🔵 A game ENDED sales: #1592 Gus®.
+- 🔵 A game ENDED sales: #1593 The Lucky Spot.
+- 🔵 A game ENDED sales: #1594 $3 Million Diamonds and Gold.
+- 🔵 A game ENDED sales: #1595 More Money.
+- 🔵 A game ENDED sales: #1596 It’s Your Lucky Day Available on iLottery.
+- 🔵 A game ENDED sales: #1597 Stacks of Cash.
+- 🔵 A game ENDED sales: #1598 Millionaire Bucks.
+- 🔵 A game ENDED sales: #1599 Ready Set Gold.
+- 🔵 A game ENDED sales: #1600 Twice As Great 8s.
+- 🔵 A game ENDED sales: #1601 10X® the Money.
+- 🔵 A game ENDED sales: #1602 50X the Win.
+- 🔵 A game ENDED sales: #1603 The Addams Family.
+- 🔵 A game ENDED sales: #1604 Lucky #13.
+- 🔵 A game ENDED sales: #1605 Ghost$ and Goblin$.
+- 🔵 A game ENDED sales: #1606 $3 Million Snow Bank.
+- 🔵 A game ENDED sales: #1607 We Wish You a Merry Million.
+- 🔵 A game ENDED sales: #1608 Ho Ho Holly $50 or $100.
+- 🔵 A game ENDED sales: #1609 Oh Ca$hmas Tree.
+- 🔵 A game ENDED sales: #1610 Sleigh Ride.
+- 🔵 A game ENDED sales: #1611 Let It Snow.
+- 🔵 A game ENDED sales: #1612 Cash Yet-tacular.
+- 🔵 A game ENDED sales: #1613 Big Money Crossword.
+- 🔵 A game ENDED sales: #1614 Six Figures.
+- 🔵 A game ENDED sales: #1615 Fab 4.
+- 🔵 A game ENDED sales: #1616 Five Million Fabulous Fortune.
+- 🔵 A game ENDED sales: #1617 $1,000,000 Game.
+- 🔵 A game ENDED sales: #1618 Cash Crush.
+- 🔵 A game ENDED sales: #1619 Charge Up.
+- 🔵 A game ENDED sales: #1620 Love $tinks.
+- 🔵 A game ENDED sales: #1621 Steal Your Heart.
+- 🔵 A game ENDED sales: #1622 Lucky 7.
+- 🔵 A game ENDED sales: #1623 Under the Rainbow.
+- 🔵 A game ENDED sales: #1624 Leprechaun’s Gold.
+- 🔵 A game ENDED sales: #1625 Clover Patch Match.
+- 🔵 A game ENDED sales: #1626 Millionaire Maker.
+- 🔵 A game ENDED sales: #1627 20X the Money.
+- 🔵 A game ENDED sales: #1628 Cash Payout.
+- 🔵 A game ENDED sales: #1629 $3 Million Mega Stacks.
+- 🔵 A game ENDED sales: #1630 Scratch and Win.
+- 🔵 A game ENDED sales: #1631 Queen of Moms.
+- 🔵 A game ENDED sales: #1632 Doggy Dough and Kitty Cash.
+- 🔵 A game ENDED sales: #1633 Gimme 5.
+- 🔵 A game ENDED sales: #1634 $1 Million? Seriously.
+- 🔵 A game ENDED sales: #1635 King of Dads.
+- 🔵 A game ENDED sales: #1636 4 X 4 Payout.
+- 🔵 A game ENDED sales: #1637 Crossword Multiplier.
+- 🔵 A game ENDED sales: #1638 $20,000 for $2.
+- 🔵 A game ENDED sales: #1639 THE GAME OF LIFE.
+- 🔵 A game ENDED sales: #1640 $200,000 Crossword Gold.
+- 🔵 A game ENDED sales: #1641 Win It All.
+- 🔵 A game ENDED sales: #1642 10 Fold.
+- 🔵 A game ENDED sales: #1643 Million Dollar Cashfall.
+- 🔵 A game ENDED sales: #1644 Match 3 Tripler.
+- 🔵 A game ENDED sales: #1645 Electric 8s.
+- 🔵 A game ENDED sales: #1646 $3,000,000 Fun Fortune.
+- 🔵 A game ENDED sales: #1647 Feeling Lucky.
+- 🔵 A game ENDED sales: #1648 Watts of Cash.
+- 🔵 A game ENDED sales: #1649 Fast Loot.
+- 🔵 A game ENDED sales: #1650 Big Money Millionaire.
+- 🔵 A game ENDED sales: #1651 PRESS YOUR LUCK®.
+- 🔵 A game ENDED sales: #1652 Double Your Dollars.
+- 🔵 A game ENDED sales: #1653 Cash Money.
+- 🔵 A game ENDED sales: #1654 Win+ Win+ Win+.
+- 🔵 A game ENDED sales: #1655 Make Me Witch.
+- 🔵 A game ENDED sales: #1656 Spooky Season.
+- 🔵 A game ENDED sales: #1657 Monster Multiplier.
+- 🔵 A game ENDED sales: #1658 Ho Ho Holiday 100X.
+- 🔵 A game ENDED sales: #1659 $1 Million Money Tree.
+- 🔵 A game ENDED sales: #1660 $500,000 Merry-mint.
+- 🔵 A game ENDED sales: #1661 Santa's Cash Drop Doubler.
+- 🔵 A game ENDED sales: #1662 Bah, Humbuck$.
+- 🔵 A game ENDED sales: #1663 Twinkles and Tangled.
+- 🔵 A game ENDED sales: #1664 Jingle Buck.
+- 🔵 A game ENDED sales: #1665 $500,000 Crossword Blowout.
+- 🔵 A game ENDED sales: #1666 Cloud 9 Bingo.
+- 🔵 A game ENDED sales: #1667 $10 Frenzy.
+- 🔵 A game ENDED sales: #1668 MONOPOLY Own It All.
+- 🔵 A game ENDED sales: #1669 $1 Million Moneybag Crossword.
+- 🔵 A game ENDED sales: #1670 You Make My Heart Skip a Beat.
+- 🔵 A game ENDED sales: #1671 Bonus Star Bingo.
+- 🔵 A game ENDED sales: #1672 My Cherry on Top.
+- 🔵 A game ENDED sales: #1673 Love Struck.
+- 🔵 A game ENDED sales: #1674 $100 or $1,000.
+- 🔵 A game ENDED sales: #1675 $50 or $100.
+- 🔵 A game ENDED sales: #1676 Lucky Leprechaun.
+- 🔵 A game ENDED sales: #1677 Clover Cash.
+- 🔵 A game ENDED sales: #1678 Retro Rainbow.
+- 🔵 A game ENDED sales: #1679 Million Dollar Multiplier Madness.
+- 🔵 A game ENDED sales: #1680 Deep Pockets.
+- 🔵 A game ENDED sales: #1681 Money Talks.
+- 🔵 A game ENDED sales: #1683 Red Hot 5s.
+- 🔵 A game ENDED sales: #1684 CLUE.
+- 🔵 A game ENDED sales: #1685 Cool Mom Club.
+- 🔵 A game ENDED sales: #1686 EZ Grand.
+- 🔵 A game ENDED sales: #1687 Instant $1,000,000 Jackpot.
+- 🔵 A game ENDED sales: #1688 20X the Money.
+- 🔵 A game ENDED sales: #1689 Cool Dad.
+- 🔵 A game ENDED sales: #1691 2 for $2.
+- 🔵 A game ENDED sales: #1692 Big Cash Payout.
+- 🔵 A game ENDED sales: #1694 Ca$h Overload Crossword.
+- 🔵 A game ENDED sales: #1695 Cash To Go.
+- 🔵 A game ENDED sales: #1697 Jumbo Bucks.
+- 🔵 A game ENDED sales: #1698 Giant Bucks.
+- 🔵 A game ENDED sales: #1699 Big Bucks.
+- 🔵 A game ENDED sales: #1701 $500,000 Bonus Crossword.
+- 🔵 A game ENDED sales: #1702 Power $500.
+- 🔵 A game ENDED sales: #1704 UNO.
+- 🔵 A game ENDED sales: #1708 Witches Brew Bucks.
+- 🔵 A game ENDED sales: #1709 Pick Your Potion.
+- 🔵 A game ENDED sales: #1710 Haunted Hou$e.
+- 🔵 A game ENDED sales: #1711 Jingle Jangle Jackpot.
+- 🔵 A game ENDED sales: #1712 Deck the Hall$ Doubler.
+- 🔵 A game ENDED sales: #1713 NATIONAL LAMPOON’S CHRISTMAS VACATION.
+- 🔵 A game ENDED sales: #1714 Candy Cane Count-Up.
+- 🔵 A game ENDED sales: #1715 Gifts Under the Tree.
+- 🔵 A game ENDED sales: #1716 Nutcracker Cash.
+- 🔵 A game ENDED sales: #1718 $1,000,000 Winnings.
+- 🔵 A game ENDED sales: #1720 Call Me.
+- 🔵 A game ENDED sales: #1721 BETTY BOOP™.
+- 🔵 A game ENDED sales: #1722 Love Note.
+- 🔵 A game ENDED sales: #1725 All About Money.
+- 🔵 A game ENDED sales: #1726 Lucky Luck.
+- 🔵 A game ENDED sales: #1727 Four Leaf Frenzy.
+- 🔵 A game ENDED sales: #1728 Sham-rockin’ Surprize.
+- 🔵 A game ENDED sales: #1729 200X the Cash.
+- 🔵 A game ENDED sales: #1732 50X the Cash.
+- 🔵 A game ENDED sales: #1733 20X the Cash.
+- 🔵 A game ENDED sales: #1737 Neon 9s.
+- 🔵 A game ENDED sales: #1741 Win It All.
+- 🔵 A game ENDED sales: #1759 Trim the Tree X-word.
+
+## Your games — current status
+
+| Game | # | Price | Status | Top prize | Top prizes left | % left | Flag |
+|------|---|------:|--------|-----------|----------------:|-------:|------|
+| Keys and Cash Available on iLottery | 1693 | $5 | active | — | — | — | ✅ |
+| Mega Bucks | 1696 | $30 | active | — | — | — | ✅ |
+| GAME OF THRONES™ Available on iLottery | 1706 | $10 | active | — | — | — | ✅ |
+| Jackpot | 1738 | $20 | active | — | — | — | ✅ |
+| MONOPOLY SECRET VAULT Available on iLottery | 1739 | $5 | active | — | — | — | ✅ |
+| Bonus Ball Bingo | 1740 | $3 | active | — | — | — | ✅ |
+| $3 Million Mega Moolah Multiplier | 1742 | $30 | active | — | — | — | ✅ |
+| Goat Load of Cash Crossword | 1744 | $5 | active | — | — | — | ✅ |
+| Millionaire Loading | 1746 | $20 | active | — | — | — | ✅ |
+| JURASSIC PARK Available on iLottery | 1747 | $10 | active | — | — | — | ✅ |
+| Cash Spectacular | 1750 | $30 | active | — | — | — | ✅ |
+| Extreme Green | 1751 | $10 | active | — | — | — | ✅ |
+| Crossword Extra | 1753 | $3 | active | — | — | — | ✅ |
+| Fro$ted Fortune | 1756 | $20 | active | — | — | — | ✅ |
+| $2,500 Festive Frenzy | 1757 | $10 | active | — | — | — | ✅ |
+| ELF Available on iLottery | 1758 | $5 | active | — | — | — | ✅ |
+| $500,000 a Year for Life | 1763 | $20 | active | — | — | — | ✅ |
+| $20,000 a Month for Life | 1764 | $10 | active | — | — | — | ✅ |
+| LOVE IS BLIND | 1766 | $2 | active | — | — | — | ✅ |
+| $500 a Week for Life | 1767 | $1 | active | — | — | — | ✅ |
+| Code Word Crossword | 1769 | $10 | active | — | — | — | ✅ |
+| Find the Leprechaun | 1772 | $2 | active | — | — | — | ✅ |
+| $500 Blowout | 1774 | $20 | active | — | — | — | ✅ |
+| Money Box Bingo | 1777 | $5 | active | — | — | — | ✅ |
+| Money Rush | 1778 | $2 | active | — | — | — | ✅ |
+| A Latte Money | 1779 | $1 | active | — | — | — | ✅ |
+| Triple Red 777 | 1780 | $30 | active | — | — | — | ✅ |
+| Win Win Win | 1781 | $10 | active | — | — | — | ✅ |
+| GUS® | 1782 | $5 | active | — | — | — | ✅ |
+| GOLD FISH® Available on iLottery | 1783 | $1 | active | — | — | — | ✅ |
+| Fever Doubler | 1787 | $5 | active | — | — | — | ✅ |
+| Lights, Camera, Crossword | 1788 | $3 | active | — | — | — | ✅ |
+| Super 7s | 1789 | $2 | active | — | — | — | ✅ |
+
+> Note: these inventory game numbers weren't found on any PA page (check the numbers): 1793
