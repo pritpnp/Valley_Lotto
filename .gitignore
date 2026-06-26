@@ -4,5 +4,6 @@ __pycache__/
 venv/
 .env
 samples/*.html
+debug/
 .pytest_cache/
 *.egg-info/

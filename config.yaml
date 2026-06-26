@@ -60,6 +60,7 @@ thresholds:
   top_prize_count_floor: 1   # OR flag when the top prize is down to its last 1 (and depleting)
 
 # If true, evaluate the low-prize rule for EVERY active game (useful for spotting
-# fresh games worth stocking). If false, only the games in `inventory` above are
-# checked for the low-prize alert (ended-game alerts always cover everything).
+# fresh games worth stocking) using the estimated original count. True original
+# counts are only fetched for the games in `inventory` above (one detail-page
+# request each, cached). Ended-game alerts always cover every game.
 report_all_games: true

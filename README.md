@@ -11,13 +11,23 @@ Lottery lists and tells you when:
 3. **A game you carry quietly disappeared** from the active list (usually means
    it ended).
 
-It reads these three official pages:
+It reads these official pages:
 
 | Page | What it gives us |
 |------|------------------|
 | [`ActivePrint`](https://www.palottery.pa.gov/scratch-offs/Print-Scratch-Offs.aspx?gametype=ActivePrint) | the authoritative list of games still on sale |
-| [`Remaining`](https://www.palottery.pa.gov/scratch-offs/Print-Scratch-Offs.aspx?gametype=Remaining) | how many prizes are left per game |
-| [`SalesEnded`](https://www.palottery.pa.gov/Scratch-Offs/Print-Scratch-Offs.aspx?gametype=SalesEnded) | games that ended + claim deadlines |
+| [`Remaining`](https://www.palottery.pa.gov/scratch-offs/Print-Scratch-Offs.aspx?gametype=Remaining) | top-six prize values + **wins remaining** per game |
+| [`SalesEnded`](https://www.palottery.pa.gov/Scratch-Offs/Print-Scratch-Offs.aspx?gametype=SalesEnded) | games whose sales have stopped |
+| `View-Scratch-Off` (per game) | the **original** top-prize count ("offers N Top Prizes of $X") + overall odds, fetched once and cached |
+
+### How "prizes too low" is decided
+
+PA publishes how many top prizes are *left* daily, but not how many a game
+*started* with — so the tracker reads each game's detail page once to learn the
+original count, caches it (originals never change), and computes a true
+**% of top prizes remaining = wins left ÷ original**. When a game drops below your
+threshold (default **40%**) it's flagged **🟠 SWAP**. Until a game's original is
+known it falls back to an estimate (highest count seen so far), shown with a `~`.
 
 ---
 
@@ -79,22 +89,15 @@ The Action already wires up email — it switches on the moment you add these re
 
 To test email locally, set those as environment variables and run the tracker.
 
-## First real run — verify the columns
+## If PA changes its page layout
 
-I built this in a sandbox that **couldn't reach `palottery.pa.gov`**, so the HTML
-parser is written to be tolerant: it maps columns by their **header text** rather
-than fixed positions. On your first live run, capture the pages and eyeball the
-result:
-
-```bash
-PYTHONPATH=src python -m lottery_tracker --save-html   # saves pages to ./samples
-```
-
-If PA's column wording differs from what the parser expects, you'll get a clear
-`ParseError` listing the headers it actually saw. Fixing it is usually a
-one-liner: add the wording to the `_SYNONYMS` table in
-[`src/lottery_tracker/parse.py`](src/lottery_tracker/parse.py). After that, you
-can re-run offline against the saved pages with `--offline`.
+The parser is verified against PA's live pages. If PA ever renames a column,
+you'll get a clear `ParseError` listing the headers it actually saw. Fixes are
+usually a one-liner — add the new wording to `_SYNONYMS` (Active/Sales-Ended) or
+the column lists in `parse_remaining`/`parse_detail` in
+[`src/lottery_tracker/parse.py`](src/lottery_tracker/parse.py). Capture the live
+HTML to inspect with `PYTHONPATH=src python -m lottery_tracker --save-html`, then
+re-run offline against it with `--offline`.
 
 ## How it's organized
 
