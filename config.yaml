@@ -28,7 +28,7 @@ inventory:
   - "1757"   # FESTIVE FRENZY
   # $5 games
   - "1693"   # KEYS & CASH
-  - "1793"   # HIGH 5
+  - "1736"   # HIGH 5
   - "1744"   # GOAT
   - "1758"   # ELF
   - "1739"   # MONOPOLY
@@ -52,11 +52,15 @@ inventory:
 # When is a game's prize pool "too low" to keep on the counter?
 # A game is flagged if ANY rule below trips. Set a rule to null to disable it.
 thresholds:
-  top_prize_pct: 0.25        # flag when fewer than 25% of the TOP prizes are still unclaimed
-  top_prize_count_floor: 1   # OR flag when there are this many top prizes left or fewer
-  total_prize_pct: null      # OR flag on all-tier prizes (e.g. 0.20). null = off.
+  # Swap a game out once its TOP prizes drop below this share of the original
+  # count. The original count comes from each game's PA detail page
+  # ("offers N Top Prizes of $X"); until that's known we estimate from the
+  # highest count seen so far.
+  top_prize_pct: 0.40        # flag when fewer than 40% of the top prizes remain
+  top_prize_count_floor: 1   # OR flag when the top prize is down to its last 1 (and depleting)
 
 # If true, evaluate the low-prize rule for EVERY active game (useful for spotting
-# fresh games worth stocking). If false, only the games in `inventory` above are
-# checked for the low-prize alert (ended-game alerts always cover everything).
+# fresh games worth stocking) using the estimated original count. True original
+# counts are only fetched for the games in `inventory` above (one detail-page
+# request each, cached). Ended-game alerts always cover every game.
 report_all_games: true

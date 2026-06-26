@@ -25,11 +25,21 @@ class Game:
     claim_deadline: Optional[str] = None   # last day a winning ticket can be redeemed
 
     # --- Prizes-Remaining page fields ---
-    top_prize_value: Optional[str] = None  # e.g. "$100,000" (kept as text; PA formats vary)
+    # PA's "Remaining" page lists the top six prize tiers (values) and how many of
+    # each are still unclaimed ("wins remaining"). tier 1 = the top prize.
+    top_prize_value: Optional[str] = None  # e.g. "$100,000" — first of the six tiers
+    top_prizes_remaining: Optional[int] = None  # wins remaining for the top tier
+    prize_tiers: list = field(default_factory=list)  # [{"value": "$17,000", "remaining": 6}, ...]
+
+    # Original top-prize count. Preferred source is the game's detail page
+    # ("offers N Top Prizes of $X"); when that's unavailable we fall back to the
+    # highest "wins remaining" ever seen (flagged via total_is_estimate).
     top_prizes_total: Optional[int] = None
-    top_prizes_remaining: Optional[int] = None
-    total_prizes_remaining: Optional[int] = None
-    total_prizes_original: Optional[int] = None
+    total_is_estimate: bool = True          # False once we have the true count from the detail page
+
+    # From the detail page.
+    detail_id: Optional[str] = None         # PA internal id used by View-Scratch-Off.aspx?id=
+    odds: Optional[str] = None              # overall odds, e.g. "1:3.38"
 
     # Bookkeeping
     source_pages: list = field(default_factory=list)  # which pages contributed to this row
@@ -40,12 +50,6 @@ class Game:
         """Fraction (0..1) of the top prizes that are still unclaimed, or None if unknown."""
         if self.top_prizes_total and self.top_prizes_total > 0 and self.top_prizes_remaining is not None:
             return self.top_prizes_remaining / self.top_prizes_total
-        return None
-
-    @property
-    def total_prize_pct_remaining(self) -> Optional[float]:
-        if self.total_prizes_original and self.total_prizes_original > 0 and self.total_prizes_remaining is not None:
-            return self.total_prizes_remaining / self.total_prizes_original
         return None
 
     def to_dict(self) -> dict:
@@ -88,8 +92,8 @@ def merge_games(
         cur.sales_end_date = cur.sales_end_date or g.sales_end_date
         cur.claim_deadline = cur.claim_deadline or g.claim_deadline
         cur.top_prize_value = cur.top_prize_value or g.top_prize_value
-        for f in ("top_prizes_total", "top_prizes_remaining",
-                  "total_prizes_remaining", "total_prizes_original"):
+        cur.prize_tiers = cur.prize_tiers or g.prize_tiers
+        for f in ("top_prizes_total", "top_prizes_remaining"):
             if getattr(cur, f) is None and getattr(g, f) is not None:
                 setattr(cur, f, getattr(g, f))
         for p in g.source_pages:
@@ -108,3 +112,27 @@ def merge_games(
             merged.source_pages.append("sales_ended")
 
     return by_num
+
+
+def estimate_top_prize_totals(
+    current: dict[str, "Game"], previous: dict[str, "Game"]
+) -> None:
+    """Estimate each game's original top-prize count as the highest 'wins
+    remaining' ever seen (this run or any prior snapshot).
+
+    PA never publishes the original print count, so this running maximum is our
+    best proxy: exact for games first seen as NEW, a lower bound for older games
+    (which only makes the % *less* alarming, never a false alarm). Mutates
+    ``current`` in place, setting ``top_prizes_total``.
+    """
+    for num, g in current.items():
+        if g.top_prizes_remaining is None:
+            continue
+        if g.top_prizes_total is not None and not g.total_is_estimate:
+            continue  # we already have the true original count from the detail page
+        prev = previous.get(num)
+        seen_max = g.top_prizes_remaining
+        if prev is not None and (prev.total_is_estimate is not False):
+            seen_max = max(seen_max, prev.top_prizes_total or 0, prev.top_prizes_remaining or 0)
+        g.top_prizes_total = seen_max
+        g.total_is_estimate = True

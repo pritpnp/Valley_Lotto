@@ -26,17 +26,14 @@ class ParseError(RuntimeError):
 # Canonical field -> list of header substrings that indicate that field.
 # Order matters only in that the first canonical field whose synonym matches wins
 # for a given header cell.
+# Used by the generic table parser for the Active and Sales-Ended pages. The
+# Remaining page has its own dedicated parser (multi-value columns) below.
 _SYNONYMS: dict[str, list[str]] = {
     "game_number": ["game number", "game no", "game #", "game num", "number"],
     "name": ["game name", "name", "title", "game"],
     "price": ["price", "ticket price", "cost"],
     "sales_end_date": ["sales end", "end sale", "last day to sell", "sale end", "end date"],
     "claim_deadline": ["claim", "redeem", "last day to claim", "expiration", "expire"],
-    "top_prize_value": ["top prize", "grand prize", "prize amount", "prize value"],
-    "top_prizes_total": ["total top prizes", "top prizes printed", "original top", "top prizes total"],
-    "top_prizes_remaining": ["top prizes remaining", "top prizes left", "top prizes unclaimed", "remaining top"],
-    "total_prizes_remaining": ["prizes remaining", "prizes left", "total prizes remaining", "unclaimed prizes"],
-    "total_prizes_original": ["total prizes", "prizes printed", "original prizes", "prizes total"],
 }
 
 _INT_RE = re.compile(r"-?\d[\d,]*")
@@ -177,15 +174,10 @@ def parse_table(html: str, *, required: set[str], status: str) -> list[Game]:
             game_number = m.group(1)
 
         g = Game(game_number=game_number, status=status, source_pages=[status_to_page(status)])
-        g.name = values.get("name", "")
+        g.name = clean_name(values.get("name", ""))
         g.price = _to_price(values.get("price", ""))
         g.sales_end_date = values.get("sales_end_date") or None
         g.claim_deadline = values.get("claim_deadline") or None
-        g.top_prize_value = values.get("top_prize_value") or None
-        g.top_prizes_total = _to_int(values.get("top_prizes_total", ""))
-        g.top_prizes_remaining = _to_int(values.get("top_prizes_remaining", ""))
-        g.total_prizes_remaining = _to_int(values.get("total_prizes_remaining", ""))
-        g.total_prizes_original = _to_int(values.get("total_prizes_original", ""))
         games.append(g)
 
     return games
@@ -195,15 +187,124 @@ def status_to_page(status: str) -> str:
     return "sales_ended" if status == "ended" else "remaining"
 
 
+# PA decorates game names with a "NEW " prefix and an " Available on iLottery"
+# suffix; strip them so names match across pages and read cleanly in reports.
+_NAME_PREFIX_RE = re.compile(r"^\s*NEW\s+", re.I)
+_NAME_SUFFIX_RE = re.compile(r"\s*Available on iLottery\.?\s*$", re.I)
+
+
+def clean_name(name: str) -> str:
+    name = _clean(name)
+    name = _NAME_PREFIX_RE.sub("", name)
+    name = _NAME_SUFFIX_RE.sub("", name)
+    return name.strip()
+
+
 def parse_sales_ended(html: str) -> list[Game]:
     # Game number is the only thing we strictly need to identify an ended game.
     return parse_table(html, required={"game_number"}, status="ended")
 
 
-def parse_remaining(html: str) -> list[Game]:
-    return parse_table(html, required={"game_number"}, status="active")
-
-
 def parse_active(html: str) -> list[Game]:
     """The ActivePrint page: the authoritative list of games still on sale."""
     return parse_table(html, required={"game_number"}, status="active")
+
+
+# --------------------------------------------------------------------------- #
+# Remaining page — dedicated parser
+# --------------------------------------------------------------------------- #
+# The "Remaining" page is special: two of its columns hold SIX space-separated
+# values each — "Top Six Prizes" (the six highest prize amounts) and
+# "Wins Remaining" (how many of each are still unclaimed). tier 1 = the top prize.
+_TOP_PRIZES_HDR = ("top six prizes", "top prizes", "prize")
+_WINS_HDR = ("wins remaining", "prizes remaining", "remaining")
+_MONEY_TOKEN_RE = re.compile(r"\$[\d,]+(?:\.\d+)?")
+
+
+def _find_col(headers: list[str], needles: tuple[str, ...]) -> int | None:
+    low = [h.lower() for h in headers]
+    for needle in needles:  # most-specific needle first
+        for i, h in enumerate(low):
+            if needle in h:
+                return i
+    return None
+
+
+_DETAIL_TOP_RE = re.compile(r"offers?\s+([\d,]+)\s+[Tt]op\s+[Pp]rize", re.I)
+_DETAIL_ODDS_RE = re.compile(r"chances of winning a prize:\s*1:([\d.]+)", re.I)
+
+
+def parse_detail(html: str) -> dict:
+    """Pull the original top-prize count and overall odds from a game's detail page.
+
+    PA states it in prose, e.g. "...is a $2 game that offers 7 Top Prizes of
+    $17,000." and "Overall chances of winning a prize: 1:3.38". Returns
+    {"top_prizes_original": int|None, "odds": str|None}.
+    """
+    text = " ".join(BeautifulSoup(html, "html.parser").get_text(" ").split())
+    top = _DETAIL_TOP_RE.search(text)
+    odds = _DETAIL_ODDS_RE.search(text)
+    return {
+        "top_prizes_original": int(top.group(1).replace(",", "")) if top else None,
+        "odds": f"1:{odds.group(1)}" if odds else None,
+    }
+
+
+def parse_remaining(html: str) -> list[Game]:
+    """Parse PA's prizes-remaining table into Games with per-tier prize counts."""
+    soup = BeautifulSoup(html, "html.parser")
+    table = soup.find("table")
+    if table is None:
+        raise ParseError("No <table> on the Remaining page.")
+
+    headers = _header_cells(table)
+    col_num = _find_col(headers, ("game #", "game number", "game no", "number"))
+    col_name = _find_col(headers, ("game name", "name"))
+    col_price = _find_col(headers, ("price", "cost"))
+    col_prizes = _find_col(headers, _TOP_PRIZES_HDR)
+    col_wins = _find_col(headers, _WINS_HDR)
+
+    if col_num is None or col_prizes is None or col_wins is None:
+        raise ParseError(
+            "Remaining page is missing expected columns.\n"
+            f"Headers seen: {headers}\n"
+            "Update parse_remaining()/_TOP_PRIZES_HDR/_WINS_HDR in parse.py."
+        )
+
+    games: list[Game] = []
+    for row in _data_rows(table):
+        cells = [_clean(c.get_text()) for c in row.find_all(["td", "th"])]
+        if not cells or col_num >= len(cells):
+            continue
+        m = _GAMENO_RE.search(cells[col_num])
+        if not m:
+            continue
+        g = Game(game_number=m.group(1), status="active", source_pages=["remaining"])
+        # Capture the detail-page id from the row's link, so we can later look up
+        # the original prize counts.
+        for a in row.find_all("a", href=True):
+            dm = re.search(r"[?&]id=(\d+)", a["href"])
+            if dm:
+                g.detail_id = dm.group(1)
+                break
+        if col_name is not None and col_name < len(cells):
+            g.name = clean_name(cells[col_name])
+        if col_price is not None and col_price < len(cells):
+            g.price = _to_price(cells[col_price])
+
+        prize_vals = _MONEY_TOKEN_RE.findall(cells[col_prizes]) if col_prizes < len(cells) else []
+        win_counts = [
+            int(t.replace(",", ""))
+            for t in re.findall(r"\d[\d,]*", cells[col_wins])
+        ] if col_wins < len(cells) else []
+
+        tiers = []
+        for i, val in enumerate(prize_vals):
+            tiers.append({"value": val, "remaining": win_counts[i] if i < len(win_counts) else None})
+        g.prize_tiers = tiers
+        if tiers:
+            g.top_prize_value = tiers[0]["value"]
+            g.top_prizes_remaining = tiers[0]["remaining"]
+        games.append(g)
+
+    return games

@@ -29,13 +29,23 @@ def render_report(
     inventory: set[str],
     thresholds: Thresholds,
     captured_at: str,
+    baseline: bool = False,
 ) -> str:
     """Human-readable Markdown: today's alerts + a health table for your games."""
     lines: list[str] = []
     lines.append(f"# Valley Lotto report — {captured_at}")
     lines.append("")
 
-    if alerts:
+    if baseline:
+        lines.append("## 🏁 Baseline established")
+        lines.append("")
+        lines.append(
+            f"First run — recorded the current state of {len(games)} games as the "
+            "starting point. No alerts this run; from now on you'll only be told "
+            "about **changes** (games that newly end or whose prizes drop too low)."
+        )
+        lines.append("")
+    elif alerts:
         lines.append(f"## ⚠️ {len(alerts)} new alert(s)")
         lines.append("")
         for a in alerts:
@@ -54,25 +64,32 @@ def render_report(
     if owned_games:
         lines.append("## Your games — current status")
         lines.append("")
-        lines.append("| Game | # | Price | Status | Top prize | Top prizes left | % left | Flag |")
-        lines.append("|------|---|------:|--------|-----------|----------------:|-------:|------|")
+        lines.append("| Game | # | Price | Odds | Top prize | Top prizes left | % left | Flag |")
+        lines.append("|------|---|------:|------|-----------|----------------:|-------:|------|")
         for g in owned_games:
             pct = g.top_prize_pct_remaining
-            pct_s = f"{pct:.0%}" if pct is not None else "—"
+            # A "~" marks a percentage based on the estimated (not yet confirmed) original.
+            pct_s = "—" if pct is None else (f"~{pct:.0%}" if g.total_is_estimate else f"{pct:.0%}")
             left = "—" if g.top_prizes_remaining is None else str(g.top_prizes_remaining)
             total = "" if g.top_prizes_total is None else f"/{g.top_prizes_total}"
             low, _ = _is_low(g, thresholds)
             if g.status == "ended":
                 flag = "🔴 ENDED"
             elif low:
-                flag = "🟠 LOW"
+                flag = "🟠 SWAP"
             else:
                 flag = "✅"
             price = "—" if g.price is None else f"${g.price:g}"
             lines.append(
-                f"| {g.name} | {g.game_number} | {price} | {g.status} | "
+                f"| {g.name} | {g.game_number} | {price} | {g.odds or '—'} | "
                 f"{g.top_prize_value or '—'} | {left}{total} | {pct_s} | {flag} |"
             )
+        lines.append("")
+        lines.append(
+            "> **% left** = top prizes still unclaimed ÷ original count (from the game's "
+            "PA detail page). A `~` means the original is still estimated from the highest "
+            "count seen so far. **🟠 SWAP** = below your threshold — time to switch the game out."
+        )
         lines.append("")
 
     missing = sorted(n for n in inventory if n not in games)

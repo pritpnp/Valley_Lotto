@@ -66,3 +66,10 @@ def fetch_remaining(**kw) -> str:
 
 def fetch_active(**kw) -> str:
     return fetch(ACTIVE_URL, **kw)
+
+
+DETAIL_URL = "https://www.palottery.pa.gov/Scratch-Offs/View-Scratch-Off.aspx?id={id}"
+
+
+def fetch_detail(detail_id: str, **kw) -> str:
+    return fetch(DETAIL_URL.format(id=detail_id), **kw)

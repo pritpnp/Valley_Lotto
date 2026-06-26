@@ -34,6 +34,24 @@ def save_state(path: str | Path, games: dict[str, Game], *, captured_at: str) ->
     p.write_text(json.dumps(payload, indent=2, sort_keys=True))
 
 
+def load_originals(path: str | Path) -> dict[str, dict]:
+    """Cache of per-game original prize counts/odds scraped from detail pages.
+
+    Originals never change once a game is printed, so we fetch each game's detail
+    page only once and reuse the cached value forever after.
+    """
+    p = Path(path)
+    if not p.exists():
+        return {}
+    return json.loads(p.read_text() or "{}")
+
+
+def save_originals(path: str | Path, originals: dict[str, dict]) -> None:
+    p = Path(path)
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(json.dumps(originals, indent=2, sort_keys=True))
+
+
 def save_history(history_dir: str | Path, games: dict[str, Game], *, captured_at: str) -> Path:
     """Write a dated snapshot. ``captured_at`` should be a date/time string."""
     d = Path(history_dir)
