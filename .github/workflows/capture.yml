@@ -1,0 +1,32 @@
+name: Capture PA page structure (debug)
+
+# One-off diagnostic: dumps the live PA page table structure to the job log and
+# commits the raw HTML to debug/ so the parser columns can be mapped correctly.
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r requirements.txt
+      - name: Capture
+        run: python scripts/capture.py
+      - name: Commit raw HTML
+        run: |
+          git config user.name "valley-lotto-bot"
+          git config user.email "noreply@anthropic.com"
+          git add debug
+          if git diff --cached --quiet; then
+            echo "nothing to commit"
+          else
+            git commit -m "debug: capture live PA page HTML"
+            git push
+          fi
