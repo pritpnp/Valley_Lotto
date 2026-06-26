@@ -3,7 +3,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from lottery_tracker.model import Game, merge_games  # noqa: E402
+from lottery_tracker.model import Game, estimate_top_prize_totals, merge_games  # noqa: E402
 from lottery_tracker.rules import Thresholds, evaluate  # noqa: E402
 
 
@@ -18,36 +18,40 @@ def test_owned_game_ending_is_critical():
     assert len(alerts) == 1
     a = alerts[0]
     assert a.kind == "ended" and a.owned and a.severity.value == "critical"
-    assert "08/14/2026" in a.message
 
 
 def test_ended_only_alerts_once():
     prev = {"5432": mk("5432", status="ended")}
     cur = {"5432": mk("5432", status="ended")}
-    alerts = evaluate(cur, prev, inventory={"5432"}, thresholds=Thresholds())
-    assert alerts == []
+    assert evaluate(cur, prev, inventory={"5432"}, thresholds=Thresholds()) == []
 
 
-def test_low_prize_transition_for_owned_game():
-    th = Thresholds(top_prize_pct=0.25, top_prize_count_floor=1, total_prize_pct=None)
+def test_low_prize_transition_by_pct():
+    th = Thresholds(top_prize_pct=0.25, top_prize_count_floor=0)
     prev = {"5310": mk("5310", status="active", top_prizes_total=10, top_prizes_remaining=3)}
     cur = {"5310": mk("5310", status="active", top_prizes_total=10, top_prizes_remaining=1)}
     alerts = evaluate(cur, prev, inventory={"5310"}, thresholds=th)
-    assert len(alerts) == 1
-    assert alerts[0].kind == "low_prizes" and alerts[0].owned
+    assert len(alerts) == 1 and alerts[0].kind == "low_prizes" and alerts[0].owned
+
+
+def test_low_prize_by_count_floor():
+    th = Thresholds(top_prize_pct=None, top_prize_count_floor=1)
+    prev = {"5310": mk("5310", status="active", top_prizes_remaining=3)}
+    cur = {"5310": mk("5310", status="active", top_prizes_remaining=1)}
+    assert len(evaluate(cur, prev, inventory={"5310"}, thresholds=th)) == 1
 
 
 def test_low_prize_not_repeated():
-    th = Thresholds(top_prize_pct=0.25, top_prize_count_floor=1)
-    prev = {"5310": mk("5310", status="active", top_prizes_total=10, top_prizes_remaining=1)}
-    cur = {"5310": mk("5310", status="active", top_prizes_total=10, top_prizes_remaining=1)}
+    th = Thresholds(top_prize_pct=None, top_prize_count_floor=1)
+    prev = {"5310": mk("5310", status="active", top_prizes_remaining=1)}
+    cur = {"5310": mk("5310", status="active", top_prizes_remaining=1)}
     assert evaluate(cur, prev, inventory={"5310"}, thresholds=th) == []
 
 
 def test_non_inventory_low_ignored_unless_report_all():
-    th = Thresholds(top_prize_pct=0.25)
-    prev = {"5500": mk("5500", status="active", top_prizes_total=20, top_prizes_remaining=18)}
-    cur = {"5500": mk("5500", status="active", top_prizes_total=20, top_prizes_remaining=2)}
+    th = Thresholds(top_prize_pct=None, top_prize_count_floor=1)
+    prev = {"5500": mk("5500", status="active", top_prizes_remaining=5)}
+    cur = {"5500": mk("5500", status="active", top_prizes_remaining=1)}
     assert evaluate(cur, prev, inventory=set(), thresholds=th) == []
     a = evaluate(cur, prev, inventory=set(), thresholds=th, report_all_games=True)
     assert len(a) == 1 and not a[0].owned
@@ -55,17 +59,31 @@ def test_non_inventory_low_ignored_unless_report_all():
 
 def test_owned_game_vanishing_flags_removed():
     prev = {"5310": mk("5310", name="Lucky 7s", status="active")}
-    cur = {}  # dropped off all pages
-    alerts = evaluate(cur, prev, inventory={"5310"}, thresholds=Thresholds())
+    alerts = evaluate({}, prev, inventory={"5310"}, thresholds=Thresholds())
     assert len(alerts) == 1 and alerts[0].kind == "removed"
 
 
 def test_merge_precedence_ended_wins():
-    remaining = [mk("5432", name="Big Money", status="active", top_prizes_remaining=5, top_prizes_total=8)]
+    remaining = [mk("5432", name="Big Money", status="active", top_prizes_remaining=5)]
     active = [mk("5432", name="Big Money", status="active")]
-    ended = [mk("5432", name="Big Money", status="ended", claim_deadline="08/14/2026")]
+    ended = [mk("5432", name="Big Money", status="ended", sales_end_date="06/15/2026")]
     merged = merge_games(remaining, ended, active)
     g = merged["5432"]
     assert g.status == "ended"            # ended wins
-    assert g.top_prizes_remaining == 5    # but prize counts retained
-    assert g.claim_deadline == "08/14/2026"
+    assert g.top_prizes_remaining == 5    # prize counts retained
+    assert g.sales_end_date == "06/15/2026"
+
+
+def test_estimate_uses_highest_count_ever_seen():
+    # New game seen at 8 -> original estimate 8 -> 100%.
+    cur = {"5432": mk("5432", status="active", top_prizes_remaining=8)}
+    estimate_top_prize_totals(cur, {})
+    assert cur["5432"].top_prizes_total == 8
+    assert abs(cur["5432"].top_prize_pct_remaining - 1.0) < 1e-9
+
+    # Next run drops to 2, but the original estimate stays at the prior max (8).
+    prev = {"5432": mk("5432", status="active", top_prizes_total=8, top_prizes_remaining=8)}
+    cur2 = {"5432": mk("5432", status="active", top_prizes_remaining=2)}
+    estimate_top_prize_totals(cur2, prev)
+    assert cur2["5432"].top_prizes_total == 8
+    assert abs(cur2["5432"].top_prize_pct_remaining - 0.25) < 1e-9

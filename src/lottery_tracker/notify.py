@@ -29,13 +29,23 @@ def render_report(
     inventory: set[str],
     thresholds: Thresholds,
     captured_at: str,
+    baseline: bool = False,
 ) -> str:
     """Human-readable Markdown: today's alerts + a health table for your games."""
     lines: list[str] = []
     lines.append(f"# Valley Lotto report — {captured_at}")
     lines.append("")
 
-    if alerts:
+    if baseline:
+        lines.append("## 🏁 Baseline established")
+        lines.append("")
+        lines.append(
+            f"First run — recorded the current state of {len(games)} games as the "
+            "starting point. No alerts this run; from now on you'll only be told "
+            "about **changes** (games that newly end or whose prizes drop too low)."
+        )
+        lines.append("")
+    elif alerts:
         lines.append(f"## ⚠️ {len(alerts)} new alert(s)")
         lines.append("")
         for a in alerts:
@@ -54,8 +64,8 @@ def render_report(
     if owned_games:
         lines.append("## Your games — current status")
         lines.append("")
-        lines.append("| Game | # | Price | Status | Top prize | Top prizes left | % left | Flag |")
-        lines.append("|------|---|------:|--------|-----------|----------------:|-------:|------|")
+        lines.append("| Game | # | Price | Status | Top prize | Top prizes left | ~% left | Flag |")
+        lines.append("|------|---|------:|--------|-----------|----------------:|--------:|------|")
         for g in owned_games:
             pct = g.top_prize_pct_remaining
             pct_s = f"{pct:.0%}" if pct is not None else "—"
@@ -73,6 +83,13 @@ def render_report(
                 f"| {g.name} | {g.game_number} | {price} | {g.status} | "
                 f"{g.top_prize_value or '—'} | {left}{total} | {pct_s} | {flag} |"
             )
+        lines.append("")
+        lines.append(
+            "> *Top prize* is the highest of PA's six listed tiers; *top prizes left* "
+            "is the wins still unclaimed. PA doesn't publish original print counts, so "
+            "**~% left** is estimated from the highest count seen so far — accurate for "
+            "games tracked since they were new, conservative for older ones."
+        )
         lines.append("")
 
     missing = sorted(n for n in inventory if n not in games)

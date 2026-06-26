@@ -18,7 +18,7 @@ from pathlib import Path
 
 from . import fetch, parse
 from .config import Config
-from .model import merge_games
+from .model import estimate_top_prize_totals, merge_games
 from .notify import render_report, send_email, write_outputs
 from .rules import Severity, evaluate
 from .state import load_state, save_history, save_state
@@ -69,17 +69,29 @@ def run(argv: list[str] | None = None) -> int:
     state_path = DATA_DIR / "state.json"
     previous = load_state(state_path)
 
-    alerts = evaluate(
-        current,
-        previous,
-        inventory=cfg.inventory,
-        thresholds=cfg.thresholds,
-        report_all_games=cfg.report_all_games,
-    )
+    # Carry the running "highest prizes ever seen" estimate forward.
+    estimate_top_prize_totals(current, previous)
+
+    # First-ever run: nothing to diff against, so seed the baseline silently
+    # instead of alerting on every historically-ended game.
+    baseline = len(previous) == 0
+    if baseline:
+        alerts = []
+        print(f"Baseline established: tracking {len(current)} games. No alerts on first run.",
+              file=sys.stderr)
+    else:
+        alerts = evaluate(
+            current,
+            previous,
+            inventory=cfg.inventory,
+            thresholds=cfg.thresholds,
+            report_all_games=cfg.report_all_games,
+        )
 
     report_md = render_report(
         alerts, current,
         inventory=cfg.inventory, thresholds=cfg.thresholds, captured_at=captured_at,
+        baseline=baseline,
     )
     paths = write_outputs(report_md, alerts, reports_dir=REPORTS_DIR, captured_at=captured_at)
 
