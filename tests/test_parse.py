@@ -41,6 +41,23 @@ def test_parse_active_strips_new_prefix():
     assert all(g.status == "active" for g in games.values())
 
 
+def test_parse_remaining_captures_detail_id():
+    html = (
+        '<table><tr><th>Game #</th><th>Game Name</th><th>Price</th>'
+        '<th>Top Six Prizes</th><th>Wins Remaining</th></tr>'
+        '<tr><td><a href="/Scratch-Offs/View-Scratch-Off.aspx?id=3363">1789</a></td>'
+        '<td>Super 7s</td><td>$2</td><td>$17,000 $1,000</td><td>6 17</td></tr></table>'
+    )
+    g = parse.parse_remaining(html)[0]
+    assert g.detail_id == "3363"
+
+
+def test_parse_detail_originals_and_odds():
+    info = parse.parse_detail((FIX / "detail.html").read_text())
+    assert info["top_prizes_original"] == 7
+    assert info["odds"] == "1:3.38"
+
+
 def test_remaining_missing_columns_raises():
     html = "<table><tr><th>Foo</th><th>Bar</th></tr><tr><td>1</td><td>2</td></tr></table>"
     try:

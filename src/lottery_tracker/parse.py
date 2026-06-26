@@ -230,6 +230,26 @@ def _find_col(headers: list[str], needles: tuple[str, ...]) -> int | None:
     return None
 
 
+_DETAIL_TOP_RE = re.compile(r"offers?\s+([\d,]+)\s+[Tt]op\s+[Pp]rize", re.I)
+_DETAIL_ODDS_RE = re.compile(r"chances of winning a prize:\s*1:([\d.]+)", re.I)
+
+
+def parse_detail(html: str) -> dict:
+    """Pull the original top-prize count and overall odds from a game's detail page.
+
+    PA states it in prose, e.g. "...is a $2 game that offers 7 Top Prizes of
+    $17,000." and "Overall chances of winning a prize: 1:3.38". Returns
+    {"top_prizes_original": int|None, "odds": str|None}.
+    """
+    text = " ".join(BeautifulSoup(html, "html.parser").get_text(" ").split())
+    top = _DETAIL_TOP_RE.search(text)
+    odds = _DETAIL_ODDS_RE.search(text)
+    return {
+        "top_prizes_original": int(top.group(1).replace(",", "")) if top else None,
+        "odds": f"1:{odds.group(1)}" if odds else None,
+    }
+
+
 def parse_remaining(html: str) -> list[Game]:
     """Parse PA's prizes-remaining table into Games with per-tier prize counts."""
     soup = BeautifulSoup(html, "html.parser")
@@ -260,6 +280,13 @@ def parse_remaining(html: str) -> list[Game]:
         if not m:
             continue
         g = Game(game_number=m.group(1), status="active", source_pages=["remaining"])
+        # Capture the detail-page id from the row's link, so we can later look up
+        # the original prize counts.
+        for a in row.find_all("a", href=True):
+            dm = re.search(r"[?&]id=(\d+)", a["href"])
+            if dm:
+                g.detail_id = dm.group(1)
+                break
         if col_name is not None and col_name < len(cells):
             g.name = clean_name(cells[col_name])
         if col_price is not None and col_price < len(cells):

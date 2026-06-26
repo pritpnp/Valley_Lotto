@@ -64,31 +64,31 @@ def render_report(
     if owned_games:
         lines.append("## Your games — current status")
         lines.append("")
-        lines.append("| Game | # | Price | Status | Top prize | Top prizes left | ~% left | Flag |")
-        lines.append("|------|---|------:|--------|-----------|----------------:|--------:|------|")
+        lines.append("| Game | # | Price | Odds | Top prize | Top prizes left | % left | Flag |")
+        lines.append("|------|---|------:|------|-----------|----------------:|-------:|------|")
         for g in owned_games:
             pct = g.top_prize_pct_remaining
-            pct_s = f"{pct:.0%}" if pct is not None else "—"
+            # A "~" marks a percentage based on the estimated (not yet confirmed) original.
+            pct_s = "—" if pct is None else (f"~{pct:.0%}" if g.total_is_estimate else f"{pct:.0%}")
             left = "—" if g.top_prizes_remaining is None else str(g.top_prizes_remaining)
             total = "" if g.top_prizes_total is None else f"/{g.top_prizes_total}"
             low, _ = _is_low(g, thresholds)
             if g.status == "ended":
                 flag = "🔴 ENDED"
             elif low:
-                flag = "🟠 LOW"
+                flag = "🟠 SWAP"
             else:
                 flag = "✅"
             price = "—" if g.price is None else f"${g.price:g}"
             lines.append(
-                f"| {g.name} | {g.game_number} | {price} | {g.status} | "
+                f"| {g.name} | {g.game_number} | {price} | {g.odds or '—'} | "
                 f"{g.top_prize_value or '—'} | {left}{total} | {pct_s} | {flag} |"
             )
         lines.append("")
         lines.append(
-            "> *Top prize* is the highest of PA's six listed tiers; *top prizes left* "
-            "is the wins still unclaimed. PA doesn't publish original print counts, so "
-            "**~% left** is estimated from the highest count seen so far — accurate for "
-            "games tracked since they were new, conservative for older ones."
+            "> **% left** = top prizes still unclaimed ÷ original count (from the game's "
+            "PA detail page). A `~` means the original is still estimated from the highest "
+            "count seen so far. **🟠 SWAP** = below your threshold — time to switch the game out."
         )
         lines.append("")
 

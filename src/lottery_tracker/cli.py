@@ -21,7 +21,7 @@ from .config import Config
 from .model import estimate_top_prize_totals, merge_games
 from .notify import render_report, send_email, write_outputs
 from .rules import Severity, evaluate
-from .state import load_state, save_history, save_state
+from .state import load_originals, load_state, save_history, save_originals, save_state
 
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_CONFIG = ROOT / "config.yaml"
@@ -38,6 +38,43 @@ def _load_html(offline: bool) -> tuple[str, str, str]:
         ended = (SAMPLES_DIR / "sales_ended.html").read_text()
         return active, remaining, ended
     return fetch.fetch_active(), fetch.fetch_remaining(), fetch.fetch_sales_ended()
+
+
+def _enrich_with_originals(current, inventory, originals, *, offline, save_html):
+    """Populate true original top-prize counts (and odds) for inventory games.
+
+    Fetches each carried game's detail page once, parses "offers N Top Prizes…",
+    and caches it in ``originals`` keyed by game number. Already-cached games and
+    games without a detail link are skipped. Detail fetch failures are non-fatal —
+    the game just falls back to the estimated total.
+    """
+    for num in sorted(inventory):
+        g = current.get(num)
+        if g is None:
+            continue
+        cached = originals.get(num)
+        if cached is None and g.detail_id:
+            html = None
+            if offline:
+                p = SAMPLES_DIR / f"detail_{g.detail_id}.html"
+                html = p.read_text() if p.exists() else None
+            else:
+                try:
+                    html = fetch.fetch_detail(g.detail_id)
+                    if save_html:
+                        SAMPLES_DIR.mkdir(exist_ok=True)
+                        (SAMPLES_DIR / f"detail_{g.detail_id}.html").write_text(html)
+                except Exception as e:  # noqa: BLE001
+                    print(f"WARNING: detail fetch failed for #{num} (id={g.detail_id}): {e}",
+                          file=sys.stderr)
+            if html is not None:
+                info = parse.parse_detail(html)
+                cached = {"detail_id": g.detail_id, **info}
+                originals[num] = cached
+        if cached and cached.get("top_prizes_original") is not None:
+            g.top_prizes_total = cached["top_prizes_original"]
+            g.total_is_estimate = False
+            g.odds = cached.get("odds")
 
 
 def run(argv: list[str] | None = None) -> int:
@@ -69,7 +106,14 @@ def run(argv: list[str] | None = None) -> int:
     state_path = DATA_DIR / "state.json"
     previous = load_state(state_path)
 
-    # Carry the running "highest prizes ever seen" estimate forward.
+    # True original prize counts come from each game's detail page. Fetch them
+    # once for the games we carry and cache forever (originals never change).
+    originals = load_originals(DATA_DIR / "originals.json")
+    _enrich_with_originals(current, cfg.inventory, originals, offline=args.offline,
+                           save_html=args.save_html)
+    save_originals(DATA_DIR / "originals.json", originals)
+
+    # Fall back to the highest-ever-seen estimate for any game without a true count.
     estimate_top_prize_totals(current, previous)
 
     # First-ever run: nothing to diff against, so seed the baseline silently

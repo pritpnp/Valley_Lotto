@@ -31,10 +31,15 @@ class Game:
     top_prizes_remaining: Optional[int] = None  # wins remaining for the top tier
     prize_tiers: list = field(default_factory=list)  # [{"value": "$17,000", "remaining": 6}, ...]
 
-    # PA does not publish the ORIGINAL print counts on these pages, so we estimate
-    # the top tier's original count as the highest "wins remaining" we've ever seen
-    # for this game (exact for games first seen as NEW; a lower bound otherwise).
-    top_prizes_total: Optional[int] = None  # estimated original count of the top prize
+    # Original top-prize count. Preferred source is the game's detail page
+    # ("offers N Top Prizes of $X"); when that's unavailable we fall back to the
+    # highest "wins remaining" ever seen (flagged via total_is_estimate).
+    top_prizes_total: Optional[int] = None
+    total_is_estimate: bool = True          # False once we have the true count from the detail page
+
+    # From the detail page.
+    detail_id: Optional[str] = None         # PA internal id used by View-Scratch-Off.aspx?id=
+    odds: Optional[str] = None              # overall odds, e.g. "1:3.38"
 
     # Bookkeeping
     source_pages: list = field(default_factory=list)  # which pages contributed to this row
@@ -123,8 +128,11 @@ def estimate_top_prize_totals(
     for num, g in current.items():
         if g.top_prizes_remaining is None:
             continue
+        if g.top_prizes_total is not None and not g.total_is_estimate:
+            continue  # we already have the true original count from the detail page
         prev = previous.get(num)
         seen_max = g.top_prizes_remaining
-        if prev is not None:
+        if prev is not None and (prev.total_is_estimate is not False):
             seen_max = max(seen_max, prev.top_prizes_total or 0, prev.top_prizes_remaining or 0)
         g.top_prizes_total = seen_max
+        g.total_is_estimate = True
