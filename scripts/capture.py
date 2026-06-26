@@ -52,16 +52,22 @@ def capture_detail(detail_id: str) -> None:
     soup = BeautifulSoup(html, "html.parser")
     tables = soup.find_all("table")
     print(f"\n{'='*70}\nDETAIL id={detail_id}  ({len(html)} bytes, {len(tables)} tables)\n{'='*70}")
-    # Look for odds text like "1 in 3.82".
-    import re as _re
-    odds = _re.findall(r"1 in [0-9.]+", soup.get_text())
-    print(f"  odds tokens found: {odds[:5]}")
-    for ti, table in enumerate(tables[:6]):
+    # Dump EVERY table fully to find any complete prize-tier breakdown.
+    for ti, table in enumerate(tables):
         rows = table.find_all("tr")
         print(f"\n  -- table[{ti}]: {len(rows)} rows --")
-        for ri, row in enumerate(rows[:6]):
+        for ri, row in enumerate(rows):
             cells = [clean(c.get_text()) for c in row.find_all(["th", "td"])]
             print(f"     row[{ri}] ({len(cells)} cells): {cells}")
+    # Save full visible text and surface lines about tickets / odds / per-tier data.
+    text = soup.get_text("\n")
+    (DEBUG / f"detail_{detail_id}.txt").write_text(text)
+    import re as _re
+    keep = [ln.strip() for ln in text.split("\n")
+            if ln.strip() and _re.search(r"odds|ticket|1 in|1:|chance|prize|remaining|sold|total|%", ln, _re.I)]
+    print("\n  -- text lines of interest --")
+    for ln in keep[:80]:
+        print("    |", ln[:120])
 
 
 def main() -> None:
