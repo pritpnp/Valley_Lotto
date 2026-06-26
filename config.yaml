@@ -20,4 +20,4 @@ thresholds:
 # If true, evaluate the low-prize rule for EVERY active game (useful for spotting
 # fresh games worth stocking). If false, only the games in `inventory` above are
 # checked for the low-prize alert (ended-game alerts always cover everything).
-report_all_games: false
+report_all_games: true
