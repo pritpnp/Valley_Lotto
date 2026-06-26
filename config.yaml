@@ -1,0 +1,62 @@
+# Valley Lotto configuration
+# ---------------------------------------------------------------------------
+# This is the ONLY file you normally edit. Keep your list of games up to date
+# and the tracker tells you when one ends or runs low on prizes.
+
+# Games you currently carry on the counter, by PA game number.
+# The game number is the 3-5 digit "Game #" shown on every PA scratch-off page.
+# (Run the tracker once and check reports/latest.md if you're unsure of a number.)
+inventory:
+  # $30 games
+  - "1742"   # $3M MEGA MOOLAH MULTIPLIER
+  - "1696"   # MEGA BUCKS
+  - "1780"   # TRIPLE RED 777
+  - "1750"   # CASH SPECTACULAR
+  # $20 games
+  - "1738"   # JACKPOT
+  - "1774"   # $500 BLOWOUT
+  - "1756"   # FROSTED FORTUNE
+  - "1746"   # MILLIONAIRE LOADING
+  - "1763"   # A YEAR FOR LIFE
+  # $10 games
+  - "1751"   # EXTREME GREEN
+  - "1747"   # JURASSIC PARK
+  - "1769"   # CODE WORD
+  - "1706"   # GAME OF THRONES
+  - "1781"   # WIN WIN WIN
+  - "1764"   # A MONTH OF LIFE
+  - "1757"   # FESTIVE FRENZY
+  # $5 games
+  - "1693"   # KEYS & CASH
+  - "1793"   # HIGH 5
+  - "1744"   # GOAT
+  - "1758"   # ELF
+  - "1739"   # MONOPOLY
+  - "1777"   # MONEY BOX BINGO
+  - "1782"   # GUS
+  - "1787"   # FEVER DOUBLER
+  # $3 games
+  - "1788"   # LIGHTS, CAMERA, CROSSWORD
+  - "1740"   # BONUS BALL BINGO
+  - "1753"   # CROSSWORD EXTRA
+  # $2 games
+  - "1772"   # FIND THE LEPRECHAUN
+  - "1778"   # MONEY RUSH
+  - "1789"   # SUPER 7
+  - "1766"   # LOVE IS BLIND
+  # $1 games
+  - "1783"   # GOLD FISH
+  - "1779"   # A LATTE MONEY
+  - "1767"   # A WEEK FOR LIFE
+
+# When is a game's prize pool "too low" to keep on the counter?
+# A game is flagged if ANY rule below trips. Set a rule to null to disable it.
+thresholds:
+  top_prize_pct: 0.25        # flag when fewer than 25% of the TOP prizes are still unclaimed
+  top_prize_count_floor: 1   # OR flag when there are this many top prizes left or fewer
+  total_prize_pct: null      # OR flag on all-tier prizes (e.g. 0.20). null = off.
+
+# If true, evaluate the low-prize rule for EVERY active game (useful for spotting
+# fresh games worth stocking). If false, only the games in `inventory` above are
+# checked for the low-prize alert (ended-game alerts always cover everything).
+report_all_games: true

@@ -1,0 +1,183 @@
+"""Turn two snapshots (previous vs. current) into actionable alerts.
+
+Two things the retailer asked to be told about:
+
+  1. A game ENDED — sales stopped. Highest priority when it's a game they carry,
+     because unsold inventory of an ended game is dead stock and winners have a
+     claim deadline.
+  2. A game's PRIZES ARE TOO LOW to be worth keeping — time to swap it for a
+     fresh game. "Too low" is configurable (see ``Thresholds``).
+
+Alerts fire on *transitions* (it just became true), so you aren't re-pinged daily
+about the same game. A game you carry that simply vanishes from all PA pages is
+treated as "ended/removed" too.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from enum import Enum
+
+from .model import Game
+
+
+class Severity(str, Enum):
+    INFO = "info"
+    WARN = "warning"
+    CRITICAL = "critical"
+
+
+@dataclass
+class Thresholds:
+    top_prize_pct: float | None = 0.25      # flag when top prizes remaining < this fraction of total
+    top_prize_count_floor: int | None = 1   # OR flag when top prizes remaining <= this absolute count
+    total_prize_pct: float | None = None    # optional: flag on all-tier remaining fraction
+
+    @classmethod
+    def from_config(cls, cfg: dict | None) -> "Thresholds":
+        cfg = cfg or {}
+        return cls(
+            top_prize_pct=cfg.get("top_prize_pct", 0.25),
+            top_prize_count_floor=cfg.get("top_prize_count_floor", 1),
+            total_prize_pct=cfg.get("total_prize_pct", None),
+        )
+
+
+@dataclass
+class Alert:
+    kind: str                      # "ended" | "low_prizes" | "removed"
+    game_number: str
+    name: str
+    severity: Severity
+    message: str
+    owned: bool = False
+    details: dict = field(default_factory=dict)
+
+    def to_dict(self) -> dict:
+        d = self.__dict__.copy()
+        d["severity"] = self.severity.value
+        return d
+
+
+def _is_low(game: Game, th: Thresholds) -> tuple[bool, list[str]]:
+    """Return (is_low, reasons). A game is low if ANY configured rule trips."""
+    reasons: list[str] = []
+    pct = game.top_prize_pct_remaining
+    if th.top_prize_pct is not None and pct is not None and pct < th.top_prize_pct:
+        reasons.append(
+            f"only {pct:.0%} of top prizes left "
+            f"({game.top_prizes_remaining}/{game.top_prizes_total})"
+        )
+    if (
+        th.top_prize_count_floor is not None
+        and game.top_prizes_remaining is not None
+        and game.top_prizes_remaining <= th.top_prize_count_floor
+    ):
+        reasons.append(f"{game.top_prizes_remaining} top prize(s) remaining")
+    if th.total_prize_pct is not None:
+        tpct = game.total_prize_pct_remaining
+        if tpct is not None and tpct < th.total_prize_pct:
+            reasons.append(f"only {tpct:.0%} of all prizes left")
+    return (bool(reasons), reasons)
+
+
+def evaluate(
+    current: dict[str, Game],
+    previous: dict[str, Game],
+    *,
+    inventory: set[str],
+    thresholds: Thresholds,
+    report_all_games: bool = False,
+) -> list[Alert]:
+    """Compare snapshots and return alerts for new transitions."""
+    alerts: list[Alert] = []
+
+    def owned(num: str) -> bool:
+        return num in inventory
+
+    # --- 1. Games that just ENDED -------------------------------------------
+    for num, g in current.items():
+        was = previous.get(num)
+        just_ended = g.status == "ended" and (was is None or was.status != "ended")
+        if just_ended:
+            sev = Severity.CRITICAL if owned(num) else Severity.INFO
+            who = "A game you carry" if owned(num) else "A game"
+            extra = ""
+            if g.claim_deadline:
+                extra = f" Last day to redeem winners: {g.claim_deadline}."
+            alerts.append(
+                Alert(
+                    kind="ended",
+                    game_number=num,
+                    name=g.name,
+                    severity=sev,
+                    owned=owned(num),
+                    message=f"{who} ENDED sales: #{num} {g.name}.{extra}",
+                    details={
+                        "sales_end_date": g.sales_end_date,
+                        "claim_deadline": g.claim_deadline,
+                        "price": g.price,
+                    },
+                )
+            )
+
+    # --- 2. Owned games that vanished from all pages (treat as removed) ------
+    for num in inventory:
+        if num not in current and num in previous and previous[num].status != "ended":
+            g = previous[num]
+            alerts.append(
+                Alert(
+                    kind="removed",
+                    game_number=num,
+                    name=g.name,
+                    severity=Severity.WARN,
+                    owned=True,
+                    message=(
+                        f"A game you carry dropped off the PA active list: "
+                        f"#{num} {g.name}. It has most likely ended — verify and pull stock."
+                    ),
+                    details={"last_seen_status": g.status},
+                )
+            )
+
+    # --- 3. Active games whose prizes just got TOO LOW ----------------------
+    for num, g in current.items():
+        if g.status != "active":
+            continue
+        if not report_all_games and not owned(num):
+            continue
+        low_now, reasons = _is_low(g, thresholds)
+        if not low_now:
+            continue
+        was = previous.get(num)
+        was_low = False
+        if was is not None:
+            was_low, _ = _is_low(was, thresholds)
+        if was_low:
+            continue  # already alerted on a prior run
+        sev = Severity.WARN if owned(num) else Severity.INFO
+        who = "A game you carry" if owned(num) else "A game"
+        alerts.append(
+            Alert(
+                kind="low_prizes",
+                game_number=num,
+                name=g.name,
+                severity=sev,
+                owned=owned(num),
+                message=(
+                    f"{who} is running low — consider swapping it for a fresh game: "
+                    f"#{num} {g.name} ({'; '.join(reasons)})."
+                ),
+                details={
+                    "reasons": reasons,
+                    "top_prizes_remaining": g.top_prizes_remaining,
+                    "top_prizes_total": g.top_prizes_total,
+                    "top_prize_value": g.top_prize_value,
+                },
+            )
+        )
+
+    # Sort: owned first, then by severity (critical -> info).
+    sev_order = {Severity.CRITICAL: 0, Severity.WARN: 1, Severity.INFO: 2}
+    alerts.sort(key=lambda a: (not a.owned, sev_order[a.severity], a.game_number))
+    return alerts

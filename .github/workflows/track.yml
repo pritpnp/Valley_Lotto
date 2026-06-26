@@ -1,0 +1,74 @@
+name: Track scratch-offs
+
+# Runs the tracker on a schedule, commits the new snapshot/report, and opens a
+# GitHub Issue when there's a new alert (a game you carry ended, or prizes got low).
+on:
+  schedule:
+    - cron: "0 13 * * *"   # daily at 13:00 UTC (~8-9am Eastern). Adjust as you like.
+  workflow_dispatch: {}     # lets you run it on demand from the Actions tab.
+
+permissions:
+  contents: write           # to commit the snapshot/report back to the repo
+  issues: write             # to open an alert issue
+
+concurrency:
+  group: track
+  cancel-in-progress: false
+
+jobs:
+  track:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run tracker
+        id: run
+        # Don't fail the job on a "critical" exit code (2) — that's an expected
+        # signal, not an error. Real errors (network/parse) are non-2 and DO fail.
+        env:
+          # Email is optional. Set these as repo secrets to turn it on.
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          ALERT_TO: ${{ secrets.ALERT_TO }}
+          ALERT_FROM: ${{ secrets.ALERT_FROM }}
+        run: |
+          set +e
+          PYTHONPATH=src python -m lottery_tracker
+          code=$?
+          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+          if [ "$code" -eq 2 ] || [ "$code" -eq 0 ]; then exit 0; else exit $code; fi
+
+      - name: Commit snapshot and report
+        run: |
+          git config user.name "valley-lotto-bot"
+          git config user.email "actions@github.com"
+          git add data reports
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "Daily scratch-off snapshot $(date -u +%Y-%m-%d)"
+            git push
+          fi
+
+      - name: Open an issue if there are new alerts
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ ! -s reports/alerts.json ]; then exit 0; fi
+          count=$(python -c "import json,sys; print(len(json.load(open('reports/alerts.json'))))")
+          if [ "$count" -eq 0 ]; then
+            echo "No new alerts."
+            exit 0
+          fi
+          title="🎟️ Valley Lotto: $count new alert(s) — $(date -u +%Y-%m-%d)"
+          gh issue create --title "$title" --body-file reports/latest.md --label "lottery-alert" \
+            || gh issue create --title "$title" --body-file reports/latest.md
