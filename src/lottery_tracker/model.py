@@ -1,0 +1,110 @@
+"""Canonical data model for a scratch-off game.
+
+A single ``Game`` row is the normalized merge of what we can learn from both
+PA Lottery pages: the "Prizes Remaining" page (active games + prize counts) and
+the "Sales Ended" page (games whose sales have stopped + claim deadlines).
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass, field, asdict
+from typing import Optional
+
+
+@dataclass
+class Game:
+    game_number: str                       # PA's game number, e.g. "5432" — our primary key
+    name: str = ""
+    price: Optional[float] = None          # ticket price in dollars
+
+    # Status comes from which page the game appears on.
+    status: str = "active"                 # "active" | "ended"
+
+    # --- Sales-Ended page fields ---
+    sales_end_date: Optional[str] = None   # last day the game is sold
+    claim_deadline: Optional[str] = None   # last day a winning ticket can be redeemed
+
+    # --- Prizes-Remaining page fields ---
+    top_prize_value: Optional[str] = None  # e.g. "$100,000" (kept as text; PA formats vary)
+    top_prizes_total: Optional[int] = None
+    top_prizes_remaining: Optional[int] = None
+    total_prizes_remaining: Optional[int] = None
+    total_prizes_original: Optional[int] = None
+
+    # Bookkeeping
+    source_pages: list = field(default_factory=list)  # which pages contributed to this row
+
+    # ---- derived helpers -------------------------------------------------
+    @property
+    def top_prize_pct_remaining(self) -> Optional[float]:
+        """Fraction (0..1) of the top prizes that are still unclaimed, or None if unknown."""
+        if self.top_prizes_total and self.top_prizes_total > 0 and self.top_prizes_remaining is not None:
+            return self.top_prizes_remaining / self.top_prizes_total
+        return None
+
+    @property
+    def total_prize_pct_remaining(self) -> Optional[float]:
+        if self.total_prizes_original and self.total_prizes_original > 0 and self.total_prizes_remaining is not None:
+            return self.total_prizes_remaining / self.total_prizes_original
+        return None
+
+    def to_dict(self) -> dict:
+        return asdict(self)
+
+    @classmethod
+    def from_dict(cls, d: dict) -> "Game":
+        # Tolerate snapshots written by older versions: ignore unknown keys.
+        known = {f for f in cls.__dataclass_fields__}  # type: ignore[attr-defined]
+        return cls(**{k: v for k, v in d.items() if k in known})
+
+
+def merge_games(
+    remaining: list[Game],
+    ended: list[Game],
+    active: list[Game] | None = None,
+) -> dict[str, Game]:
+    """Merge the page parses into one dict keyed by game_number.
+
+    Sources:
+      * ``remaining``  — prize counts for active games.
+      * ``active``     — authoritative list of games still on sale (ActivePrint).
+      * ``ended``      — games whose sales have stopped, with claim deadlines.
+
+    Precedence: a game on the ``ended`` list is marked ended regardless of the
+    other pages (PA can keep an ended game on the remaining list for a while so
+    winners can still redeem). The ``active`` set is recorded so callers can tell
+    "still selling" from "ended but prizes still claimable".
+    """
+    by_num: dict[str, Game] = {}
+
+    def _upsert(g: Game) -> Game:
+        cur = by_num.get(g.game_number)
+        if cur is None:
+            by_num[g.game_number] = g
+            return g
+        # Merge field-by-field, preferring already-populated values.
+        cur.name = cur.name or g.name
+        cur.price = cur.price if cur.price is not None else g.price
+        cur.sales_end_date = cur.sales_end_date or g.sales_end_date
+        cur.claim_deadline = cur.claim_deadline or g.claim_deadline
+        cur.top_prize_value = cur.top_prize_value or g.top_prize_value
+        for f in ("top_prizes_total", "top_prizes_remaining",
+                  "total_prizes_remaining", "total_prizes_original"):
+            if getattr(cur, f) is None and getattr(g, f) is not None:
+                setattr(cur, f, getattr(g, f))
+        for p in g.source_pages:
+            if p not in cur.source_pages:
+                cur.source_pages.append(p)
+        return cur
+
+    for g in remaining:
+        _upsert(g)
+    for g in (active or []):
+        _upsert(g)
+    for g in ended:
+        merged = _upsert(g)
+        merged.status = "ended"  # ended always wins
+        if "sales_ended" not in merged.source_pages:
+            merged.source_pages.append("sales_ended")
+
+    return by_num

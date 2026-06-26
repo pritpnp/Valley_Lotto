@@ -1,0 +1,23 @@
+# Valley Lotto configuration
+# ---------------------------------------------------------------------------
+# This is the ONLY file you normally edit. Keep your list of games up to date
+# and the tracker tells you when one ends or runs low on prizes.
+
+# Games you currently carry on the counter, by PA game number.
+# The game number is the 3-5 digit "Game #" shown on every PA scratch-off page.
+# (Run the tracker once and check reports/latest.md if you're unsure of a number.)
+inventory:
+  - "0000"   # <-- replace these with your real game numbers
+  - "0001"
+
+# When is a game's prize pool "too low" to keep on the counter?
+# A game is flagged if ANY rule below trips. Set a rule to null to disable it.
+thresholds:
+  top_prize_pct: 0.25        # flag when fewer than 25% of the TOP prizes are still unclaimed
+  top_prize_count_floor: 1   # OR flag when there are this many top prizes left or fewer
+  total_prize_pct: null      # OR flag on all-tier prizes (e.g. 0.20). null = off.
+
+# If true, evaluate the low-prize rule for EVERY active game (useful for spotting
+# fresh games worth stocking). If false, only the games in `inventory` above are
+# checked for the low-prize alert (ended-game alerts always cover everything).
+report_all_games: false
