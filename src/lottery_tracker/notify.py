@@ -260,7 +260,7 @@ def _tier_details_html(g: Game, prev: Game | None, e) -> str:
     for r in health:
         rem = "—" if r["remaining"] is None else f"{r['remaining']:,}"
         tot = "" if r["original"] is None else f" / {r['original']:,}"
-        pct = "—" if r["pct"] is None else f"{r['pct']:.0%}"
+        pct = "—" if r["pct"] is None else f"{min(1.0, r['pct']):.0%}"
         dv = deltas.get(r["value"])
         if dv is None:
             d, cls = "—", "muted"
