@@ -210,20 +210,29 @@ class Game:
         ~Binomial(N, p): expected = p·N, standard deviation = √(N·p·(1−p)),
         z = (remaining − expected) / sd.
 
-        |z| ≥ 2 means the tier really is depleting faster (z<0) or slower (z>0) than
-        the rest of the game — a *signal*. |z| < 2 is just small-sample noise (this is
-        why a 2-of-3 top prize looks dramatic but means nothing). Returns one row per
-        tracked tier: {value, value_num, z, significant, remaining, original}.
+        A tier is flagged *significant* when |z| clears a **Bonferroni-corrected**
+        threshold: because we test every tier at once, a flat |z|≥2 cutoff would raise
+        a false "signal" ~26% of the time on a 6-tier game. We instead require the
+        family-wise error rate to stay at ``alpha`` (5%) across all k tiers, i.e.
+        |z| ≥ Φ⁻¹(1 − alpha/2k) — about 2.6σ for six tiers. Everything below that is
+        treated as small-sample noise (which is why a 2-of-3 top prize means nothing).
+        Returns one row per tracked tier: {value, value_num, z, crit, significant,
+        remaining, original}.
         """
+        from statistics import NormalDist
+
         rows = self._tiers_with_orig()
         if len(rows) < 2:
             return []
+        k = len(rows)
+        alpha = 0.05
+        crit = NormalDist().inv_cdf(1 - alpha / (2 * k))  # family-wise 5% over k tiers
         tot_rem = sum(r["remaining"] for r in rows)
         tot_orig = sum(r["original"] for r in rows)
         out = []
         for r in rows:
             n, rem = r["original"], r["remaining"]
-            # Pool the OTHER tiers as the reference rate.
+            # Pool the OTHER tiers as the reference rate (leave-one-out).
             other_orig = tot_orig - n
             p = (tot_rem - rem) / other_orig if other_orig > 0 else None
             if p is None or not (0 < p < 1):
@@ -232,8 +241,8 @@ class Game:
                 sd = (n * p * (1 - p)) ** 0.5
                 z = (rem - p * n) / sd if sd > 0 else 0.0
             out.append({
-                "value": r["value"], "value_num": r["value_num"], "z": z,
-                "significant": abs(z) >= 2.0, "remaining": rem, "original": n,
+                "value": r["value"], "value_num": r["value_num"], "z": z, "crit": crit,
+                "significant": abs(z) >= crit, "remaining": rem, "original": n,
             })
         return out
 
