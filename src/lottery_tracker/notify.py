@@ -59,36 +59,45 @@ def render_report(
         lines.append("Nothing ended and nothing crossed your low-prize threshold since the last run.")
         lines.append("")
 
-    # Health table for the games you carry.
+    # Health table for the games you carry — sorted by overall odds (best first),
+    # because the odds are the real "will a customer win anything / break even?"
+    # number and they barely move over a game's life.
     owned_games = [games[n] for n in sorted(inventory) if n in games]
+    owned_games.sort(key=lambda g: (g.odds_value is None, g.odds_value or 99))
     if owned_games:
-        lines.append("## Your games — current status")
+        lines.append("## Your games — sorted best odds first")
         lines.append("")
-        lines.append("| Game | # | Price | Odds | Top prize | Top prizes left | % left | Flag |")
-        lines.append("|------|---|------:|------|-----------|----------------:|-------:|------|")
+        lines.append("| Game | # | Price | Win odds | Top prize | Top prizes left | Flags |")
+        lines.append("|------|---|------:|:--------:|-----------|----------------:|-------|")
         for g in owned_games:
             pct = g.top_prize_pct_remaining
-            # A "~" marks a percentage based on the estimated (not yet confirmed) original.
-            pct_s = "—" if pct is None else (f"~{pct:.0%}" if g.total_is_estimate else f"{pct:.0%}")
+            pct_s = "" if pct is None else (f" (~{pct:.0%})" if g.total_is_estimate else f" ({pct:.0%})")
             left = "—" if g.top_prizes_remaining is None else str(g.top_prizes_remaining)
             total = "" if g.top_prizes_total is None else f"/{g.top_prizes_total}"
             low, _ = _is_low(g, thresholds)
+            flags = []
             if g.status == "ended":
-                flag = "🔴 ENDED"
-            elif low:
-                flag = "🟠 SWAP"
-            else:
-                flag = "✅"
+                flags.append("🔴 ENDED")
+            if low:
+                flags.append("🟠 SWAP")
+            if (thresholds.weak_odds is not None and g.odds_value is not None
+                    and g.odds_value > thresholds.weak_odds):
+                flags.append("🔻 WEAK ODDS")
+            flag = " ".join(flags) if flags else "✅"
             price = "—" if g.price is None else f"${g.price:g}"
+            odds = f"1:{g.odds_value:g}" if g.odds_value is not None else "—"
             lines.append(
-                f"| {g.name} | {g.game_number} | {price} | {g.odds or '—'} | "
-                f"{g.top_prize_value or '—'} | {left}{total} | {pct_s} | {flag} |"
+                f"| {g.name} | {g.game_number} | {price} | {odds} | "
+                f"{g.top_prize_value or '—'} | {left}{total}{pct_s} | {flag} |"
             )
         lines.append("")
         lines.append(
-            "> **% left** = top prizes still unclaimed ÷ original count (from the game's "
-            "PA detail page). A `~` means the original is still estimated from the highest "
-            "count seen so far. **🟠 SWAP** = below your threshold — time to switch the game out."
+            "> **Win odds (1:X)** = published chance a ticket wins *any* prize — the real "
+            "\"will they at least break even?\" number; lower is better and it stays ~constant "
+            "all game long. **🔻 WEAK ODDS** = worse than your odds cutoff (a poor game to keep "
+            "stocked). **🟠 SWAP** = the big prizes are mostly gone (value drained), even if the "
+            "odds are fine. **🔴 ENDED** = sales stopped. *PA only publishes the top six prizes, "
+            "so the % is for those; the small break-even prizes aren't published — the odds cover them.*"
         )
         lines.append("")
 
