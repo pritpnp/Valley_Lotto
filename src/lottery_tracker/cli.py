@@ -52,33 +52,49 @@ def _enrich_with_originals(current, inventory, originals, *, offline, save_html)
     games without a detail link are skipped. Detail fetch failures are non-fatal —
     the game just falls back to the estimated total.
     """
+    def _get(url, sample_name):
+        if offline:
+            p = SAMPLES_DIR / sample_name
+            return p.read_text() if p.exists() else None
+        html = fetch.fetch(url)
+        if save_html:
+            SAMPLES_DIR.mkdir(exist_ok=True)
+            (SAMPLES_DIR / sample_name).write_text(html)
+        return html
+
     for num in sorted(inventory):
         g = current.get(num)
         if g is None:
             continue
         cached = originals.get(num)
-        if cached is None and g.detail_id:
-            html = None
-            if offline:
-                p = SAMPLES_DIR / f"detail_{g.detail_id}.html"
-                html = p.read_text() if p.exists() else None
-            else:
-                try:
-                    html = fetch.fetch_detail(g.detail_id)
-                    if save_html:
-                        SAMPLES_DIR.mkdir(exist_ok=True)
-                        (SAMPLES_DIR / f"detail_{g.detail_id}.html").write_text(html)
-                except Exception as e:  # noqa: BLE001
-                    print(f"WARNING: detail fetch failed for #{num} (id={g.detail_id}): {e}",
-                          file=sys.stderr)
-            if html is not None:
-                info = parse.parse_detail(html)
-                cached = {"detail_id": g.detail_id, **info}
-                originals[num] = cached
-        if cached and cached.get("top_prizes_original") is not None:
-            g.top_prizes_total = cached["top_prizes_original"]
-            g.total_is_estimate = False
-            g.odds = cached.get("odds")
+        # We need the detail page (odds + bulletin link) and the Bulletin (full
+        # prize structure). Fetch whichever piece we don't have cached yet.
+        need_bulletin = not (cached or {}).get("prize_originals")
+        if (cached is None or need_bulletin) and g.detail_id:
+            try:
+                dhtml = _get(fetch.DETAIL_URL.format(id=g.detail_id), f"detail_{g.detail_id}.html")
+                if dhtml is not None:
+                    info = parse.parse_detail(dhtml)
+                    cached = {**(cached or {}), "detail_id": g.detail_id, **info}
+                    b_url = info.get("bulletin_url")
+                    if b_url and not cached.get("prize_originals"):
+                        bhtml = _get(b_url, f"bulletin_{g.detail_id}.html")
+                        if bhtml is not None:
+                            cached.update(parse.parse_bulletin(bhtml))
+                    originals[num] = cached
+            except Exception as e:  # noqa: BLE001
+                print(f"WARNING: detail/bulletin fetch failed for #{num}: {e}", file=sys.stderr)
+        # Apply whatever we have to the game.
+        if cached:
+            if cached.get("prize_originals"):
+                g.tier_originals = cached["prize_originals"]
+                g.tickets_printed = cached.get("tickets_printed")
+                g.payout_pct = cached.get("payout_pct")
+            if cached.get("top_prizes_original") is not None:
+                g.top_prizes_total = cached["top_prizes_original"]
+                g.total_is_estimate = False
+            if cached.get("odds"):
+                g.odds = cached["odds"]
 
 
 def run(argv: list[str] | None = None) -> int:

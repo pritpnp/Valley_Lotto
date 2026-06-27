@@ -52,6 +52,11 @@ class Game:
     detail_id: Optional[str] = None         # PA internal id used by View-Scratch-Off.aspx?id=
     odds: Optional[str] = None              # overall odds, e.g. "1:3.38"
 
+    # From the PA Bulletin (official full prize structure).
+    tickets_printed: Optional[int] = None
+    payout_pct: Optional[float] = None
+    tier_originals: dict = field(default_factory=dict)  # {value_num_str: original_count}
+
     # Change tracking (filled in by update_change_tracking each run).
     first_seen: Optional[str] = None      # when we first recorded this game
     last_changed: Optional[str] = None    # last time we OBSERVED its data move (None = not yet)
@@ -93,6 +98,60 @@ class Game:
                 "weight": i + 1,  # i=0 is the top (highest) prize → lightest; bottom → heaviest
             })
         return rows
+
+    def tier_health(self) -> list[dict]:
+        """Per published tier: value, remaining, true original (from the Bulletin),
+        % remaining, and bottom-to-top weight. ``pct`` is None when we lack the
+        original count for that tier.
+        """
+        rows = []
+        tiers = self.prize_tiers or []
+        for i, t in enumerate(tiers):
+            v = _money_to_num(t.get("value"))
+            rem = t.get("remaining")
+            orig = self.tier_originals.get(str(v)) if (v is not None and self.tier_originals) else None
+            pct = (rem / orig) if (orig and rem is not None and orig > 0) else None
+            rows.append({"value": t.get("value"), "value_num": v, "remaining": rem,
+                         "original": orig, "pct": pct, "weight": i + 1})
+        return rows
+
+    @property
+    def sell_through_pct(self) -> Optional[float]:
+        """Best gauge of how much of the WHOLE game is unsold: the % remaining of the
+        lowest-value tracked tier (it has the most prizes, so it's statistically the
+        most precise — and under PA's even distribution every tier tracks it)."""
+        rows = [r for r in self.tier_health() if r["pct"] is not None and r["value_num"] is not None]
+        return min(rows, key=lambda r: r["value_num"])["pct"] if rows else None
+
+    @property
+    def jackpot_density(self) -> Optional[float]:
+        """Top-tier % remaining ÷ sell-through %. >1 = top prizes are hanging around
+        longer than the game's sell-through predicts (good for jackpot hunters);
+        <1 = the big prizes were claimed early (picked over)."""
+        rows = [r for r in self.tier_health() if r["pct"] is not None and r["value_num"] is not None]
+        anchor = self.sell_through_pct
+        if len(rows) < 2 or not anchor:
+            return None
+        top = max(rows, key=lambda r: r["value_num"])["pct"]
+        return top / anchor
+
+    @property
+    def weighted_low_health(self) -> Optional[float]:
+        """Weighted-average % remaining across tracked tiers, with the CHEAPEST tiers
+        weighted heaviest (the retailer's rule). With true originals this is a real
+        number; in practice it sits near the sell-through % because tiers deplete
+        together, and dips when the low tiers run down faster than the top."""
+        rows = [r for r in self.tier_health() if r["pct"] is not None and r["value_num"] is not None]
+        if not rows:
+            return None
+        rows.sort(key=lambda r: r["value_num"])  # ascending: cheapest first
+        n = len(rows)
+        acc = wsum = 0.0
+        for rank, r in enumerate(rows):
+            w = n - rank  # cheapest gets the highest weight
+            acc += w * r["pct"]
+            wsum += w
+        return acc / wsum if wsum else None
 
     @property
     def lower_wins_remaining(self) -> Optional[int]:
