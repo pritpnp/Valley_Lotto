@@ -1,24 +1,8 @@
-# Valley Lotto report — 2026-06-27T22:23:52Z
+# Valley Lotto report — 2026-06-27T22:36:23Z
 
-## ⚠️ 17 new alert(s)
+## ✅ No new alerts
 
-- 🔵 A game is running low — consider swapping it for a fresh game: #1682 $160 Million Cash Blowout (only 20% of top prizes left (1/5); 1 top prize(s) remaining).
-- 🔵 A game is running low — consider swapping it for a fresh game: #1690 Crossword Bonus Cash (only 10% of top prizes left (1/10); 1 top prize(s) remaining).
-- 🔵 A game is running low — consider swapping it for a fresh game: #1700 All Cash (only 20% of top prizes left (1/5); 1 top prize(s) remaining).
-- 🔵 A game is running low — consider swapping it for a fresh game: #1703 S’more Crossword (only 20% of top prizes left (2/10)).
-- 🔵 A game is running low — consider swapping it for a fresh game: #1705 $3,000,000 Golden Ticket (only 20% of top prizes left (1/5); 1 top prize(s) remaining).
-- 🔵 A game is running low — consider swapping it for a fresh game: #1707 Lucky 13 (only 30% of top prizes left (3/10)).
-- 🔵 A game is running low — consider swapping it for a fresh game: #1717 $5,000,000 Lion’s Share (only 20% of top prizes left (1/5); 1 top prize(s) remaining).
-- 🔵 A game is running low — consider swapping it for a fresh game: #1724 Lady Luck (only 30% of top prizes left (3/10)).
-- 🔵 A game is running low — consider swapping it for a fresh game: #1730 100X the Cash (only 30% of top prizes left (3/10)).
-- 🔵 A game is running low — consider swapping it for a fresh game: #1731 Blingo (only 10% of top prizes left (1/10); 1 top prize(s) remaining).
-- 🔵 A game is running low — consider swapping it for a fresh game: #1734 3s a Charm (only 20% of top prizes left (1/5); 1 top prize(s) remaining).
-- 🔵 A game is running low — consider swapping it for a fresh game: #1745 Win Pigs Fly (only 20% of top prizes left (2/10)).
-- 🔵 A game is running low — consider swapping it for a fresh game: #1748 Money Maker (only 10% of top prizes left (1/10); 1 top prize(s) remaining).
-- 🔵 A game is running low — consider swapping it for a fresh game: #1749 Simply A Buck (only 10% of top prizes left (10/100)).
-- 🔵 A game is running low — consider swapping it for a fresh game: #1752 Winning 7s (only 5% of top prizes left (1/20); 1 top prize(s) remaining).
-- 🔵 A game is running low — consider swapping it for a fresh game: #1760 Snow Place Like Home (only 25% of top prizes left (5/20)).
-- 🔵 A game is running low — consider swapping it for a fresh game: #1765 $10,000 a Month for Life (only 20% of top prizes left (1/5); 1 top prize(s) remaining).
+Nothing ended and nothing crossed your low-prize threshold since the last run.
 
 ## Recommendation: send back 15, keep 19
 
@@ -441,7 +425,7 @@
 
 | Price | Game | # | Win odds | Density | % left |
 |------:|------|---|:-------:|:-------:|:------:|
-| $50 | Million Dollar Win It All | 1784 | 1:3.61 | 0.94 | 101% |
+| $50 | Million Dollar Win It All | 1784 | 1:3.61 | 0.94 | 100% |
 | $50 | $1,000,000 a Year for Life | 1762 | 1:3.74 | 0.92 | 76% |
 | $30 | $120,000,000 Payout | 1768 | 1:3.09 | 0.89 | 68% |
 | $20 | THE GAME OF LIFE Second-Chance Eligible | 1785 | 1:3.43 | 1.06 | 94% |
