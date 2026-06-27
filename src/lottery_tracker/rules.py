@@ -44,6 +44,133 @@ class Thresholds:
 
 
 @dataclass
+class RatingWeights:
+    """The factors that decide KEEP vs SEND BACK, and how much each one counts.
+
+    Each factor is scored 0–100 (100 = great, 0 = terrible). The final rating is the
+    weighted average of the factors we have data for, and a game is SENT BACK when
+    its rating falls below ``cutoff``. Edit the weights in config.yaml to say which
+    factors matter most to you — set a weight to 0 to ignore that factor entirely.
+
+    Factors:
+      odds            — overall chance to win ANY prize (1:X). The break-even signal.
+      prizes_left     — true % of the whole game still unsold (robust Σrem/Σorig).
+      low_prize       — % of the CHEAP prizes left (what customers actually win).
+      low_prize_skew  — are the cheap prizes drying up FASTER than the game overall?
+                        (only counts when statistically significant, |z| ≥ 2.)
+      jackpot_density — top prizes vs sell-through. Off by default-ish (low weight)
+                        because it's not what players aim for, and it only counts at
+                        all when it's a real signal, not small-sample noise.
+    """
+
+    odds: float = 30.0
+    prizes_left: float = 25.0
+    low_prize: float = 25.0
+    low_prize_skew: float = 15.0
+    jackpot_density: float = 5.0
+
+    # Tuning knobs (you rarely need to touch these).
+    odds_good: float = 3.0       # 1:3.0 or better → full marks on odds
+    odds_bad: float = 5.0        # 1:5.0 or worse  → zero on odds
+    skew_z_full: float = 6.0     # a −6σ cheap-prize outlier → zero on the skew factor
+    cutoff: float = 50.0         # rating below this → SEND BACK
+
+    @classmethod
+    def from_config(cls, cfg: dict | None) -> "RatingWeights":
+        cfg = cfg or {}
+        d = {}
+        for f in cls.__dataclass_fields__:  # type: ignore[attr-defined]
+            if f in cfg and cfg[f] is not None:
+                d[f] = float(cfg[f])
+        return cls(**d)
+
+
+@dataclass
+class Factor:
+    """One scored input to a game's rating (for display + the decision)."""
+    key: str
+    label: str
+    score: float | None     # 0..100, or None when we have no data for it
+    weight: float
+    detail: str             # short human explanation of the value
+
+
+def _clamp(x: float, lo: float = 0.0, hi: float = 100.0) -> float:
+    return max(lo, min(hi, x))
+
+
+def rate(game: Game, weights: "RatingWeights | None" = None) -> tuple[float | None, list[Factor]]:
+    """Score a game 0–100 from several weighted, outlier-aware factors.
+
+    Returns (rating, factors). ``rating`` is None only when we have no usable data at
+    all. Factors with ``score is None`` are excluded from the weighted average (and
+    the remaining weights are renormalized), so a missing input never silently drags
+    a game down — it just doesn't vote.
+    """
+    w = weights or RatingWeights()
+    factors: list[Factor] = []
+
+    # 1) Win odds — the chance to win anything.
+    if game.odds_value is not None:
+        s = _clamp(100 * (w.odds_bad - game.odds_value) / (w.odds_bad - w.odds_good))
+        factors.append(Factor("odds", "Win odds", s, w.odds, f"1:{game.odds_value:g}"))
+    else:
+        factors.append(Factor("odds", "Win odds", None, w.odds, "—"))
+
+    # 2) Prizes left — true % of the game unsold (robust; falls back to top-prize %
+    #    only when we have no per-tier originals yet).
+    pl = game.overall_pct_remaining
+    if pl is None:
+        pl = game.top_prize_pct_remaining
+    if pl is not None:
+        factors.append(Factor("prizes_left", "Prizes left", _clamp(100 * min(1.0, pl)),
+                              w.prizes_left, f"{min(1.0, pl):.0%} of all prizes left"))
+    else:
+        factors.append(Factor("prizes_left", "Prizes left", None, w.prizes_left, "—"))
+
+    # 3) Low-prize stock — % of the cheap, winnable prizes left.
+    lp = game.low_prize_pct_remaining
+    if lp is not None:
+        factors.append(Factor("low_prize", "Low-prize stock", _clamp(100 * min(1.0, lp)),
+                              w.low_prize, f"{min(1.0, lp):.0%} of cheap prizes left"))
+    else:
+        factors.append(Factor("low_prize", "Low-prize stock", None, w.low_prize, "—"))
+
+    # 4) Low-prize skew — are the cheap prizes draining FASTER than the game overall?
+    #    Only a statistically significant negative z-score counts (everything else is
+    #    small-sample noise).
+    zs = game.tier_z_scores()
+    if zs:
+        zs_sorted = sorted(zs, key=lambda r: r["value_num"])
+        low = zs_sorted[: max(1, len(zs_sorted) // 2)]
+        sig_neg = [r["z"] for r in low if r["significant"] and r["z"] < 0]
+        if sig_neg:
+            worst = min(sig_neg)
+            s = _clamp(100 * (1 - (-worst) / w.skew_z_full))
+            factors.append(Factor("low_prize_skew", "Low-prize trend", s, w.low_prize_skew,
+                                  f"cheap prizes {worst:+.1f}σ vs game — drying up"))
+        else:
+            factors.append(Factor("low_prize_skew", "Low-prize trend", 100.0, w.low_prize_skew,
+                                  "in line with the game"))
+    else:
+        factors.append(Factor("low_prize_skew", "Low-prize trend", None, w.low_prize_skew, "—"))
+
+    # 5) Jackpot density — only votes when it's a real signal, not noise.
+    jd = game.jackpot_density
+    if jd is not None and game.jackpot_density_significant:
+        factors.append(Factor("jackpot_density", "Jackpot density", _clamp(100 * min(1.0, jd)),
+                              w.jackpot_density, f"{jd:.2f}× (significant)"))
+    else:
+        note = f"{jd:.2f}× (noise — ignored)" if jd is not None else "—"
+        factors.append(Factor("jackpot_density", "Jackpot density", None, w.jackpot_density, note))
+
+    avail = [f for f in factors if f.score is not None and f.weight > 0]
+    tot_w = sum(f.weight for f in avail)
+    rating = sum(f.weight * f.score for f in avail) / tot_w if tot_w > 0 else None
+    return rating, factors
+
+
+@dataclass
 class Alert:
     kind: str                      # "ended" | "low_prizes" | "removed"
     game_number: str
@@ -59,37 +186,36 @@ class Alert:
         return d
 
 
-def recommendation(game: Game, th: Thresholds) -> tuple[str, str]:
+def recommendation(
+    game: Game, th: Thresholds, weights: "RatingWeights | None" = None
+) -> tuple[str, str]:
     """One clear call per game: ("keep" | "send_back", reason).
 
-    SEND BACK (stop selling / return to PA) when the game can't earn for you:
-      * sales have ended, OR
-      * fewer than the threshold (default 40%) of its prizes are left, OR
-      * its odds are weak AND its jackpots are already picked over.
-    Otherwise KEEP it (with a note if it's getting weak so you don't reorder).
+    Driven by the weighted 0–100 rating (see ``rate``): SEND BACK when sales have
+    ended, or when the rating falls below the cutoff. The reason names the factors
+    that hurt the score the most, so you can see *why* — and re-weight what matters
+    to you in config.yaml.
     """
     if game.status == "ended":
         when = f" {game.sales_end_date}" if game.sales_end_date else ""
         return ("send_back", f"sales ended{when} — pull it")
 
-    # True "% of the whole game left": prefer the statistically-precise low-tier
-    # sell-through; fall back to the top-prize % when we lack the prize structure.
-    left = game.sell_through_pct if game.sell_through_pct is not None else game.top_prize_pct_remaining
-    weak = (th.weak_odds is not None and game.odds_value is not None
-            and game.odds_value > th.weak_odds)
-    picked_over = game.jackpot_density is not None and game.jackpot_density < 0.85
+    w = weights or RatingWeights()
+    score, factors = rate(game, w)
+    if score is None:
+        return ("keep", "not enough data yet — keeping")
 
-    if left is not None and th.top_prize_pct is not None and left < th.top_prize_pct:
-        return ("send_back", f"only {left:.0%} of prizes left")
-    if weak and picked_over:
-        return ("send_back", f"weak odds (1:{game.odds_value:g}) and jackpots picked over")
-
-    notes = []
-    if weak:
-        notes.append(f"weak odds (1:{game.odds_value:g}) — fine while it sells, don't reorder")
-    if picked_over:
-        notes.append("jackpots thinning")
-    return ("keep", "; ".join(notes) if notes else "good odds, prizes still available")
+    # Biggest drags first: low score × high weight.
+    drags = sorted(
+        (f for f in factors if f.score is not None and f.weight > 0),
+        key=lambda f: f.weight * (100 - f.score), reverse=True,
+    )
+    weak_bits = [f.detail for f in drags[:2] if f.score < 60]
+    if score < w.cutoff:
+        why = "; ".join(weak_bits) if weak_bits else "weak across the board"
+        return ("send_back", f"rating {score:.0f}/100 — {why}")
+    tail = f" — watch: {weak_bits[0]}" if weak_bits else " — healthy"
+    return ("keep", f"rating {score:.0f}/100{tail}")
 
 
 def _is_low(game: Game, th: Thresholds) -> tuple[bool, list[str]]:

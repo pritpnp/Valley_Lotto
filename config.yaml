@@ -64,6 +64,28 @@ thresholds:
   top_prize_pct: 0.40        # 🟠 SWAP when fewer than 40% of the top prizes remain
   top_prize_count_floor: 1   # OR when the top prize is down to its last 1 (and depleting)
 
+# KEEP vs SEND BACK is a weighted 0-100 rating. Each factor is scored 0-100 and
+# the rating is the weighted average of the factors we have data for; a game is
+# SENT BACK when its rating falls below `cutoff`. Change the weights to say what
+# matters MOST to you (set any weight to 0 to ignore that factor entirely):
+#   odds            chance to win ANY prize (1:X) — the break-even signal
+#   prizes_left     true % of the whole game unsold (robust Σ remaining / Σ original)
+#   low_prize       % of the CHEAP prizes left (what customers actually win)
+#   low_prize_skew  are the cheap prizes draining FASTER than the game? (only counts
+#                   when statistically significant — real signal, not small-sample noise)
+#   jackpot_density top prizes vs sell-through — low weight on purpose (not what
+#                   players aim for), and it only votes when it's a real signal
+rating_weights:
+  odds: 30
+  prizes_left: 25
+  low_prize: 25
+  low_prize_skew: 15
+  jackpot_density: 5
+  # tuning (rarely changed)
+  odds_good: 3.0           # 1:3.0 or better scores 100 on odds
+  odds_bad: 5.0            # 1:5.0 or worse scores 0 on odds
+  cutoff: 50               # rating below this -> SEND BACK
+
 # If true, evaluate the low-prize rule for EVERY active game (useful for spotting
 # fresh games worth stocking) using the estimated original count. True original
 # counts are only fetched for the games in `inventory` above (one detail-page

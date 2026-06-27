@@ -19,26 +19,34 @@
 {% else %}
 <table class="grid">
   <thead><tr>
-    <th>Action</th><th>#</th><th>Game</th><th>Price</th><th>Odds</th>
-    <th>% left</th><th>Top prize</th><th>Top left</th><th>Why</th>
+    <th>Action</th><th>Rating</th><th>#</th><th>Game</th><th>Price</th><th>Odds</th>
+    <th>% left (all)</th><th>Low-prize %</th><th>Density</th><th>Why</th>
   </tr></thead>
   <tbody>
   {% for r in rows %}
     <tr class="{{ 'row-send' if r.action == 'send_back' else 'row-keep' }}">
       <td>{% if r.action == 'send_back' %}<span class="badge send">SEND BACK</span>
           {% else %}<span class="badge keep">KEEP</span>{% endif %}</td>
+      <td><b>{{ r.rating_str }}</b>{% if r.rating is not none %}<span class="muted">/100</span>{% endif %}</td>
       <td>{{ r.game_number }}</td>
       <td>{{ r.name }}</td>
       <td>{{ '$%g' % r.price if r.price is not none else '—' }}</td>
       <td>{{ ('1:%g' % r.odds_value) if r.odds_value is not none else '—' }}</td>
-      <td>{{ r.sell_through_str }}</td>
-      <td>{{ r.top_prize_value or '—' }}</td>
-      <td>{{ r.top_prizes_remaining if r.top_prizes_remaining is not none else '—' }}</td>
+      <td>{{ r.pct_all_str }}</td>
+      <td>{{ r.low_prize_str }}</td>
+      <td>{% if r.jackpot_density is none %}—{% elif r.jackpot_significant %}{{ '%.2f' % r.jackpot_density }}{% else %}<span class="muted" title="small-sample noise — ignored in rating">{{ '%.2f' % r.jackpot_density }} n/s</span>{% endif %}</td>
       <td class="why">{{ r.reason }}</td>
     </tr>
   {% endfor %}
   </tbody>
 </table>
+<p class="muted" style="font-size:13px">
+  <b>Rating (0–100)</b> = weighted blend of win odds, % of all prizes left, low-prize stock,
+  low-prize trend, and (when it's a real signal) jackpot density. Under the cutoff → SEND BACK.
+  <b>% left (all)</b> is Σ wins remaining ÷ Σ original wins across every tier — driven by the
+  abundant cheap prizes, not the noisy jackpot count. <b>Density n/s</b> = not statistically
+  significant, so it's ignored. Tune the weights in <code>config.yaml</code>.
+</p>
 {% endif %}
 
 {% if fresh %}
@@ -50,7 +58,7 @@
     <tr><td>{{ r.game_number }}</td><td>{{ r.name }}</td>
       <td>{{ '$%g' % r.price if r.price is not none else '—' }}</td>
       <td>{{ ('1:%g' % r.odds_value) if r.odds_value is not none else '—' }}</td>
-      <td>{{ r.sell_through_str }}</td></tr>
+      <td>{{ r.pct_all_str }}</td></tr>
   {% endfor %}
   </tbody>
 </table>
@@ -66,7 +74,7 @@
     {% for r in items %}
       <tr><td>{{ r.game_number }}</td><td>{{ r.name }}</td>
         <td>{{ ('1:%g' % r.odds_value) if r.odds_value is not none else '—' }}</td>
-        <td>{{ r.sell_through_str }}</td>
+        <td>{{ r.pct_all_str }}</td>
         <td><form method="post" action="/inventory/add" class="inline">
           <input type="hidden" name="game_number" value="{{ r.game_number }}">
           <button class="link">+ carry</button></form></td></tr>

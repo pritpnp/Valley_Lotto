@@ -161,11 +161,13 @@ def dashboard(request: Request, conn=Depends(get_db), user: dict = Depends(requi
     catalog = load_catalog(_state_path())
     cfg = _config()
     th = cfg.thresholds
-    rows = store_rows(catalog, inv, th)
+    weights = cfg.rating_weights
+    rows = store_rows(catalog, inv, th, weights)
     summary = store_summary(rows)
-    fresh = new_games(catalog, within_days=14)
+    fresh = new_games(catalog, within_days=14, weights=weights)
     bring_in = bring_in_candidates(
-        catalog, inv, th, min_left=cfg.bring_in_min_left, per_price=cfg.bring_in_per_price
+        catalog, inv, th, weights=weights,
+        min_left=cfg.bring_in_min_left, per_price=cfg.bring_in_per_price,
     )
     return templates.TemplateResponse(
         request,

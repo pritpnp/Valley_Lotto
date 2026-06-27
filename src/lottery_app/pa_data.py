@@ -14,7 +14,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from lottery_tracker.model import Game
-from lottery_tracker.rules import Thresholds, recommendation
+from lottery_tracker.rules import RatingWeights, Thresholds, rate, recommendation
 from lottery_tracker.state import load_state
 
 
@@ -47,9 +47,13 @@ def _pct(x: float | None) -> str:
     return "—" if x is None else f"{min(1.0, x):.0%}"
 
 
-def _row(g: Game, th: Thresholds) -> dict:
+def _row(g: Game, th: Thresholds, weights: RatingWeights) -> dict:
     """Flatten one game into the fields the dashboard template renders."""
-    action, reason = recommendation(g, th)
+    action, reason = recommendation(g, th, weights)
+    rating, _factors = rate(g, weights)
+    pct_all = g.overall_pct_remaining
+    if pct_all is None:
+        pct_all = g.top_prize_pct_remaining
     return {
         "game_number": g.game_number,
         "name": g.name,
@@ -57,28 +61,33 @@ def _row(g: Game, th: Thresholds) -> dict:
         "status": g.status,
         "action": action,                       # "keep" | "send_back"
         "reason": reason,
+        "rating": rating,
+        "rating_str": "—" if rating is None else f"{rating:.0f}",
         "odds": g.odds,
         "odds_value": g.odds_value,
-        "sell_through": g.sell_through_pct,
-        "sell_through_str": _pct(g.sell_through_pct),
+        "pct_all": pct_all,
+        "pct_all_str": _pct(pct_all),
+        "low_prize_pct": g.low_prize_pct_remaining,
+        "low_prize_str": _pct(g.low_prize_pct_remaining),
         "jackpot_density": g.jackpot_density,
+        "jackpot_significant": g.jackpot_density_significant,
         "top_prize_value": g.top_prize_value,
         "top_prizes_remaining": g.top_prizes_remaining,
-        "top_prize_pct": g.top_prize_pct_remaining,
-        "top_prize_pct_str": _pct(g.top_prize_pct_remaining),
         "tiers": g.tier_health(),
         "last_changed": g.last_changed,
         "sales_end_date": g.sales_end_date,
     }
 
 
-def store_rows(catalog: Catalog, inventory: set[str], th: Thresholds) -> list[dict]:
+def store_rows(catalog: Catalog, inventory: set[str], th: Thresholds,
+               weights: RatingWeights | None = None) -> list[dict]:
     """Dashboard rows for the games a store carries.
 
     Includes inventory games even if they've vanished from the catalog (so the
     store still sees "this ended / was removed"). Sorted SEND BACK first (the
-    things needing action), then by price high→low.
+    things needing action), then by worst rating.
     """
+    weights = weights or RatingWeights()
     rows = []
     for num in inventory:
         g = catalog.games.get(num)
@@ -88,14 +97,17 @@ def store_rows(catalog: Catalog, inventory: set[str], th: Thresholds) -> list[di
                 "game_number": num, "name": "(not on PA active list)", "price": None,
                 "status": "unknown", "action": "send_back",
                 "reason": "not found in PA catalog — likely ended, verify and pull",
-                "odds": None, "odds_value": None, "sell_through": None,
-                "sell_through_str": "—", "jackpot_density": None, "top_prize_value": None,
-                "top_prizes_remaining": None, "top_prize_pct": None, "top_prize_pct_str": "—",
-                "tiers": [], "last_changed": None, "sales_end_date": None,
+                "rating": None, "rating_str": "—",
+                "odds": None, "odds_value": None, "pct_all": None, "pct_all_str": "—",
+                "low_prize_pct": None, "low_prize_str": "—",
+                "jackpot_density": None, "jackpot_significant": False, "top_prize_value": None,
+                "top_prizes_remaining": None, "tiers": [], "last_changed": None,
+                "sales_end_date": None,
             })
         else:
-            rows.append(_row(g, th))
-    rows.sort(key=lambda r: (r["action"] != "send_back", -(r["price"] or 0), r["game_number"]))
+            rows.append(_row(g, th, weights))
+    rows.sort(key=lambda r: (r["action"] != "send_back",
+                             r["rating"] if r["rating"] is not None else 999))
     return rows
 
 
@@ -107,31 +119,33 @@ def store_summary(rows: list[dict]) -> dict:
 
 def bring_in_candidates(
     catalog: Catalog, inventory: set[str], th: Thresholds,
-    *, min_left: float = 0.6, per_price: int = 4,
+    *, weights: RatingWeights | None = None, min_left: float = 0.6, per_price: int = 4,
 ) -> dict[float, list[dict]]:
     """Best fresh games to BRING IN, grouped by price point.
 
     Catalog-wide: any active game NOT already carried, with strong odds and a high
-    share of prizes still in the pack. Ranked by odds (best first) within each
-    price. Returns {price: [rows]} for the dashboard's "bring in" board.
+    share of prizes still in the pack (robust % remaining). Ranked by odds (best
+    first) within each price. Returns {price: [rows]} for the "bring in" board.
     """
+    weights = weights or RatingWeights()
     by_price: dict[float, list[dict]] = {}
     for g in catalog.games.values():
         if g.status != "active" or g.game_number in inventory or g.price is None:
             continue
-        left = g.sell_through_pct
-        if left is not None and left < min_left:
+        left = g.overall_pct_remaining
+        if left is None or left < min_left:
             continue
         if th.weak_odds is not None and g.odds_value is not None and g.odds_value > th.weak_odds:
             continue
-        by_price.setdefault(g.price, []).append(_row(g, th))
+        by_price.setdefault(g.price, []).append(_row(g, th, weights))
     for price, rows in by_price.items():
         rows.sort(key=lambda r: (r["odds_value"] is None, r["odds_value"] or 9e9))
         by_price[price] = rows[:per_price]
     return dict(sorted(by_price.items(), key=lambda kv: -kv[0]))
 
 
-def new_games(catalog: Catalog, within_days: int = 14) -> list[dict]:
+def new_games(catalog: Catalog, within_days: int = 14,
+              weights: RatingWeights | None = None) -> list[dict]:
     """Recently-appeared active games (excludes the baseline first-seen cohort)."""
     from lottery_tracker.notify import new_games as _ng
 
@@ -140,4 +154,5 @@ def new_games(catalog: Catalog, within_days: int = 14) -> list[dict]:
     if not now:
         return []
     th = Thresholds()
-    return [_row(g, th) for g in _ng(catalog.games, now, within_days=within_days)]
+    weights = weights or RatingWeights()
+    return [_row(g, th, weights) for g in _ng(catalog.games, now, within_days=within_days)]

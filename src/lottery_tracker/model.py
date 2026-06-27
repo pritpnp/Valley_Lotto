@@ -153,6 +153,101 @@ class Game:
             wsum += w
         return acc / wsum if wsum else None
 
+    # ---- robust, outlier-aware metrics ----------------------------------
+    def _tiers_with_orig(self) -> list[dict]:
+        """tier_health rows that have a real original count we can do stats on."""
+        return [
+            r for r in self.tier_health()
+            if r["original"] and r["original"] > 0
+            and r["remaining"] is not None and r["value_num"] is not None
+        ]
+
+    @property
+    def overall_pct_remaining(self) -> Optional[float]:
+        """True fraction of the game left = Σ(wins remaining) / Σ(original wins)
+        across every tracked tier.
+
+        This is the statistically sound "% of the game unsold". It is mathematically
+        an inverse-variance-weighted average of the per-tier fractions, so it is
+        dominated by the abundant low tiers (thousands of prizes → tiny error) and
+        barely moved by the noisy top tier (a handful of prizes). It does NOT rely on
+        the jackpot count the way the old top-prize-only estimate did.
+        """
+        rows = self._tiers_with_orig()
+        if not rows:
+            return None
+        rem = sum(r["remaining"] for r in rows)
+        orig = sum(r["original"] for r in rows)
+        return rem / orig if orig > 0 else None
+
+    @property
+    def low_prize_pct_remaining(self) -> Optional[float]:
+        """% of the CHEAP prizes still in the pack (the cheapest half of the tracked
+        tiers, by value) = Σremaining / Σoriginal over those tiers.
+
+        These are the prizes a normal customer actually wins, so this is the
+        "incentive to play" signal — if the cheap prizes are gone, players have no
+        reason to buy even when a jackpot is technically still out there.
+        """
+        rows = sorted(self._tiers_with_orig(), key=lambda r: r["value_num"])
+        if not rows:
+            return None
+        k = max(1, len(rows) // 2)  # cheapest half (at least one tier)
+        low = rows[:k]
+        rem = sum(r["remaining"] for r in low)
+        orig = sum(r["original"] for r in low)
+        return rem / orig if orig > 0 else None
+
+    def tier_z_scores(self) -> list[dict]:
+        """How far each tier deviates from the REST of the game, in standard
+        deviations (z-score). This is the outlier check the data needs.
+
+        Under PA's uniform shuffle every tier should deplete at the same rate. We
+        compare each tier against the pooled rate of all the *other* tiers (a
+        leave-one-out reference ``p`` — important, because the abundant cheap tier
+        otherwise defines the average and could never look like an outlier against
+        itself). For a tier with N original prizes the count still out is
+        ~Binomial(N, p): expected = p·N, standard deviation = √(N·p·(1−p)),
+        z = (remaining − expected) / sd.
+
+        |z| ≥ 2 means the tier really is depleting faster (z<0) or slower (z>0) than
+        the rest of the game — a *signal*. |z| < 2 is just small-sample noise (this is
+        why a 2-of-3 top prize looks dramatic but means nothing). Returns one row per
+        tracked tier: {value, value_num, z, significant, remaining, original}.
+        """
+        rows = self._tiers_with_orig()
+        if len(rows) < 2:
+            return []
+        tot_rem = sum(r["remaining"] for r in rows)
+        tot_orig = sum(r["original"] for r in rows)
+        out = []
+        for r in rows:
+            n, rem = r["original"], r["remaining"]
+            # Pool the OTHER tiers as the reference rate.
+            other_orig = tot_orig - n
+            p = (tot_rem - rem) / other_orig if other_orig > 0 else None
+            if p is None or not (0 < p < 1):
+                z = 0.0
+            else:
+                sd = (n * p * (1 - p)) ** 0.5
+                z = (rem - p * n) / sd if sd > 0 else 0.0
+            out.append({
+                "value": r["value"], "value_num": r["value_num"], "z": z,
+                "significant": abs(z) >= 2.0, "remaining": rem, "original": n,
+            })
+        return out
+
+    @property
+    def jackpot_density_significant(self) -> bool:
+        """True only when the top tier's deviation from sell-through is statistically
+        real (|z| ≥ 2). When False, the jackpot-density number is just small-sample
+        noise and should not drive any decision."""
+        zs = self.tier_z_scores()
+        if not zs:
+            return False
+        top = max(zs, key=lambda r: r["value_num"])
+        return top["significant"]
+
     @property
     def lower_wins_remaining(self) -> Optional[int]:
         """Count of NON-jackpot wins still out there (published tiers below the top).

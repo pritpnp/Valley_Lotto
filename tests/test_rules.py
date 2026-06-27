@@ -17,10 +17,11 @@ def test_recommendation_send_back_when_ended():
     assert act == "send_back"
 
 
-def test_recommendation_send_back_below_threshold():
-    # 20% of prizes left (top tier 1/5) -> below 40% -> send back.
-    g = _g("1", status="active", top_prizes_total=5, top_prizes_remaining=1, odds="1:3.5")
-    assert recommendation(g, Thresholds())[0] == "send_back"
+def test_recommendation_send_back_when_rating_low():
+    # Weak odds AND mostly sold through -> low weighted rating -> send back.
+    g = _g("1", status="active", top_prizes_total=10, top_prizes_remaining=1, odds="1:4.8")
+    act, reason = recommendation(g, Thresholds())
+    assert act == "send_back" and "rating" in reason
 
 
 def test_recommendation_keep_when_healthy():

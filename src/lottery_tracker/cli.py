@@ -169,8 +169,8 @@ def run(argv: list[str] | None = None) -> int:
 
     report_md = render_report(
         alerts, current,
-        inventory=cfg.inventory, thresholds=cfg.thresholds, captured_at=captured_at,
-        baseline=baseline, previous=previous,
+        inventory=cfg.inventory, thresholds=cfg.thresholds, weights=cfg.rating_weights,
+        captured_at=captured_at, baseline=baseline, previous=previous,
         bring_in_min_left=cfg.bring_in_min_left, bring_in_per_price=cfg.bring_in_per_price,
     )
     paths = write_outputs(report_md, alerts, reports_dir=REPORTS_DIR, captured_at=captured_at)
@@ -179,6 +179,7 @@ def run(argv: list[str] | None = None) -> int:
     DOCS_DIR.mkdir(parents=True, exist_ok=True)
     (DOCS_DIR / "index.html").write_text(render_html(
         alerts, current, inventory=cfg.inventory, thresholds=cfg.thresholds,
+        weights=cfg.rating_weights,
         captured_at=captured_at, baseline=baseline, previous=previous,
         bring_in_min_left=cfg.bring_in_min_left, bring_in_per_price=cfg.bring_in_per_price,
     ))

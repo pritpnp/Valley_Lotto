@@ -6,7 +6,7 @@ from pathlib import Path
 
 import yaml
 
-from .rules import Thresholds
+from .rules import RatingWeights, Thresholds
 
 
 class Config:
@@ -17,6 +17,8 @@ class Config:
             str(x).strip() for x in (self.raw.get("inventory") or [])
         }
         self.thresholds = Thresholds.from_config(self.raw.get("thresholds"))
+        # Weighted KEEP/SEND-BACK rating factors (edit weights to taste).
+        self.rating_weights = RatingWeights.from_config(self.raw.get("rating_weights"))
         self.report_all_games: bool = bool(self.raw.get("report_all_games", False))
         # How many days of scraped + parsed snapshots to keep (twice-daily scrapes).
         self.retention_days: int = int(self.raw.get("retention_days", 30))

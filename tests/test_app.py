@@ -66,9 +66,15 @@ def _client(tmp_path, monkeypatch):
         "captured_at": "2026-06-27T16:00:00Z",
         "games": {
             "1736": {"game_number": "1736", "name": "HIGH 5", "price": 5, "status": "active",
-                     "odds": "1:4.2", "prize_tiers": [{"value": "$100000", "remaining": 1}]},
+                     "odds": "1:4.2",
+                     "prize_tiers": [{"value": "$100000", "remaining": 1},
+                                     {"value": "$50", "remaining": 500}],
+                     "tier_originals": {"100000.0": 2, "50.0": 1000}},
             "1778": {"game_number": "1778", "name": "MONEY RUSH", "price": 2, "status": "active",
-                     "odds": "1:3.5", "prize_tiers": [{"value": "$30000", "remaining": 4}]},
+                     "odds": "1:3.5",
+                     "prize_tiers": [{"value": "$30000", "remaining": 4},
+                                     {"value": "$20", "remaining": 800}],
+                     "tier_originals": {"30000.0": 5, "20.0": 1000}},
         },
     }
     state_path = tmp_path / "state.json"

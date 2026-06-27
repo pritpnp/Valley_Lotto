@@ -18,7 +18,7 @@ from email.message import EmailMessage
 from pathlib import Path
 
 from .model import Game
-from .rules import Alert, Severity, Thresholds, _is_low, recommendation
+from .rules import Alert, RatingWeights, Severity, Thresholds, rate, recommendation
 
 _SEV_EMOJI = {Severity.CRITICAL: "🔴", Severity.WARN: "🟠", Severity.INFO: "🔵"}
 
@@ -47,6 +47,7 @@ def render_report(
     *,
     inventory: set[str],
     thresholds: Thresholds,
+    weights: RatingWeights | None = None,
     captured_at: str,
     baseline: bool = False,
     previous: dict[str, Game] | None = None,
@@ -54,6 +55,7 @@ def render_report(
     bring_in_per_price: int = 4,
 ) -> str:
     """Human-readable Markdown: today's alerts + a health table for your games."""
+    weights = weights or RatingWeights()
     lines: list[str] = []
     lines.append(f"# Valley Lotto report — {captured_at}")
     lines.append("")
@@ -95,9 +97,10 @@ def render_report(
     # because the odds are the real "will a customer win anything / break even?"
     # number and they barely move over a game's life.
     owned_games = [games[n] for n in sorted(inventory) if n in games]
-    recs = {g.game_number: recommendation(g, thresholds) for g in owned_games}
+    recs = {g.game_number: recommendation(g, thresholds, weights) for g in owned_games}
+    ratings = {g.game_number: rate(g, weights)[0] for g in owned_games}
     owned_games.sort(key=lambda g: (recs[g.game_number][0] != "send_back",
-                                    -(g.price or 0), g.odds_value or 99))
+                                    ratings[g.game_number] if ratings[g.game_number] is not None else 999))
     if owned_games:
         send = [g for g in owned_games if recs[g.game_number][0] == "send_back"]
         lines.append(f"## Recommendation: send back {len(send)}, keep {len(owned_games) - len(send)}")
@@ -107,34 +110,37 @@ def render_report(
                          + ", ".join(f"#{g.game_number} {g.name} (${g.price:g}, {recs[g.game_number][1]})"
                                      for g in send))
             lines.append("")
-        lines.append("| Game | # | Price | Win odds | Prizes left | Density | Last move | Action |")
-        lines.append("|------|---|------:|:-------:|:----------:|:-------:|:---------:|--------|")
+        lines.append("| Game | # | Price | Rating | Win odds | % left (all) | Low-prize % | Density | Action |")
+        lines.append("|------|---|------:|:------:|:-------:|:-----------:|:-----------:|:-------:|--------|")
         for g in owned_games:
-            st = g.sell_through_pct if g.sell_through_pct is not None else g.top_prize_pct_remaining
-            left_s = "—" if st is None else f"{min(1.0, st):.0%}"
+            r = ratings[g.game_number]
+            rating_s = "—" if r is None else f"{r:.0f}/100"
+            pl = g.overall_pct_remaining
+            pl_s = "—" if pl is None else f"{min(1.0, pl):.0%}"
+            lp = g.low_prize_pct_remaining
+            lp_s = "—" if lp is None else f"{min(1.0, lp):.0%}"
             price = "—" if g.price is None else f"${g.price:g}"
             odds = f"1:{g.odds_value:g}" if g.odds_value is not None else "—"
-            moved = last_move_label(g, captured_at)
             jd = g.jackpot_density
-            jd_s = "—" if jd is None else f"{jd:.2f}"
+            jd_s = "—" if jd is None else (f"{jd:.2f}" if g.jackpot_density_significant else f"{jd:.2f} (n/s)")
             act, reason = recs[g.game_number]
             action = ("🔴 **SEND BACK**" if act == "send_back" else "🟢 KEEP") + f" — {reason}"
             lines.append(
-                f"| {g.name} | {g.game_number} | {price} | {odds} | "
-                f"{left_s} | {jd_s} | {moved} | {action} |"
+                f"| {g.name} | {g.game_number} | {price} | {rating_s} | {odds} | "
+                f"{pl_s} | {lp_s} | {jd_s} | {action} |"
             )
         lines.append("")
         lines.append(
-            "> **Win odds (1:X) is the number that matters** — the published chance a ticket wins "
-            "*any* prize. Because the cheap break-even prizes vastly outnumber the jackpots, this is "
-            "effectively a *low-prize-weighted* figure: lower = better chance a customer wins something. "
-            "**🔻 WEAK ODDS** = worse than 1:" f"{thresholds.weak_odds:g}" " (poor to stock). "
-            "**Prizes left (est.)** = how much of the *whole* game is unsold — estimated from the top "
-            "prizes, which works because prizes are shuffled evenly through the pack, so it tracks the "
-            "cheap prizes too. **🟠 SWAP** = under 40% left (game mostly sold through). "
-            "**Lower prizes left** = non-jackpot wins still in the pack. "
-            "*A separate single-day \"low-prize %\" can't be computed — on any one day it's mathematically "
-            "identical to the top-prize %, so we don't fake one.*"
+            "> **Rating (0–100)** is a weighted blend of the factors below; under "
+            f"{weights.cutoff:g} → SEND BACK. Set the weights in `config.yaml`.\n"
+            "> - **Win odds (1:X)** — chance a ticket wins *any* prize (the break-even signal). "
+            "Lower is better.\n"
+            "> - **% left (all)** — true share of the *whole* game still unsold "
+            "(Σ wins remaining ÷ Σ original wins over every tracked tier — dominated by the abundant "
+            "cheap prizes, not the noisy jackpot count).\n"
+            "> - **Low-prize %** — share of the *cheap* prizes left (what customers actually win).\n"
+            "> - **Density** — top prizes vs sell-through; shown **(n/s)** when it's small-sample "
+            "noise rather than a real signal, in which case it does not affect the rating."
         )
         lines.append("")
 
@@ -174,8 +180,9 @@ def render_report(
         for price in sorted(cands, reverse=True):
             for g in cands[price]:
                 jd = f"{g.jackpot_density:.2f}" if g.jackpot_density is not None else "—"
+                pl = g.overall_pct_remaining
                 lines.append(f"| ${price:g} | {g.name} | {g.game_number} | "
-                             f"1:{g.odds_value:g} | {jd} | {min(1.0, g.sell_through_pct):.0%} |")
+                             f"1:{g.odds_value:g} | {jd} | {min(1.0, pl):.0%} |")
         lines.append("")
 
     missing = sorted(n for n in inventory if n not in games)
@@ -238,9 +245,10 @@ def bring_in_candidates(games: dict[str, Game], inventory: set[str], *,
     from collections import defaultdict
     by_price: dict[float, list[Game]] = defaultdict(list)
     for num, g in games.items():
+        left = g.overall_pct_remaining
         if (g.status == "active" and num not in inventory
-                and g.odds_value is not None and g.sell_through_pct is not None
-                and g.sell_through_pct >= min_left):
+                and g.odds_value is not None and left is not None
+                and left >= min_left):
             by_price[g.price or 0].append(g)
     out = {}
     for price, gs in by_price.items():
@@ -320,6 +328,7 @@ def render_html(
     *,
     inventory: set[str],
     thresholds: Thresholds,
+    weights: RatingWeights | None = None,
     captured_at: str,
     baseline: bool = False,
     previous: dict[str, Game] | None = None,
@@ -328,12 +337,14 @@ def render_html(
 ) -> str:
     """A self-contained dashboard page for GitHub Pages (no external assets)."""
     e = _html.escape
+    weights = weights or RatingWeights()
     prev = previous or {}
     owned = [games[n] for n in sorted(inventory) if n in games]
-    recs = {g.game_number: recommendation(g, thresholds) for g in owned}
-    # Send-backs first (what to act on), then by price high→low, then best odds.
+    recs = {g.game_number: recommendation(g, thresholds, weights) for g in owned}
+    ratings = {g.game_number: rate(g, weights)[0] for g in owned}
+    # Send-backs first (what to act on), then worst rating first.
     owned.sort(key=lambda g: (recs[g.game_number][0] != "send_back",
-                              -(g.price or 0), g.odds_value or 99))
+                              ratings[g.game_number] if ratings[g.game_number] is not None else 999))
 
     n_weak = sum(1 for g in owned if thresholds.weak_odds is not None
                  and g.odds_value is not None and g.odds_value > thresholds.weak_odds)
@@ -343,50 +354,70 @@ def render_html(
 
     rows = []
     for g in owned:
-        pct = g.top_prize_pct_remaining
-        low = _is_low(g, thresholds)[0]
-        badges = []
-        if g.status == "ended":
-            badges.append(f'<span class="badge b-ended">🔴 ENDED'
-                          f'{" " + e(g.sales_end_date) if g.sales_end_date else ""}</span>')
-        if low:
-            badges.append('<span class="badge b-swap">🟠 SWAP</span>')
-        if (thresholds.weak_odds is not None and g.odds_value is not None
-                and g.odds_value > thresholds.weak_odds):
-            badges.append('<span class="badge b-odds">🔻 WEAK ODDS</span>')
-        if not badges:
-            badges.append('<span class="badge b-ok">✅</span>')
+        rating = ratings[g.game_number]
+        # Headline "% left" is now the robust whole-game figure (Σrem/Σorig), not the
+        # noisy top-prize count. Falls back to the estimate when we lack originals.
+        pct = g.overall_pct_remaining
+        est = pct is None
+        if pct is None:
+            pct = g.top_prize_pct_remaining
 
-        pct_txt = "—"
-        bar = ""
-        if pct is not None:
-            pct_txt = f'{"~" if g.total_is_estimate else ""}{min(1.0, pct):.0%}'
-            w = max(3, min(100, round(pct * 100)))
-            bar = (f'<div class="pct-bar"><div class="pct-fill" '
-                   f'style="width:{w}%;background:{_bar_color(pct, g.status=="ended")}"></div></div>')
         odds = f"1:{g.odds_value:g}" if g.odds_value is not None else "—"
         price = "—" if g.price is None else f"${g.price:g}"
-        left = "—" if g.top_prizes_remaining is None else str(g.top_prizes_remaining)
-        total = "" if g.top_prizes_total is None else f"/{g.top_prizes_total}"
-        lower = "—" if g.lower_wins_remaining is None else f"{g.lower_wins_remaining:,}"
-        jd = g.jackpot_density
-        jd_s = "—" if jd is None else f"{jd:.2f}"
-        jd_cls = "up" if (jd is not None and jd >= 1.15) else ("dn" if (jd is not None and jd < 0.85) else "muted")
-        act, reason = recs[g.game_number]
-        if act == "send_back":
-            action_html = f'<span class="badge b-send" title="{e(reason)}">SEND BACK</span>'
+
+        # Rating cell with a colored bar.
+        if rating is None:
+            rating_html = "<span class='muted'>—</span>"
         else:
-            action_html = f'<span class="badge b-keep" title="{e(reason)}">KEEP</span>'
-        moved = last_move_label(g, captured_at)
-        moved_cls = "up" if (g.last_changed and _days_between(g.last_changed, captured_at) <= 1) else "muted"
+            rcol = "var(--green)" if rating >= 65 else ("var(--orange)" if rating >= weights.cutoff else "var(--red)")
+            rw = max(3, min(100, round(rating)))
+            rating_html = (f"<b style='color:{rcol}'>{rating:.0f}</b><span class='muted'>/100</span>"
+                           f"<div class='pct-bar'><div class='pct-fill' style='width:{rw}%;background:{rcol}'></div></div>")
+
+        # % left (all prizes) cell.
+        if pct is None:
+            pct_html = "<span class='muted'>—</span>"
+        else:
+            tot = ""
+            rows_o = g._tiers_with_orig()
+            if rows_o:
+                tot = f" <span class='muted'>({sum(r['remaining'] for r in rows_o):,}/{sum(r['original'] for r in rows_o):,})</span>"
+            w = max(3, min(100, round(pct * 100)))
+            bar = (f"<div class='pct-bar'><div class='pct-fill' "
+                   f"style='width:{w}%;background:{_bar_color(pct, g.status=='ended')}'></div></div>")
+            pct_html = f"{'~' if est else ''}{min(1.0, pct):.0%}{tot}{bar}"
+
+        # Low-prize % left.
+        lp = g.low_prize_pct_remaining
+        lp_html = "<span class='muted'>—</span>" if lp is None else f"{min(1.0, lp):.0%}"
+
+        # Jackpot density — flagged when it's just small-sample noise.
+        jd = g.jackpot_density
+        if jd is None:
+            jd_html = "<span class='muted'>—</span>"
+        elif not g.jackpot_density_significant:
+            jd_html = f"<span class='muted' title='not statistically significant — ignored in the rating'>{jd:.2f} n/s</span>"
+        else:
+            jd_cls = "up" if jd >= 1.15 else ("dn" if jd < 0.85 else "muted")
+            jd_html = f"<span class='{jd_cls}'>{jd:.2f}</span>"
+
+        act, reason = recs[g.game_number]
+        if g.status == "ended":
+            act_extra = f'<div><span class="badge b-ended">🔴 ENDED{" " + e(g.sales_end_date) if g.sales_end_date else ""}</span></div>'
+        else:
+            act_extra = ""
+        if act == "send_back":
+            action_html = f'<span class="badge b-send" title="{e(reason)}">SEND BACK</span>{act_extra}'
+        else:
+            action_html = f'<span class="badge b-keep" title="{e(reason)}">KEEP</span>{act_extra}'
         rows.append(
             f"<tr><td>{e(g.name)}</td><td class='muted'>{e(g.game_number)}</td>"
-            f"<td class='r'>{price}</td><td class='muted'>{e(g.on_sale_date or '—')}</td>"
+            f"<td class='r'>{price}</td>"
+            f"<td class='r'>{rating_html}</td>"
             f"<td class='odds'>{odds}</td>"
-            f"<td class='r'>{left}{total} <span class='muted'>({pct_txt})</span>{bar}</td>"
-            f"<td class='r'>{lower}</td>"
-            f"<td class='r {jd_cls}'>{jd_s}</td>"
-            f"<td class='{moved_cls}'>{e(moved)}</td>"
+            f"<td class='r'>{pct_html}</td>"
+            f"<td class='r'>{lp_html}</td>"
+            f"<td class='r'>{jd_html}</td>"
             f"<td>{action_html}</td></tr>"
         )
 
@@ -425,12 +456,14 @@ def render_html(
     for price in sorted(cands, reverse=True):
         for i, g in enumerate(cands[price]):
             jd = g.jackpot_density
+            jd_txt = "—" if jd is None else (f"{jd:.2f}" if g.jackpot_density_significant else f"{jd:.2f} n/s")
+            pl = g.overall_pct_remaining
             bring_rows.append(
                 f"<tr><td class='r'>{'$%g' % price if i == 0 else ''}</td>"
                 f"<td>{e(g.name)}</td><td class='muted'>{e(g.game_number)}</td>"
                 f"<td class='odds'>1:{g.odds_value:g}</td>"
-                f"<td class='r'>{'%.2f' % jd if jd is not None else '—'}</td>"
-                f"<td class='r'>{min(1.0, g.sell_through_pct):.0%}</td></tr>"
+                f"<td class='r'>{jd_txt}</td>"
+                f"<td class='r'>{min(1.0, pl):.0%}</td></tr>"
             )
     bring_html = (
         "<h2>Best games to bring in — fresh, by price</h2>"
@@ -460,18 +493,26 @@ def render_html(
 </div>
 {alert_html}
 {new_html}
-<h2>Your games — sorted by win odds (your low-prize signal)</h2>
-<table><thead><tr><th>Game</th><th>#</th><th class="r">Price</th><th>Started</th>
-<th>Win odds</th><th class="r">Prizes left (est.)</th><th class="r">Lower prizes left</th><th class="r" title="top-prize % ÷ sell-through; >1 = jackpots still dense, <1 = picked over">Jackpot density</th><th>Last move</th><th>Action</th></tr></thead>
+<h2>Your games — ranked by overall rating (act on the lowest first)</h2>
+<table><thead><tr><th>Game</th><th>#</th><th class="r">Price</th>
+<th class="r" title="weighted 0-100 blend of the factors below; under {weights.cutoff:g} = send back">Rating</th>
+<th>Win odds</th>
+<th class="r" title="true % of the whole game unsold: Σ wins remaining ÷ Σ original wins">% left (all)</th>
+<th class="r" title="% of the cheap prizes left — what customers actually win">Low-prize %</th>
+<th class="r" title="top-prize % ÷ sell-through; shown n/s when it's small-sample noise">Density</th>
+<th>Action</th></tr></thead>
 <tbody>{''.join(rows)}</tbody></table>
-<p class="sub" style="margin-top:12px"><b>Win odds (1:X) is the number that matters.</b> It's the chance a ticket wins
-<i>any</i> prize — and since the cheap break-even prizes hugely outnumber the jackpots, it's effectively a
-<b>low-prize-weighted</b> figure (lower = better chance to win something). <b>🔻 WEAK ODDS</b> = worse than 1:{thresholds.weak_odds:g}, a poor game to stock.
-<b>Prizes left (est.)</b> = how much of the <i>whole</i> game is unsold (estimated from the top prizes — works because prizes are shuffled evenly through the pack, so it tracks the cheap prizes too).
-<b>🟠 SWAP</b> = under 40% left. <b>Lower prizes left</b> = non-jackpot wins still in the pack. <b>🔴 ENDED</b> = sales stopped.<br>
-<b>Jackpot density</b> = top-prize % ÷ sell-through (from PA's official prize structure). Above 1 = the big prizes are hanging around
-longer than the game's sell-through predicts (good for jackpot-hunting customers); below 1 = the jackpots got claimed early (picked over).
-Green ≥1.15, orange &lt;0.85.</p>
+<p class="sub" style="margin-top:12px"><b>Rating (0–100)</b> is a weighted blend of the factors below; under
+{weights.cutoff:g} → <b>SEND BACK</b>. Hover the Action badge for the exact reason. You set the weights in
+<code>config.yaml</code> (currently odds {weights.odds:g}, prizes-left {weights.prizes_left:g}, low-prize {weights.low_prize:g},
+low-prize trend {weights.low_prize_skew:g}, jackpot density {weights.jackpot_density:g}).<br>
+<b>Win odds (1:X)</b> — chance a ticket wins <i>any</i> prize (the break-even signal); lower is better.
+<b>% left (all)</b> — the true share of the <i>whole</i> game still unsold: Σ wins remaining ÷ Σ original wins across every
+tracked tier. Because the cheap prizes number in the thousands and the jackpots in single digits, this is driven by reliable
+data, <i>not</i> the noisy top-prize count.
+<b>Low-prize %</b> — share of the cheap prizes left (no incentive to play once these are gone).
+<b>Density</b> — top prizes vs sell-through; marked <b>n/s</b> (and ignored by the rating) when it's small-sample noise
+rather than a real signal. Green ≥1.15, orange &lt;0.85.</p>
 <h2>All prize tiers — cheapest weighted heaviest</h2>
 <p class="sub">Every published prize per game, the wins still left, and the change since the last scrape
 (▼ = claimed). Weights run heaviest at the bottom (cheapest prize). We scrape twice a day, so this trend
