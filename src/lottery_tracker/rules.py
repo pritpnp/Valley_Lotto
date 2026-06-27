@@ -59,6 +59,39 @@ class Alert:
         return d
 
 
+def recommendation(game: Game, th: Thresholds) -> tuple[str, str]:
+    """One clear call per game: ("keep" | "send_back", reason).
+
+    SEND BACK (stop selling / return to PA) when the game can't earn for you:
+      * sales have ended, OR
+      * fewer than the threshold (default 40%) of its prizes are left, OR
+      * its odds are weak AND its jackpots are already picked over.
+    Otherwise KEEP it (with a note if it's getting weak so you don't reorder).
+    """
+    if game.status == "ended":
+        when = f" {game.sales_end_date}" if game.sales_end_date else ""
+        return ("send_back", f"sales ended{when} — pull it")
+
+    # True "% of the whole game left": prefer the statistically-precise low-tier
+    # sell-through; fall back to the top-prize % when we lack the prize structure.
+    left = game.sell_through_pct if game.sell_through_pct is not None else game.top_prize_pct_remaining
+    weak = (th.weak_odds is not None and game.odds_value is not None
+            and game.odds_value > th.weak_odds)
+    picked_over = game.jackpot_density is not None and game.jackpot_density < 0.85
+
+    if left is not None and th.top_prize_pct is not None and left < th.top_prize_pct:
+        return ("send_back", f"only {left:.0%} of prizes left")
+    if weak and picked_over:
+        return ("send_back", f"weak odds (1:{game.odds_value:g}) and jackpots picked over")
+
+    notes = []
+    if weak:
+        notes.append(f"weak odds (1:{game.odds_value:g}) — fine while it sells, don't reorder")
+    if picked_over:
+        notes.append("jackpots thinning")
+    return ("keep", "; ".join(notes) if notes else "good odds, prizes still available")
+
+
 def _is_low(game: Game, th: Thresholds) -> tuple[bool, list[str]]:
     """Return (is_low, reasons). A game is low if ANY configured rule trips."""
     reasons: list[str] = []

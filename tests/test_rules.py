@@ -4,7 +4,28 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from lottery_tracker.model import Game, estimate_top_prize_totals, merge_games  # noqa: E402
-from lottery_tracker.rules import Thresholds, evaluate  # noqa: E402
+from lottery_tracker.rules import Thresholds, evaluate, recommendation  # noqa: E402
+
+
+def _g(num, **kw):
+    return Game(game_number=num, **kw)
+
+
+def test_recommendation_send_back_when_ended():
+    g = _g("1", status="ended", sales_end_date="06/15/2026")
+    act, _ = recommendation(g, Thresholds())
+    assert act == "send_back"
+
+
+def test_recommendation_send_back_below_threshold():
+    # 20% of prizes left (top tier 1/5) -> below 40% -> send back.
+    g = _g("1", status="active", top_prizes_total=5, top_prizes_remaining=1, odds="1:3.5")
+    assert recommendation(g, Thresholds())[0] == "send_back"
+
+
+def test_recommendation_keep_when_healthy():
+    g = _g("1", status="active", top_prizes_total=10, top_prizes_remaining=8, odds="1:3.2")
+    assert recommendation(g, Thresholds())[0] == "keep"
 
 
 def mk(num, **kw):
