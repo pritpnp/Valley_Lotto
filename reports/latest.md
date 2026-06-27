@@ -1,4 +1,4 @@
-# Valley Lotto report — 2026-06-27T16:55:25Z
+# Valley Lotto report — 2026-06-27T17:06:51Z
 
 ## ✅ No new alerts
 
@@ -6,42 +6,42 @@ Nothing ended and nothing crossed your low-prize threshold since the last run.
 
 ## Your games — sorted by win odds (your low-prize signal)
 
-| Game | # | Price | Started | Win odds | Prizes left (est.) | Lower prizes left | Flags |
-|------|---|------:|:-------:|:-------:|:------------------:|------------------:|-------|
-| Triple Red 777 | 1780 | $30 | 04/2026 | 1:3.11 | 86% (6/7) | 8,522 | ✅ |
-| Mega Bucks | 1696 | $30 | 06/2024 | 1:3.12 | 40% (2/5) | 13,362 | ✅ |
-| Win Win Win | 1781 | $10 | 04/2026 | 1:3.12 | 60% (3/5) | 68,157 | ✅ |
-| Super 7s | 1789 | $2 | 06/2026 | 1:3.38 | 86% (6/7) | 106,465 | ✅ |
-| Fro$ted Fortune | 1756 | $20 | 11/2025 | 1:3.42 | 10% (1/10) | 87,532 | 🟠 SWAP |
-| Millionaire Loading | 1746 | $20 | 08/2025 | 1:3.46 | 20% (1/5) | 15,137 | 🟠 SWAP |
-| $500,000 a Year for Life | 1763 | $20 | 12/2025 | 1:3.46 | 80% (4/5) | 29,078 | ✅ |
-| $3 Million Mega Moolah Multiplier | 1742 | $30 | 07/2025 | 1:3.49 | 67% (2/3) | 3,409 | ✅ |
-| Extreme Green | 1751 | $10 | 09/2025 | 1:3.49 | 25% (3/12) | 136,162 | 🟠 SWAP |
-| ELF | 1758 | $5 | 11/2025 | 1:3.52 | 40% (2/5) | 12,530 | ✅ |
-| Money Rush | 1778 | $2 | 03/2026 | 1:3.54 | 48% (19/40) | 12,644 | ✅ |
-| Fever Doubler | 1787 | $5 | 06/2026 | 1:3.56 | 100% (5/5) | 84,943 | ✅ |
-| Cash Spectacular | 1750 | $30 | 09/2025 | 1:3.57 | 60% (6/10) | 4,878 | ✅ |
-| Lights, Camera, Crossword | 1788 | $3 | 06/2026 | 1:3.57 | 100% (10/10) | 37,270 | ✅ |
-| $20,000 a Month for Life | 1764 | $10 | 12/2025 | 1:3.6 | 83% (5/6) | 169,218 | ✅ |
-| Code Word Crossword | 1769 | $10 | 01/2026 | 1:3.62 | 50% (5/10) | 931 | ✅ |
-| Money Box Bingo | 1777 | $5 | 03/2026 | 1:3.66 | 70% (7/10) | 4,106 | ✅ |
-| Jackpot | 1738 | $20 | 05/2025 | 1:3.67 | 20% (1/5) | 12,419 | 🟠 SWAP |
-| GAME OF THRONES™ | 1706 | $10 | 09/2024 | 1:3.68 | 30% (3/10) | 34,747 | 🟠 SWAP |
-| GUS® | 1782 | $5 | 04/2026 | 1:3.76 | 65% (13/20) | 2,768 | ✅ |
-| JURASSIC PARK | 1747 | $10 | 08/2025 | 1:3.82 | 50% (5/10) | 49,068 | ✅ |
-| Find the Leprechaun | 1772 | $2 | 01/2026 | 1:3.84 | 47% (8/17) | 9,190 | ✅ |
-| Crossword Extra | 1753 | $3 | 09/2025 | 1:4 | 40% (4/10) | 4,830 | ✅ |
-| A Latte Money | 1779 | $1 | 03/2026 | 1:4.25 | 40% (2/5) | 19,516 | ✅ |
-| GOLD FISH® | 1783 | $1 | 04/2026 | 1:4.32 | 60% (12/20) | 108,007 | ✅ |
-| Bonus Ball Bingo | 1740 | $3 | 05/2025 | 1:4.38 | 70% (7/10) | 7,181 | ✅ |
-| Keys and Cash | 1693 | $5 | 05/2024 | 1:4.42 | 30% (6/20) | 2,690 | 🟠 SWAP |
-| Goat Load of Cash Crossword | 1744 | $5 | 07/2025 | 1:4.44 | 10% (1/10) | 1,693 | 🟠 SWAP |
-| High 5 | 1736 | $5 | 04/2025 | 1:4.46 | 20% (2/10) | 2,056 | 🟠 SWAP |
-| LOVE IS BLIND | 1766 | $2 | 12/2025 | 1:4.54 | 20% (1/5) | 41,054 | 🟠 SWAP 🔻 WEAK ODDS |
-| MONOPOLY SECRET VAULT | 1739 | $5 | 05/2025 | 1:4.59 | 40% (4/10) | 15,123 | 🔻 WEAK ODDS |
-| $500 a Week for Life | 1767 | $1 | 12/2025 | 1:4.77 | 50% (2/4) | 60,924 | 🔻 WEAK ODDS |
-| $2,500 Festive Frenzy | 1757 | $10 | 11/2025 | — | ~100% (219/219) | 106,195 | ✅ |
-| $500 Blowout | 1774 | $20 | 03/2026 | — | ~100% (38971/38971) | 1,776,129 | ✅ |
+| Game | # | Price | Started | Win odds | Prizes left (est.) | Lower prizes left | Last move | Flags |
+|------|---|------:|:-------:|:-------:|:------------------:|------------------:|:---------:|-------|
+| Triple Red 777 | 1780 | $30 | 04/2026 | 1:3.11 | 86% (6/7) | 8,522 | just added | ✅ |
+| Mega Bucks | 1696 | $30 | 06/2024 | 1:3.12 | 40% (2/5) | 13,362 | just added | ✅ |
+| Win Win Win | 1781 | $10 | 04/2026 | 1:3.12 | 60% (3/5) | 68,157 | just added | ✅ |
+| Super 7s | 1789 | $2 | 06/2026 | 1:3.38 | 86% (6/7) | 106,465 | just added | ✅ |
+| Fro$ted Fortune | 1756 | $20 | 11/2025 | 1:3.42 | 10% (1/10) | 87,532 | just added | 🟠 SWAP |
+| Millionaire Loading | 1746 | $20 | 08/2025 | 1:3.46 | 20% (1/5) | 15,137 | just added | 🟠 SWAP |
+| $500,000 a Year for Life | 1763 | $20 | 12/2025 | 1:3.46 | 80% (4/5) | 29,078 | just added | ✅ |
+| $3 Million Mega Moolah Multiplier | 1742 | $30 | 07/2025 | 1:3.49 | 67% (2/3) | 3,409 | just added | ✅ |
+| Extreme Green | 1751 | $10 | 09/2025 | 1:3.49 | 25% (3/12) | 136,162 | just added | 🟠 SWAP |
+| ELF | 1758 | $5 | 11/2025 | 1:3.52 | 40% (2/5) | 12,530 | just added | ✅ |
+| Money Rush | 1778 | $2 | 03/2026 | 1:3.54 | 48% (19/40) | 12,644 | just added | ✅ |
+| Fever Doubler | 1787 | $5 | 06/2026 | 1:3.56 | 100% (5/5) | 84,943 | just added | ✅ |
+| Cash Spectacular | 1750 | $30 | 09/2025 | 1:3.57 | 60% (6/10) | 4,878 | just added | ✅ |
+| Lights, Camera, Crossword | 1788 | $3 | 06/2026 | 1:3.57 | 100% (10/10) | 37,270 | just added | ✅ |
+| $20,000 a Month for Life | 1764 | $10 | 12/2025 | 1:3.6 | 83% (5/6) | 169,218 | just added | ✅ |
+| Code Word Crossword | 1769 | $10 | 01/2026 | 1:3.62 | 50% (5/10) | 931 | just added | ✅ |
+| Money Box Bingo | 1777 | $5 | 03/2026 | 1:3.66 | 70% (7/10) | 4,106 | just added | ✅ |
+| Jackpot | 1738 | $20 | 05/2025 | 1:3.67 | 20% (1/5) | 12,419 | just added | 🟠 SWAP |
+| GAME OF THRONES™ | 1706 | $10 | 09/2024 | 1:3.68 | 30% (3/10) | 34,747 | just added | 🟠 SWAP |
+| GUS® | 1782 | $5 | 04/2026 | 1:3.76 | 65% (13/20) | 2,768 | just added | ✅ |
+| JURASSIC PARK | 1747 | $10 | 08/2025 | 1:3.82 | 50% (5/10) | 49,068 | just added | ✅ |
+| Find the Leprechaun | 1772 | $2 | 01/2026 | 1:3.84 | 47% (8/17) | 9,190 | just added | ✅ |
+| Crossword Extra | 1753 | $3 | 09/2025 | 1:4 | 40% (4/10) | 4,830 | just added | ✅ |
+| A Latte Money | 1779 | $1 | 03/2026 | 1:4.25 | 40% (2/5) | 19,516 | just added | ✅ |
+| GOLD FISH® | 1783 | $1 | 04/2026 | 1:4.32 | 60% (12/20) | 108,007 | just added | ✅ |
+| Bonus Ball Bingo | 1740 | $3 | 05/2025 | 1:4.38 | 70% (7/10) | 7,181 | just added | ✅ |
+| Keys and Cash | 1693 | $5 | 05/2024 | 1:4.42 | 30% (6/20) | 2,690 | just added | 🟠 SWAP |
+| Goat Load of Cash Crossword | 1744 | $5 | 07/2025 | 1:4.44 | 10% (1/10) | 1,693 | just added | 🟠 SWAP |
+| High 5 | 1736 | $5 | 04/2025 | 1:4.46 | 20% (2/10) | 2,056 | just added | 🟠 SWAP |
+| LOVE IS BLIND | 1766 | $2 | 12/2025 | 1:4.54 | 20% (1/5) | 41,054 | just added | 🟠 SWAP 🔻 WEAK ODDS |
+| MONOPOLY SECRET VAULT | 1739 | $5 | 05/2025 | 1:4.59 | 40% (4/10) | 15,123 | just added | 🔻 WEAK ODDS |
+| $500 a Week for Life | 1767 | $1 | 12/2025 | 1:4.77 | 50% (2/4) | 60,924 | just added | 🔻 WEAK ODDS |
+| $2,500 Festive Frenzy | 1757 | $10 | 11/2025 | — | ~100% (219/219) | 106,195 | just added | ✅ |
+| $500 Blowout | 1774 | $20 | 03/2026 | — | ~100% (38971/38971) | 1,776,129 | just added | ✅ |
 
 > **Win odds (1:X) is the number that matters** — the published chance a ticket wins *any* prize. Because the cheap break-even prizes vastly outnumber the jackpots, this is effectively a *low-prize-weighted* figure: lower = better chance a customer wins something. **🔻 WEAK ODDS** = worse than 1:4.5 (poor to stock). **Prizes left (est.)** = how much of the *whole* game is unsold — estimated from the top prizes, which works because prizes are shuffled evenly through the pack, so it tracks the cheap prizes too. **🟠 SWAP** = under 40% left (game mostly sold through). **Lower prizes left** = non-jackpot wins still in the pack. *A separate single-day "low-prize %" can't be computed — on any one day it's mathematically identical to the top-prize %, so we don't fake one.*
 
