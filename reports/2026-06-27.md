@@ -1,4 +1,4 @@
-# Valley Lotto report — 2026-06-27T17:18:35Z
+# Valley Lotto report — 2026-06-27T17:28:20Z
 
 ## ✅ No new alerts
 
@@ -8,9 +8,11 @@ Nothing ended and nothing crossed your low-prize threshold since the last run.
 
 | Game | # | Price | Started | Win odds | Prizes left (est.) | Lower prizes left | Last move | Flags |
 |------|---|------:|:-------:|:-------:|:------------------:|------------------:|:---------:|-------|
+| $500 Blowout | 1774 | $20 | 03/2026 | 1:2.72 | ~100% (38971/38971) | 1,776,129 | just added | ✅ |
 | Triple Red 777 | 1780 | $30 | 04/2026 | 1:3.11 | 86% (6/7) | 8,522 | just added | ✅ |
 | Mega Bucks | 1696 | $30 | 06/2024 | 1:3.12 | 40% (2/5) | 13,362 | just added | ✅ |
 | Win Win Win | 1781 | $10 | 04/2026 | 1:3.12 | 60% (3/5) | 68,157 | just added | ✅ |
+| $2,500 Festive Frenzy | 1757 | $10 | 11/2025 | 1:3.32 | ~100% (219/219) | 106,195 | just added | ✅ |
 | Super 7s | 1789 | $2 | 06/2026 | 1:3.38 | 86% (6/7) | 106,465 | just added | ✅ |
 | Fro$ted Fortune | 1756 | $20 | 11/2025 | 1:3.42 | 10% (1/10) | 87,532 | just added | 🟠 SWAP |
 | Millionaire Loading | 1746 | $20 | 08/2025 | 1:3.46 | 20% (1/5) | 15,137 | just added | 🟠 SWAP |
@@ -40,12 +42,20 @@ Nothing ended and nothing crossed your low-prize threshold since the last run.
 | LOVE IS BLIND | 1766 | $2 | 12/2025 | 1:4.54 | 20% (1/5) | 41,054 | just added | 🟠 SWAP 🔻 WEAK ODDS |
 | MONOPOLY SECRET VAULT | 1739 | $5 | 05/2025 | 1:4.59 | 40% (4/10) | 15,123 | just added | 🔻 WEAK ODDS |
 | $500 a Week for Life | 1767 | $1 | 12/2025 | 1:4.77 | 50% (2/4) | 60,924 | just added | 🔻 WEAK ODDS |
-| $2,500 Festive Frenzy | 1757 | $10 | 11/2025 | — | ~100% (219/219) | 106,195 | just added | ✅ |
-| $500 Blowout | 1774 | $20 | 03/2026 | — | ~100% (38971/38971) | 1,776,129 | just added | ✅ |
 
 > **Win odds (1:X) is the number that matters** — the published chance a ticket wins *any* prize. Because the cheap break-even prizes vastly outnumber the jackpots, this is effectively a *low-prize-weighted* figure: lower = better chance a customer wins something. **🔻 WEAK ODDS** = worse than 1:4.5 (poor to stock). **Prizes left (est.)** = how much of the *whole* game is unsold — estimated from the top prizes, which works because prizes are shuffled evenly through the pack, so it tracks the cheap prizes too. **🟠 SWAP** = under 40% left (game mostly sold through). **Lower prizes left** = non-jackpot wins still in the pack. *A separate single-day "low-prize %" can't be computed — on any one day it's mathematically identical to the top-prize %, so we don't fake one.*
 
 ## Prize tiers per game (cheapest weighted heaviest)
+
+**#1774 $500 Blowout** — active
+
+| Prize | Wins left | Δ since last | Weight |
+|-------|----------:|:------------:|:------:|
+| $500 | 38,971 | 0 | ×1 |
+| $200 | 22,575 | 0 | ×2 |
+| $100 | 88,281 | 0 | ×3 |
+| $50 | 426,966 | 0 | ×4 |
+| $20 | 1,238,307 | 0 | ×5 |
 
 **#1780 Triple Red 777** — active
 
@@ -79,6 +89,17 @@ Nothing ended and nothing crossed your low-prize threshold since the last run.
 | $500 | 2,094 | 0 | ×4 |
 | $250 | 4,979 | 0 | ×5 |
 | $150 | 61,038 | 0 | ×6 |
+
+**#1757 $2,500 Festive Frenzy** — active
+
+| Prize | Wins left | Δ since last | Weight |
+|-------|----------:|:------------:|:------:|
+| $2,500 | 219 | 0 | ×1 |
+| $500 | 673 | 0 | ×2 |
+| $250 | 1,639 | 0 | ×3 |
+| $100 | 6,357 | 0 | ×4 |
+| $50 | 13,208 | 0 | ×5 |
+| $20 | 84,318 | 0 | ×6 |
 
 **#1789 Super 7s** — active
 
@@ -397,24 +418,3 @@ Nothing ended and nothing crossed your low-prize threshold since the last run.
 | $40 | 2,095 | 0 | ×4 |
 | $20 | 3,442 | 0 | ×5 |
 | $10 | 55,081 | 0 | ×6 |
-
-**#1757 $2,500 Festive Frenzy** — active
-
-| Prize | Wins left | Δ since last | Weight |
-|-------|----------:|:------------:|:------:|
-| $2,500 | 219 | 0 | ×1 |
-| $500 | 673 | 0 | ×2 |
-| $250 | 1,639 | 0 | ×3 |
-| $100 | 6,357 | 0 | ×4 |
-| $50 | 13,208 | 0 | ×5 |
-| $20 | 84,318 | 0 | ×6 |
-
-**#1774 $500 Blowout** — active
-
-| Prize | Wins left | Δ since last | Weight |
-|-------|----------:|:------------:|:------:|
-| $500 | 38,971 | 0 | ×1 |
-| $200 | 22,575 | 0 | ×2 |
-| $100 | 88,281 | 0 | ×3 |
-| $50 | 426,966 | 0 | ×4 |
-| $20 | 1,238,307 | 0 | ×5 |
