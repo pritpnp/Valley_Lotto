@@ -18,7 +18,7 @@ from email.message import EmailMessage
 from pathlib import Path
 
 from .model import Game
-from .rules import Alert, Severity, Thresholds, _is_low
+from .rules import Alert, Severity, Thresholds, _is_low, recommendation
 
 _SEV_EMOJI = {Severity.CRITICAL: "🔴", Severity.WARN: "🟠", Severity.INFO: "🔵"}
 
@@ -83,42 +83,33 @@ def render_report(
     # because the odds are the real "will a customer win anything / break even?"
     # number and they barely move over a game's life.
     owned_games = [games[n] for n in sorted(inventory) if n in games]
-    owned_games.sort(key=lambda g: (g.odds_value is None, g.odds_value or 99))
+    recs = {g.game_number: recommendation(g, thresholds) for g in owned_games}
+    owned_games.sort(key=lambda g: (recs[g.game_number][0] != "send_back",
+                                    -(g.price or 0), g.odds_value or 99))
     if owned_games:
-        lines.append("## Your games — sorted by win odds (your low-prize signal)")
+        send = [g for g in owned_games if recs[g.game_number][0] == "send_back"]
+        lines.append(f"## Recommendation: send back {len(send)}, keep {len(owned_games) - len(send)}")
         lines.append("")
-        lines.append("| Game | # | Price | Started | Win odds | Prizes left (est.) | Lower prizes left | Density | Last move | Flags |")
-        lines.append("|------|---|------:|:-------:|:-------:|:------------------:|------------------:|:-------:|:---------:|-------|")
+        if send:
+            lines.append("**🔴 Send back (stop selling / return):** "
+                         + ", ".join(f"#{g.game_number} {g.name} (${g.price:g}, {recs[g.game_number][1]})"
+                                     for g in send))
+            lines.append("")
+        lines.append("| Game | # | Price | Win odds | Prizes left | Density | Last move | Action |")
+        lines.append("|------|---|------:|:-------:|:----------:|:-------:|:---------:|--------|")
         for g in owned_games:
-            pct = g.top_prize_pct_remaining
-            if pct is None:
-                pct_s = "—"
-            else:
-                tot = "" if g.top_prizes_total is None else f"/{g.top_prizes_total}"
-                pct_s = f"{'~' if g.total_is_estimate else ''}{pct:.0%} ({g.top_prizes_remaining}{tot})"
-            lower = "—" if g.lower_wins_remaining is None else f"{g.lower_wins_remaining:,}"
-            low, _ = _is_low(g, thresholds)
-            flags = []
-            if g.status == "ended":
-                ended_txt = "🔴 ENDED"
-                if g.sales_end_date:
-                    ended_txt += f" {g.sales_end_date}"
-                flags.append(ended_txt)
-            if low:
-                flags.append("🟠 SWAP")
-            if (thresholds.weak_odds is not None and g.odds_value is not None
-                    and g.odds_value > thresholds.weak_odds):
-                flags.append("🔻 WEAK ODDS")
-            flag = " ".join(flags) if flags else "✅"
+            st = g.sell_through_pct if g.sell_through_pct is not None else g.top_prize_pct_remaining
+            left_s = "—" if st is None else f"{st:.0%}"
             price = "—" if g.price is None else f"${g.price:g}"
             odds = f"1:{g.odds_value:g}" if g.odds_value is not None else "—"
-            started = g.on_sale_date or "—"
             moved = last_move_label(g, captured_at)
             jd = g.jackpot_density
             jd_s = "—" if jd is None else f"{jd:.2f}"
+            act, reason = recs[g.game_number]
+            action = ("🔴 **SEND BACK**" if act == "send_back" else "🟢 KEEP") + f" — {reason}"
             lines.append(
-                f"| {g.name} | {g.game_number} | {price} | {started} | {odds} | "
-                f"{pct_s} | {lower} | {jd_s} | {moved} | {flag} |"
+                f"| {g.name} | {g.game_number} | {price} | {odds} | "
+                f"{left_s} | {jd_s} | {moved} | {action} |"
             )
         lines.append("")
         lines.append(
@@ -195,6 +186,8 @@ tr:last-child td{border-bottom:none}td.r,th.r{text-align:right}
 .b-swap{background:rgba(243,156,18,.18);color:var(--orange)}
 .b-odds{background:rgba(231,76,60,.16);color:#ff8a7a}
 .b-ended{background:rgba(231,76,60,.2);color:var(--red)}
+.b-keep{background:rgba(46,204,113,.18);color:var(--green);font-weight:700}
+.b-send{background:rgba(231,76,60,.22);color:#ff7a6b;font-weight:700}
 .odds{font-variant-numeric:tabular-nums;font-weight:600}
 .pct-bar{height:6px;background:var(--line);border-radius:3px;overflow:hidden;margin-top:3px}
 .pct-fill{height:100%}.muted{color:var(--muted)}
@@ -269,12 +262,16 @@ def render_html(
     e = _html.escape
     prev = previous or {}
     owned = [games[n] for n in sorted(inventory) if n in games]
-    owned.sort(key=lambda g: (g.odds_value is None, g.odds_value or 99))
+    recs = {g.game_number: recommendation(g, thresholds) for g in owned}
+    # Send-backs first (what to act on), then by price high→low, then best odds.
+    owned.sort(key=lambda g: (recs[g.game_number][0] != "send_back",
+                              -(g.price or 0), g.odds_value or 99))
 
-    n_swap = sum(1 for g in owned if g.status != "ended" and _is_low(g, thresholds)[0])
     n_weak = sum(1 for g in owned if thresholds.weak_odds is not None
                  and g.odds_value is not None and g.odds_value > thresholds.weak_odds)
     n_ended = sum(1 for g in owned if g.status == "ended")
+    n_send = sum(1 for a, _ in recs.values() if a == "send_back")
+    n_keep = len(owned) - n_send
 
     rows = []
     for g in owned:
@@ -307,6 +304,11 @@ def render_html(
         jd = g.jackpot_density
         jd_s = "—" if jd is None else f"{jd:.2f}"
         jd_cls = "up" if (jd is not None and jd >= 1.15) else ("dn" if (jd is not None and jd < 0.85) else "muted")
+        act, reason = recs[g.game_number]
+        if act == "send_back":
+            action_html = f'<span class="badge b-send" title="{e(reason)}">SEND BACK</span>'
+        else:
+            action_html = f'<span class="badge b-keep" title="{e(reason)}">KEEP</span>'
         moved = last_move_label(g, captured_at)
         moved_cls = "up" if (g.last_changed and _days_between(g.last_changed, captured_at) <= 1) else "muted"
         rows.append(
@@ -317,7 +319,7 @@ def render_html(
             f"<td class='r'>{lower}</td>"
             f"<td class='r {jd_cls}'>{jd_s}</td>"
             f"<td class='{moved_cls}'>{e(moved)}</td>"
-            f"<td>{' '.join(badges)}</td></tr>"
+            f"<td>{action_html}</td></tr>"
         )
 
     alert_html = ""
@@ -340,14 +342,14 @@ def render_html(
 <p class="sub">PA scratch-off tracker · updated {e(captured_at)} · auto-refreshes</p>
 <div class="cards">
 <div class="card"><div class="n">{len(owned)}</div><div class="l">games tracked</div></div>
-<div class="card orange"><div class="n">{n_swap}</div><div class="l">🟠 swap (under 40%)</div></div>
-<div class="card red"><div class="n">{n_weak}</div><div class="l">🔻 weak odds</div></div>
-<div class="card red"><div class="n">{n_ended}</div><div class="l">🔴 ended</div></div>
+<div class="card green"><div class="n">{n_keep}</div><div class="l">🟢 keep</div></div>
+<div class="card red"><div class="n">{n_send}</div><div class="l">🔴 send back</div></div>
+<div class="card red"><div class="n">{n_ended}</div><div class="l">⛔ ended</div></div>
 </div>
 {alert_html}
 <h2>Your games — sorted by win odds (your low-prize signal)</h2>
 <table><thead><tr><th>Game</th><th>#</th><th class="r">Price</th><th>Started</th>
-<th>Win odds</th><th class="r">Prizes left (est.)</th><th class="r">Lower prizes left</th><th class="r" title="top-prize % ÷ sell-through; >1 = jackpots still dense, <1 = picked over">Jackpot density</th><th>Last move</th><th>Status</th></tr></thead>
+<th>Win odds</th><th class="r">Prizes left (est.)</th><th class="r">Lower prizes left</th><th class="r" title="top-prize % ÷ sell-through; >1 = jackpots still dense, <1 = picked over">Jackpot density</th><th>Last move</th><th>Action</th></tr></thead>
 <tbody>{''.join(rows)}</tbody></table>
 <p class="sub" style="margin-top:12px"><b>Win odds (1:X) is the number that matters.</b> It's the chance a ticket wins
 <i>any</i> prize — and since the cheap break-even prizes hugely outnumber the jackpots, it's effectively a
