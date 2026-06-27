@@ -77,6 +77,18 @@ def test_parse_detail_originals_and_odds():
     assert info["odds"] == "1:3.38"
 
 
+def test_parse_bulletin_full_prize_structure():
+    # Real PA Bulletin notice for Super 7s (game 1789).
+    d = parse.parse_bulletin((FIX / "bulletin.html").read_text())
+    assert d["tickets_printed"] == 7_200_000
+    assert d["payout_pct"] == 70.47
+    orig = d["prize_originals"]
+    # Winners are summed across all winning combinations per prize value.
+    assert orig["17000.0"] == 7        # matches the detail page's "offers 7 Top Prizes"
+    assert orig["17.0"] == 103_200     # lowest tracked tier — the sell-through anchor
+    assert orig["2.0"] == 864_000
+
+
 def test_remaining_missing_columns_raises():
     html = "<table><tr><th>Foo</th><th>Bar</th></tr><tr><td>1</td><td>2</td></tr></table>"
     try:

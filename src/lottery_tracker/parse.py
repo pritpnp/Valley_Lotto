@@ -16,7 +16,7 @@ import re
 
 from bs4 import BeautifulSoup
 
-from .model import Game
+from .model import Game, _money_to_num
 
 
 class ParseError(RuntimeError):
@@ -237,19 +237,70 @@ _DETAIL_ODDS_RE = re.compile(r"chances of winning a prize:\s*1:([\d.]+)", re.I)
 
 
 def parse_detail(html: str) -> dict:
-    """Pull the original top-prize count and overall odds from a game's detail page.
+    """Pull the top-prize count, overall odds, and the PA Bulletin link from a
+    game's detail page.
 
     PA states it in prose, e.g. "...is a $2 game that offers 7 Top Prizes of
-    $17,000." and "Overall chances of winning a prize: 1:3.38". Returns
-    {"top_prizes_original": int|None, "odds": str|None}.
+    $17,000." and "Overall chances of winning a prize: 1:3.38". The detail page
+    also links the official PA Bulletin notice (full prize structure).
     """
-    text = " ".join(BeautifulSoup(html, "html.parser").get_text(" ").split())
+    soup = BeautifulSoup(html, "html.parser")
+    text = " ".join(soup.get_text(" ").split())
     top = _DETAIL_TOP_RE.search(text)
     odds = _DETAIL_ODDS_RE.search(text)
+    bulletin = None
+    for a in soup.find_all("a", href=True):
+        if "pacodeandbulletin.gov" in a["href"]:
+            bulletin = a["href"]
+            break
     return {
         "top_prizes_original": int(top.group(1).replace(",", "")) if top else None,
         "odds": f"1:{odds.group(1)}" if odds else None,
+        "bulletin_url": bulletin,
     }
+
+
+def parse_bulletin(html: str) -> dict:
+    """Parse a PA Bulletin instant-game notice into the full original prize structure.
+
+    The notice has one table: Win With | Super Seven | Win (prize) | Odds 1-in |
+    No. of Winners. A prize value can be won several ways, so we SUM the winner
+    counts per prize value to get the original count printed for each level.
+
+    Returns {"tickets_printed": int|None, "payout_pct": float|None,
+             "prize_originals": {value_num_str: original_count}}.
+    """
+    soup = BeautifulSoup(html, "html.parser")
+    full_text = soup.get_text(" ")
+    tickets = None
+    m = re.search(r"Approximately\s+([\d,]+)\s+tickets", full_text)
+    if m:
+        tickets = int(m.group(1).replace(",", ""))
+    payout = None
+    m = re.search(r"payout percentage is\s+([\d.]+)\s*%", full_text, re.I)
+    if m:
+        payout = float(m.group(1))
+
+    originals: dict[str, int] = {}
+    for table in soup.find_all("table"):
+        tt = table.get_text(" ")
+        if "Winners" not in tt or "Odds" not in tt:
+            continue
+        rows = table.find_all("tr")
+        header = [_clean(c.get_text()) for c in rows[0].find_all(["td", "th"])]
+        win_idx = next((i for i, h in enumerate(header) if h.lower().startswith("win:")), 2)
+        num_idx = next((i for i, h in enumerate(header) if "winners" in h.lower()), len(header) - 1)
+        for r in rows[1:]:
+            cells = [_clean(c.get_text()) for c in r.find_all(["td", "th"])]
+            if len(cells) <= max(win_idx, num_idx):
+                continue
+            val = _money_to_num(cells[win_idx])
+            cnt = _money_to_num(cells[num_idx])
+            if val is not None and cnt is not None:
+                key = str(val)
+                originals[key] = originals.get(key, 0) + int(cnt)
+        break
+    return {"tickets_printed": tickets, "payout_pct": payout, "prize_originals": originals}
 
 
 def parse_remaining(html: str) -> list[Game]:
