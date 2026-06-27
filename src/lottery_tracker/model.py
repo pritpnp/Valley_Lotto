@@ -7,6 +7,7 @@ the "Sales Ended" page (games whose sales have stopped + claim deadlines).
 
 from __future__ import annotations
 
+import json
 import re
 from dataclasses import dataclass, field, asdict
 from typing import Optional
@@ -50,6 +51,10 @@ class Game:
     # From the detail page.
     detail_id: Optional[str] = None         # PA internal id used by View-Scratch-Off.aspx?id=
     odds: Optional[str] = None              # overall odds, e.g. "1:3.38"
+
+    # Change tracking (filled in by update_change_tracking each run).
+    first_seen: Optional[str] = None      # when we first recorded this game
+    last_changed: Optional[str] = None    # last time we OBSERVED its data move (None = not yet)
 
     # Bookkeeping
     source_pages: list = field(default_factory=list)  # which pages contributed to this row
@@ -185,6 +190,41 @@ def merge_games(
             g.status = "active" if num in active_set else "ended"
 
     return by_num
+
+
+def _game_fingerprint(g: "Game") -> str:
+    """Per-game fingerprint of the data we treat as 'a change' (status + tiers)."""
+    return json.dumps(
+        {
+            "status": g.status,
+            "on_sale_date": g.on_sale_date,
+            "sales_end_date": g.sales_end_date,
+            "tiers": [[t.get("value"), t.get("remaining")] for t in (g.prize_tiers or [])],
+        },
+        sort_keys=True, separators=(",", ":"),
+    )
+
+
+def update_change_tracking(
+    current: dict[str, "Game"], previous: dict[str, "Game"], captured_at: str
+) -> None:
+    """Carry forward each game's first_seen / last_changed.
+
+    last_changed is set only when we actually OBSERVE the data move; until then it
+    stays None (we don't pretend a game "changed today" just because tracking
+    started today). Mutates ``current`` in place.
+    """
+    for num, g in current.items():
+        prev = previous.get(num)
+        if prev is None:
+            g.first_seen = captured_at
+            g.last_changed = None
+        else:
+            g.first_seen = prev.first_seen or captured_at
+            g.last_changed = (
+                prev.last_changed if _game_fingerprint(prev) == _game_fingerprint(g)
+                else captured_at
+            )
 
 
 def estimate_top_prize_totals(

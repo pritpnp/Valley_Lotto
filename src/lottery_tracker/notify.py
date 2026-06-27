@@ -23,6 +23,24 @@ from .rules import Alert, Severity, Thresholds, _is_low
 _SEV_EMOJI = {Severity.CRITICAL: "🔴", Severity.WARN: "🟠", Severity.INFO: "🔵"}
 
 
+def _days_between(a_iso: str, b_iso: str) -> int:
+    from datetime import datetime
+    a = datetime.fromisoformat(a_iso.replace("Z", "+00:00"))
+    b = datetime.fromisoformat(b_iso.replace("Z", "+00:00"))
+    return (b - a).days
+
+
+def last_move_label(g: Game, now_iso: str) -> str:
+    """Human "last move" string: when we last saw this game's numbers change."""
+    if g.last_changed:
+        d = _days_between(g.last_changed, now_iso)
+        return "moved today" if d <= 0 else f"moved {d}d ago"
+    if g.first_seen:
+        d = _days_between(g.first_seen, now_iso)
+        return "just added" if d <= 0 else f"static {d}d"
+    return "—"
+
+
 def render_report(
     alerts: list[Alert],
     games: dict[str, Game],
@@ -69,8 +87,8 @@ def render_report(
     if owned_games:
         lines.append("## Your games — sorted by win odds (your low-prize signal)")
         lines.append("")
-        lines.append("| Game | # | Price | Started | Win odds | Prizes left (est.) | Lower prizes left | Flags |")
-        lines.append("|------|---|------:|:-------:|:-------:|:------------------:|------------------:|-------|")
+        lines.append("| Game | # | Price | Started | Win odds | Prizes left (est.) | Lower prizes left | Last move | Flags |")
+        lines.append("|------|---|------:|:-------:|:-------:|:------------------:|------------------:|:---------:|-------|")
         for g in owned_games:
             pct = g.top_prize_pct_remaining
             if pct is None:
@@ -95,9 +113,10 @@ def render_report(
             price = "—" if g.price is None else f"${g.price:g}"
             odds = f"1:{g.odds_value:g}" if g.odds_value is not None else "—"
             started = g.on_sale_date or "—"
+            moved = last_move_label(g, captured_at)
             lines.append(
                 f"| {g.name} | {g.game_number} | {price} | {started} | {odds} | "
-                f"{pct_s} | {lower} | {flag} |"
+                f"{pct_s} | {lower} | {moved} | {flag} |"
             )
         lines.append("")
         lines.append(
@@ -277,12 +296,15 @@ def render_html(
         left = "—" if g.top_prizes_remaining is None else str(g.top_prizes_remaining)
         total = "" if g.top_prizes_total is None else f"/{g.top_prizes_total}"
         lower = "—" if g.lower_wins_remaining is None else f"{g.lower_wins_remaining:,}"
+        moved = last_move_label(g, captured_at)
+        moved_cls = "up" if (g.last_changed and _days_between(g.last_changed, captured_at) <= 1) else "muted"
         rows.append(
             f"<tr><td>{e(g.name)}</td><td class='muted'>{e(g.game_number)}</td>"
             f"<td class='r'>{price}</td><td class='muted'>{e(g.on_sale_date or '—')}</td>"
             f"<td class='odds'>{odds}</td>"
             f"<td class='r'>{left}{total} <span class='muted'>({pct_txt})</span>{bar}</td>"
             f"<td class='r'>{lower}</td>"
+            f"<td class='{moved_cls}'>{e(moved)}</td>"
             f"<td>{' '.join(badges)}</td></tr>"
         )
 
@@ -313,7 +335,7 @@ def render_html(
 {alert_html}
 <h2>Your games — sorted by win odds (your low-prize signal)</h2>
 <table><thead><tr><th>Game</th><th>#</th><th class="r">Price</th><th>Started</th>
-<th>Win odds</th><th class="r">Prizes left (est.)</th><th class="r">Lower prizes left</th><th>Status</th></tr></thead>
+<th>Win odds</th><th class="r">Prizes left (est.)</th><th class="r">Lower prizes left</th><th>Last move</th><th>Status</th></tr></thead>
 <tbody>{''.join(rows)}</tbody></table>
 <p class="sub" style="margin-top:12px"><b>Win odds (1:X) is the number that matters.</b> It's the chance a ticket wins
 <i>any</i> prize — and since the cheap break-even prizes hugely outnumber the jackpots, it's effectively a

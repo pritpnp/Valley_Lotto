@@ -3,7 +3,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from lottery_tracker.model import Game  # noqa: E402
+from lottery_tracker.model import Game, update_change_tracking  # noqa: E402
+from lottery_tracker.notify import last_move_label  # noqa: E402
 from lottery_tracker.state import content_hash, append_scrape_log, slugify  # noqa: E402
 
 
@@ -41,6 +42,26 @@ def test_hash_ignores_timestamp_only_fields():
 
 def test_slugify():
     assert slugify("2026-06-27T16:00:00Z") == "2026-06-27_1600"
+
+
+def test_change_tracking_only_marks_observed_moves():
+    t0, t1, t2 = "2026-06-01T00:00:00Z", "2026-06-02T00:00:00Z", "2026-06-03T00:00:00Z"
+    cur = {"1": _game("1", [("$100", 5)])}
+    update_change_tracking(cur, {}, t0)
+    assert cur["1"].first_seen == t0 and cur["1"].last_changed is None
+    assert last_move_label(cur["1"], t0) == "just added"
+
+    prev = cur
+    cur = {"1": _game("1", [("$100", 5)])}
+    update_change_tracking(cur, prev, t1)
+    assert cur["1"].first_seen == t0 and cur["1"].last_changed is None
+    assert last_move_label(cur["1"], t1) == "static 1d"
+
+    prev = cur
+    cur = {"1": _game("1", [("$100", 4)])}
+    update_change_tracking(cur, prev, t2)
+    assert cur["1"].last_changed == t2
+    assert last_move_label(cur["1"], t2) == "moved today"
 
 
 def test_scrape_log_appends(tmp_path):

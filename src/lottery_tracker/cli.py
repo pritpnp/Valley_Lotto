@@ -18,7 +18,7 @@ from pathlib import Path
 
 from . import fetch, parse
 from .config import Config
-from .model import estimate_top_prize_totals, merge_games
+from .model import estimate_top_prize_totals, merge_games, update_change_tracking
 from .notify import render_html, render_report, send_email, write_outputs
 from .rules import Severity, evaluate
 from .state import (
@@ -119,6 +119,9 @@ def run(argv: list[str] | None = None) -> int:
 
     # Fall back to the highest-ever-seen estimate for any game without a true count.
     estimate_top_prize_totals(current, previous)
+
+    # Track when each game's data last actually moved (for the "last move" display).
+    update_change_tracking(current, previous, captured_at)
 
     # First-ever run: nothing to diff against, so seed the baseline silently
     # instead of alerting on every historically-ended game.
