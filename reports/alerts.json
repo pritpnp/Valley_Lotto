@@ -1,1 +1,16 @@
-[]
+[
+  {
+    "kind": "ended",
+    "game_number": "1556",
+    "name": "$500,000 Crossword Mania",
+    "severity": "info",
+    "message": "A game ENDED sales: #1556 $500,000 Crossword Mania.",
+    "owned": false,
+    "details": {
+      "on_sale_date": null,
+      "sales_end_date": null,
+      "claim_deadline": null,
+      "price": 10.0
+    }
+  }
+]

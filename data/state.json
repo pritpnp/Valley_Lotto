@@ -1,5 +1,5 @@
 {
-  "captured_at": "2026-06-27T00:33:31Z",
+  "captured_at": "2026-06-27T03:25:45Z",
   "games": {
     "1000": {
       "claim_deadline": null,
@@ -11664,7 +11664,7 @@
       "source_pages": [
         "remaining"
       ],
-      "status": "active",
+      "status": "ended",
       "top_prize_value": "$500,000",
       "top_prizes_remaining": 0,
       "top_prizes_total": 0,
