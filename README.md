@@ -20,14 +20,25 @@ It reads these official pages:
 | [`SalesEnded`](https://www.palottery.pa.gov/Scratch-Offs/Print-Scratch-Offs.aspx?gametype=SalesEnded) | games whose sales have stopped |
 | `View-Scratch-Off` (per game) | the **original** top-prize count ("offers N Top Prizes of $X") + overall odds, fetched once and cached |
 
-### How "prizes too low" is decided
+### How a game's quality is judged
 
-PA publishes how many top prizes are *left* daily, but not how many a game
-*started* with — so the tracker reads each game's detail page once to learn the
-original count, caches it (originals never change), and computes a true
-**% of top prizes remaining = wins left ÷ original**. When a game drops below your
-threshold (default **40%**) it's flagged **🟠 SWAP**. Until a game's original is
-known it falls back to an estimate (highest count seen so far), shown with a `~`.
+Two separate things, because they answer different questions:
+
+- **Win odds (1:X)** — *will a customer win anything / at least break even?* PA
+  publishes the overall odds of winning **any** prize (e.g. `1:3.82`). Lower is
+  better, and because the small common prizes dominate it, the number stays about
+  the same for a game's whole life. This is the primary "worth playing?" signal;
+  games worse than your cutoff (default **1:4.5**) are flagged **🔻 WEAK ODDS**.
+- **Big-prize depletion** — *is the value drained?* The tracker reads each game's
+  detail page once for the original top-prize count, then computes
+  **% of top prizes left = wins left ÷ original**. Below your threshold (default
+  **40%**) it's flagged **🟠 SWAP** — the marquee prizes are gone even if the odds
+  are fine. (Until the original is known it estimates from the highest count seen,
+  shown with a `~`.)
+
+> PA only publishes the **top six** prizes and the overall odds — not the per-tier
+> counts for the small break-even prizes. So the % is for the top prizes; the win
+> odds is what covers the small ones. That's the most the public PA data supports.
 
 ---
 

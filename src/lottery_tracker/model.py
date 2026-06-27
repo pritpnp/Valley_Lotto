@@ -52,6 +52,21 @@ class Game:
             return self.top_prizes_remaining / self.top_prizes_total
         return None
 
+    @property
+    def odds_value(self) -> Optional[float]:
+        """Overall odds as a number (the X in '1:X'); lower = better chance to win.
+
+        This is the published chance that a ticket wins ANY prize — effectively the
+        chance a player at least breaks even, and it stays ~constant over a game's
+        life (the small, common prizes dominate it and deplete in step with sales).
+        """
+        if not self.odds:
+            return None
+        try:
+            return float(self.odds.split(":")[-1])
+        except (ValueError, IndexError):
+            return None
+
     def to_dict(self) -> dict:
         return asdict(self)
 

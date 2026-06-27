@@ -29,15 +29,17 @@ class Severity(str, Enum):
 
 @dataclass
 class Thresholds:
-    top_prize_pct: float | None = 0.25      # flag when top prizes remaining < this fraction of the estimated original
-    top_prize_count_floor: int | None = 1   # OR flag when top prizes remaining <= this absolute count
+    top_prize_pct: float | None = 0.40      # SWAP when top prizes remaining < this fraction of the original
+    top_prize_count_floor: int | None = 1   # OR when top prizes remaining <= this absolute count (and depleting)
+    weak_odds: float | None = 4.5           # mark games whose overall odds are worse than 1:this
 
     @classmethod
     def from_config(cls, cfg: dict | None) -> "Thresholds":
         cfg = cfg or {}
         return cls(
-            top_prize_pct=cfg.get("top_prize_pct", 0.25),
+            top_prize_pct=cfg.get("top_prize_pct", 0.40),
             top_prize_count_floor=cfg.get("top_prize_count_floor", 1),
+            weak_odds=cfg.get("weak_odds", 4.5),
         )
 
 
