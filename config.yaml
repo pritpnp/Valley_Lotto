@@ -70,6 +70,14 @@ thresholds:
 # request each, cached). Ended-game alerts always cover every game.
 report_all_games: true
 
+# Catalog scout: also pull the full prize structure for EVERY active PA game (not
+# just your inventory) so the dashboard can rank the best games to BRING IN. The
+# first fill fetches a lot (cached forever after), spread over a few runs.
+scout_catalog: true
+bring_in_min_left: 0.6     # only suggest games with at least this share of prizes left (fresh)
+bring_in_per_price: 4      # how many suggestions to show per price point
+max_new_fetches: 250       # cap on new detail/bulletin fetches per run
+
 # Storage: we scrape twice a day. EVERY scrape is recorded (timestamp + content
 # hash) in data/scrape_log.jsonl — an append-only archive that is never deleted.
 # A full parsed snapshot (data/snapshots/) + the raw HTML (data/raw/) are stored

@@ -300,7 +300,14 @@ def parse_bulletin(html: str) -> dict:
                 key = str(val)
                 originals[key] = originals.get(key, 0) + int(cnt)
         break
-    return {"tickets_printed": tickets, "payout_pct": payout, "prize_originals": originals}
+    # Overall odds of winning ANY prize = tickets / total winners — a reliable
+    # fallback when the detail page's prose odds can't be parsed.
+    odds_computed = None
+    total_winners = sum(originals.values())
+    if tickets and total_winners:
+        odds_computed = f"1:{tickets / total_winners:.2f}"
+    return {"tickets_printed": tickets, "payout_pct": payout,
+            "prize_originals": originals, "odds_computed": odds_computed}
 
 
 def parse_remaining(html: str) -> list[Game]:

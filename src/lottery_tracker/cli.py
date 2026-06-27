@@ -44,14 +44,18 @@ def _load_html(offline: bool) -> tuple[str, str, str]:
     return fetch.fetch_active(), fetch.fetch_remaining(), fetch.fetch_sales_ended()
 
 
-def _enrich_with_originals(current, inventory, originals, *, offline, save_html):
-    """Populate true original top-prize counts (and odds) for inventory games.
+def _enrich_with_originals(current, targets, originals, *, offline, save_html,
+                           max_new_fetches=10_000):
+    """Populate true original prize counts + odds for each target game.
 
-    Fetches each carried game's detail page once, parses "offers N Top Prizes…",
-    and caches it in ``originals`` keyed by game number. Already-cached games and
-    games without a detail link are skipped. Detail fetch failures are non-fatal —
-    the game just falls back to the estimated total.
+    Fetches each game's detail page (odds + bulletin link) and its PA Bulletin
+    (full prize structure) once, then caches it forever in ``originals`` keyed by
+    game number. ``max_new_fetches`` caps how many *new* games we fetch this run so
+    a large first-time catalog fill spreads over a few runs instead of one burst.
+    Failures are non-fatal — the game just falls back to estimates.
     """
+    import time
+
     def _get(url, sample_name):
         if offline:
             p = SAMPLES_DIR / sample_name
@@ -62,15 +66,15 @@ def _enrich_with_originals(current, inventory, originals, *, offline, save_html)
             (SAMPLES_DIR / sample_name).write_text(html)
         return html
 
-    for num in sorted(inventory):
+    new_fetches = 0
+    for num in sorted(targets):
         g = current.get(num)
         if g is None:
             continue
         cached = originals.get(num)
-        # We need the detail page (odds + bulletin link) and the Bulletin (full
-        # prize structure). Fetch whichever piece we don't have cached yet.
         need_bulletin = not (cached or {}).get("prize_originals")
-        if (cached is None or need_bulletin) and g.detail_id:
+        if (cached is None or need_bulletin) and g.detail_id and new_fetches < max_new_fetches:
+            new_fetches += 1
             try:
                 dhtml = _get(fetch.DETAIL_URL.format(id=g.detail_id), f"detail_{g.detail_id}.html")
                 if dhtml is not None:
@@ -82,6 +86,8 @@ def _enrich_with_originals(current, inventory, originals, *, offline, save_html)
                         if bhtml is not None:
                             cached.update(parse.parse_bulletin(bhtml))
                     originals[num] = cached
+                if not offline:
+                    time.sleep(0.2)  # be polite to PA's servers
             except Exception as e:  # noqa: BLE001
                 print(f"WARNING: detail/bulletin fetch failed for #{num}: {e}", file=sys.stderr)
         # Apply whatever we have to the game.
@@ -93,8 +99,10 @@ def _enrich_with_originals(current, inventory, originals, *, offline, save_html)
             if cached.get("top_prizes_original") is not None:
                 g.top_prizes_total = cached["top_prizes_original"]
                 g.total_is_estimate = False
-            if cached.get("odds"):
-                g.odds = cached["odds"]
+            g.odds = cached.get("odds") or cached.get("odds_computed") or g.odds
+    if new_fetches >= max_new_fetches:
+        print(f"Reached max_new_fetches ({max_new_fetches}); remaining games fill next run.",
+              file=sys.stderr)
 
 
 def run(argv: list[str] | None = None) -> int:
@@ -129,8 +137,12 @@ def run(argv: list[str] | None = None) -> int:
     # True original prize counts come from each game's detail page. Fetch them
     # once for the games we carry and cache forever (originals never change).
     originals = load_originals(DATA_DIR / "originals.json")
-    _enrich_with_originals(current, cfg.inventory, originals, offline=args.offline,
-                           save_html=args.save_html)
+    # Inventory always; with scout_catalog, every active game too (cached forever).
+    targets = set(cfg.inventory)
+    if cfg.scout_catalog:
+        targets |= {n for n, g in current.items() if g.status == "active"}
+    _enrich_with_originals(current, targets, originals, offline=args.offline,
+                           save_html=args.save_html, max_new_fetches=cfg.max_new_fetches)
     save_originals(DATA_DIR / "originals.json", originals)
 
     # Fall back to the highest-ever-seen estimate for any game without a true count.
@@ -159,6 +171,7 @@ def run(argv: list[str] | None = None) -> int:
         alerts, current,
         inventory=cfg.inventory, thresholds=cfg.thresholds, captured_at=captured_at,
         baseline=baseline, previous=previous,
+        bring_in_min_left=cfg.bring_in_min_left, bring_in_per_price=cfg.bring_in_per_price,
     )
     paths = write_outputs(report_md, alerts, reports_dir=REPORTS_DIR, captured_at=captured_at)
 
@@ -167,6 +180,7 @@ def run(argv: list[str] | None = None) -> int:
     (DOCS_DIR / "index.html").write_text(render_html(
         alerts, current, inventory=cfg.inventory, thresholds=cfg.thresholds,
         captured_at=captured_at, baseline=baseline, previous=previous,
+        bring_in_min_left=cfg.bring_in_min_left, bring_in_per_price=cfg.bring_in_per_price,
     ))
 
     # Persist the new snapshot only AFTER a successful evaluate, so a crashed run

@@ -50,3 +50,24 @@ def test_metrics_none_without_originals():
     g = Game(game_number="x", prize_tiers=[{"value": "$5", "remaining": 3}])
     assert g.jackpot_density is None and g.sell_through_pct is None
     assert g.weighted_low_health is None
+
+
+def _bulletin_game(num, price, odds, frac):
+    # A game where every tier has `frac` of its prizes left.
+    tiers = [{"value": "$1000", "remaining": int(10 * frac)},
+             {"value": "$20", "remaining": int(100000 * frac)}]
+    return Game(game_number=num, price=price, status="active", odds=odds,
+                prize_tiers=tiers, tier_originals={"1000.0": 10, "20.0": 100000})
+
+
+def test_bring_in_candidates_ranks_fresh_by_odds():
+    from lottery_tracker.notify import bring_in_candidates
+    games = {
+        "10": _bulletin_game("10", 5, "1:3.2", 0.9),   # fresh, great odds
+        "11": _bulletin_game("11", 5, "1:4.8", 0.9),   # fresh, worse odds
+        "12": _bulletin_game("12", 5, "1:3.0", 0.2),   # great odds but picked over -> excluded
+        "99": _bulletin_game("99", 5, "1:3.1", 0.95),  # but this one is in inventory -> excluded
+    }
+    out = bring_in_candidates(games, inventory={"99"}, min_left=0.6, per_price=4)
+    ranked = [g.game_number for g in out[5]]
+    assert ranked == ["10", "11"]   # 12 too depleted, 99 owned

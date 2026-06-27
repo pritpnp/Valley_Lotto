@@ -20,6 +20,14 @@ class Config:
         self.report_all_games: bool = bool(self.raw.get("report_all_games", False))
         # How many days of scraped + parsed snapshots to keep (twice-daily scrapes).
         self.retention_days: int = int(self.raw.get("retention_days", 30))
+        # Catalog scout: pull the full prize structure for EVERY active PA game
+        # (not just inventory) so we can rank the best games to bring in.
+        self.scout_catalog: bool = bool(self.raw.get("scout_catalog", True))
+        self.bring_in_min_left: float = float(self.raw.get("bring_in_min_left", 0.6))
+        self.bring_in_per_price: int = int(self.raw.get("bring_in_per_price", 4))
+        # Cap how many NEW games we fetch detail+bulletin for per run, so the first
+        # catalog fill is spread across a few runs instead of one huge burst.
+        self.max_new_fetches: int = int(self.raw.get("max_new_fetches", 250))
 
     @classmethod
     def load(cls, path: str | Path) -> "Config":
