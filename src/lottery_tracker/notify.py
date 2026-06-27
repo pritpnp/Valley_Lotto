@@ -81,6 +81,16 @@ def render_report(
         lines.append("Nothing ended and nothing crossed your low-prize threshold since the last run.")
         lines.append("")
 
+    fresh = new_games(games, captured_at)
+    if fresh:
+        lines.append(f"## 🆕 New games just on sale ({len(fresh)})")
+        lines.append("")
+        for g in fresh:
+            price = f"${g.price:g}" if g.price is not None else "—"
+            odds = f"1:{g.odds_value:g}" if g.odds_value is not None else "—"
+            lines.append(f"- **#{g.game_number} {g.name}** ({price}, odds {odds}, on sale {g.on_sale_date or '—'})")
+        lines.append("")
+
     # Health table for the games you carry — sorted by overall odds (best first),
     # because the odds are the real "will a customer win anything / break even?"
     # number and they barely move over a game's life.
@@ -239,6 +249,27 @@ def bring_in_candidates(games: dict[str, Game], inventory: set[str], *,
     return out
 
 
+def new_games(games: dict[str, Game], now_iso: str, within_days: int = 10) -> list[Game]:
+    """Active games that newly appeared on the ActivePrint list (launched after we
+    started tracking, within the last ``within_days``)."""
+    firsts = [g.first_seen for g in games.values() if g.first_seen]
+    if not firsts:
+        return []
+    baseline_date = min(firsts)  # the initial cohort all shares this; not "new"
+    out = []
+    for g in games.values():
+        if g.status != "active" or not g.first_seen or g.first_seen == baseline_date:
+            continue
+        try:
+            d = _days_between(g.first_seen, now_iso)
+        except Exception:  # noqa: BLE001
+            continue
+        if 0 <= d <= within_days:
+            out.append(g)
+    out.sort(key=lambda g: (-(g.price or 0), g.odds_value or 99))
+    return out
+
+
 def _bar_color(pct: float | None, ended: bool) -> str:
     if ended:
         return "var(--red)"
@@ -368,6 +399,23 @@ def render_html(
     elif baseline:
         alert_html = '<div class="alert">🏁 Baseline established — tracking started, no alerts yet.</div>'
 
+    fresh = new_games(games, captured_at)
+    if fresh:
+        nrows = "".join(
+            f"<tr><td>{e(g.name)}</td><td class='muted'>{e(g.game_number)}</td>"
+            f"<td class='r'>{'$%g' % g.price if g.price is not None else '—'}</td>"
+            f"<td class='odds'>{('1:%g' % g.odds_value) if g.odds_value is not None else '—'}</td>"
+            f"<td class='muted'>{e(g.on_sale_date or '—')}</td></tr>" for g in fresh)
+        new_html = (
+            f"<h2>🆕 New games just on sale ({len(fresh)})</h2>"
+            "<p class='sub'>Newly appeared on PA's active list since we started tracking — candidates to stock.</p>"
+            "<table><thead><tr><th>Game</th><th>#</th><th class='r'>Price</th>"
+            "<th>Win odds</th><th>On sale</th></tr></thead>"
+            f"<tbody>{nrows}</tbody></table>"
+        )
+    else:
+        new_html = ""
+
     tier_html = "".join(_tier_details_html(g, prev.get(g.game_number), e) for g in owned)
 
     # "Best games to bring in" board — fresh games you don't carry, ranked per price.
@@ -411,6 +459,7 @@ def render_html(
 <div class="card red"><div class="n">{n_ended}</div><div class="l">⛔ ended</div></div>
 </div>
 {alert_html}
+{new_html}
 <h2>Your games — sorted by win odds (your low-prize signal)</h2>
 <table><thead><tr><th>Game</th><th>#</th><th class="r">Price</th><th>Started</th>
 <th>Win odds</th><th class="r">Prizes left (est.)</th><th class="r">Lower prizes left</th><th class="r" title="top-prize % ÷ sell-through; >1 = jackpots still dense, <1 = picked over">Jackpot density</th><th>Last move</th><th>Action</th></tr></thead>

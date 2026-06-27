@@ -64,6 +64,17 @@ def test_change_tracking_only_marks_observed_moves():
     assert last_move_label(cur["1"], t2) == "moved today"
 
 
+def test_new_games_excludes_baseline_cohort():
+    from lottery_tracker.notify import new_games
+    games = {
+        "1": Game(game_number="1", status="active", first_seen="2026-06-01T00:00:00Z"),
+        "2": Game(game_number="2", status="active", first_seen="2026-06-01T00:00:00Z"),
+        "3": Game(game_number="3", status="active", first_seen="2026-06-08T00:00:00Z"),
+    }
+    out = new_games(games, "2026-06-09T00:00:00Z", within_days=10)
+    assert [g.game_number for g in out] == ["3"]  # baseline cohort (1,2) excluded
+
+
 def test_scrape_log_appends(tmp_path):
     p = tmp_path / "scrape_log.jsonl"
     append_scrape_log(p, {"slug": "a", "changed": True})

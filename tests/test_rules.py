@@ -28,6 +28,15 @@ def test_recommendation_keep_when_healthy():
     assert recommendation(g, Thresholds())[0] == "keep"
 
 
+def test_new_game_alert_when_it_appears():
+    prev = {"1": _g("1", status="active")}
+    cur = {"1": _g("1", status="active"),
+           "2": _g("2", name="Fresh Game", status="active", price=5, odds="1:3.3")}
+    alerts = evaluate(cur, prev, inventory=set(), thresholds=Thresholds())
+    new = [a for a in alerts if a.kind == "new"]
+    assert len(new) == 1 and new[0].game_number == "2"
+
+
 def mk(num, **kw):
     return Game(game_number=num, **kw)
 

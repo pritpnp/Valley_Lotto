@@ -217,6 +217,28 @@ def evaluate(
             )
         )
 
+    # --- 4. Brand-new games that just appeared on the ActivePrint list ------
+    for num, g in current.items():
+        if g.status != "active" or num in previous:
+            continue  # only games we've never seen before
+        bits = []
+        if g.price is not None:
+            bits.append(f"${g.price:g}")
+        if g.odds_value is not None:
+            bits.append(f"odds 1:{g.odds_value:g}")
+        extra = f" ({', '.join(bits)})" if bits else ""
+        alerts.append(
+            Alert(
+                kind="new",
+                game_number=num,
+                name=g.name,
+                severity=Severity.INFO,
+                owned=False,
+                message=f"🆕 New game now on sale: #{num} {g.name}{extra} — consider stocking it.",
+                details={"price": g.price, "odds": g.odds, "on_sale_date": g.on_sale_date},
+            )
+        )
+
     # Sort: owned first, then by severity (critical -> info).
     sev_order = {Severity.CRITICAL: 0, Severity.WARN: 1, Severity.INFO: 2}
     alerts.sort(key=lambda a: (not a.owned, sev_order[a.severity], a.game_number))
