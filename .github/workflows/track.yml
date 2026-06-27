@@ -51,7 +51,7 @@ jobs:
         run: |
           git config user.name "valley-lotto-bot"
           git config user.email "actions@github.com"
-          git add data reports
+          git add data reports docs
           if git diff --cached --quiet; then
             echo "No changes to commit."
           else

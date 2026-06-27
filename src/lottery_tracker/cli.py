@@ -19,7 +19,7 @@ from pathlib import Path
 from . import fetch, parse
 from .config import Config
 from .model import estimate_top_prize_totals, merge_games
-from .notify import render_report, send_email, write_outputs
+from .notify import render_html, render_report, send_email, write_outputs
 from .rules import Severity, evaluate
 from .state import load_originals, load_state, save_history, save_originals, save_state
 
@@ -27,6 +27,7 @@ ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_CONFIG = ROOT / "config.yaml"
 DATA_DIR = ROOT / "data"
 REPORTS_DIR = ROOT / "reports"
+DOCS_DIR = ROOT / "docs"
 SAMPLES_DIR = ROOT / "samples"
 
 
@@ -138,6 +139,13 @@ def run(argv: list[str] | None = None) -> int:
         baseline=baseline,
     )
     paths = write_outputs(report_md, alerts, reports_dir=REPORTS_DIR, captured_at=captured_at)
+
+    # GitHub Pages dashboard.
+    DOCS_DIR.mkdir(parents=True, exist_ok=True)
+    (DOCS_DIR / "index.html").write_text(render_html(
+        alerts, current, inventory=cfg.inventory, thresholds=cfg.thresholds,
+        captured_at=captured_at, baseline=baseline,
+    ))
 
     # Persist the new snapshot only AFTER a successful evaluate, so a crashed run
     # doesn't swallow a transition we never reported.

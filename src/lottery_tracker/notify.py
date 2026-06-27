@@ -9,6 +9,7 @@ Channels, in order of how much setup they need:
 
 from __future__ import annotations
 
+import html as _html
 import json
 import os
 import smtplib
@@ -115,6 +116,140 @@ def render_report(
         lines.append("")
 
     return "\n".join(lines)
+
+
+# --------------------------------------------------------------------------- #
+# HTML dashboard (GitHub Pages)
+# --------------------------------------------------------------------------- #
+_PAGE_CSS = """
+:root{--bg:#0f1420;--card:#171e2e;--line:#26304a;--txt:#e8edf7;--muted:#93a0bd;
+--green:#2ecc71;--orange:#f39c12;--red:#e74c3c;--blue:#4aa3ff}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--txt);
+font:15px/1.5 -apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+.wrap{max-width:980px;margin:0 auto;padding:20px 16px 60px}
+h1{font-size:24px;margin:0 0 2px}.sub{color:var(--muted);margin:0 0 18px;font-size:13px}
+.cards{display:flex;gap:10px;flex-wrap:wrap;margin:0 0 20px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;
+padding:12px 16px;min-width:120px;flex:1}
+.card .n{font-size:26px;font-weight:700}.card .l{color:var(--muted);font-size:12px}
+.card.red .n{color:var(--red)}.card.orange .n{color:var(--orange)}.card.green .n{color:var(--green)}
+table{width:100%;border-collapse:collapse;background:var(--card);border-radius:12px;overflow:hidden}
+th,td{padding:9px 10px;text-align:left;border-bottom:1px solid var(--line);font-size:13.5px}
+th{color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.03em}
+tr:last-child td{border-bottom:none}td.r,th.r{text-align:right}
+.badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;font-weight:600;white-space:nowrap}
+.b-ok{background:rgba(46,204,113,.15);color:var(--green)}
+.b-swap{background:rgba(243,156,18,.18);color:var(--orange)}
+.b-odds{background:rgba(231,76,60,.16);color:#ff8a7a}
+.b-ended{background:rgba(231,76,60,.2);color:var(--red)}
+.odds{font-variant-numeric:tabular-nums;font-weight:600}
+.pct-bar{height:6px;background:var(--line);border-radius:3px;overflow:hidden;margin-top:3px}
+.pct-fill{height:100%}.muted{color:var(--muted)}
+h2{font-size:16px;margin:26px 0 10px}a{color:var(--blue)}
+.alert{background:var(--card);border-left:3px solid var(--orange);border-radius:8px;
+padding:10px 14px;margin:6px 0;font-size:14px}
+.alert.crit{border-left-color:var(--red)}
+footer{color:var(--muted);font-size:12px;margin-top:28px}
+"""
+
+
+def _bar_color(pct: float | None, ended: bool) -> str:
+    if ended:
+        return "var(--red)"
+    if pct is None:
+        return "var(--muted)"
+    if pct < 0.40:
+        return "var(--orange)"
+    return "var(--green)"
+
+
+def render_html(
+    alerts: list[Alert],
+    games: dict[str, Game],
+    *,
+    inventory: set[str],
+    thresholds: Thresholds,
+    captured_at: str,
+    baseline: bool = False,
+) -> str:
+    """A self-contained dashboard page for GitHub Pages (no external assets)."""
+    e = _html.escape
+    owned = [games[n] for n in sorted(inventory) if n in games]
+    owned.sort(key=lambda g: (g.odds_value is None, g.odds_value or 99))
+
+    n_swap = sum(1 for g in owned if g.status != "ended" and _is_low(g, thresholds)[0])
+    n_weak = sum(1 for g in owned if thresholds.weak_odds is not None
+                 and g.odds_value is not None and g.odds_value > thresholds.weak_odds)
+    n_ended = sum(1 for g in owned if g.status == "ended")
+
+    rows = []
+    for g in owned:
+        pct = g.top_prize_pct_remaining
+        low = _is_low(g, thresholds)[0]
+        badges = []
+        if g.status == "ended":
+            badges.append(f'<span class="badge b-ended">🔴 ENDED'
+                          f'{" " + e(g.sales_end_date) if g.sales_end_date else ""}</span>')
+        if low:
+            badges.append('<span class="badge b-swap">🟠 SWAP</span>')
+        if (thresholds.weak_odds is not None and g.odds_value is not None
+                and g.odds_value > thresholds.weak_odds):
+            badges.append('<span class="badge b-odds">🔻 WEAK ODDS</span>')
+        if not badges:
+            badges.append('<span class="badge b-ok">✅</span>')
+
+        pct_txt = "—"
+        bar = ""
+        if pct is not None:
+            pct_txt = f'{"~" if g.total_is_estimate else ""}{pct:.0%}'
+            w = max(3, min(100, round(pct * 100)))
+            bar = (f'<div class="pct-bar"><div class="pct-fill" '
+                   f'style="width:{w}%;background:{_bar_color(pct, g.status=="ended")}"></div></div>')
+        odds = f"1:{g.odds_value:g}" if g.odds_value is not None else "—"
+        price = "—" if g.price is None else f"${g.price:g}"
+        left = "—" if g.top_prizes_remaining is None else str(g.top_prizes_remaining)
+        total = "" if g.top_prizes_total is None else f"/{g.top_prizes_total}"
+        rows.append(
+            f"<tr><td>{e(g.name)}</td><td class='muted'>{e(g.game_number)}</td>"
+            f"<td class='r'>{price}</td><td class='muted'>{e(g.on_sale_date or '—')}</td>"
+            f"<td class='odds'>{odds}</td><td class='r'>{e(g.top_prize_value or '—')}</td>"
+            f"<td class='r'>{left}{total} <span class='muted'>({pct_txt})</span>{bar}</td>"
+            f"<td>{' '.join(badges)}</td></tr>"
+        )
+
+    alert_html = ""
+    if alerts:
+        items = "".join(
+            f'<div class="alert{" crit" if a.severity == Severity.CRITICAL else ""}">'
+            f'{_SEV_EMOJI[a.severity]} {e(a.message)}</div>' for a in alerts)
+        alert_html = f"<h2>New alerts</h2>{items}"
+    elif baseline:
+        alert_html = '<div class="alert">🏁 Baseline established — tracking started, no alerts yet.</div>'
+
+    return f"""<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="refresh" content="600">
+<title>Valley Lotto — PA Scratch-Off Tracker</title><style>{_PAGE_CSS}</style></head>
+<body><div class="wrap">
+<h1>🎟️ Valley Lotto</h1>
+<p class="sub">PA scratch-off tracker · updated {e(captured_at)} · auto-refreshes</p>
+<div class="cards">
+<div class="card"><div class="n">{len(owned)}</div><div class="l">games tracked</div></div>
+<div class="card orange"><div class="n">{n_swap}</div><div class="l">🟠 swap (under 40%)</div></div>
+<div class="card red"><div class="n">{n_weak}</div><div class="l">🔻 weak odds</div></div>
+<div class="card red"><div class="n">{n_ended}</div><div class="l">🔴 ended</div></div>
+</div>
+{alert_html}
+<h2>Your games — best odds first</h2>
+<table><thead><tr><th>Game</th><th>#</th><th class="r">Price</th><th>Started</th>
+<th>Win odds</th><th class="r">Top prize</th><th class="r">Top prizes left</th><th>Status</th></tr></thead>
+<tbody>{''.join(rows)}</tbody></table>
+<p class="sub" style="margin-top:12px"><b>Win odds (1:X)</b> = chance a ticket wins anything (lower=better, ~constant all game).
+<b>🟠 SWAP</b> = top prizes under 40%. <b>🔻 WEAK ODDS</b> = worse than 1:{thresholds.weak_odds:g}.
+<b>🔴 ENDED</b> = sales stopped.</p>
+<footer>Generated by <a href="https://github.com/pritpnp/Valley_Lotto">Valley_Lotto</a> ·
+data from palottery.pa.gov · for retailer use.</footer>
+</div></body></html>"""
 
 
 def write_outputs(
