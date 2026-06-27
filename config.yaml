@@ -69,3 +69,8 @@ thresholds:
 # counts are only fetched for the games in `inventory` above (one detail-page
 # request each, cached). Ended-game alerts always cover every game.
 report_all_games: true
+
+# How many days of scraped (raw HTML) + parsed (JSON) snapshots to keep in the
+# repo. We scrape twice a day, so this keeps the newest retention_days * 2 files
+# under data/snapshots and data/raw, pruning anything older.
+retention_days: 30

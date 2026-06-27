@@ -31,6 +31,7 @@ def render_report(
     thresholds: Thresholds,
     captured_at: str,
     baseline: bool = False,
+    previous: dict[str, Game] | None = None,
 ) -> str:
     """Human-readable Markdown: today's alerts + a health table for your games."""
     lines: list[str] = []
@@ -113,6 +114,31 @@ def render_report(
         )
         lines.append("")
 
+        # Per-game prize-tier breakdown (every published price), with the change
+        # since the last scrape and bottom-to-top weights (cheapest prize heaviest).
+        prev = previous or {}
+        lines.append("## Prize tiers per game (cheapest weighted heaviest)")
+        lines.append("")
+        for g in owned_games:
+            rows = g.tier_table(prev_tiers=(prev.get(g.game_number).prize_tiers
+                                            if prev.get(g.game_number) else None))
+            if not rows:
+                continue
+            lines.append(f"**#{g.game_number} {g.name}** — {g.status}")
+            lines.append("")
+            lines.append("| Prize | Wins left | Δ since last | Weight |")
+            lines.append("|-------|----------:|:------------:|:------:|")
+            for r in rows:
+                rem = "—" if r["remaining"] is None else f"{r['remaining']:,}"
+                if r["delta"] is None:
+                    d = "—"
+                elif r["delta"] == 0:
+                    d = "0"
+                else:
+                    d = f"{'▼' if r['delta'] < 0 else '▲'}{abs(r['delta']):,}"
+                lines.append(f"| {r['value']} | {rem} | {d} | ×{r['weight']} |")
+            lines.append("")
+
     missing = sorted(n for n in inventory if n not in games)
     if missing:
         lines.append(
@@ -156,6 +182,11 @@ h2{font-size:16px;margin:26px 0 10px}a{color:var(--blue)}
 padding:10px 14px;margin:6px 0;font-size:14px}
 .alert.crit{border-left-color:var(--red)}
 footer{color:var(--muted);font-size:12px;margin-top:28px}
+details{background:var(--card);border:1px solid var(--line);border-radius:10px;margin:6px 0;padding:6px 12px}
+summary{cursor:pointer;font-size:13.5px;color:var(--txt)}
+table.tiers{margin:8px 0 4px;background:transparent}
+table.tiers th,table.tiers td{padding:5px 8px;font-size:13px}
+.up{color:var(--green)}.dn{color:var(--orange)}
 """
 
 
@@ -169,6 +200,34 @@ def _bar_color(pct: float | None, ended: bool) -> str:
     return "var(--green)"
 
 
+def _tier_details_html(g: Game, prev: Game | None, e) -> str:
+    """An expandable per-game prize-tier table: every price, wins left, change, weight."""
+    rows = g.tier_table(prev_tiers=prev.prize_tiers if prev else None)
+    if not rows:
+        return ""
+    trs = []
+    for r in rows:
+        rem = "—" if r["remaining"] is None else f"{r['remaining']:,}"
+        if r["delta"] is None:
+            d, cls = "—", "muted"
+        elif r["delta"] == 0:
+            d, cls = "0", "muted"
+        elif r["delta"] < 0:
+            d, cls = f"▼{abs(r['delta']):,}", "dn"
+        else:
+            d, cls = f"▲{r['delta']:,}", "up"
+        trs.append(
+            f"<tr><td>{e(r['value'] or '—')}</td><td class='r'>{rem}</td>"
+            f"<td class='r {cls}'>{d}</td><td class='r muted'>×{r['weight']}</td></tr>"
+        )
+    return (
+        f"<details><summary>{e(g.name)} — show all prizes</summary>"
+        f"<table class='tiers'><thead><tr><th>Prize</th><th class='r'>Wins left</th>"
+        f"<th class='r'>Δ last scrape</th><th class='r'>Weight</th></tr></thead>"
+        f"<tbody>{''.join(trs)}</tbody></table></details>"
+    )
+
+
 def render_html(
     alerts: list[Alert],
     games: dict[str, Game],
@@ -177,9 +236,11 @@ def render_html(
     thresholds: Thresholds,
     captured_at: str,
     baseline: bool = False,
+    previous: dict[str, Game] | None = None,
 ) -> str:
     """A self-contained dashboard page for GitHub Pages (no external assets)."""
     e = _html.escape
+    prev = previous or {}
     owned = [games[n] for n in sorted(inventory) if n in games]
     owned.sort(key=lambda g: (g.odds_value is None, g.odds_value or 99))
 
@@ -234,6 +295,8 @@ def render_html(
     elif baseline:
         alert_html = '<div class="alert">🏁 Baseline established — tracking started, no alerts yet.</div>'
 
+    tier_html = "".join(_tier_details_html(g, prev.get(g.game_number), e) for g in owned)
+
     return f"""<!doctype html><html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta http-equiv="refresh" content="600">
@@ -258,8 +321,13 @@ def render_html(
 <b>Prizes left (est.)</b> = how much of the <i>whole</i> game is unsold (estimated from the top prizes — works because prizes are shuffled evenly through the pack, so it tracks the cheap prizes too).
 <b>🟠 SWAP</b> = under 40% left. <b>Lower prizes left</b> = non-jackpot wins still in the pack. <b>🔴 ENDED</b> = sales stopped.<br>
 <i>A separate single-day "low-prize %" can't be computed — on any one day it's mathematically the same as the top-prize %, so we don't fake one.</i></p>
+<h2>All prize tiers — cheapest weighted heaviest</h2>
+<p class="sub">Every published prize per game, the wins still left, and the change since the last scrape
+(▼ = claimed). Weights run heaviest at the bottom (cheapest prize). We scrape twice a day, so this trend
+builds over time.</p>
+{tier_html}
 <footer>Generated by <a href="https://github.com/pritpnp/Valley_Lotto">Valley_Lotto</a> ·
-data from palottery.pa.gov · for retailer use.</footer>
+data from palottery.pa.gov · for retailer use · 30-day history in /data.</footer>
 </div></body></html>"""
 
 

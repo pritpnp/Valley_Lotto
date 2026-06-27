@@ -7,8 +7,17 @@ the "Sales Ended" page (games whose sales have stopped + claim deadlines).
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field, asdict
 from typing import Optional
+
+
+def _money_to_num(s: Optional[str]) -> Optional[float]:
+    """'$5,000' -> 5000.0, tolerant of stray text; None if no number found."""
+    if not s:
+        return None
+    m = re.search(r"[\d,]+(?:\.\d+)?", s)
+    return float(m.group(0).replace(",", "")) if m else None
 
 
 @dataclass
@@ -52,6 +61,33 @@ class Game:
         if self.top_prizes_total and self.top_prizes_total > 0 and self.top_prizes_remaining is not None:
             return self.top_prizes_remaining / self.top_prizes_total
         return None
+
+    def tier_table(self, *, prev_tiers: list | None = None) -> list[dict]:
+        """Return the prize tiers (high→low value) with bottom-to-top weights and
+        the change in wins-remaining since the previous snapshot.
+
+        Each row: {value, value_num, remaining, delta, weight}. Weight increases
+        toward the bottom (cheapest prize = heaviest), per the retailer's rule that
+        the low/break-even prizes matter most.
+        """
+        tiers = self.prize_tiers or []
+        n = len(tiers)
+        prev_by_value = {}
+        for t in (prev_tiers or []):
+            prev_by_value[t.get("value")] = t.get("remaining")
+        rows = []
+        for i, t in enumerate(tiers):
+            rem = t.get("remaining")
+            prev = prev_by_value.get(t.get("value"))
+            delta = (rem - prev) if (rem is not None and prev is not None) else None
+            rows.append({
+                "value": t.get("value"),
+                "value_num": _money_to_num(t.get("value")),
+                "remaining": rem,
+                "delta": delta,
+                "weight": i + 1,  # i=0 is the top (highest) prize → lightest; bottom → heaviest
+            })
+        return rows
 
     @property
     def lower_wins_remaining(self) -> Optional[int]:
@@ -138,9 +174,15 @@ def merge_games(
         _upsert(g)
     for g in ended:
         merged = _upsert(g)
-        merged.status = "ended"  # ended always wins
         if "sales_ended" not in merged.source_pages:
             merged.source_pages.append("sales_ended")
+
+    # RULE #1: the ActivePrint list is the source of truth for "still selling".
+    # If a game isn't on it, it's dead — regardless of the other pages.
+    active_set = {g.game_number for g in (active or [])}
+    if active_set:  # only enforce when we actually have the active list
+        for num, g in by_num.items():
+            g.status = "active" if num in active_set else "ended"
 
     return by_num
 

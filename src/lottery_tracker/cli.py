@@ -21,7 +21,10 @@ from .config import Config
 from .model import estimate_top_prize_totals, merge_games
 from .notify import render_html, render_report, send_email, write_outputs
 from .rules import Severity, evaluate
-from .state import load_originals, load_state, save_history, save_originals, save_state
+from .state import (
+    load_originals, load_state, prune_keep_newest, save_originals,
+    save_raw_html, save_snapshot, save_state, slugify,
+)
 
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_CONFIG = ROOT / "config.yaml"
@@ -136,7 +139,7 @@ def run(argv: list[str] | None = None) -> int:
     report_md = render_report(
         alerts, current,
         inventory=cfg.inventory, thresholds=cfg.thresholds, captured_at=captured_at,
-        baseline=baseline,
+        baseline=baseline, previous=previous,
     )
     paths = write_outputs(report_md, alerts, reports_dir=REPORTS_DIR, captured_at=captured_at)
 
@@ -144,13 +147,24 @@ def run(argv: list[str] | None = None) -> int:
     DOCS_DIR.mkdir(parents=True, exist_ok=True)
     (DOCS_DIR / "index.html").write_text(render_html(
         alerts, current, inventory=cfg.inventory, thresholds=cfg.thresholds,
-        captured_at=captured_at, baseline=baseline,
+        captured_at=captured_at, baseline=baseline, previous=previous,
     ))
 
     # Persist the new snapshot only AFTER a successful evaluate, so a crashed run
     # doesn't swallow a transition we never reported.
     save_state(state_path, current, captured_at=captured_at)
-    save_history(DATA_DIR / "history", current, captured_at=captured_at)
+
+    # Store both the scraped (raw HTML, gzipped) and parsed (JSON) data per scrape,
+    # keeping a rolling retention window so the history can train future logic.
+    slug = slugify(captured_at)
+    keep = max(2, cfg.retention_days * 2)  # twice-daily scrapes
+    save_snapshot(DATA_DIR / "snapshots", slug, current, captured_at=captured_at)
+    if not args.offline:
+        save_raw_html(DATA_DIR / "raw", slug, {
+            "active": active_html, "remaining": remaining_html, "sales_ended": ended_html,
+        })
+    prune_keep_newest(DATA_DIR / "snapshots", keep)
+    prune_keep_newest(DATA_DIR / "raw", keep)
 
     if alerts and not args.no_email:
         crit = sum(1 for a in alerts if a.severity == Severity.CRITICAL)

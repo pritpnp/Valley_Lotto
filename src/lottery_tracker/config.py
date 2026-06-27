@@ -18,6 +18,8 @@ class Config:
         }
         self.thresholds = Thresholds.from_config(self.raw.get("thresholds"))
         self.report_all_games: bool = bool(self.raw.get("report_all_games", False))
+        # How many days of scraped + parsed snapshots to keep (twice-daily scrapes).
+        self.retention_days: int = int(self.raw.get("retention_days", 30))
 
     @classmethod
     def load(cls, path: str | Path) -> "Config":

@@ -9,10 +9,62 @@ rather than the same status every single day.
 
 from __future__ import annotations
 
+import gzip
 import json
+import shutil
 from pathlib import Path
 
 from .model import Game
+
+
+def slugify(captured_at: str) -> str:
+    """'2026-06-27T16:00:00Z' -> '2026-06-27_1600' (sortable, one per scrape)."""
+    date, _, rest = captured_at.partition("T")
+    hhmm = (rest[:5] or "0000").replace(":", "")
+    return f"{date}_{hhmm}"
+
+
+def save_snapshot(snapshots_dir: str | Path, slug: str, games: dict[str, Game],
+                  *, captured_at: str) -> Path:
+    """Write one parsed snapshot per scrape (kept for the retention window)."""
+    d = Path(snapshots_dir)
+    d.mkdir(parents=True, exist_ok=True)
+    out = d / f"{slug}.json"
+    out.write_text(json.dumps(
+        {"captured_at": captured_at, "games": {n: g.to_dict() for n, g in games.items()}},
+        sort_keys=True,
+    ))
+    return out
+
+
+def save_raw_html(raw_dir: str | Path, slug: str, html_by_name: dict[str, str]) -> Path:
+    """Store the scraped HTML (gzipped) so we keep the raw source, not just parses."""
+    d = Path(raw_dir) / slug
+    d.mkdir(parents=True, exist_ok=True)
+    for name, html in html_by_name.items():
+        with gzip.open(d / f"{name}.html.gz", "wt", encoding="utf-8") as fh:
+            fh.write(html)
+    return d
+
+
+def prune_keep_newest(dir_path: str | Path, keep: int) -> list[str]:
+    """Keep only the newest ``keep`` entries (by sortable name); delete the rest.
+
+    Works for both the snapshot files and the raw-HTML subdirectories. Returns the
+    names removed. Filenames are timestamp-prefixed, so lexical sort == time order.
+    """
+    d = Path(dir_path)
+    if not d.exists():
+        return []
+    entries = sorted(p for p in d.iterdir() if p.name not in (".gitkeep",))
+    removed = []
+    for p in entries[:-keep] if keep > 0 else entries:
+        removed.append(p.name)
+        if p.is_dir():
+            shutil.rmtree(p)
+        else:
+            p.unlink()
+    return removed
 
 
 def load_state(path: str | Path) -> dict[str, Game]:

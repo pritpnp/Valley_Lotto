@@ -20,6 +20,22 @@ It reads these official pages:
 | [`SalesEnded`](https://www.palottery.pa.gov/Scratch-Offs/Print-Scratch-Offs.aspx?gametype=SalesEnded) | games whose sales have stopped |
 | `View-Scratch-Off` (per game) | the **original** top-prize count ("offers N Top Prizes of $X") + overall odds, fetched once and cached |
 
+### Rule #1: the ActivePrint list decides alive vs. dead
+
+A game is **alive only if it's on PA's
+[ActivePrint](https://www.palottery.pa.gov/Scratch-Offs/Print-Scratch-Offs.aspx?gametype=ActivePrint)
+list**. If it's not there, it's dead — full stop — regardless of what any other
+page shows. That check runs first.
+
+### Data collected (twice a day, 30-day history)
+
+The tracker scrapes **twice daily** (~12am & 12pm Eastern) and commits both the
+**raw HTML** (`data/raw/`, gzipped) and the **parsed snapshot** (`data/snapshots/`)
+each run, keeping the newest ~30 days (`retention_days` in config). Every report
+shows **all published prize tiers** per game with the **change since the last
+scrape** and bottom-to-top weights (cheapest prize heaviest), so the trend builds
+up over time and can train better swap logic later.
+
 ### How a game's quality is judged
 
 - **Win odds (1:X) — the number that matters.** PA's published overall odds of

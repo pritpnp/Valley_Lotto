@@ -63,15 +63,20 @@ def test_owned_game_vanishing_flags_removed():
     assert len(alerts) == 1 and alerts[0].kind == "removed"
 
 
-def test_merge_precedence_ended_wins():
-    remaining = [mk("5432", name="Big Money", status="active", top_prizes_remaining=5)]
-    active = [mk("5432", name="Big Money", status="active")]
-    ended = [mk("5432", name="Big Money", status="ended", sales_end_date="06/15/2026")]
+def test_activeprint_is_authority_for_status():
+    # RULE #1: on the ActivePrint list => active; absent => dead, no matter what
+    # the other pages say.
+    remaining = [
+        mk("5432", name="Big Money", status="active", top_prizes_remaining=5),
+        mk("5310", name="Lucky 7s", status="active", top_prizes_remaining=2),
+    ]
+    active = [mk("5432", name="Big Money", status="active")]   # only 5432 is still selling
+    ended = [mk("5310", name="Lucky 7s", status="ended", sales_end_date="06/15/2026")]
     merged = merge_games(remaining, ended, active)
-    g = merged["5432"]
-    assert g.status == "ended"            # ended wins
-    assert g.top_prizes_remaining == 5    # prize counts retained
-    assert g.sales_end_date == "06/15/2026"
+    assert merged["5432"].status == "active"   # on ActivePrint -> alive
+    assert merged["5432"].top_prizes_remaining == 5
+    assert merged["5310"].status == "ended"    # NOT on ActivePrint -> dead
+    assert merged["5310"].sales_end_date == "06/15/2026"
 
 
 def test_estimate_uses_highest_count_ever_seen():

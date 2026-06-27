@@ -4,7 +4,9 @@ name: Track scratch-offs
 # GitHub Issue when there's a new alert (a game you carry ended, or prizes got low).
 on:
   schedule:
-    - cron: "0 13 * * *"   # daily at 13:00 UTC (~8-9am Eastern). Adjust as you like.
+    # Twice a day — ~12am and ~12pm Eastern (04:00 & 16:00 UTC during EDT).
+    # GitHub cron is UTC only, so this drifts ~1h when the US changes clocks.
+    - cron: "0 4,16 * * *"
   workflow_dispatch: {}     # lets you run it on demand from the Actions tab.
 
 permissions:
