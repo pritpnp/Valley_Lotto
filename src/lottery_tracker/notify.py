@@ -66,15 +66,18 @@ def render_report(
     owned_games = [games[n] for n in sorted(inventory) if n in games]
     owned_games.sort(key=lambda g: (g.odds_value is None, g.odds_value or 99))
     if owned_games:
-        lines.append("## Your games — sorted best odds first")
+        lines.append("## Your games — sorted by win odds (your low-prize signal)")
         lines.append("")
-        lines.append("| Game | # | Price | Started | Win odds | Top prize | Top prizes left | Flags |")
-        lines.append("|------|---|------:|:-------:|:--------:|-----------|----------------:|-------|")
+        lines.append("| Game | # | Price | Started | Win odds | Prizes left (est.) | Lower prizes left | Flags |")
+        lines.append("|------|---|------:|:-------:|:-------:|:------------------:|------------------:|-------|")
         for g in owned_games:
             pct = g.top_prize_pct_remaining
-            pct_s = "" if pct is None else (f" (~{pct:.0%})" if g.total_is_estimate else f" ({pct:.0%})")
-            left = "—" if g.top_prizes_remaining is None else str(g.top_prizes_remaining)
-            total = "" if g.top_prizes_total is None else f"/{g.top_prizes_total}"
+            if pct is None:
+                pct_s = "—"
+            else:
+                tot = "" if g.top_prizes_total is None else f"/{g.top_prizes_total}"
+                pct_s = f"{'~' if g.total_is_estimate else ''}{pct:.0%} ({g.top_prizes_remaining}{tot})"
+            lower = "—" if g.lower_wins_remaining is None else f"{g.lower_wins_remaining:,}"
             low, _ = _is_low(g, thresholds)
             flags = []
             if g.status == "ended":
@@ -93,17 +96,20 @@ def render_report(
             started = g.on_sale_date or "—"
             lines.append(
                 f"| {g.name} | {g.game_number} | {price} | {started} | {odds} | "
-                f"{g.top_prize_value or '—'} | {left}{total}{pct_s} | {flag} |"
+                f"{pct_s} | {lower} | {flag} |"
             )
         lines.append("")
         lines.append(
-            "> **Win odds (1:X)** = published chance a ticket wins *any* prize — the real "
-            "\"will they at least break even?\" number; lower is better and it stays ~constant "
-            "all game long. **🔻 WEAK ODDS** = worse than your odds cutoff (a poor game to keep "
-            "stocked). **🟠 SWAP** = the big prizes are mostly gone (value drained), even if the "
-            "odds are fine. **🔴 ENDED** = sales stopped (date shown). **Started** = when the game "
-            "first went on sale. *PA only publishes the top six prizes, so the % is for those; the "
-            "small break-even prizes aren't published — the odds cover them.*"
+            "> **Win odds (1:X) is the number that matters** — the published chance a ticket wins "
+            "*any* prize. Because the cheap break-even prizes vastly outnumber the jackpots, this is "
+            "effectively a *low-prize-weighted* figure: lower = better chance a customer wins something. "
+            "**🔻 WEAK ODDS** = worse than 1:" f"{thresholds.weak_odds:g}" " (poor to stock). "
+            "**Prizes left (est.)** = how much of the *whole* game is unsold — estimated from the top "
+            "prizes, which works because prizes are shuffled evenly through the pack, so it tracks the "
+            "cheap prizes too. **🟠 SWAP** = under 40% left (game mostly sold through). "
+            "**Lower prizes left** = non-jackpot wins still in the pack. "
+            "*A separate single-day \"low-prize %\" can't be computed — on any one day it's mathematically "
+            "identical to the top-prize %, so we don't fake one.*"
         )
         lines.append("")
 
@@ -209,11 +215,13 @@ def render_html(
         price = "—" if g.price is None else f"${g.price:g}"
         left = "—" if g.top_prizes_remaining is None else str(g.top_prizes_remaining)
         total = "" if g.top_prizes_total is None else f"/{g.top_prizes_total}"
+        lower = "—" if g.lower_wins_remaining is None else f"{g.lower_wins_remaining:,}"
         rows.append(
             f"<tr><td>{e(g.name)}</td><td class='muted'>{e(g.game_number)}</td>"
             f"<td class='r'>{price}</td><td class='muted'>{e(g.on_sale_date or '—')}</td>"
-            f"<td class='odds'>{odds}</td><td class='r'>{e(g.top_prize_value or '—')}</td>"
+            f"<td class='odds'>{odds}</td>"
             f"<td class='r'>{left}{total} <span class='muted'>({pct_txt})</span>{bar}</td>"
+            f"<td class='r'>{lower}</td>"
             f"<td>{' '.join(badges)}</td></tr>"
         )
 
@@ -240,13 +248,16 @@ def render_html(
 <div class="card red"><div class="n">{n_ended}</div><div class="l">🔴 ended</div></div>
 </div>
 {alert_html}
-<h2>Your games — best odds first</h2>
+<h2>Your games — sorted by win odds (your low-prize signal)</h2>
 <table><thead><tr><th>Game</th><th>#</th><th class="r">Price</th><th>Started</th>
-<th>Win odds</th><th class="r">Top prize</th><th class="r">Top prizes left</th><th>Status</th></tr></thead>
+<th>Win odds</th><th class="r">Prizes left (est.)</th><th class="r">Lower prizes left</th><th>Status</th></tr></thead>
 <tbody>{''.join(rows)}</tbody></table>
-<p class="sub" style="margin-top:12px"><b>Win odds (1:X)</b> = chance a ticket wins anything (lower=better, ~constant all game).
-<b>🟠 SWAP</b> = top prizes under 40%. <b>🔻 WEAK ODDS</b> = worse than 1:{thresholds.weak_odds:g}.
-<b>🔴 ENDED</b> = sales stopped.</p>
+<p class="sub" style="margin-top:12px"><b>Win odds (1:X) is the number that matters.</b> It's the chance a ticket wins
+<i>any</i> prize — and since the cheap break-even prizes hugely outnumber the jackpots, it's effectively a
+<b>low-prize-weighted</b> figure (lower = better chance to win something). <b>🔻 WEAK ODDS</b> = worse than 1:{thresholds.weak_odds:g}, a poor game to stock.
+<b>Prizes left (est.)</b> = how much of the <i>whole</i> game is unsold (estimated from the top prizes — works because prizes are shuffled evenly through the pack, so it tracks the cheap prizes too).
+<b>🟠 SWAP</b> = under 40% left. <b>Lower prizes left</b> = non-jackpot wins still in the pack. <b>🔴 ENDED</b> = sales stopped.<br>
+<i>A separate single-day "low-prize %" can't be computed — on any one day it's mathematically the same as the top-prize %, so we don't fake one.</i></p>
 <footer>Generated by <a href="https://github.com/pritpnp/Valley_Lotto">Valley_Lotto</a> ·
 data from palottery.pa.gov · for retailer use.</footer>
 </div></body></html>"""

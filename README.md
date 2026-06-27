@@ -22,23 +22,28 @@ It reads these official pages:
 
 ### How a game's quality is judged
 
-Two separate things, because they answer different questions:
+- **Win odds (1:X) — the number that matters.** PA's published overall odds of
+  winning **any** prize. Because the cheap break-even prizes vastly outnumber the
+  jackpots, this is effectively a **low-prize-weighted** figure — exactly the
+  "can a customer still win something?" signal. Lower is better; it stays about
+  constant over a game's life. Games worse than your cutoff (default **1:4.5**)
+  are flagged **🔻 WEAK ODDS** (poor to stock).
+- **Prizes left (est.)** — how much of the *whole* game is unsold, estimated from
+  the top-prize depletion. This works because prizes are shuffled evenly through
+  the print run, so the top-prize % is a fair estimate of how much of the entire
+  pack (cheap prizes included) is still out there — not just the jackpot. Below
+  **40%** it's flagged **🟠 SWAP** (mostly sold through).
+- **Lower prizes left** — the raw count of non-jackpot wins still in the pack, so
+  you can see the low-prize availability directly.
 
-- **Win odds (1:X)** — *will a customer win anything / at least break even?* PA
-  publishes the overall odds of winning **any** prize (e.g. `1:3.82`). Lower is
-  better, and because the small common prizes dominate it, the number stays about
-  the same for a game's whole life. This is the primary "worth playing?" signal;
-  games worse than your cutoff (default **1:4.5**) are flagged **🔻 WEAK ODDS**.
-- **Big-prize depletion** — *is the value drained?* The tracker reads each game's
-  detail page once for the original top-prize count, then computes
-  **% of top prizes left = wins left ÷ original**. Below your threshold (default
-  **40%**) it's flagged **🟠 SWAP** — the marquee prizes are gone even if the odds
-  are fine. (Until the original is known it estimates from the highest count seen,
-  shown with a `~`.)
-
-> PA only publishes the **top six** prizes and the overall odds — not the per-tier
-> counts for the small break-even prizes. So the % is for the top prizes; the win
-> odds is what covers the small ones. That's the most the public PA data supports.
+> **Why not one "low-prize-weighted health %"?** Mathematically, on any single
+> day a tier-weighted average of "% remaining" is *identical* to the top-prize %
+> (every tier has the same fraction left at one moment, so the weights cancel).
+> PA also doesn't publish original counts for the lower tiers. So a separate
+> single-day low-prize % would just be the top-prize number in disguise — we don't
+> fake one. The win odds **is** your low-prize signal, and the lower-prize counts
+> show availability directly. (Detecting whether cheap prizes drain *faster* than
+> the rest needs many days of history and is only weakly supported by PA's data.)
 
 ---
 

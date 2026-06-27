@@ -54,6 +54,20 @@ class Game:
         return None
 
     @property
+    def lower_wins_remaining(self) -> Optional[int]:
+        """Count of NON-jackpot wins still out there (published tiers below the top).
+
+        This is the low-prize availability the retailer cares about: how many of the
+        common, cheaper-to-win prizes are still in the pack. (PA only publishes the
+        top six tiers, so the very smallest break-even prizes aren't included — the
+        overall win odds cover those.)
+        """
+        if not self.prize_tiers or len(self.prize_tiers) < 2:
+            return None
+        vals = [t.get("remaining") for t in self.prize_tiers[1:] if t.get("remaining") is not None]
+        return sum(vals) if vals else None
+
+    @property
     def odds_value(self) -> Optional[float]:
         """Overall odds as a number (the X in '1:X'); lower = better chance to win.
 
