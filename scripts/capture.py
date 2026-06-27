@@ -1,45 +1,39 @@
-"""Investigate whether PA exposes per-prize odds / full prize structure (all tiers'
-original counts), which is what's needed to compute Jackpot Density / weighted
-low-prize health. Dumps detail-page anchors + odds patterns to debug/."""
+"""Fetch a game's DATA PDF (full prize structure: all tiers, original counts, odds)
+and dump its text so we can confirm it has what we need for Jackpot Density /
+weighted low-prize health."""
 import re, sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from bs4 import BeautifulSoup
+from pdfminer.high_level import extract_text
 from lottery_tracker import fetch
 
 DEBUG = Path("debug"); DEBUG.mkdir(exist_ok=True)
-# A few games incl. High 5 (1736) which Win PA Lottery rates high jackpot-density.
-IDS = ["3363", "3340"]
-GUESS_URLS = [
-    "https://www.palottery.pa.gov/Scratch-Offs/Prizes-Chances.aspx?id={id}",
-    "https://www.palottery.pa.gov/Scratch-Offs/Game-Rules.aspx?id={id}",
-]
-
-def dump(name, html):
-    (DEBUG / f"{name}.html").write_text(html)
-    soup = BeautifulSoup(html, "html.parser")
-    text = " ".join(soup.get_text(" ").split())
-    odds = re.findall(r"1 in [0-9.,]+|1:[0-9.]+", text)
-    print(f"\n=== {name} ({len(html)}b) ===")
-    print(" odds tokens:", odds[:20])
-    # links that look like prize/odds/rules/pdf
-    hrefs = sorted({a.get("href","") for a in soup.find_all("a", href=True)})
-    interesting = [h for h in hrefs if re.search(r"prize|odd|rule|chance|pdf|structure|how-to", h, re.I)]
-    print(" interesting links:", interesting[:20])
-    # tables: count + header of each
-    for ti, t in enumerate(soup.find_all("table")):
-        rows = t.find_all("tr")
-        hdr = [" ".join(c.get_text().split()) for c in (rows[0].find_all(["th","td"]) if rows else [])]
-        print(f"  table[{ti}] {len(rows)} rows, header={hdr}")
+BASE = "https://www.palottery.pa.gov"
+IDS = ["3363", "3340"]  # Super 7s, Love Is Blind
 
 for gid in IDS:
-    try:
-        dump(f"detail_{gid}", fetch.fetch_detail(gid))
-    except Exception as e:
-        print(f"detail {gid} FAILED: {e}")
-    for tmpl in GUESS_URLS:
-        url = tmpl.format(id=gid)
+    html = fetch.fetch_detail(gid)
+    soup = BeautifulSoup(html, "html.parser")
+    pdfs = [a["href"] for a in soup.find_all("a", href=True) if a["href"].lower().endswith("_data.pdf")]
+    if not pdfs:
+        pdfs = [a["href"] for a in soup.find_all("a", href=True) if ".pdf" in a["href"].lower()]
+    print(f"\n=== game id {gid}: pdf links = {pdfs} ===")
+    for href in pdfs[:1]:
+        url = href if href.startswith("http") else BASE + href
+        name = href.split("/")[-1].replace(".pdf", "")
         try:
-            dump(f"guess_{gid}_{tmpl.split('/')[-1].split('.')[0]}", fetch.fetch(url))
-        except Exception as e:
-            print(f"GUESS {url} -> {e}")
+            r = fetch.fetch  # reuse session headers
+            import requests
+            from lottery_tracker.fetch import _HEADERS
+            resp = requests.get(url, headers=_HEADERS, timeout=60); resp.raise_for_status()
+            (DEBUG / f"{name}.pdf").write_bytes(resp.content)
+            text = extract_text(DEBUG / f"{name}.pdf")
+            (DEBUG / f"{name}.txt").write_text(text)
+            print(f"  downloaded {len(resp.content)}b, {len(text)} chars")
+            # show lines that look like a prize table (value, odds, counts)
+            for ln in [l.strip() for l in text.splitlines() if l.strip()]:
+                if re.search(r"\$[\d,]+|odds|1 in|total|prize|win", ln, re.I):
+                    print("   |", ln[:120])
+        except Exception as ex:
+            print("  PDF fetch/parse failed:", ex)
