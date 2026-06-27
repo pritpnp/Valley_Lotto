@@ -101,7 +101,7 @@ def render_report(
         lines.append("|------|---|------:|:-------:|:----------:|:-------:|:---------:|--------|")
         for g in owned_games:
             st = g.sell_through_pct if g.sell_through_pct is not None else g.top_prize_pct_remaining
-            left_s = "—" if st is None else f"{st:.0%}"
+            left_s = "—" if st is None else f"{min(1.0, st):.0%}"
             price = "—" if g.price is None else f"${g.price:g}"
             odds = f"1:{g.odds_value:g}" if g.odds_value is not None else "—"
             moved = last_move_label(g, captured_at)
@@ -165,7 +165,7 @@ def render_report(
             for g in cands[price]:
                 jd = f"{g.jackpot_density:.2f}" if g.jackpot_density is not None else "—"
                 lines.append(f"| ${price:g} | {g.name} | {g.game_number} | "
-                             f"1:{g.odds_value:g} | {jd} | {g.sell_through_pct:.0%} |")
+                             f"1:{g.odds_value:g} | {jd} | {min(1.0, g.sell_through_pct):.0%} |")
         lines.append("")
 
     missing = sorted(n for n in inventory if n not in games)
@@ -329,7 +329,7 @@ def render_html(
         pct_txt = "—"
         bar = ""
         if pct is not None:
-            pct_txt = f'{"~" if g.total_is_estimate else ""}{pct:.0%}'
+            pct_txt = f'{"~" if g.total_is_estimate else ""}{min(1.0, pct):.0%}'
             w = max(3, min(100, round(pct * 100)))
             bar = (f'<div class="pct-bar"><div class="pct-fill" '
                    f'style="width:{w}%;background:{_bar_color(pct, g.status=="ended")}"></div></div>')
@@ -382,7 +382,7 @@ def render_html(
                 f"<td>{e(g.name)}</td><td class='muted'>{e(g.game_number)}</td>"
                 f"<td class='odds'>1:{g.odds_value:g}</td>"
                 f"<td class='r'>{'%.2f' % jd if jd is not None else '—'}</td>"
-                f"<td class='r'>{g.sell_through_pct:.0%}</td></tr>"
+                f"<td class='r'>{min(1.0, g.sell_through_pct):.0%}</td></tr>"
             )
     bring_html = (
         "<h2>Best games to bring in — fresh, by price</h2>"
