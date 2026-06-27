@@ -150,9 +150,29 @@ src/lottery_tracker/
   rules.py    # the alert logic (ended / low-prizes / removed)
   notify.py   # Markdown report, alerts.json, optional email
   cli.py      # ties it together: fetch -> parse -> diff -> alert -> report
+src/lottery_app/                # multi-store web app (see docs/APP.md)
+  db.py       # SQLite: stores, users (scrypt-hashed), per-store inventory
+  auth.py     # password hashing/verification (stdlib scrypt)
+  pa_data.py  # reads the shared state.json catalog into per-store dashboard rows
+  main.py     # FastAPI routes: login, dashboard, inventory, store/user admin
+  seed.py     # create the first store + admin login
 .github/workflows/track.yml     # daily schedule + auto-issue
 tests/                          # offline tests with HTML fixtures
 ```
+
+## Multi-store web app
+
+Each store gets its own login, staff, and inventory while sharing one PA
+database. Quick start:
+
+```bash
+pip install -r requirements.txt -r requirements-app.txt
+PYTHONPATH=src python -m lottery_app.seed --store "Main St" --username owner --role admin --import-config
+export LOTTO_SECRET="$(python -c 'import secrets;print(secrets.token_hex(32))')"
+PYTHONPATH=src uvicorn lottery_app.main:app --port 8000
+```
+
+Full guide (roles, Docker, Cloudflare Tunnel on a Beelink): **[docs/APP.md](docs/APP.md)**.
 
 ## Tests
 

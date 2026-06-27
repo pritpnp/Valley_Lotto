@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Inventory · {{ store.name if store else 'Valley Lotto' }}{% endblock %}
+{% block content %}
+<h1>Inventory</h1>
+<p class="muted">The games {{ store.name if store else 'this store' }} carries on the counter.</p>
+
+<form method="post" action="/inventory/add" class="card row">
+  <label>Add game number(s)
+    <input name="game_number" placeholder="e.g. 1736 or 1736, 1744" required autofocus>
+  </label>
+  <button type="submit" class="primary">Add</button>
+</form>
+
+<h2>Currently carried ({{ carried|length }})</h2>
+{% if not carried %}<p class="muted">None yet.</p>{% else %}
+<table class="grid">
+  <thead><tr><th>#</th><th>Game</th><th>Price</th><th></th></tr></thead>
+  <tbody>
+  {% for r in carried %}
+    <tr><td>{{ r.game_number }}</td><td>{{ r.name }}</td>
+      <td>{{ '$%g' % r.price if r.price is not none else '—' }}</td>
+      <td><form method="post" action="/inventory/remove" class="inline">
+        <input type="hidden" name="game_number" value="{{ r.game_number }}">
+        <button class="link danger">remove</button></form></td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+<h2>Available active games ({{ available|length }})</h2>
+<details>
+  <summary>Browse the PA catalog to add games</summary>
+  <table class="grid">
+    <thead><tr><th>#</th><th>Game</th><th>Price</th><th></th></tr></thead>
+    <tbody>
+    {% for r in available %}
+      <tr><td>{{ r.game_number }}</td><td>{{ r.name }}</td>
+        <td>{{ '$%g' % r.price if r.price is not none else '—' }}</td>
+        <td><form method="post" action="/inventory/add" class="inline">
+          <input type="hidden" name="game_number" value="{{ r.game_number }}">
+          <button class="link">+ add</button></form></td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</details>
+{% endblock %}

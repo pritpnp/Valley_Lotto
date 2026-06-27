@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}Dashboard · {{ store.name if store else 'Valley Lotto' }}{% endblock %}
+{% block content %}
+<h1>Dashboard</h1>
+<p class="muted">
+  Shared PA data captured: {{ captured_at or 'never (run the scraper)' }} ·
+  {{ active_count }} active games in the catalog
+</p>
+
+<div class="cards">
+  <div class="card stat"><div class="num">{{ summary.total }}</div><div class="lbl">Games you carry</div></div>
+  <div class="card stat keep"><div class="num">{{ summary.keep }}</div><div class="lbl">KEEP</div></div>
+  <div class="card stat send"><div class="num">{{ summary.send_back }}</div><div class="lbl">SEND BACK</div></div>
+</div>
+
+<h2>Your inventory</h2>
+{% if not rows %}
+<p class="muted">No games yet. <a href="/inventory">Add the games you carry →</a></p>
+{% else %}
+<table class="grid">
+  <thead><tr>
+    <th>Action</th><th>#</th><th>Game</th><th>Price</th><th>Odds</th>
+    <th>% left</th><th>Top prize</th><th>Top left</th><th>Why</th>
+  </tr></thead>
+  <tbody>
+  {% for r in rows %}
+    <tr class="{{ 'row-send' if r.action == 'send_back' else 'row-keep' }}">
+      <td>{% if r.action == 'send_back' %}<span class="badge send">SEND BACK</span>
+          {% else %}<span class="badge keep">KEEP</span>{% endif %}</td>
+      <td>{{ r.game_number }}</td>
+      <td>{{ r.name }}</td>
+      <td>{{ '$%g' % r.price if r.price is not none else '—' }}</td>
+      <td>{{ ('1:%g' % r.odds_value) if r.odds_value is not none else '—' }}</td>
+      <td>{{ r.sell_through_str }}</td>
+      <td>{{ r.top_prize_value or '—' }}</td>
+      <td>{{ r.top_prizes_remaining if r.top_prizes_remaining is not none else '—' }}</td>
+      <td class="why">{{ r.reason }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+{% if fresh %}
+<h2>🆕 New games just on sale</h2>
+<table class="grid">
+  <thead><tr><th>#</th><th>Game</th><th>Price</th><th>Odds</th><th>% left</th></tr></thead>
+  <tbody>
+  {% for r in fresh %}
+    <tr><td>{{ r.game_number }}</td><td>{{ r.name }}</td>
+      <td>{{ '$%g' % r.price if r.price is not none else '—' }}</td>
+      <td>{{ ('1:%g' % r.odds_value) if r.odds_value is not none else '—' }}</td>
+      <td>{{ r.sell_through_str }}</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+<h2>Best games to bring in</h2>
+<p class="muted">Fresh, strong-odds games you don't carry yet — grouped by price.</p>
+{% for price, items in bring_in.items() %}
+  <h3>${{ '%g' % price }} games</h3>
+  <table class="grid">
+    <thead><tr><th>#</th><th>Game</th><th>Odds</th><th>% left</th><th></th></tr></thead>
+    <tbody>
+    {% for r in items %}
+      <tr><td>{{ r.game_number }}</td><td>{{ r.name }}</td>
+        <td>{{ ('1:%g' % r.odds_value) if r.odds_value is not none else '—' }}</td>
+        <td>{{ r.sell_through_str }}</td>
+        <td><form method="post" action="/inventory/add" class="inline">
+          <input type="hidden" name="game_number" value="{{ r.game_number }}">
+          <button class="link">+ carry</button></form></td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+{% else %}
+  <p class="muted">No suggestions right now (catalog may be empty — run the scraper).</p>
+{% endfor %}
+{% endblock %}

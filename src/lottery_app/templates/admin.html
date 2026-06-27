@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Manage · Valley Lotto{% endblock %}
+{% block content %}
+<h1>Manage</h1>
+
+{% if user.role == 'admin' %}
+<h2>Stores</h2>
+<form method="post" action="/admin/store" class="card row">
+  <label>New store name <input name="name" placeholder="e.g. Valley Mart - Allentown" required></label>
+  <button type="submit" class="primary">Create store</button>
+</form>
+{% endif %}
+
+{% for s in stores %}
+<section class="card">
+  <h2>{{ s.name }} <span class="muted">/{{ s.slug }}</span></h2>
+  <table class="grid">
+    <thead><tr><th>Username</th><th>Role</th><th>Reset password</th><th></th></tr></thead>
+    <tbody>
+    {% for u in users_by_store.get(s.id, []) %}
+      <tr>
+        <td>{{ u.username }}{% if u.id == user.id %} <span class="muted">(you)</span>{% endif %}</td>
+        <td>{{ u.role }}</td>
+        <td><form method="post" action="/admin/user/password" class="inline">
+          <input type="hidden" name="user_id" value="{{ u.id }}">
+          <input name="password" type="password" placeholder="new password" required>
+          <button class="link">set</button></form></td>
+        <td>{% if u.id != user.id %}<form method="post" action="/admin/user/delete" class="inline">
+          <input type="hidden" name="user_id" value="{{ u.id }}">
+          <button class="link danger">delete</button></form>{% endif %}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+
+  <form method="post" action="/admin/user" class="row">
+    <input type="hidden" name="store_id" value="{{ s.id }}">
+    <input name="username" placeholder="new username" required>
+    <input name="password" type="password" placeholder="password" required>
+    <select name="role">
+      <option value="staff">staff</option>
+      <option value="owner">owner</option>
+      {% if user.role == 'admin' %}<option value="admin">admin</option>{% endif %}
+    </select>
+    <button type="submit" class="primary">Add user</button>
+  </form>
+</section>
+{% endfor %}
+{% endblock %}

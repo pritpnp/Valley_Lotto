@@ -1,0 +1,35 @@
+# Two services on the Beelink (or any Docker host):
+#   web         — the multi-store dashboard
+#   cloudflared — optional Cloudflare Tunnel so the stores can reach it over HTTPS
+#                 without opening a port on your router. Comment it out if you only
+#                 need it on the local network.
+#
+# First run:
+#   echo "LOTTO_SECRET=$(openssl rand -hex 32)" > .env
+#   docker compose up -d --build
+#   docker compose exec web python -m lottery_app.seed --store "Main St" \
+#       --username owner --password 'strong-pass' --role admin --import-config
+services:
+  web:
+    build: .
+    restart: unless-stopped
+    environment:
+      LOTTO_SECRET: ${LOTTO_SECRET:?set LOTTO_SECRET in .env}
+      LOTTO_DB: /app/data/app.db
+      LOTTO_STATE: /app/data/state.json
+    volumes:
+      - ./data:/app/data        # shares the scraper's state.json + the app.db
+    ports:
+      - "8000:8000"             # drop this when fronting with cloudflared only
+
+  # Optional: expose the app at https://<your-name>.example.com with no open ports.
+  # Create a tunnel in the Cloudflare dashboard, then put its token in .env.
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN:-}
+    depends_on:
+      - web
+    profiles: ["tunnel"]        # enable with:  docker compose --profile tunnel up -d

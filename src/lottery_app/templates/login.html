@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Sign in · Valley Lotto{% endblock %}
+{% block content %}
+<div class="login-wrap">
+  <h1>🎟️ Valley Lotto</h1>
+  <p class="muted">Scratch-off inventory dashboard</p>
+  {% if error %}<div class="error">{{ error }}</div>{% endif %}
+  {% if not stores %}
+    <div class="error">No stores set up yet. Run <code>python -m lottery_app.seed</code> first.</div>
+  {% else %}
+  <form method="post" action="/login" class="card">
+    <label>Store
+      <select name="store_id" required>
+        {% for s in stores %}<option value="{{ s.id }}">{{ s.name }}</option>{% endfor %}
+      </select>
+    </label>
+    <label>Username <input name="username" autocomplete="username" required autofocus></label>
+    <label>Password <input name="password" type="password" autocomplete="current-password" required></label>
+    <button type="submit" class="primary">Sign in</button>
+  </form>
+  {% endif %}
+</div>
+{% endblock %}

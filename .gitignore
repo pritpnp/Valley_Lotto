@@ -7,3 +7,6 @@ samples/*.html
 debug/
 .pytest_cache/
 *.egg-info/
+# App database (per-deployment; never commit store logins/inventory)
+data/app.db
+data/app.db-*

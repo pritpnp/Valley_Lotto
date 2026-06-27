@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Valley Lotto{% endblock %}</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+{% if user %}
+<header class="topbar">
+  <div class="brand">🎟️ Valley Lotto{% if store %} · <span class="store">{{ store.name }}</span>{% endif %}</div>
+  <nav>
+    <a href="/dashboard">Dashboard</a>
+    <a href="/inventory">Inventory</a>
+    {% if user.role in ('admin', 'owner') %}<a href="/admin">Manage</a>{% endif %}
+    {% if user.role == 'admin' and stores and stores|length > 1 %}
+    <form method="post" action="/switch-store" class="inline">
+      <select name="store_id" onchange="this.form.submit()">
+        {% for s in stores %}
+        <option value="{{ s.id }}" {% if store and s.id == store.id %}selected{% endif %}>{{ s.name }}</option>
+        {% endfor %}
+      </select>
+    </form>
+    {% endif %}
+    <span class="who">{{ user.username }} ({{ user.role }})</span>
+    <form method="post" action="/logout" class="inline"><button class="link">Log out</button></form>
+  </nav>
+</header>
+{% endif %}
+<main>
+  {% block content %}{% endblock %}
+</main>
+</body>
+</html>
