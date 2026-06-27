@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script src="https://cdn.userway.org/widget.js" data-account="x3mWS39MTD"></script>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-33818875-7"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
+
+        gtag('config', 'UA-33818875-7');
+    </script>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pennsylvania Bulletin</title>
+    <link href="/Content/bootstrap.css" rel="stylesheet"/>
+<link href="/Content/site.css" rel="stylesheet"/>
+
+    <script src="/Scripts/modernizr-2.6.2.js"></script>
+
+    <meta name="keywords" content="Pennsylvania Code & Bulletin Online, Pennsylvania Code, Pennsylvania Bulletin, Commonwealth of Pennsylvania, Pennsylvania Regulations, Pennsylvania Rulemaking">
+    <meta name="description" content="Information included at this site has been derived directly from the Pennsylvania Code, the Commonwealth's official publication of rules and regulations and from the Pennsylvania Bulletin, the Commonwealth's official gazette for information and rulemaking">
+    <link href="https://fonts.googleapis.com/css?family=Montserrat:100,200,300,400,500,600,700,800,900">
+    <link href="https://fonts.googleapis.com/css?family=Cinzel:100,200,300,400,500,600,700,800,900">
+    
+    <link rel="stylesheet" href="/Content/pabulletin.css" />
+
+</head>
+<body>
+
+
+    <a class="skip-link" href="#maincontent">Skip to main content</a>
+
+    <header>
+        <nav class="navbar navbar-inverse navbar-fixed-top navbar-color-pabull" aria-label="Primary">
+            <div class="container">
+                <div class="navbar-header">
+                    <button type="button"
+                            class="navbar-toggle"
+                            data-toggle="collapse"
+                            data-target="#primary-navigation"
+                            aria-label="Open primary navigation"
+                            aria-controls="primary-navigation"
+                            aria-expanded="false">                        
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+
+                        
+                <div class="navbar-brand visible-xs">
+                    
+                        <img src="/Content/Images/Marble_Bulletin_MOBILE-72.jpg" style="width: 250px;" title="Pennsylvania Bulletin" alt="Pennsylvania Bulletin" />
+
+                </div>
+                </div>
+                <div id="primary-navigation" class="navbar-collapse collapse">
+                    <div id="fullscreen-id" class="hidden-xs hidden-sm hidden-md fullscreen-identification" style="color: white;"></div>
+                    <div id="fullscreen-id-sm" class="visible-sm visible-md fullscreen-identification" style="color: white;"></div>
+                    <ul class="nav navbar-nav">
+                        <li><a href="/">HOME</a></li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" aria-label="Search site">
+                                SEARCH <span class="caret" aria-hidden="true"></span>
+                            </a>
+                            <div class="dropdown-menu pacode-header-dropdown" aria-labelledby="navbarDropdownMenuLink">
+                                <a class="dropdown-item pacode-header-dropdown" href="/Home/Pabull">Pennsylvania&nbsp;Bulletin</a><br />
+                                <a class="dropdown-item" href="/Home/Pacode">Pennsylvania Code</a>
+                                <div class="dropdown-divider pabull-dropdown-divider"></div>
+                                <a class="dropdown-item pacode-header-dropdown" href="/Home/Tips">Search Tips</a><br />
+                            </div>
+                        </li>
+                        <li><a href="/Home/About">ABOUT</a></li>
+                        <li><a href="/Home/Contact">CONTACT</a></li>
+                        <li><a href="/Home/FAQ">FAQ</a></li>
+
+                        <li><a href="/Account/PARegister">ALERTS</a></li>
+
+                    </ul>
+                    
+                </div>
+            </div>
+        </nav>
+    </header>
+
+
+    <div class="container-fluid body-content">
+        
+
+
+
+
+
+
+
+
+
+
+<script type="text/javascript">
+    function toggleScreenSize(currentMode) {
+        var x = document.getElementById("home-leftpanel-column-pabull");
+        var screensize = document.getElementById("screen-size-text");
+        var screensizetarget = screensize.innerHTML;
+        var sizesave = "";
+        if (currentMode === "full" || screensizetarget.indexOf("reduce") > -1) {
+            x.style.display = "block";
+            document.getElementById("maincontent").style.width = "75%";
+            document.getElementById('screen-size-text').innerHTML = "<span class='glyphicon glyphicon-fullscreen' aria-hidden='true'></span><span class='navbar-text-desc'>Enter Full Screen</span>";
+            document.getElementById('screen-size-text-xs').innerHTML = "<span class='glyphicon glyphicon-fullscreen' aria-hidden='true'></span><span class='navbar-text-desc-xs'>Enter Full Screen</span>";
+            document.getElementById("ViewModeLink").onclick = function () { toggleScreenSize('reduce'); };
+            sizesave = "exit";
+            document.getElementById("ViewModeLink").setAttribute("aria-pressed", "false");
+            var viewModeLinkXs = document.getElementById("ViewModeLink-xs");
+            if (viewModeLinkXs) {
+                viewModeLinkXs.setAttribute("aria-pressed", "false");
+            }
+            // disable the full screen identification
+            document.getElementById('fullscreen-id').style.display = "none";
+            document.getElementById('fullscreen-id').innerHTML = "";
+            document.getElementById('fullscreen-id-sm').style.display = "none";
+            document.getElementById('fullscreen-id-sm').innerHTML = "";
+
+        } else {
+            x.style.display = "none";
+            document.getElementById("maincontent").style.width = "100%";
+            document.getElementById('screen-size-text').innerHTML = "<span class='glyphicon glyphicon-resize-small' aria-hidden='true'></span><span class='navbar-text-desc'>Exit Full Screen</span>";
+            document.getElementById('screen-size-text-xs').innerHTML = "<span class='glyphicon glyphicon-resize-small' aria-hidden='true'></span><span class='navbar-text-desc-xs'>Exit Full Screen</span>";
+            document.getElementById("ViewModeLink").onclick = function () { toggleScreenSize('full'); };
+            sizesave = "full";
+            document.getElementById("ViewModeLink").setAttribute("aria-pressed", "true");
+            var viewModeLinkXs = document.getElementById("ViewModeLink-xs");
+            if (viewModeLinkXs) {
+                viewModeLinkXs.setAttribute("aria-pressed", "true");
+            }
+            // enable the full screen identification
+            document.getElementById('fullscreen-id').innerHTML = "<img class='fullscreen-id-image' alt='' src='/Content/Images/Marble_Bulletin_MOBILE-72.jpg'/>";
+            document.getElementById('fullscreen-id').style.display = "inline";
+            document.getElementById('fullscreen-id-sm').innerHTML = "<div class='fullscreen-id-text'>Pennsylvania</br>Bulletin</div>";
+        }
+
+        // update the Previous doc link
+        var prevlink = document.getElementById("PrevLink");
+        if (prevlink != null && prevlink.value != '') {
+            var prevlinkhref = prevlink.getAttribute("href");
+            prevlinkhref = prevlinkhref.replace(/\&d=(.*?)$/, "&d=" + sizesave)
+            prevlink.setAttribute("href", prevlinkhref);
+        }
+        // update the Prev doc link in the continuation HTML links
+        var prevlink = document.getElementById("PrevLinkc1");
+        if (prevlink != null && prevlink.value != '') {
+            var prevlinkhref = prevlink.getAttribute("href");
+            prevlinkhref = prevlinkhref.replace(/\&d=(.*?)$/, "&d=" + sizesave)
+            prevlink.setAttribute("href", prevlinkhref);
+        }
+        // update the prev link in the small sized screen
+        var prevlink = document.getElementById("PrevLinkxs");
+        if (prevlink != null && prevlink.value != '') {
+            var prevlinkhref = prevlink.getAttribute("href");
+            prevlinkhref = prevlinkhref.replace(/\&d=(.*?)$/, "&d=" + sizesave)
+            prevlink.setAttribute("href", prevlinkhref);
+        }
+        // update the Next doc link
+        var nextlink = document.getElementById("NextLink");
+        if (nextlink != null && nextlink.value != '') {
+            var nextlinkhref = nextlink.getAttribute("href");
+            nextlinkhref = nextlinkhref.replace(/\&d=(.*?)$/, "&d=" + sizesave)
+            nextlink.setAttribute("href", nextlinkhref);
+        }
+        // update the Next doc link in the continuation HTML links
+        var nextlink = document.getElementById("NextLinkc1");
+        if (nextlink != null && nextlink.value != '') {
+            var nextlinkhref = nextlink.getAttribute("href");
+            nextlinkhref = nextlinkhref.replace(/\&d=(.*?)$/, "&d=" + sizesave)
+            nextlink.setAttribute("href", nextlinkhref);
+        }
+        // update the Next link in the small sized screen
+        var nextlink = document.getElementById("NextLinkxs");
+        if (nextlink != null && nextlink.value != '') {
+            var nextlinkhref = nextlink.getAttribute("href");
+            nextlinkhref = nextlinkhref.replace(/\&d=(.*?)$/, "&d=" + sizesave)
+            nextlink.setAttribute("href", nextlinkhref);
+        }
+    }
+</script>
+
+<script src="https://code.jquery.com/jquery-latest.js" type="text/javascript">
+</script>
+<script type="text/javascript">
+    $(document).ready(function () {
+        // this function helps us read the URL params so we can look for the the condition d=full indicating full screen mode
+        $.urlParam = function (name) {
+            var results = new RegExp('[\\?&]' + name + '=([^&#]*)').exec(window.location.href);
+            return results ? decodeURIComponent(results[1]) : "";
+        }
+        searchParams = $.urlParam('d')      // the "d" url parameter value
+        if (searchParams.includes('full')) {
+            // if we are in full screen mode do the below - we need this here for the case where the user is using Next and Prev buttons
+            // enable the full screen identification
+            document.getElementById('fullscreen-id').innerHTML = "<img class='fullscreen-id-image' alt='' src='/Content/Images/Marble_Bulletin_MOBILE-72.jpg'/>";
+            document.getElementById('fullscreen-id').style.display = "inline";
+            document.getElementById('fullscreen-id-sm').innerHTML = "<div class='fullscreen-id-text'>Pennsylvania</br>Bulletin</div>";
+        }
+    })
+</script>
+
+<script>
+    // When the user scrolls down 20px from the top of the document, show the button
+    window.onscroll = function () { scrollFunction() };
+
+    function scrollFunction() {
+        if (document.body.scrollTop > 20 || document.getElementById('textpanel').scrollTop > 20) {
+            document.getElementById("myBtn").style.display = "block";
+            document.getElementById("myBtnBottom").style.display = "none";
+        } else {
+            document.getElementById("myBtn").style.display = "none";
+            document.getElementById("myBtnBottom").style.display = "block";
+        }
+
+    }
+
+    // When the user clicks on the button, scroll to the top of the document
+    function topFunction() {
+        // go to the top of the main page
+        document.body.scrollTop = 0;
+        document.documentElement.scrollTop = 0;
+        // set the text view panel to the top as well
+        var myDiv = document.getElementById('textpanel');
+        myDiv.scrollTop = 0;
+    }
+    function bottomFunction() {
+        // go to the bottom of the main page
+        document.body.scrollTop = document.body.scrollHeight;
+        document.documentElement.scrollTop = document.documentElement.scrollHeight;
+        // set the text view panel to the top as well
+        var myDiv = document.getElementById('textpanel');
+        myDiv.scrollTop = myDiv.scrollHeight;
+    }
+</script>
+
+<script>
+    function printContent(el) {
+        // get the HTML content from the div and open it in a new window so it stands alone
+        var printReport = document.getElementById("textpanel").innerHTML;
+        printReport = "<a class='printwindow-close' style='margin-left: 40px;' href='javascript:window.close();'>Close Window</a>" + printReport;
+        var w = window.open();
+        $(w.document.body).html(printReport);
+        w.print();
+    }
+</script>
+
+<script src="/Keyoti_SearchEngine_Web_Common/SearchUnit_Highlighter.js"></script>
+
+<div class="row">
+    <aside id="home-leftpanel-column-pabull"
+           class="col-md-3 hidden-print"
+           style="display:block;"
+           aria-label="Pennsylvania Bulletin information">
+
+
+        
+
+
+
+<div class="hidden-xs hidden-sm">
+
+
+        <!--<h1>Pennsylvania<br />Bulletin</h1> -->
+
+
+    <div class="hidden-xs banner-leftnav">
+            <a href="/"><img src="/Content/Images/PA_Bulletin_Image-72.jpg" title="Pennsylvania Bulletin" alt="Pennsylvania Bulletin" /></a>
+</div>
+</div>
+
+<div class="leftnavcontainer">
+        <!-- desktop or larger only -->
+    <div class="commonwealth-heading" aria-label="Commonwealth of Pennsylvania">
+        <span class="commonwealth-heading-line" aria-hidden="true">
+            <span class="commonwealth-heading-initial">C</span>OMMONWEALTH OF
+        </span>
+        <span class="commonwealth-heading-line" aria-hidden="true">
+            <span class="commonwealth-heading-initial">P</span>ENNSYLVANIA
+        </span>
+    </div>
+
+        <!-- small screen ipad like only -->
+         <div class="commonwealth-heading-smallscreen visible-sm">
+                <img src="/Content/Images/Marble_Bulletin_MOBILE-72.jpg" style="" title="Pennsylvania Bulletin" alt="Pennsylvania Bulletin" />
+
+
+         </div>
+        
+        <!-- small screen and xtra small only -->
+        <div class="commonwealth-heading-black visible-xs visible-sm"
+             aria-label="Commonwealth of Pennsylvania">
+            <span aria-hidden="true">
+                <span class="commonwealth-heading-initial-mobile">C</span>OMMONWEALTH OF
+            </span>
+            <span aria-hidden="true">
+                <span class="commonwealth-heading-initial">P</span>ENNSYLVANIA
+            </span>
+        </div>           
+
+        <div class="hidden-xs hidden-sm">
+            <p class="leftpaneltext-bold">No statutes or acts will be found at this website.</p>
+
+            <div>
+                            <p class="leftpaneltext">
+                    The <em><strong>Pennsylvania Bulletin</strong></em> website includes the following: Rulemakings by State agencies; Proposed Rulemakings by State agencies; State agency notices; the Governor’s Proclamations and Executive Orders; Actions by the General Assembly; and Statewide and local court rules.
+                </p>
+            </div>
+        </div>
+
+
+   <div class="visible-xs visible-sm">
+
+       <div class="introformobile-container">
+
+
+               <button type="button"
+                       class="accordion-toggle homelink collapsed button-reset"
+                       data-toggle="collapse"
+                       data-target="#introformobile-pabull"
+                       aria-expanded="false"
+                       aria-controls="introformobile-pabull">
+                   About the Pennsylvania Code & Bulletin
+               </button>
+
+
+
+           <div id="introformobile-pabull" class="collapse">
+
+               <p class="leftpaneltextmobile">&bull; No statutes or acts will be found at this website.</p>
+
+                                  <p class="leftpaneltextmobile">
+                       The <em><strong>Pennsylvania Bulletin</strong></em> website includes the following: Rulemakings by State agencies; Proposed Rulemakings by State agencies; State agency notices; the Governor’s Proclamations and Executive Orders; Actions by the General Assembly; and Statewide and local court rules.
+                   </p>
+           </div>
+       </div>
+   </div>
+
+<div class="hidden-xs hidden-sm alert-leftnav">
+    <a href="/Account/PARegister"><img src="/Content/Images/Email_Alert_Icon-72.png" alt="Email Alerts" title="Email Alerts" border="0"/></a>
+</div>
+</div>
+
+    </aside>
+
+    <!--- Middle Column -->
+    <main id="maincontent" style="width: 75%;" class="col-md-9">
+        <div id="pabull-text" class="parent" style="height: 890px;">
+            <!-- header-->
+
+
+
+
+            
+
+
+
+            <nav class="visible-xs" aria-label="Document actions">
+                <div style="background-color: #eeeeee; text-align: center;">
+                    <ul class="nav navbar-nav">
+                        <li class="subnav-sm-override">
+                            <a id="TOCLinkxs" href="/Home/volume?vol=56&amp;issue=22" title="Bulletin Table of Contents">
+                                <span class="glyphicon glyphicon-list" aria-hidden="true"></span>
+                                <span class="navbar-text-desc-xs">Table of Contents</span>
+                            </a>
+                        </li>
+                        <li class="subnav-sm-override">
+                            <a id="PrevLinkxs" href="/Display/pabull?file=/secure/pabulletin/data/vol56/56-22/783.html&amp;d=reduce" title="Previous Doc">
+                                <span class="glyphicon glyphicon-backward" aria-hidden="true"></span>
+                                <span class="navbar-text-desc-xs">Previous Doc</span>
+                            </a>
+                        </li>
+                        <li class="subnav-sm-override">
+                            <a id="NextLinkxs" href="/Display/pabull?file=/secure/pabulletin/data/vol56/56-22/785.html&amp;d=reduce" title="Next Doc">
+                                <span class="glyphicon glyphicon-forward" aria-hidden="true"></span>
+                                <span class="navbar-text-desc-xs">Next Doc</span>
+                            </a>
+                        </li>
+                                <li class="subnav-sm-override">
+                                    <a id="TOCLinkxs" href="/Home/volume?vol=56&amp;issue=23" title="Next Bulletin">
+                                        <span class="glyphicon glyphicon-circle-arrow-right" aria-hidden="true"></span>
+                                        <span class="navbar-text-desc-xs">Next Bulletin</span>
+                                    </a>
+                                </li>
+
+                        <!-- if a search was performed, include link back to the results else show search -->
+                                <li class="subnav-sm-override">
+                                    <a href="/Home/Pabull?query=" title="Return to Search">
+                                        <span class="glyphicon glyphicon-search" aria-hidden="true"></span>
+                                        <span class="navbar-text-desc-xs">Return to Search</span>
+                                    </a>
+                                </li>
+
+
+                        <li class="subnav-sm-override">
+                            <button id="ViewModeLink-xs"
+                                    type="button"
+                                    class="icon-button"
+                                    onclick="toggleScreenSize('reduce');"
+                                    aria-pressed="false">
+
+                                <span id="screen-size-text-xs">
+                                        <span class="glyphicon glyphicon-fullscreen" aria-hidden="true"></span>
+                                        <span class="navbar-text-desc-xs">Enter Full Screen</span>
+                                </span>
+
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+            <nav class="child hidden-xs d-print-none"
+                 style="background-color: #eeeeee; text-align: center;"
+                 aria-label="Document actions">
+                <div class="container">
+                    <div class="navbar-header">
+                        <button type="button"
+                                class="navbar-toggle"
+                                data-toggle="collapse"
+                                data-target="#document-navigation"
+                                aria-label="Open document navigation"
+                                aria-controls="document-navigation"
+                                aria-expanded="false">
+                            <span class="icon-bar"></span>
+                            <span class="icon-bar"></span>
+                            <span class="icon-bar"></span>
+                        </button>
+                    </div>
+                    <div id="document-navigation" class="navbar-collapse collapse">
+                        <ul class="nav docview-subnav navbar-nav">
+                            <li>
+                                <a id="TOCLink"
+                                   href="/Home/volume?vol=56&amp;issue=22"
+                                   aria-label="View Bulletin Table of Contents">
+                                    <span class="glyphicon glyphicon-list" aria-hidden="true"></span>
+                                    <span class="navbar-text-desc">Table of Contents</span>
+                                </a>
+                            </li>
+
+                            <li>
+                                <a id="PrevLink"
+                                   href="/Display/pabull?file=/secure/pabulletin/data/vol56/56-22/783.html&amp;d=reduce"
+                                   aria-label="Previous Doc">
+                                    <span class="glyphicon glyphicon-backward" aria-hidden="true"></span>
+                                    <span class="navbar-text-desc">Previous Doc</span>
+                                </a>
+                            </li>
+
+                                    <li>
+                                        <a id="NextLink"
+                                           href="/Display/pabull?file=/secure/pabulletin/data/vol56/56-22/785.html&amp;d=reduce"
+                                           aria-label="Next Doc">
+                                            <span class="glyphicon glyphicon-forward" aria-hidden="true"></span>
+                                            <span class="navbar-text-desc">Next Doc</span>
+                                        </a>
+                                    </li>
+
+
+                                    <li>
+                                        <a id="NextBulletinLink"
+                                           href="/Home/volume?vol=56&amp;issue=23"
+                                           aria-label="Go to next bulletin">
+                                            <span class="glyphicon glyphicon-circle-arrow-right" aria-hidden="true"></span>
+                                            <span class="navbar-text-desc">Next Bulletin</span>
+                                        </a>
+                                    </li>
+
+
+                            <!-- if a search was performed, include link back to the results else show search -->
+                                    <li>
+                                        <a href="/Home/Pabull?query="
+                                           aria-label="Return to search results">
+                                            <span class="glyphicon glyphicon-search" aria-hidden="true"></span>
+                                            <span class="navbar-text-desc">Return to Search</span>
+                                        </a>
+                                    </li>
+
+                            <li>
+                                <button id="printwindow"
+                                        type="button"
+                                        class="icon-button"
+                                        onclick="printContent('textpanel');"
+                                        title="Print Document"
+                                        aria-label="Print document">
+                                    <span class="glyphicon glyphicon-print" aria-hidden="true"></span>
+                                    <span class="navbar-text-desc">Print</span>
+                                </button>
+                            </li>
+
+                            <li>
+                                <button id="ViewModeLink"
+                                        type="button"
+                                        class="icon-button"
+                                        onclick="toggleScreenSize('reduce');"
+                                        aria-label="Toggle screen size"
+                                        aria-pressed="false">
+                                    <span id="screen-size-text">
+                                                <span class="glyphicon glyphicon-fullscreen" aria-hidden="true"></span>
+                                                <span class="navbar-text-desc">Enter Full Screen</span>
+
+                                    </span>
+                                </button>
+                            </li>
+
+                        </ul>
+                    </div>
+                </div>
+            </nav>
+
+            <!-- Display Breadcrumb -->
+                    <nav id="BreadCrumbBlock"
+                         class="breadcrumb-container breadcrumb-pacode"
+                         aria-label="Breadcrumb">
+                        <div class="breadcrumb-item"><a id="BreadCrumbLinkTitle" class="breadcrumb-link" href="/Home/volume?vol=56&issue=22">Volume&nbsp;56&nbsp;&nbsp;Issue&nbsp;22</a><a class="breadcrumb-link" href="/secure/pabulletin/data/vol56/56-22/56-22.pdf" target="_blank" rel="noopener noreferrer" aria-label="View PDF for this issue, opens in a new tab"><img alt="" class="pdf-download breadcrumb-pdficon" src="/Content/images/pdficon.png"/></a></div><div class="breadcrumb-item breadcrumb-separator">&nbsp;56 Pa.B. 3252</div><div class="breadcrumb-item breadcrumb-separator">&nbsp;Pennsylvania Super 7s Instant Lottery Game 1789</div>
+                    </nav>
+
+            <div onscroll="scrollFunction()" id="textpanel" tabindex="0" role="region" aria-label="Bulletin article text" style="overflow: auto; width: 100%; height: 800px;">
+                <article>
+                    <div>
+                        <!-- this div had height 1200 that was removed-->
+                        <div id="pabull-text-window">
+                            <html>
+<head>
+<title>PA Bulletin, Doc. No. 26-784</title>
+<link type="text/css" href="/Content/pabulletin.css">
+<meta name="Keyoti_Search_Custom_Data" content="vol=56&issue=22&dock_number=26-784&bullpage=3252&description=Pennsylvania Super 7s Instant Lottery Game 1789&doctype=Notice&agency=Revenue&title_affected=0&chapteraffected=0&fiscal=0&pubdate=2026-05-30">
+<meta name="Keyoti_Search_Content_Categories" content="56">
+<meta name="description" content="Pennsylvania Super 7s Instant Lottery Game 1789">
+<script src="/Keyoti_SearchEngine_Web_Common/SearchUnit_Highlighter.js"></script>
+</head>
+<body BGCOLOR="#FFFFFF">
+<blockquote>
+<map name="navbar">
+   
+   
+   
+   
+   
+   
+</map>
+
+
+<h1><center>NOTICES</center></h1>
+<h2><center>DEPARTMENT OF REVENUE</center></b></h2>
+<h3><center><ttlstrt>Pennsylvania Super 7s Instant Lottery Game 1789<ttlend><br></center></b></h3>
+<h4><center>[56 Pa.B. 3252]<br>[Saturday, May 30, 2026]<br></center></b></h4>
+<p>&emsp;Under the State Lottery Law (72 P.S. &#167;&#167;&ensp;3761-101&mdash;3761-314) and 61 Pa.&thinsp;Code &#167;&ensp;819.203 (relating to notice of instant game rules), the Secretary of Revenue hereby provides public notice of the rules for the following instant lottery game:</p>
+<p>&emsp;1.&ensp;<i>Name</i>:&ensp;The name of the game is Pennsylvania Super 7s (''Super 7s''). The game number is PA-1789.</p>
+<p>&emsp;2.&ensp;<i>Price and payout percentage</i>:&ensp;The price of a Super 7s instant lottery game ticket is $2. The payout percentage is 70.47%. </p>
+<p>&emsp;3.&ensp;<i>Play symbols</i>:&ensp;Each Super 7s instant lottery game ticket will contain one play area featuring a ''WINNING NUMBERS'' area, a ''YOUR NUMBERS'' area and a ''SUPER SEVEN'' spot containing one play symbol. The play symbols and their captions located in the ''WINNING NUMBERS'' area and the ''YOUR NUMBERS'' area are: 1 (ONE), 2 (TWO), 3 (THREE), 4 (FOUR), 5 (FIVE), 6 (SIX), 8 (EIGHT), 9 (NINE), 10 (TEN), 11 (ELEVN), 12 (TWLV), 13 (THRTN), 14 (FORTN), 15 (FIFTN), 16 (SIXTN), 18 (EGHTN), 19 (NINTN), 20 (TWENT), 21 (TWYONE), 22 (TWYTWO), 23 (TWYTHR), 24 (TWYFOR) and 25 (TWYFIV). The play symbols and their captions located in the ''SUPER SEVEN'' spot are: NO BONUS (TRYAGAIN) symbol, TRY AGAIN (NOBONUS) symbol, NO BONUS (TRYAGAIN) symbol, TRY AGAIN (NOBONUS) symbol, NO BONUS (TRYAGAIN) symbol, TRY AGAIN (NOBONUS) symbol and a 7 (ANY$7) symbol.</p>
+<p>&emsp;4.&ensp;<i>Prize symbols</i>:&ensp;The prize symbols and their captions located in the ''YOUR NUMBERS'' area are: $2<sup>.00</sup> (TWO DOL), $3<sup>.00</sup> (THR DOL), $5<sup>.00</sup> (FIV DOL), $7<sup>.00</sup> (SVN DOL), $10<sup>.00</sup> (TEN DOL), $17<sup>.00</sup> (SEVENTEEN), $35<sup>.00</sup> (TRY FIV), $70<sup>.00</sup> (SEVENTY), $200 (TWO HUN), $1,000 (ONE THO) and $17,000 (SVNTN THO).</p>
+<p>&emsp;5.&ensp;<i>Prizes</i>:&ensp;The prizes that can be won in this game are: $2, $3, $5, $7, $10, $17, $35, $70, $200, $1,000 and $17,000. For a complete description of how these prizes can be won, see section 8 (relating to number and description of prizes and approximate odds). A player can win up to eight times on a ticket.</p>
+<p>&emsp;6.&ensp;<i>Approximate number of tickets printed for the game</i>:&ensp;Approximately 7,200,000 tickets will be printed for the Super 7s instant lottery game.</p>
+<p>&emsp;7.&ensp;<i>Determination of prize winners</i>:</p>
+<p>&emsp;(a)&ensp;Holders of tickets upon which any one of the ''YOUR NUMBERS'' play symbols matches either of the ''WINNING NUMBERS'' play symbols and a prize symbol of $17,000 (SVNTN THO) appears in the ''prize'' area under the matching ''YOUR NUMBERS'' play symbol, on a single ticket, shall be entitled to a prize of $17,000 for each such match.</p>
+<p>&emsp;(b)&ensp;Holders of tickets upon which any one of the ''YOUR NUMBERS'' play symbols matches either of the ''WINNING NUMBERS'' play symbols and a prize symbol of $1,000 (ONE THO) appears in the ''prize'' area under the matching ''YOUR NUMBERS'' play symbol, on a single ticket, shall be entitled to a prize of $1,000 for each such match.</p>
+<p>&emsp;(c)&ensp;Holders of tickets upon which any one of the ''YOUR NUMBERS'' play symbols matches either of the ''WINNING NUMBERS'' play symbols and a prize symbol of $200 (TWO HUN) appears in the ''prize'' area under the matching ''YOUR NUMBERS'' play symbol, on a single ticket, shall be entitled to a prize of $200 for each such match.</p>
+<p>&emsp;(d)&ensp;Holders of tickets upon which any one of the ''YOUR NUMBERS'' play symbols matches either of the ''WINNING NUMBERS'' play symbols and a prize symbol of $70<sup>.00</sup> (SEVENTY) appears in the ''prize'' area under the matching ''YOUR NUMBERS'' play symbol, on a single ticket, shall be entitled to a prize of $70 for each such match.</p>
+<p>&emsp;(e)&ensp;Holders of tickets upon which any one of the ''YOUR NUMBERS'' play symbols matches either of the ''WINNING NUMBERS'' play symbols and a prize symbol of $35<sup>.00</sup> (TRY FIV) appears in the ''prize'' area under the matching ''YOUR NUMBERS'' play symbol, on a single ticket, shall be entitled to a prize of $35 for each such match.</p>
+<p>&emsp;(f)&ensp;Holders of tickets upon which a 7 (ANY$7) symbol appears in the ''SUPER SEVEN'' spot and five prize symbols of $7<sup>.00</sup> (SVN DOL) appear in the ''YOUR NUMBERS'' area, on a single ticket, shall be entitled to a prize of $35.</p>
+<p>&emsp;(g)&ensp;Holders of tickets upon which a 7 (ANY$7) symbol appears in the ''SUPER SEVEN'' spot and four prize symbols of $7<sup>.00</sup> (SVN DOL) appear in the ''YOUR NUMBERS'' area, on a single ticket, shall be entitled to a prize of $28.</p>
+<p>&emsp;(h)&ensp;Holders of tickets upon which a 7 (ANY$7) symbol appears in the ''SUPER SEVEN'' spot and three prize symbols of $7<sup>.00</sup> (SVN DOL) appear in the ''YOUR NUMBERS'' area, on a single ticket, shall be entitled to a prize of $21.</p>
+<p>&emsp;(i)&ensp;Holders of tickets upon which any one of the ''YOUR NUMBERS'' play symbols matches either of the ''WINNING NUMBERS'' play symbols and a prize symbol of $17<sup>.00</sup> (SEVENTEEN) appears in the ''prize'' area under the matching ''YOUR NUMBERS'' play symbol, on a single ticket, shall be entitled to a prize of $17 for each such match.</p>
+<p>&emsp;(j)&ensp;Holders of tickets upon which a 7 (ANY$7) symbol appears in the ''SUPER SEVEN'' spot and two prize symbols of $7<sup>.00</sup> (SVN DOL) appear in the ''YOUR NUMBERS'' area, on a single ticket, shall be entitled to a prize of $14.</p>
+<p>&emsp;(k)&ensp;Holders of tickets upon which any one of the ''YOUR NUMBERS'' play symbols matches either of the ''WINNING NUMBERS'' play symbols and a prize symbol of $10<sup>.00</sup> (TEN DOL) appears in the ''prize'' area under the matching ''YOUR NUMBERS'' play symbol, on a single ticket, shall be entitled to a prize of $10 for each such match.</p>
+<p>&emsp;(l)&ensp;Holders of tickets upon which any one of the ''YOUR NUMBERS'' play symbols matches either of the ''WINNING NUMBERS'' play symbols and a prize symbol of $7<sup>.00</sup> (SVN DOL) appears in the ''prize'' area under the matching ''YOUR NUMBERS'' play symbol, on a single ticket, shall be entitled to a prize of $7 for each such match.</p>
+<p>&emsp;(m)&ensp;Holders of tickets upon which a 7 (ANY$7) symbol appears in the ''SUPER SEVEN'' spot and one prize symbol of $7<sup>.00</sup> (SVN DOL) appears in the ''YOUR NUMBERS'' area, on a single ticket, shall be entitled to a prize of $7.</p>
+<p>&emsp;(n)&ensp;Holders of tickets upon which any one of the ''YOUR NUMBERS'' play symbols matches either of the ''WINNING NUMBERS'' play symbols and a prize symbol of $5<sup>.00</sup> (FIV DOL) appears in the ''prize'' area under the matching ''YOUR NUMBERS'' play symbol, on a single ticket, shall be entitled to a prize of $5 for each such match.</p>
+<p>&emsp;(o)&ensp;Holders of tickets upon which any one of the ''YOUR NUMBERS'' play symbols matches either of the ''WINNING NUMBERS'' play symbols and a prize symbol of $3<sup>.00</sup> (THR DOL) appears in the ''prize'' area under the matching ''YOUR NUMBERS'' play symbol, on a single ticket, shall be entitled to a prize of $3 for each such match.</p>
+<p>&emsp;(p)&ensp;Holders of tickets upon which any one of the ''YOUR NUMBERS'' play symbols matches either of the ''WINNING NUMBERS'' play symbols and a prize symbol of $2<sup>.00</sup> (TWO DOL) appears in the ''prize'' area under the matching ''YOUR NUMBERS'' play symbol, on a single ticket, shall be entitled to a prize of $2 for each such match.</p>
+<p>&emsp;8.&ensp;<i>Number and description of prizes and approximate odds</i>:&ensp;The following table sets forth the approximate number of winners, amounts of prizes and approximate odds of winning:</p>
+<p><br></p>
+<table class="miscr"><setcol;5;xalign>
+<tr align=left valign=bottom><th align=left>Match Any Of YOUR<br> NUMBERS To Either Of<br> The WINNING NUMBERS<br> To Win Prize Shown<br> Under That Match.<br> Win With: </th><th>SUPER SEVEN: </th><th>Win: </th><th align=center>Approximate<br> Odds Are 1 In: </th><th align=right>Approximate No.<br> Of Winners Per<br> 7,200,000 Tickets: </th></tr>
+<tr align=left valign=top><td align=left>$2 </td><td></td><td>$2 </td><td>8.33 </td><td align=right>864,000 </td></tr>
+<tr align=left valign=top><td align=left>$3 </td><td></td><td>$3 </td><td>12.82 </td><td align=right>561,600</td></tr>
+<tr align=left valign=top><td align=left>$3 + $2 </td><td></td><td>$5 </td><td>500 </td><td align=right>14,400 </td></tr>
+<tr align=left valign=top><td align=left>$5 </td><td></td><td>$5 </td><td>100 </td><td align=right>72,000 </td></tr>
+<tr align=left valign=top><td align=left>$5 + $2 </td><td></td><td>$7 </td><td>1,000 </td><td align=right>7,200 </td></tr>
+<tr align=left valign=top><td align=left>($2 &#215; 2) + $3 </td><td></td><td>$7 </td><td>1,000 </td><td align=right>7,200</td></tr>
+<tr align=left valign=top><td align=left></td><td>7 SYMBOL w/ $7 </td><td>$7 </td><td>18.52 </td><td align=right>388,800 </td></tr>
+<tr align=left valign=top><td align=left>$7 </td><td></td><td>$7 </td><td>500 </td><td align=right>14,400 </td></tr>
+<tr align=left valign=top><td align=left>$5 + $3 + $2 </td><td></td><td>$10 </td><td>1,000 </td><td align=right>7,200 </td></tr>
+<tr align=left valign=top><td align=left>$7 + $3 </td><td></td><td>$10 </td><td>1,000 </td><td align=right>7,200 </td></tr>
+<tr align=left valign=top><td align=left>($3 &#215; 2) + ($2 &#215; 2) </td><td></td><td>$10 </td><td>1,000 </td><td align=right>7,200</td></tr>
+<tr align=left valign=top><td align=left>$3 </td><td>7 SYMBOL w/ $7 </td><td>$10 </td><td>125 </td><td align=right>57,600 </td></tr>
+<tr align=left valign=top><td align=left>$10 </td><td></td><td>$10 </td><td>1,000 </td><td align=right>7,200 </td></tr>
+<tr align=left valign=top><td align=left>$7 + $5 + $3 + $2 </td><td></td><td>$17 </td><td>1,200 </td><td align=right>6,000 </td></tr>
+<tr align=left valign=top><td align=left>$10 + $7 </td><td></td><td>$17 </td><td>1,200 </td><td align=right>6,000 </td></tr>
+<tr align=left valign=top><td align=left>$3 </td><td>7 SYMBOL w/ ($7 &#215; 2) </td><td>$17 </td><td>162.16 </td><td align=right>44,400 </td></tr>
+<tr align=left valign=top><td align=left>$10 </td><td>7 SYMBOL w/ $7 </td><td>$17 </td><td>164.38 </td><td align=right>43,800 </td></tr>
+<tr align=left valign=top><td align=left>$17 </td><td></td><td>$17 </td><td>2,400 </td><td align=right>3,000 </td></tr>
+<tr align=left valign=top><td align=left>$7 &#215; 5 </td><td></td><td>$35 </td><td>12,000 </td><td align=right>600 </td></tr>
+<tr align=left valign=top><td align=left>$5 + $2 </td><td>7 SYMBOL w/ ($7 &#215; 4) </td><td>$35 </td><td>12,000 </td><td align=right>600 </td></tr>
+<tr align=left valign=top><td align=left>($5 &#215; 2) + ($2 &#215; 2) </td><td>7 SYMBOL w/ ($7 &#215; 3) </td><td>$35 </td><td>12,000 </td><td align=right>600</td></tr>
+<tr align=left valign=top><td align=left></td><td>7 SYMBOL w/ ($7 &#215; 5) </td><td>$35 </td><td>12,000 </td><td align=right>600 </td></tr>
+<tr align=left valign=top><td align=left>$35 </td><td></td><td>$35 </td><td>12,000 </td><td align=right>600 </td></tr>
+<tr align=left valign=top><td align=left>$35 + $17 + $10 + $5 + $3 </td><td></td><td>$70 </td><td>40,000 </td><td align=right>180 </td></tr>
+<tr align=left valign=top><td align=left>($2 &#215; 2) + $35 + $10 </td><td>7 SYMBOL w/ ($7 &#215; 3) </td><td>$70 </td><td>6,000 </td><td align=right>1,200 </td></tr>
+<tr align=left valign=top><td align=left>($3 &#215; 2) + $35 + $17 + $5 </td><td>7 SYMBOL w/ $7 </td><td>$70 </td><td>6,000 </td><td align=right>1,200 </td></tr>
+<tr align=left valign=top><td align=left>($3 &#215; 3) + $35 + $10 + $2 </td><td>7 SYMBOL w/ ($7 &#215; 2) </td><td>$70 </td><td>6,000 </td><td align=right>1,200 </td></tr>
+<tr align=left valign=top><td align=left>($17 &#215; 2) + $5 + $3 </td><td>7 SYMBOL w/ ($7 &#215; 4) </td><td>$70 </td><td>6,000 </td><td align=right>1,200</td></tr>
+<tr align=left valign=top><td align=left>$35 </td><td>7 SYMBOL w/ ($7 &#215; 5) </td><td>$70 </td><td>6,000 </td><td align=right>1,200 </td></tr>
+<tr align=left valign=top><td align=left>$70 </td><td></td><td>$70 </td><td>40,000 </td><td align=right>180 </td></tr>
+<tr align=left valign=top><td align=left>($70 &#215; 2) + ($10 &#215; 6) </td><td></td><td>$200 </td><td>120,000 </td><td align=right>60</td></tr>
+<tr align=left valign=top><td align=left>($70 &#215; 2) + ($17 &#215; 3) + $2 </td><td>7 SYMBOL w/ $7 </td><td>$200 </td><td>60,000 </td><td align=right>120 </td></tr>
+<tr align=left valign=top><td align=left>($70 &#215; 2) + ($3 &#215; 2) + $35 + $5 </td><td>7 SYMBOL w/ ($7 &#215; 2) </td><td>$200 </td><td>60,000 </td><td align=right>120 </td></tr>
+<tr align=left valign=top><td align=left>$200 </td><td></td><td>$200 </td><td>120,000 </td><td align=right>60</td></tr>
+<tr align=left valign=top><td align=left>$200 &#215; 5 </td><td></td><td>$1,000 </td><td>720,000 </td><td align=right>10 </td></tr>
+<tr align=left valign=top><td align=left>$1,000 </td><td></td><td>$1,000 </td><td>720,000 </td><td align=right>10 </td></tr>
+<tr align=left valign=top><td align=left>$17,000 </td><td></td><td>$17,000 </td><td>1,028,571 </td><td align=right>7</td></tr></table>
+<p>&emsp;SUPER SEVEN: Reveal a ''7'' (ANY$7) symbol to win ANY $7 prize shown in the YOUR NUMBERS area!<br><br> </p>
+<p>&emsp;Prizes, including top prizes, are subject to availability at the time of purchase.</p>
+<p>&emsp;9.&ensp;<i>Retailer incentive awards</i>:&ensp;The Lottery may conduct a separate Retailer Incentive Program for retailers who sell Super 7s instant lottery game tickets.</p>
+<p>&emsp;10.&ensp;<i>Retailer bonus</i>:&ensp;The Lottery may offer a retailer bonus in connection with the sale of Pennsylvania instant lottery game tickets. If a retailer bonus is offered, a Lottery retailer shall be eligible for a bonus as described in this section. Lottery retailers who sell a winning ticket that entitles the ticket holder to a prize, either payable in a single installment or having a guaranteed minimum payout, of at least $100,000 and not exceeding $500,000 shall be paid a bonus of $500. Lottery retailers who sell a winning ticket that entitles the ticket holder to a prize, either payable in a single installment or having a guaranteed minimum payout, of at least $500,001 and not exceeding $1,000,000 shall be paid a bonus of $5,000. Lottery retailers who sell a winning ticket that entitles the ticket holder to a prize, either payable in a single installment or having a guaranteed minimum payout, of at least $1,000,001 and not exceeding $10,000,000 shall be paid a bonus of $10,000. Lottery retailers who sell a winning ticket that entitles the ticket holder to a prize, either payable in a single installment or having a guaranteed minimum payout, of at least $10,000,001 shall be paid a bonus of $100,000. A Lottery retailer is entitled only to the largest bonus for which they qualify on a winning ticket. A bonus will be initiated for payment after the instant ticket is claimed and validated. A bonus will not be awarded to a Lottery retailer that sells a non-winning Pennsylvania Lottery instant ticket used to enter a Pennsylvania Lottery second-chance drawing or promotion that is subsequently selected to win a prize.</p>
+<p>&emsp;11.&ensp;<i>Unclaimed prize money</i>:&ensp;For a period of 1 year from the announced close of Super 7s, prize money from winning Super 7s instant lottery game tickets will be retained by the Secretary for payment to the persons entitled thereto. If no claim is made within 1 year of the announced close of the Super 7s instant lottery game, the right of a ticket holder to claim the prize represented by the ticket, if any, will expire and the prize money will be paid into the State Lottery Fund and used for purposes provided for by statute.</p>
+<p>&emsp;12.&ensp;<i>Governing law</i>:&ensp;In purchasing a ticket, the  customer agrees to comply with and abide by the  State Lottery Law (72 P.S. &#167;&#167;&ensp;3761-101&mdash;3761-314),  61 Pa.&thinsp;Code Part V (relating to State Lotteries) and the provisions contained in this notice.</p>
+<p>&emsp;13.&ensp;<i>Termination of the game</i>:&ensp;The Secretary may announce a termination date, after which no further tickets from this game may be sold. The announcement will be disseminated through media used to advertise or promote Super 7s or through normal communications methods.</p>
+<p align=right>PATRICK BROWNE,&emsp;<br>
+Secretary</p>
+<h5><center>[Pa.B. Doc. No. 26-784. Filed for public inspection May 29, 2026, 9:00 a.m.]</center></h5>
+<p>
+<hr>
+<br>
+<div class="disclaimer-hide">No part of the information on this site may be reproduced for profit or sold for profit.</div>
+</p>
+<p>
+This material has been drawn directly from the official
+<i>Pennsylvania Bulletin</i> full text database.
+Due to the limitations of HTML or differences in display capabilities
+of different browsers, this version may differ slightly from the
+official printed version.
+</font>
+<hr>
+</p>
+
+<p>
+<!--
+<map name="navbar">
+   
+   
+   
+   
+   
+   
+</map>
+-->
+
+
+</p>
+
+<center>
+
+</center>
+</blockquote>
+</body>
+</html>
+
+                            <button onclick="topFunction()" id="myBtn" aria-label="Go to top">Top</button>
+                            <button onclick="bottomFunction()" id="myBtnBottom" aria-label="Go to bottom">Bottom</button>
+                        </div>
+                    </div>
+                </article>
+            </div>
+        </div>
+
+        <div style="margin-left: 0px; padding-top: 20px;" class="row">
+            <div class="row footer-section">
+                <div class="col-md-12">
+                    
+
+<footer class="hidden-xs hidden-sm">
+
+        <div class="footer-disclaimer">
+            No part of the information on this site may be reproduced forprofit or sold for profit. Please direct comments or questions to <a href="mailto:webmaster@PaBulletin.com">webmaster@PaBulletin.com</a>
+        </div>
+
+    <nav class="navbar navbar hidden-print" aria-label="Footer navigation">
+        <div class="container">
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                
+            </div>
+            <div class="navbar-collapse">
+                <ul class="nav navbar-nav sitefooter-pabull">
+                    <li><a href="/Home/Accessibility">Accessibility</a></li>
+                    <li><a href="/Home/Privacy">Privacy</a></li>
+                    <li><a href="/Home/Disclaimer">Disclaimer</a></li>
+                    <li><a href="/downloads/StyleManual_6thEdition.pdf" rel="noopener noreferrer" aria-label="Style Manual, opens in a new tab" target="_blank">Style Manual</a></li>
+                    <li><a href="/downloads/CodeSchedule.pdf" rel="noopener noreferrer" aria-label="Code Schedule, opens in a new tab" target="_blank">Code Publication Schedule</a></li>
+                    <li><a href="/downloads/BulletinSchedule.pdf" rel="noopener noreferrer" aria-label="Bulletin Schedule, opens in a new tab" target="_blank">Bulletin Publication Schedule</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+</footer>
+
+<footer class="visible-xs visible-sm">
+    <div class="footer-mobile">
+        <span class="footer-link"><a href="/Home/Accessibility">Accessibility</a></span> &nbsp;|&nbsp;
+        <span class="footer-link"><a href="/Home/Privacy">Privacy</a></span> &nbsp;|&nbsp;
+        <span class="footer-link"><a href="/Home/Disclaimer">Disclaimer</a></span> &nbsp;|&nbsp;
+        <span class="footer-link"><a href="/downloads/StyleManual_6thEdition.pdf" rel="noopener noreferrer" aria-label="Style Manual, opens in a new tab" target="_blank">Style Manual</a></span> &nbsp;|&nbsp;
+        <span class="footer-link"><a href="/downloads/CodeSchedule.pdf" rel="noopener noreferrer" aria-label="Code Schedule, opens in a new tab" target="_blank">Code Publication Schedule</a></span> &nbsp;|&nbsp;
+        <span class="footer-link"><a href="/downloads/BulletinSchedule.pdf" rel="noopener noreferrer" aria-label="Bulletin Schedule, opens in a new tab" target="_blank">Bulletin Publication Schedule</a></span>
+
+    </div>
+</footer>
+                </div>
+            </div>
+        </div>
+    </main>
+
+
+</div>
+        <br />
+        
+    </div>
+
+
+    <script src="/Scripts/jquery-1.10.2.js"></script>
+
+    <script src="/Scripts/bootstrap.js"></script>
+<script src="/Scripts/respond.js"></script>
+
+    
+</body>
+</html>

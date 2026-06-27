@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script src="https://cdn.userway.org/widget.js" data-account="x3mWS39MTD"></script>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-33818875-7"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
+
+        gtag('config', 'UA-33818875-7');
+    </script>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pennsylvania Bulletin</title>
+    <link href="/Content/bootstrap.css" rel="stylesheet"/>
+<link href="/Content/site.css" rel="stylesheet"/>
+
+    <script src="/Scripts/modernizr-2.6.2.js"></script>
+
+    <meta name="keywords" content="Pennsylvania Code & Bulletin Online, Pennsylvania Code, Pennsylvania Bulletin, Commonwealth of Pennsylvania, Pennsylvania Regulations, Pennsylvania Rulemaking">
+    <meta name="description" content="Information included at this site has been derived directly from the Pennsylvania Code, the Commonwealth's official publication of rules and regulations and from the Pennsylvania Bulletin, the Commonwealth's official gazette for information and rulemaking">
+    <link href="https://fonts.googleapis.com/css?family=Montserrat:100,200,300,400,500,600,700,800,900">
+    <link href="https://fonts.googleapis.com/css?family=Cinzel:100,200,300,400,500,600,700,800,900">
+    
+    <link rel="stylesheet" href="/Content/pabulletin.css" />
+
+</head>
+<body>
+
+
+    <a class="skip-link" href="#maincontent">Skip to main content</a>
+
+    <header>
+        <nav class="navbar navbar-inverse navbar-fixed-top navbar-color-pabull" aria-label="Primary">
+            <div class="container">
+                <div class="navbar-header">
+                    <button type="button"
+                            class="navbar-toggle"
+                            data-toggle="collapse"
+                            data-target="#primary-navigation"
+                            aria-label="Open primary navigation"
+                            aria-controls="primary-navigation"
+                            aria-expanded="false">                        
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+
+                        
+                <div class="navbar-brand visible-xs">
+                    
+                        <img src="/Content/Images/Marble_Bulletin_MOBILE-72.jpg" style="width: 250px;" title="Pennsylvania Bulletin" alt="Pennsylvania Bulletin" />
+
+                </div>
+                </div>
+                <div id="primary-navigation" class="navbar-collapse collapse">
+                    <div id="fullscreen-id" class="hidden-xs hidden-sm hidden-md fullscreen-identification" style="color: white;"></div>
+                    <div id="fullscreen-id-sm" class="visible-sm visible-md fullscreen-identification" style="color: white;"></div>
+                    <ul class="nav navbar-nav">
+                        <li><a href="/">HOME</a></li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" aria-label="Search site">
+                                SEARCH <span class="caret" aria-hidden="true"></span>
+                            </a>
+                            <div class="dropdown-menu pacode-header-dropdown" aria-labelledby="navbarDropdownMenuLink">
+                                <a class="dropdown-item pacode-header-dropdown" href="/Home/Pabull">Pennsylvania&nbsp;Bulletin</a><br />
+                                <a class="dropdown-item" href="/Home/Pacode">Pennsylvania Code</a>
+                                <div class="dropdown-divider pabull-dropdown-divider"></div>
+                                <a class="dropdown-item pacode-header-dropdown" href="/Home/Tips">Search Tips</a><br />
+                            </div>
+                        </li>
+                        <li><a href="/Home/About">ABOUT</a></li>
+                        <li><a href="/Home/Contact">CONTACT</a></li>
+                        <li><a href="/Home/FAQ">FAQ</a></li>
+
+                        <li><a href="/Account/PARegister">ALERTS</a></li>
+
+                    </ul>
+                    
+                </div>
+            </div>
+        </nav>
+    </header>
+
+
+    <div class="container-fluid body-content">
+        
+
+
+
+
+
+
+
+
+
+
+<script type="text/javascript">
+    function toggleScreenSize(currentMode) {
+        var x = document.getElementById("home-leftpanel-column-pabull");
+        var screensize = document.getElementById("screen-size-text");
+        var screensizetarget = screensize.innerHTML;
+        var sizesave = "";
+        if (currentMode === "full" || screensizetarget.indexOf("reduce") > -1) {
+            x.style.display = "block";
+            document.getElementById("maincontent").style.width = "75%";
+            document.getElementById('screen-size-text').innerHTML = "<span class='glyphicon glyphicon-fullscreen' aria-hidden='true'></span><span class='navbar-text-desc'>Enter Full Screen</span>";
+            document.getElementById('screen-size-text-xs').innerHTML = "<span class='glyphicon glyphicon-fullscreen' aria-hidden='true'></span><span class='navbar-text-desc-xs'>Enter Full Screen</span>";
+            document.getElementById("ViewModeLink").onclick = function () { toggleScreenSize('reduce'); };
+            sizesave = "exit";
+            document.getElementById("ViewModeLink").setAttribute("aria-pressed", "false");
+            var viewModeLinkXs = document.getElementById("ViewModeLink-xs");
+            if (viewModeLinkXs) {
+                viewModeLinkXs.setAttribute("aria-pressed", "false");
+            }
+            // disable the full screen identification
+            document.getElementById('fullscreen-id').style.display = "none";
+            document.getElementById('fullscreen-id').innerHTML = "";
+            document.getElementById('fullscreen-id-sm').style.display = "none";
+            document.getElementById('fullscreen-id-sm').innerHTML = "";
+
+        } else {
+            x.style.display = "none";
+            document.getElementById("maincontent").style.width = "100%";
+            document.getElementById('screen-size-text').innerHTML = "<span class='glyphicon glyphicon-resize-small' aria-hidden='true'></span><span class='navbar-text-desc'>Exit Full Screen</span>";
+            document.getElementById('screen-size-text-xs').innerHTML = "<span class='glyphicon glyphicon-resize-small' aria-hidden='true'></span><span class='navbar-text-desc-xs'>Exit Full Screen</span>";
+            document.getElementById("ViewModeLink").onclick = function () { toggleScreenSize('full'); };
+            sizesave = "full";
+            document.getElementById("ViewModeLink").setAttribute("aria-pressed", "true");
+            var viewModeLinkXs = document.getElementById("ViewModeLink-xs");
+            if (viewModeLinkXs) {
+                viewModeLinkXs.setAttribute("aria-pressed", "true");
+            }
+            // enable the full screen identification
+            document.getElementById('fullscreen-id').innerHTML = "<img class='fullscreen-id-image' alt='' src='/Content/Images/Marble_Bulletin_MOBILE-72.jpg'/>";
+            document.getElementById('fullscreen-id').style.display = "inline";
+            document.getElementById('fullscreen-id-sm').innerHTML = "<div class='fullscreen-id-text'>Pennsylvania</br>Bulletin</div>";
+        }
+
+        // update the Previous doc link
+        var prevlink = document.getElementById("PrevLink");
+        if (prevlink != null && prevlink.value != '') {
+            var prevlinkhref = prevlink.getAttribute("href");
+            prevlinkhref = prevlinkhref.replace(/\&d=(.*?)$/, "&d=" + sizesave)
+            prevlink.setAttribute("href", prevlinkhref);
+        }
+        // update the Prev doc link in the continuation HTML links
+        var prevlink = document.getElementById("PrevLinkc1");
+        if (prevlink != null && prevlink.value != '') {
+            var prevlinkhref = prevlink.getAttribute("href");
+            prevlinkhref = prevlinkhref.replace(/\&d=(.*?)$/, "&d=" + sizesave)
+            prevlink.setAttribute("href", prevlinkhref);
+        }
+        // update the prev link in the small sized screen
+        var prevlink = document.getElementById("PrevLinkxs");
+        if (prevlink != null && prevlink.value != '') {
+            var prevlinkhref = prevlink.getAttribute("href");
+            prevlinkhref = prevlinkhref.replace(/\&d=(.*?)$/, "&d=" + sizesave)
+            prevlink.setAttribute("href", prevlinkhref);
+        }
+        // update the Next doc link
+        var nextlink = document.getElementById("NextLink");
+        if (nextlink != null && nextlink.value != '') {
+            var nextlinkhref = nextlink.getAttribute("href");
+            nextlinkhref = nextlinkhref.replace(/\&d=(.*?)$/, "&d=" + sizesave)
+            nextlink.setAttribute("href", nextlinkhref);
+        }
+        // update the Next doc link in the continuation HTML links
+        var nextlink = document.getElementById("NextLinkc1");
+        if (nextlink != null && nextlink.value != '') {
+            var nextlinkhref = nextlink.getAttribute("href");
+            nextlinkhref = nextlinkhref.replace(/\&d=(.*?)$/, "&d=" + sizesave)
+            nextlink.setAttribute("href", nextlinkhref);
+        }
+        // update the Next link in the small sized screen
+        var nextlink = document.getElementById("NextLinkxs");
+        if (nextlink != null && nextlink.value != '') {
+            var nextlinkhref = nextlink.getAttribute("href");
+            nextlinkhref = nextlinkhref.replace(/\&d=(.*?)$/, "&d=" + sizesave)
+            nextlink.setAttribute("href", nextlinkhref);
+        }
+    }
+</script>
+
+<script src="https://code.jquery.com/jquery-latest.js" type="text/javascript">
+</script>
+<script type="text/javascript">
+    $(document).ready(function () {
+        // this function helps us read the URL params so we can look for the the condition d=full indicating full screen mode
+        $.urlParam = function (name) {
+            var results = new RegExp('[\\?&]' + name + '=([^&#]*)').exec(window.location.href);
+            return results ? decodeURIComponent(results[1]) : "";
+        }
+        searchParams = $.urlParam('d')      // the "d" url parameter value
+        if (searchParams.includes('full')) {
+            // if we are in full screen mode do the below - we need this here for the case where the user is using Next and Prev buttons
+            // enable the full screen identification
+            document.getElementById('fullscreen-id').innerHTML = "<img class='fullscreen-id-image' alt='' src='/Content/Images/Marble_Bulletin_MOBILE-72.jpg'/>";
+            document.getElementById('fullscreen-id').style.display = "inline";
+            document.getElementById('fullscreen-id-sm').innerHTML = "<div class='fullscreen-id-text'>Pennsylvania</br>Bulletin</div>";
+        }
+    })
+</script>
+
+<script>
+    // When the user scrolls down 20px from the top of the document, show the button
+    window.onscroll = function () { scrollFunction() };
+
+    function scrollFunction() {
+        if (document.body.scrollTop > 20 || document.getElementById('textpanel').scrollTop > 20) {
+            document.getElementById("myBtn").style.display = "block";
+            document.getElementById("myBtnBottom").style.display = "none";
+        } else {
+            document.getElementById("myBtn").style.display = "none";
+            document.getElementById("myBtnBottom").style.display = "block";
+        }
+
+    }
+
+    // When the user clicks on the button, scroll to the top of the document
+    function topFunction() {
+        // go to the top of the main page
+        document.body.scrollTop = 0;
+        document.documentElement.scrollTop = 0;
+        // set the text view panel to the top as well
+        var myDiv = document.getElementById('textpanel');
+        myDiv.scrollTop = 0;
+    }
+    function bottomFunction() {
+        // go to the bottom of the main page
+        document.body.scrollTop = document.body.scrollHeight;
+        document.documentElement.scrollTop = document.documentElement.scrollHeight;
+        // set the text view panel to the top as well
+        var myDiv = document.getElementById('textpanel');
+        myDiv.scrollTop = myDiv.scrollHeight;
+    }
+</script>
+
+<script>
+    function printContent(el) {
+        // get the HTML content from the div and open it in a new window so it stands alone
+        var printReport = document.getElementById("textpanel").innerHTML;
+        printReport = "<a class='printwindow-close' style='margin-left: 40px;' href='javascript:window.close();'>Close Window</a>" + printReport;
+        var w = window.open();
+        $(w.document.body).html(printReport);
+        w.print();
+    }
+</script>
+
+<script src="/Keyoti_SearchEngine_Web_Common/SearchUnit_Highlighter.js"></script>
+
+<div class="row">
+    <aside id="home-leftpanel-column-pabull"
+           class="col-md-3 hidden-print"
+           style="display:block;"
+           aria-label="Pennsylvania Bulletin information">
+
+
+        
+
+
+
+<div class="hidden-xs hidden-sm">
+
+
+        <!--<h1>Pennsylvania<br />Bulletin</h1> -->
+
+
+    <div class="hidden-xs banner-leftnav">
+            <a href="/"><img src="/Content/Images/PA_Bulletin_Image-72.jpg" title="Pennsylvania Bulletin" alt="Pennsylvania Bulletin" /></a>
+</div>
+</div>
+
+<div class="leftnavcontainer">
+        <!-- desktop or larger only -->
+    <div class="commonwealth-heading" aria-label="Commonwealth of Pennsylvania">
+        <span class="commonwealth-heading-line" aria-hidden="true">
+            <span class="commonwealth-heading-initial">C</span>OMMONWEALTH OF
+        </span>
+        <span class="commonwealth-heading-line" aria-hidden="true">
+            <span class="commonwealth-heading-initial">P</span>ENNSYLVANIA
+        </span>
+    </div>
+
+        <!-- small screen ipad like only -->
+         <div class="commonwealth-heading-smallscreen visible-sm">
+                <img src="/Content/Images/Marble_Bulletin_MOBILE-72.jpg" style="" title="Pennsylvania Bulletin" alt="Pennsylvania Bulletin" />
+
+
+         </div>
+        
+        <!-- small screen and xtra small only -->
+        <div class="commonwealth-heading-black visible-xs visible-sm"
+             aria-label="Commonwealth of Pennsylvania">
+            <span aria-hidden="true">
+                <span class="commonwealth-heading-initial-mobile">C</span>OMMONWEALTH OF
+            </span>
+            <span aria-hidden="true">
+                <span class="commonwealth-heading-initial">P</span>ENNSYLVANIA
+            </span>
+        </div>           
+
+        <div class="hidden-xs hidden-sm">
+            <p class="leftpaneltext-bold">No statutes or acts will be found at this website.</p>
+
+            <div>
+                            <p class="leftpaneltext">
+                    The <em><strong>Pennsylvania Bulletin</strong></em> website includes the following: Rulemakings by State agencies; Proposed Rulemakings by State agencies; State agency notices; the Governor’s Proclamations and Executive Orders; Actions by the General Assembly; and Statewide and local court rules.
+                </p>
+            </div>
+        </div>
+
+
+   <div class="visible-xs visible-sm">
+
+       <div class="introformobile-container">
+
+
+               <button type="button"
+                       class="accordion-toggle homelink collapsed button-reset"
+                       data-toggle="collapse"
+                       data-target="#introformobile-pabull"
+                       aria-expanded="false"
+                       aria-controls="introformobile-pabull">
+                   About the Pennsylvania Code & Bulletin
+               </button>
+
+
+
+           <div id="introformobile-pabull" class="collapse">
+
+               <p class="leftpaneltextmobile">&bull; No statutes or acts will be found at this website.</p>
+
+                                  <p class="leftpaneltextmobile">
+                       The <em><strong>Pennsylvania Bulletin</strong></em> website includes the following: Rulemakings by State agencies; Proposed Rulemakings by State agencies; State agency notices; the Governor’s Proclamations and Executive Orders; Actions by the General Assembly; and Statewide and local court rules.
+                   </p>
+           </div>
+       </div>
+   </div>
+
+<div class="hidden-xs hidden-sm alert-leftnav">
+    <a href="/Account/PARegister"><img src="/Content/Images/Email_Alert_Icon-72.png" alt="Email Alerts" title="Email Alerts" border="0"/></a>
+</div>
+</div>
+
+    </aside>
+
+    <!--- Middle Column -->
+    <main id="maincontent" style="width: 75%;" class="col-md-9">
+        <div id="pabull-text" class="parent" style="height: 890px;">
+            <!-- header-->
+
+
+
+
+            
+
+
+
+            <nav class="visible-xs" aria-label="Document actions">
+                <div style="background-color: #eeeeee; text-align: center;">
+                    <ul class="nav navbar-nav">
+                        <li class="subnav-sm-override">
+                            <a id="TOCLinkxs" href="/Home/volume?vol=55&amp;issue=52" title="Bulletin Table of Contents">
+                                <span class="glyphicon glyphicon-list" aria-hidden="true"></span>
+                                <span class="navbar-text-desc-xs">Table of Contents</span>
+                            </a>
+                        </li>
+                        <li class="subnav-sm-override">
+                            <a id="PrevLinkxs" href="/Display/pabull?file=/secure/pabulletin/data/vol55/55-52/1784.html&amp;d=reduce" title="Previous Doc">
+                                <span class="glyphicon glyphicon-backward" aria-hidden="true"></span>
+                                <span class="navbar-text-desc-xs">Previous Doc</span>
+                            </a>
+                        </li>
+                        <li class="subnav-sm-override">
+                            <a id="NextLinkxs" href="/Display/pabull?file=/secure/pabulletin/data/vol55/55-52/1786.html&amp;d=reduce" title="Next Doc">
+                                <span class="glyphicon glyphicon-forward" aria-hidden="true"></span>
+                                <span class="navbar-text-desc-xs">Next Doc</span>
+                            </a>
+                        </li>
+
+                        <!-- if a search was performed, include link back to the results else show search -->
+                                <li class="subnav-sm-override">
+                                    <a href="/Home/Pabull?query=" title="Return to Search">
+                                        <span class="glyphicon glyphicon-search" aria-hidden="true"></span>
+                                        <span class="navbar-text-desc-xs">Return to Search</span>
+                                    </a>
+                                </li>
+
+
+                        <li class="subnav-sm-override">
+                            <button id="ViewModeLink-xs"
+                                    type="button"
+                                    class="icon-button"
+                                    onclick="toggleScreenSize('reduce');"
+                                    aria-pressed="false">
+
+                                <span id="screen-size-text-xs">
+                                        <span class="glyphicon glyphicon-fullscreen" aria-hidden="true"></span>
+                                        <span class="navbar-text-desc-xs">Enter Full Screen</span>
+                                </span>
+
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+            <nav class="child hidden-xs d-print-none"
+                 style="background-color: #eeeeee; text-align: center;"
+                 aria-label="Document actions">
+                <div class="container">
+                    <div class="navbar-header">
+                        <button type="button"
+                                class="navbar-toggle"
+                                data-toggle="collapse"
+                                data-target="#document-navigation"
+                                aria-label="Open document navigation"
+                                aria-controls="document-navigation"
+                                aria-expanded="false">
+                            <span class="icon-bar"></span>
+                            <span class="icon-bar"></span>
+                            <span class="icon-bar"></span>
+                        </button>
+                    </div>
+                    <div id="document-navigation" class="navbar-collapse collapse">
+                        <ul class="nav docview-subnav navbar-nav">
+                            <li>
+                                <a id="TOCLink"
+                                   href="/Home/volume?vol=55&amp;issue=52"
+                                   aria-label="View Bulletin Table of Contents">
+                                    <span class="glyphicon glyphicon-list" aria-hidden="true"></span>
+                                    <span class="navbar-text-desc">Table of Contents</span>
+                                </a>
+                            </li>
+
+                            <li>
+                                <a id="PrevLink"
+                                   href="/Display/pabull?file=/secure/pabulletin/data/vol55/55-52/1784.html&amp;d=reduce"
+                                   aria-label="Previous Doc">
+                                    <span class="glyphicon glyphicon-backward" aria-hidden="true"></span>
+                                    <span class="navbar-text-desc">Previous Doc</span>
+                                </a>
+                            </li>
+
+                                    <li>
+                                        <a id="NextLink"
+                                           href="/Display/pabull?file=/secure/pabulletin/data/vol55/55-52/1786.html&amp;d=reduce"
+                                           aria-label="Next Doc">
+                                            <span class="glyphicon glyphicon-forward" aria-hidden="true"></span>
+                                            <span class="navbar-text-desc">Next Doc</span>
+                                        </a>
+                                    </li>
+
+
+
+
+                            <!-- if a search was performed, include link back to the results else show search -->
+                                    <li>
+                                        <a href="/Home/Pabull?query="
+                                           aria-label="Return to search results">
+                                            <span class="glyphicon glyphicon-search" aria-hidden="true"></span>
+                                            <span class="navbar-text-desc">Return to Search</span>
+                                        </a>
+                                    </li>
+
+                            <li>
+                                <button id="printwindow"
+                                        type="button"
+                                        class="icon-button"
+                                        onclick="printContent('textpanel');"
+                                        title="Print Document"
+                                        aria-label="Print document">
+                                    <span class="glyphicon glyphicon-print" aria-hidden="true"></span>
+                                    <span class="navbar-text-desc">Print</span>
+                                </button>
+                            </li>
+
+                            <li>
+                                <button id="ViewModeLink"
+                                        type="button"
+                                        class="icon-button"
+                                        onclick="toggleScreenSize('reduce');"
+                                        aria-label="Toggle screen size"
+                                        aria-pressed="false">
+                                    <span id="screen-size-text">
+                                                <span class="glyphicon glyphicon-fullscreen" aria-hidden="true"></span>
+                                                <span class="navbar-text-desc">Enter Full Screen</span>
+
+                                    </span>
+                                </button>
+                            </li>
+
+                        </ul>
+                    </div>
+                </div>
+            </nav>
+
+            <!-- Display Breadcrumb -->
+                    <nav id="BreadCrumbBlock"
+                         class="breadcrumb-container breadcrumb-pacode"
+                         aria-label="Breadcrumb">
+                        <div class="breadcrumb-item"><a id="BreadCrumbLinkTitle" class="breadcrumb-link" href="/Home/volume?vol=55&issue=52">Volume&nbsp;55&nbsp;&nbsp;Issue&nbsp;52</a><a class="breadcrumb-link" href="/secure/pabulletin/data/vol55/55-52/55-52.pdf" target="_blank" rel="noopener noreferrer" aria-label="View PDF for this issue, opens in a new tab"><img alt="" class="pdf-download breadcrumb-pdficon" src="/Content/images/pdficon.png"/></a></div><div class="breadcrumb-item breadcrumb-separator">&nbsp;55 Pa.B. 8855</div><div class="breadcrumb-item breadcrumb-separator">&nbsp;Pennsylvania LOVE IS BLIND Instant Lottery Game 1766</div>
+                    </nav>
+
+            <div onscroll="scrollFunction()" id="textpanel" tabindex="0" role="region" aria-label="Bulletin article text" style="overflow: auto; width: 100%; height: 800px;">
+                <article>
+                    <div>
+                        <!-- this div had height 1200 that was removed-->
+                        <div id="pabull-text-window">
+                            <html>
+<head>
+<title>PA Bulletin, Doc. No. 25-1785</title>
+<link type="text/css" href="/Content/pabulletin.css">
+<meta name="Keyoti_Search_Custom_Data" content="vol=55&issue=52&dock_number=25-1785&bullpage=8855&description=Pennsylvania LOVE IS BLIND Instant Lottery Game 1766&doctype=Notice&agency=Revenue&title_affected=0&chapteraffected=0&fiscal=0&pubdate=2025-12-27">
+<meta name="Keyoti_Search_Content_Categories" content="55">
+<meta name="description" content="Pennsylvania LOVE IS BLIND Instant Lottery Game 1766">
+<script src="/Keyoti_SearchEngine_Web_Common/SearchUnit_Highlighter.js"></script>
+</head>
+<body BGCOLOR="#FFFFFF">
+<blockquote>
+<map name="navbar">
+   
+   
+   
+   
+   
+   
+</map>
+
+
+<h1><center>NOTICES</center></h1>
+<h2><center>DEPARTMENT OF REVENUE</center></b></h2>
+<h3><center><ttlstrt>Pennsylvania LOVE IS BLIND Instant Lottery Game 1766<ttlend></center></b></h3>
+<h4><center>[55 Pa.B. 8855]<br>[Saturday, December 27, 2025]<br></center></b></h4>
+<p>&emsp;Under the State Lottery Law (72 P.S. &#167;&#167;&ensp;3761-101&mdash;3761-314) and 61 Pa.&thinsp;Code &#167;&ensp;819.203 (relating to notice of instant game rules), the Secretary of Revenue hereby provides public notice of the rules for the following instant lottery game:</p>
+<p>&emsp;1.&ensp;<i>Name</i>:&ensp;The name of the game is Pennsylvania LOVE IS BLIND (''LOVE IS BLIND''). The game number is PA-1766.</p>
+<p>&emsp;2.&ensp;<i>Price and payout percentage</i>:&ensp;The price of a LOVE IS BLIND instant lottery game ticket is $2. The payout percentage is 68.29%.</p>
+<p>&emsp;3.&ensp;<i>Play symbols</i>:&ensp;Each LOVE IS BLIND instant lottery game ticket will contain one play area and a ''BLIND LOVE CLUB'' area. The play symbols and their captions located in the play area are: Pod (POD) symbol, Heart (HEART) symbol, Kiss (KISS) symbol, Goblets (GOBLETS) symbol, Rings (RINGS) symbol, Super Heart (SUPR HRT) symbol, Thought Bubble (THOUGHT) symbol, Wedding Bands (BANDS) symbol, Double Heart (DBLHRT) symbol, Single 1 (SINGLE 1) symbol, Single 2 (SINGLE 2) symbol, Engaged (ENGAGED) symbol, Door (DOOR) symbol and a Proposal (WIN10) symbol. The play symbols and their captions located in the ''BLIND LOVE CLUB'' area are: TRY AGAIN (TRYAGAIN) symbol, TRY AGAIN (TRYAGAIN) symbol, TRY AGAIN (TRYAGAIN) symbol, TRY AGAIN (TRYAGAIN) symbol, TRY AGAIN (TRYAGAIN) symbol and a Blindfolded Heart (2XWINALL) symbol.</p>
+<p>&emsp;4.&ensp;<i>Prize Symbols</i>:&ensp;The prize symbols and their captions located in the play area are: $2<sup>.00</sup> (TWO DOL), $4<sup>.00</sup> (FOR DOL), $10<sup>.00</sup> (TEN DOL), $20<sup>.00</sup> (TWENTY), $40<sup>.00</sup> (FORTY), $100 (ONE HUN), $400 (FOR HUN), $2,000 (TWO THO) and $20,000 (TWY THO).</p>
+<p>&emsp;5.&ensp;<i>Prizes</i>:&ensp;The prizes that can be won in this game are: $2, $4, $10, $20, $40, $100, $400, $2,000 and $20,000. For a complete description of how these prizes can be won, see section 9 (relating to number and description of prizes and approximate odds). A player can win up to nine times on a ticket.</p>
+<p>&emsp;6.&ensp;<i>Approximate number of tickets printed for the game</i>:&ensp;Approximately 4,800,000 tickets will be printed for the LOVE IS BLIND instant lottery game.</p>
+<p>&emsp;7.&ensp;<i>Second-Chance Drawing</i>:&ensp;The Pennsylvania Lottery (''Lottery'') will conduct one Second Shot at Love Second-Chance Drawing (''Drawing'') for which non-winning LOVE IS BLIND instant lottery game tickets may be eligible as provided for in section 10 (relating to second-chance drawing).</p>
+<p>&emsp;8.&ensp;<i>Determination of prize winners</i>:</p>
+<p>&emsp;(a)&ensp;Holders of tickets upon which a Door (DOOR) symbol appears in the play area and a prize symbol of $20,000 (TWY THO) appears in the ''prize'' area under that Door (DOOR) symbol, on a single ticket, shall be entitled to a prize of $20,000.</p>
+<p>&emsp;(b)&ensp;Holders of tickets upon which a Door (DOOR) symbol appears in the play area and a prize symbol of $2,000 (TWO THO) appears in the ''prize'' area under that Door (DOOR) symbol, on a single ticket, shall be entitled to a prize of $2,000.</p>
+<p>&emsp;(c)&ensp;Holders of tickets upon which a Blindfolded Heart (2XWINALL) symbol appears in the ''BLIND LOVE CLUB'' area and a prize symbol of $100 (ONE HUN) appears in five of the ''prize'' areas, a prize symbol of $40<sup>.00</sup> (FORTY) appears in two of the ''prize'' areas, a prize symbol of $400 (FOR HUN) appears in one of the ''prize'' areas and a prize symbol of $20<sup>.00</sup> (TWENTY) appears in one of the ''prize'' areas, on a single ticket, shall be entitled to a prize of $2,000.</p>
+<p>&emsp;(d)&ensp;Holders of tickets upon which a Door (DOOR) symbol appears in the play area and a prize symbol of $400 (FOR HUN) appears in the ''prize'' area under that Door (DOOR) symbol, on a single ticket, shall be entitled to a prize of $400.</p>
+<p>&emsp;(e)&ensp;Holders of tickets upon which a Blindfolded Heart (2XWINALL) symbol appears in the ''BLIND LOVE CLUB'' area and a prize symbol of $40<sup>.00</sup> (FORTY) appears in four of the ''prize'' areas, a prize symbol of $4<sup>.00</sup> (FOR DOL) appears in two of the ''prize'' areas, a prize symbol of $20<sup>.00</sup> (TWENTY) appears in one of the ''prize'' areas, a prize symbol of $10<sup>.00</sup> (TEN DOL) appears in one of the ''prize'' areas and a prize symbol of $2<sup>.00</sup> (TWO DOL) appears in one of the ''prize'' areas, on a single ticket, shall be entitled to a prize of $400.</p>
+<p>&emsp;(f)&ensp;Holders of tickets upon which a Blindfolded Heart (2XWINALL) symbol appears in the ''BLIND LOVE CLUB'' area and a prize symbol of $40<sup>.00</sup> (FORTY) appears in two of the ''prize'' areas, a prize symbol of $20<sup>.00</sup> (TWENTY) appears in five of the ''prize'' areas and a prize symbol of $10<sup>.00</sup> (TEN DOL) appears in two of the ''prize'' areas, on a single ticket, shall be entitled to a prize of $400.</p>
+<p>&emsp;(g)&ensp;Holders of tickets upon which a Door (DOOR) symbol appears in the play area and a prize symbol of $100 (ONE HUN) appears in the ''prize'' area under that Door (DOOR) symbol, on a single ticket, shall be entitled to a prize of $100.</p>
+<p>&emsp;(h)&ensp;Holders of tickets upon which a Blindfolded Heart (2XWINALL) symbol appears in the ''BLIND LOVE CLUB'' area and a prize symbol of $10<sup>.00</sup> (TEN DOL) appears in four of the ''prize'' areas and a prize symbol of $2<sup>.00</sup> (TWO DOL) appears in five of the ''prize'' areas, on a single ticket, shall be entitled to a prize of $100.</p>
+<p>&emsp;(i)&ensp;Holders of tickets upon which a Blindfolded Heart (2XWINALL) symbol appears in the ''BLIND LOVE CLUB'' area and a prize symbol of $4<sup>.00</sup> (FOR DOL) appears in seven of the ''prize'' areas, a prize symbol of $20<sup>.00</sup> (TWENTY) appears in one of the ''prize'' areas and a prize symbol of $2<sup>.00</sup> (TWO DOL) appears in one of the ''prize'' areas, on a single ticket, shall be entitled to a prize of $100.</p>
+<p>&emsp;(j)&ensp;Holders of tickets upon which a Door (DOOR) symbol appears in the play area and a prize symbol of $40<sup>.00</sup> (FORTY) appears in the ''prize'' area under that Door (DOOR) symbol, on a single ticket, shall be entitled to a prize of $40.</p>
+<p>&emsp;(k)&ensp;Holders of tickets upon which a Blindfolded Heart (2XWINALL) symbol appears in the ''BLIND LOVE CLUB'' area and a prize symbol of $2<sup>.00</sup> (TWO DOL) appears in eight of the ''prize'' areas and a prize symbol of $4<sup>.00</sup> (FOR DOL) appears in one of the ''prize'' areas, on a single ticket, shall be entitled to a prize of $40.</p>
+<p>&emsp;(l)&ensp;Holders of tickets upon which a Door (DOOR) symbol appears in the play area and a prize symbol of $20<sup>.00</sup> (TWENTY) appears in the ''prize'' area under that Door (DOOR) symbol, on a single ticket, shall be entitled to a prize of $20.</p>
+<p>&emsp;(m)&ensp;Holders of tickets upon which a Door (DOOR) symbol appears in the play area and a prize symbol of $10<sup>.00</sup> (TEN DOL) appears in the ''prize'' area under that Door (DOOR) symbol, on a single ticket, shall be entitled to a prize of $10.</p>
+<p>&emsp;(n)&ensp;Holders of tickets upon which a Proposal (WIN10) symbol appears in the play area, on a single ticket, shall be entitled to a prize of $10.</p>
+<p>&emsp;(o)&ensp;Holders of tickets upon which a Door (DOOR) symbol appears in the play area and a prize symbol of $4<sup>.00</sup> (FOR DOL) appears in the ''prize'' area under that Door (DOOR) symbol, on a single ticket, shall be entitled to a prize of $4.</p>
+<p>&emsp;(p)&ensp;Holders of tickets upon which a Door (DOOR) symbol appears in the play area and a prize symbol of $2<sup>.00</sup> (TWO DOL) appears in the ''prize'' area under that Door (DOOR) symbol, on a single ticket, shall be entitled to a prize of $2.</p>
+<p>&emsp;9.&ensp;<i>Number and description of prizes and approximate odds</i>:&ensp;The following table sets forth the approximate number of winners, amounts of prizes and approximate odds of winning:<br></p>
+<p><br></p>
+<table class="miscr"><setcol;5;xalign>
+<tr align=left valign=bottom><th align=left>Reveal a Door (DOOR)<br> Symbol to Win Prize Shown<br> Under That Symbol.<br> Win With:</th><th align=center>BLIND LOVE<br> CLUB:</th><th>Win:</th><th align=center>Approximate<br> Odds Are 1 In:</th><th align=right>Approximate No.<br> Of Winners Per<br> 4,800,000 Tickets: </th></tr>
+<tr align=left valign=top><td align=left>$2 </td><td></td><td>$2 </td><td>8.55</td><td align=right>561,600 </td></tr>
+<tr align=left valign=top><td align=left>$2 &#215; 2</td><td></td><td>$4 </td><td>25</td><td align=right>192,000 </td></tr>
+<tr align=left valign=top><td align=left>$4 </td><td></td><td>$4 </td><td>41.67</td><td align=right>115,200</td></tr>
+<tr align=left valign=top><td align=left>$2 &#215; 5</td><td></td><td>$10 </td><td>1,000</td><td align=right>4,800 </td></tr>
+<tr align=left valign=top><td align=left>($2 &#215; 3) + $4</td><td></td><td>$10 </td><td>1,000</td><td align=right>4,800 </td></tr>
+<tr align=left valign=top><td align=left>($4 &#215; 2) + $2</td><td></td><td>$10 </td><td>1,000</td><td align=right>4,800</td></tr>
+<tr align=left valign=top><td align=left>$10 w/ PROPOSAL</td><td></td><td>$10 </td><td>333.33</td><td align=right>14,400 </td></tr>
+<tr align=left valign=top><td align=left>$10 </td><td></td><td>$10 </td><td>1,000</td><td align=right>4,800 </td></tr>
+<tr align=left valign=top><td align=left>$4 &#215; 5</td><td></td><td>$20 </td><td>333.33</td><td align=right>14,400 </td></tr>
+<tr align=left valign=top><td align=left>$10 &#215; 2</td><td></td><td>$20 </td><td>333.33</td><td align=right>14,400 </td></tr>
+<tr align=left valign=top><td align=left>($10 w/ PROPOSAL) + ($2 &#215; 5)</td><td></td><td>$20 </td><td>100</td><td align=right>48,000 </td></tr>
+<tr align=left valign=top><td align=left>($10 w/ PROPOSAL) &#215; 2</td><td></td><td>$20 </td><td>100</td><td align=right>48,000 </td></tr>
+<tr align=left valign=top><td align=left>$20 </td><td></td><td>$20 </td><td>250</td><td align=right>19,200</td></tr>
+<tr align=left valign=top><td align=left></td><td align=center>BLINDFOLDED HEART w/<br> (($2 &#215; 8) + $4)</td><td>$40 </td><td>800</td><td align=right>6,000 </td></tr>
+<tr align=left valign=top><td align=left>$10 &#215; 4</td><td></td><td>$40 </td><td>24,000</td><td align=right>200 </td></tr>
+<tr align=left valign=top><td align=left>($10 w/ PROPOSAL) + ($10 &#215; 2) + ($4 &#215; 2) + $2</td><td></td><td>$40 </td><td>12,000</td><td align=right>400</td></tr>
+<tr align=left valign=top><td align=left>(($10 w/ PROPOSAL) &#215; 2) + ($4 &#215; 5)</td><td></td><td>$40 </td><td>12,000</td><td align=right>400</td></tr>
+<tr align=left valign=top><td align=left>($10 w/ PROPOSAL) &#215; 4</td><td></td><td>$40 </td><td>12,000</td><td align=right>400 </td></tr>
+<tr align=left valign=top><td align=left>$40 </td><td></td><td>$40 </td><td>24,000</td><td align=right>200 </td></tr>
+<tr align=left valign=top><td align=left></td><td align=center>BLINDFOLDED HEART w/<br> (($4 &#215; 7) + $20 + $2)</td><td>$100 </td><td>8,000</td><td align=right>600</td></tr>
+<tr align=left valign=top><td align=left></td><td>BLINDFOLDED HEART w/ (($10 &#215; 4) + ($2 &#215; 5))</td><td>$100 </td><td>8,000</td><td align=right>600 </td></tr>
+<tr align=left valign=top><td align=left>$20 &#215; 5</td><td></td><td>$100 </td><td>60,000</td><td align=right>80 </td></tr>
+<tr align=left valign=top><td align=left>(($10 w/ PROPOSAL) &#215; 3) + ($20 &#215; 3) + ($4 &#215; 2) + $2</td><td></td><td>$100 </td><td>40,000</td><td align=right>120 </td></tr>
+<tr align=left valign=top><td align=left>(($10 w/ PROPOSAL) &#215; 5) + $40 + $10</td><td></td><td>$100 </td><td>40,000</td><td align=right>120 </td></tr>
+<tr align=left valign=top><td align=left>$100 </td><td></td><td>$100 </td><td>60,000</td><td align=right>80 </td></tr>
+<tr align=left valign=top><td align=left></td><td>BLINDFOLDED HEART w/ (($40 &#215; 2) + ($20 &#215; 5) + ($10 &#215; 2))</td><td>$400 </td><td>12,000</td><td align=right>400 </td></tr>
+<tr align=left valign=top><td align=left></td><td>BLINDFOLDED HEART w/ (($40 &#215; 4) + ($4 &#215; 2) + $20 + $10 + $2)</td><td>$400 </td><td>12,000</td><td align=right>400 </td></tr>
+<tr align=left valign=top><td align=left>$100 &#215; 4</td><td></td><td>$400 </td><td>120,000</td><td align=right>40 </td></tr>
+<tr align=left valign=top><td align=left>(($10 w/ PROPOSAL) &#215; 4) + ($100 &#215; 3) + $40 + $20</td><td></td><td>$400</td><td>60,000</td><td align=right>80 </td></tr>
+<tr align=left valign=top><td align=left>$400 </td><td></td><td>$400 </td><td>120,000</td><td align=right>40</td></tr>
+<tr align=left valign=top><td align=left></td><td>BLINDFOLDED HEART w/ (($100 &#215; 5) + ($40 &#215; 2) + $400 + $20)</td><td>$2,000 </td><td>320,000</td><td align=right>15 </td></tr>
+<tr align=left valign=top><td align=left>$2,000 </td><td></td><td>$2,000 </td><td>960,000</td><td align=right>5 </td></tr>
+<tr align=left valign=top><td align=left>$20,000 </td><td></td><td>$20,000 </td><td>960,000</td><td align=right>5</td></tr></table>
+<p>Reveal a ''Proposal'' (WIN10) symbol to WIN $10 instantly!</p>
+<p>BLIND LOVE CLUB: Reveal a ''Blindfolded Heart'' (2XWINALL) symbol to DOUBLE and win ALL 9 prizes shown!<br><br></p>
+<p>&emsp;Prizes, including top prizes, are subject to availability at the time of purchase.</p>
+<p>&emsp;10.&ensp;<i>Second-Chance Drawing</i>:&ensp;The Lottery's Second Shot at Love Second-Chance Drawing for qualifying instant and Fast Play lottery game tickets:</p>
+<p>&emsp;(a)&ensp;<i>Qualifying Tickets</i>:&ensp;Non-winning PA-1766 LOVE IS BLIND ($2) instant lottery game tickets, and PA-5312 Love Coupon ($5), PA-5313 Perfect Match ($2) and PA-5314 Cherry Beary Love ($1) Fast Play lottery game tickets (''Qualifying Tickets'') are eligible for entry into the Drawing.</p>
+<p>&emsp;(b)&ensp;<i>Participation and entry</i>:</p>
+<p>&emsp;(1)&ensp;Entrants must have a registered lottery account in order to participate in the Drawing. To create a lottery account, visit https://www.PAiLottery.com. Creating a lottery account is free.</p>
+<p>&emsp;(2)&ensp;A registered lottery account holder is subject to the iLottery regulations and specifically agrees to be bound by the iLottery terms and conditions located at https://www.pailottery.com/signup/terms-and-conditions/, as well as any related policies.</p>
+<p>&emsp;(3)&ensp;To establish a lottery account, players must provide the following information:</p>
+<p>&emsp;(i)&ensp;The player's name as it appears on a valid government-issued identification or tax documents;</p>
+<p>&emsp;(ii)&ensp;The player's date of birth;</p>
+<p>&emsp;(iii)&ensp;The entire or last four digits of the player's Social Security Number, or comparable equivalent;</p>
+<p>&emsp;(iv)&ensp;The player's address;</p>
+<p>&emsp;(v)&ensp;The player's telephone number;</p>
+<p>&emsp;(vi)&ensp;The player's email address;</p>
+<p>&emsp;(vii)&ensp;Any other information established by the Lottery to be necessary to verify the age and identity of the player.</p>
+<p>&emsp;(4)&ensp;An individual may be required to provide additional information or documentation, as set forth in the iLottery terms and conditions, to establish a lottery account or register for iLottery. The information may be used for iLottery registration or to confirm information provided by that individual during the registration process.</p>
+<p>&emsp;(5)&ensp;To enter the Drawing, entrants must submit the identifying information from at least one Qualifying Ticket via the Drawing's promotional web site, available at https://www.palottery.com, or the Lottery's official mobile application during the entry period. The identifying information from a Qualifying Ticket may be submitted only once in the Drawing. Entries will automatically be awarded at the time of successful submission of a Qualifying Ticket. No other method of submission will be accepted. Entries submitted using any other method, including entries mailed or hand-delivered to the Lottery, are not valid and will be disqualified.</p>
+<p>&emsp;(6)&ensp;Each entry must be complete, and the information supplied by the entrant must be accurate. Incomplete entries cannot be accepted.</p>
+<p>&emsp;(7)&ensp;Only one claimant per entry is allowed.</p>
+<p>&emsp;(8)&ensp;Entrants must be 18 years of age or older.</p>
+<p>&emsp;(9)&ensp;Players may submit the identifying information from an unlimited number of Qualifying Tickets in the Drawing.</p>
+<p>&emsp;(10)&ensp;Once an entry has been submitted it cannot be withdrawn or changed.</p>
+<p>&emsp;(c)&ensp;<i>Drawing description</i>:</p>
+<p>&emsp;(1)&ensp;The Lottery will conduct one Second Shot at Love Second-Chance Drawing from among all Fast Play and instant lottery game Qualifying Tickets entered into the Drawing. All time references are Eastern Prevailing Time.</p>
+<p>&emsp;(2)&ensp;The entry period for instant lottery game Qualifying Tickets will begin after 11:59:59 p.m. December 28, 2025, and will end at 11:59:59 p.m. February 19, 2025. The entry period for Fast Play lottery game Qualifying Tickets will begin after 4:59:59 a.m. January 6, 2026, and will end at 11:59:59 p.m. February 19, 2026. All entries received during the entry periods will be entered in the Drawing tentatively scheduled to be held between February 20, 2026, and March 6, 2026.</p>
+<p>&emsp;(3)&ensp;The entry periods for the Drawing will be posted to the Lottery's publicly accessible web site at https://www.palottery.com.</p>
+<p>&emsp;(4)&ensp;The number of entries an entrant will receive for the Drawing is determined by the purchase price of the Qualifying Ticket entered. The purchase price and corresponding number of entries for the Qualifying Ticket is as follows: PA-1766 LOVE IS BLIND ($2) = two entries; PA-5312 Love Coupon ($5) = five entries; PA-5313 Perfect Match ($2) = two entries; and PA-5314 Cherry Beary Love ($1) = one entry.</p>
+<p>&emsp;(5)&ensp;Players may review prizes won and their entries for the Drawing via the Drawing's promotional web site.</p>
+<p>&emsp;(d)&ensp;<i>Prizes available to be won, determination of winners and odds of winning</i>:</p>
+<p>&emsp;(1)&ensp;The prize entitlements described below are subject to all restrictions and limitations described in section 10(e), or those mentioned anywhere else in these rules.</p>
+<p>&emsp;(2)&ensp;Lottery will conduct one Drawing from among all the entries received during the entry periods as described in section 10(c)(2).</p>
+<p>&emsp;(i)&ensp;The first through the third entries selected in the Drawing will be winning entries and the entrants who submitted those winning entries shall each be entitled to a prize of $14,000, less required income tax withholding.</p>
+<p>&emsp;(ii)&ensp;The fourth through the ninth entries selected in the Drawing will be winning entries and the entrants who submitted those winning entries shall each be entitled to a prize of $4,000.</p>
+<p>&emsp;(iii)&ensp;The tenth through the fifty-ninth entries selected in the Drawing will be winning entries and the entrants who submitted those winning entries shall each be entitled to a prize of $100 iLottery Bonus Money.</p>
+<p>&emsp;(3)&ensp;All prizes will be paid as a lump-sum cash payment or uploaded to a winning player's lottery account.</p>
+<p>&emsp;(4)&ensp;Winners of iLottery Bonus Money are not required to claim a prize. Winners of iLottery Bonus Money will have the iLottery Bonus Money credited to their lottery account and will receive an email notifying them that they won a prize.</p>
+<p>&emsp;(5)&ensp;The number of winning entries to be selected for the Drawing will be posted to the Lottery's publicly accessible web site.</p>
+<p>&emsp;(6)&ensp;The odds of winning in the Drawing depend upon the number of entries received for the Drawing.</p>
+<p>&emsp;(7)&ensp;A computer-generated randomizer will be used to select the Drawing winners.</p>
+<p>&emsp;(e)&ensp;<i>Drawing restrictions</i>:</p>
+<p>&emsp;(1)&ensp;To be eligible to participate in the Drawing, entrants must have complied with the requirements of these rules.</p>
+<p>&emsp;(2)&ensp;The Lottery is not responsible for late, lost or misdirected entries not entered into the Drawing. The Lottery is not responsible for entries that are not entered into the Drawing because of incompatible internet browsers, mobile Lottery application failure or other technical issues. The Lottery is not responsible for entries not entered due to delays in creating a lottery account or the inability to create a lottery account. If a Drawing entry is selected as a winner and rejected or otherwise disqualified during or following the Drawing, the Lottery will select one entry to replace the rejected or otherwise disqualified entry in accordance with these rules and Lottery procedure. Entries not received for any other reason will not be considered entries.</p>
+<p>&emsp;(3)&ensp;If any discrepancy exists between these rules and any material describing the Drawing, these rules shall govern.</p>
+<p>&emsp;(4)&ensp;Employees of the Lottery, 9Rooftops Marketing, LLC, Scientific Games, LLC and MDI Entertainment, LLC, and their subcontractors, or a spouse, child, brother, sister or parent residing as a member of the same household in the principal place of residence of any such person are not eligible to participate in the Drawing. Offer void where prohibited or restricted.</p>
+<p>&emsp;(5)&ensp;The Lottery reserves the right, in its sole discretion, to cancel or suspend the Drawing and change these rules if the Drawing cannot be conducted as planned due to errors in these rules or advertising, unauthorized intervention, tampering, fraud, technical errors, viruses, worms, bugs or any other cause that, in the Lottery's sole judgment, could corrupt or impair the administration, security, fairness, integrity or proper conduct of the Drawing.</p>
+<p>&emsp;(6)&ensp;All entries shall be subject to verification by the Lottery.</p>
+<p>&emsp;(7)&ensp;The Lottery reserves the right, in its sole discretion, to disqualify an entrant found to be tampering with the operation of the Drawing or to be acting in violation of these rules or applicable law.</p>
+<p>&emsp;(8)&ensp;The Drawing is governed by the laws of the Commonwealth of Pennsylvania. Applicable laws and regulations apply.</p>
+<p>&emsp;(9)&ensp;Prizes must be claimed within 1 year of the drawing date of the Drawing in which the prize was won. If no claim is made within 1 year of the drawing date of the Drawing in which the prize was won, the right of an entrant to claim the prize won, if any, will expire and the prize money will be paid into the State Lottery Fund and used for purposes provided by statute.</p>
+<p>&emsp;(10)&ensp;Final determination of winners will be made by the Secretary, whose judgment will be final and binding.</p>
+<p>&emsp;(11)&ensp;A prize awarded in the Drawing to a person who dies before receiving the prize shall be paid according to 61 Pa.&thinsp;Code &#167;&ensp;811.16 (relating to prizes payable after death of a prize winner).</p>
+<p>&emsp;(12)&ensp;A winner is responsible for all taxes arising from or in connection with any prize won.</p>
+<p>&emsp;(13)&ensp;A player may only win the prize for which the player is first selected in the Drawing. Subsequent entries, from the same individual, selected in the same Drawing will be disqualified and one replacement entry will be selected.</p>
+<p>&emsp;(14)&ensp;Winners of iLottery Bonus Money must abide by the iLottery terms &#38; conditions, the iLottery Bonus Policy and these rules. iLottery Bonus Money will expire 90 days from the date on which the winner was notified, via email, of the prize win, as further detailed in section 10(d)(4). iLottery Bonus Money has a five-times play through requirement in order to convert the iLottery Bonus Money into cash. For example, for a player winning $100 of iLottery Bonus Money, the player is required to place $500 in wagers before the iLottery Bonus Money awarded is converted into cash which may be withdrawn from the player's account.</p>
+<p>&emsp;(15)&ensp;Prizes are not transferrable.</p>
+<p>&emsp;(16)&ensp;Other restrictions may apply.</p>
+<p>&emsp;11.&ensp;<i>Retailer incentive awards</i>:&ensp;The Lottery may conduct a separate Retailer Incentive Program for retailers who sell LOVE IS BLIND instant lottery game tickets.</p>
+<p>&emsp;12.&ensp;<i>Retailer bonus</i>:&ensp;The Lottery may offer a retailer bonus in connection with the sale of Pennsylvania instant lottery game tickets. If a retailer bonus is offered, a Lottery retailer shall be eligible for a bonus as described in this section. Lottery retailers who sell a winning ticket that entitles the ticket holder to a prize, either payable in a single installment or having a guaranteed minimum payout, of at least $100,000 and not exceeding $500,000 shall be paid a bonus of $500. Lottery retailers who sell a winning ticket that entitles the ticket holder to a prize, either payable in a single installment or having a guaranteed minimum payout, of at least $500,001 and not exceeding $1,000,000 shall be paid a bonus of $5,000. Lottery retailers who sell a winning ticket that entitles the ticket holder to a prize, either payable in a single installment or having a guaranteed minimum payout, of at least $1,000,001 and not exceeding $10,000,000 shall be paid a bonus of $10,000. Lottery retailers who sell a winning ticket that entitles the ticket holder to a prize, either payable in a single installment or having a guaranteed minimum payout, of at least $10,000,001 shall be paid a bonus of $100,000. A Lottery retailer is entitled only to the largest bonus for which they qualify on a winning ticket. A bonus will be initiated for payment after the instant ticket is claimed and validated. A bonus will not be awarded to a Lottery retailer that sells a non-winning Pennsylvania Lottery instant ticket used to enter a Pennsylvania Lottery second-chance drawing or promotion that is subsequently selected to win a prize.</p>
+<p>&emsp;13.&ensp;<i>Unclaimed prize money</i>:&ensp;For a period of 1 year from the announced close of LOVE IS BLIND, prize money from winning LOVE IS BLIND instant lottery game tickets will be retained by the Secretary for payment to the persons entitled thereto. If no claim is made within 1 year of the announced close of the LOVE IS BLIND instant lottery game, the right of a ticket holder to claim the prize represented by the ticket, if any, will expire and the prize money will be paid into the State Lottery Fund and used for purposes provided for by statute.</p>
+<p>&emsp;14.&ensp;<i>Governing law</i>:&ensp;In purchasing a ticket, the customer agrees to comply with and abide by the State Lottery Law (72 P.S. &#167;&#167;&ensp;3761-101&mdash;3761-314), 61 Pa.&thinsp;Code Part V (relating to State Lotteries) and the provisions contained in this notice.</p>
+<p>&emsp;15.&ensp;<i>Termination of the game</i>:&ensp;The Secretary may announce a termination date, after which no further tickets from this game may be sold. The announcement will be disseminated through media used to advertise or promote LOVE IS BLIND or through normal communications methods.</p>
+<p align=right>PATRICK BROWNE,&emsp;<br>
+Secretary</p>
+<h5><center>[Pa.B. Doc. No. 25-1785. Filed for public inspection December 26, 2025, 9:00 a.m.]</center></h5>
+
+<p>
+<hr>
+<br>
+<div class="disclaimer-hide">No part of the information on this site may be reproduced for profit or sold for profit.</div>
+</p>
+<p>
+This material has been drawn directly from the official
+<i>Pennsylvania Bulletin</i> full text database.
+Due to the limitations of HTML or differences in display capabilities
+of different browsers, this version may differ slightly from the
+official printed version.
+</font>
+<hr>
+</p>
+
+<p>
+<!--
+<map name="navbar">
+   
+   
+   
+   
+   
+   
+</map>
+-->
+
+
+</p>
+
+<center>
+
+</center>
+</blockquote>
+</body>
+</html>
+
+                            <button onclick="topFunction()" id="myBtn" aria-label="Go to top">Top</button>
+                            <button onclick="bottomFunction()" id="myBtnBottom" aria-label="Go to bottom">Bottom</button>
+                        </div>
+                    </div>
+                </article>
+            </div>
+        </div>
+
+        <div style="margin-left: 0px; padding-top: 20px;" class="row">
+            <div class="row footer-section">
+                <div class="col-md-12">
+                    
+
+<footer class="hidden-xs hidden-sm">
+
+        <div class="footer-disclaimer">
+            No part of the information on this site may be reproduced forprofit or sold for profit. Please direct comments or questions to <a href="mailto:webmaster@PaBulletin.com">webmaster@PaBulletin.com</a>
+        </div>
+
+    <nav class="navbar navbar hidden-print" aria-label="Footer navigation">
+        <div class="container">
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                
+            </div>
+            <div class="navbar-collapse">
+                <ul class="nav navbar-nav sitefooter-pabull">
+                    <li><a href="/Home/Accessibility">Accessibility</a></li>
+                    <li><a href="/Home/Privacy">Privacy</a></li>
+                    <li><a href="/Home/Disclaimer">Disclaimer</a></li>
+                    <li><a href="/downloads/StyleManual_6thEdition.pdf" rel="noopener noreferrer" aria-label="Style Manual, opens in a new tab" target="_blank">Style Manual</a></li>
+                    <li><a href="/downloads/CodeSchedule.pdf" rel="noopener noreferrer" aria-label="Code Schedule, opens in a new tab" target="_blank">Code Publication Schedule</a></li>
+                    <li><a href="/downloads/BulletinSchedule.pdf" rel="noopener noreferrer" aria-label="Bulletin Schedule, opens in a new tab" target="_blank">Bulletin Publication Schedule</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+</footer>
+
+<footer class="visible-xs visible-sm">
+    <div class="footer-mobile">
+        <span class="footer-link"><a href="/Home/Accessibility">Accessibility</a></span> &nbsp;|&nbsp;
+        <span class="footer-link"><a href="/Home/Privacy">Privacy</a></span> &nbsp;|&nbsp;
+        <span class="footer-link"><a href="/Home/Disclaimer">Disclaimer</a></span> &nbsp;|&nbsp;
+        <span class="footer-link"><a href="/downloads/StyleManual_6thEdition.pdf" rel="noopener noreferrer" aria-label="Style Manual, opens in a new tab" target="_blank">Style Manual</a></span> &nbsp;|&nbsp;
+        <span class="footer-link"><a href="/downloads/CodeSchedule.pdf" rel="noopener noreferrer" aria-label="Code Schedule, opens in a new tab" target="_blank">Code Publication Schedule</a></span> &nbsp;|&nbsp;
+        <span class="footer-link"><a href="/downloads/BulletinSchedule.pdf" rel="noopener noreferrer" aria-label="Bulletin Schedule, opens in a new tab" target="_blank">Bulletin Publication Schedule</a></span>
+
+    </div>
+</footer>
+                </div>
+            </div>
+        </div>
+    </main>
+
+
+</div>
+        <br />
+        
+    </div>
+
+
+    <script src="/Scripts/jquery-1.10.2.js"></script>
+
+    <script src="/Scripts/bootstrap.js"></script>
+<script src="/Scripts/respond.js"></script>
+
+    
+</body>
+</html>
