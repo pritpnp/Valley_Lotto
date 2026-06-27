@@ -32,6 +32,7 @@ _SYNONYMS: dict[str, list[str]] = {
     "game_number": ["game number", "game no", "game #", "game num", "number"],
     "name": ["game name", "name", "title", "game"],
     "price": ["price", "ticket price", "cost"],
+    "on_sale_date": ["on sale", "start", "launch", "first day"],
     "sales_end_date": ["sales end", "end sale", "last day to sell", "sale end", "end date"],
     "claim_deadline": ["claim", "redeem", "last day to claim", "expiration", "expire"],
 }
@@ -176,6 +177,7 @@ def parse_table(html: str, *, required: set[str], status: str) -> list[Game]:
         g = Game(game_number=game_number, status=status, source_pages=[status_to_page(status)])
         g.name = clean_name(values.get("name", ""))
         g.price = _to_price(values.get("price", ""))
+        g.on_sale_date = values.get("on_sale_date") or None
         g.sales_end_date = values.get("sales_end_date") or None
         g.claim_deadline = values.get("claim_deadline") or None
         games.append(g)

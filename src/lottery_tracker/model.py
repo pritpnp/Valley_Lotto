@@ -20,8 +20,9 @@ class Game:
     # Status comes from which page the game appears on.
     status: str = "active"                 # "active" | "ended"
 
-    # --- Sales-Ended page fields ---
-    sales_end_date: Optional[str] = None   # last day the game is sold
+    # --- Date fields (from the Active / Sales-Ended pages) ---
+    on_sale_date: Optional[str] = None     # when the game started selling (e.g. "06/2026")
+    sales_end_date: Optional[str] = None   # last day the game is sold (set once ended)
     claim_deadline: Optional[str] = None   # last day a winning ticket can be redeemed
 
     # --- Prizes-Remaining page fields ---
@@ -104,6 +105,7 @@ def merge_games(
         # Merge field-by-field, preferring already-populated values.
         cur.name = cur.name or g.name
         cur.price = cur.price if cur.price is not None else g.price
+        cur.on_sale_date = cur.on_sale_date or g.on_sale_date
         cur.sales_end_date = cur.sales_end_date or g.sales_end_date
         cur.claim_deadline = cur.claim_deadline or g.claim_deadline
         cur.top_prize_value = cur.top_prize_value or g.top_prize_value
