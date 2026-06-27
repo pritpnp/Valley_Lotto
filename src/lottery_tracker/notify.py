@@ -87,8 +87,8 @@ def render_report(
     if owned_games:
         lines.append("## Your games — sorted by win odds (your low-prize signal)")
         lines.append("")
-        lines.append("| Game | # | Price | Started | Win odds | Prizes left (est.) | Lower prizes left | Last move | Flags |")
-        lines.append("|------|---|------:|:-------:|:-------:|:------------------:|------------------:|:---------:|-------|")
+        lines.append("| Game | # | Price | Started | Win odds | Prizes left (est.) | Lower prizes left | Density | Last move | Flags |")
+        lines.append("|------|---|------:|:-------:|:-------:|:------------------:|------------------:|:-------:|:---------:|-------|")
         for g in owned_games:
             pct = g.top_prize_pct_remaining
             if pct is None:
@@ -114,9 +114,11 @@ def render_report(
             odds = f"1:{g.odds_value:g}" if g.odds_value is not None else "—"
             started = g.on_sale_date or "—"
             moved = last_move_label(g, captured_at)
+            jd = g.jackpot_density
+            jd_s = "—" if jd is None else f"{jd:.2f}"
             lines.append(
                 f"| {g.name} | {g.game_number} | {price} | {started} | {odds} | "
-                f"{pct_s} | {lower} | {moved} | {flag} |"
+                f"{pct_s} | {lower} | {jd_s} | {moved} | {flag} |"
             )
         lines.append("")
         lines.append(
@@ -220,29 +222,35 @@ def _bar_color(pct: float | None, ended: bool) -> str:
 
 
 def _tier_details_html(g: Game, prev: Game | None, e) -> str:
-    """An expandable per-game prize-tier table: every price, wins left, change, weight."""
-    rows = g.tier_table(prev_tiers=prev.prize_tiers if prev else None)
-    if not rows:
+    """An expandable per-game prize-tier table: every price, wins left of total,
+    % remaining (true, from the Bulletin), change since last scrape, and weight."""
+    health = g.tier_health()
+    if not health:
         return ""
+    deltas = {r["value"]: r["delta"] for r in g.tier_table(prev_tiers=prev.prize_tiers if prev else None)}
     trs = []
-    for r in rows:
+    for r in health:
         rem = "—" if r["remaining"] is None else f"{r['remaining']:,}"
-        if r["delta"] is None:
+        tot = "" if r["original"] is None else f" / {r['original']:,}"
+        pct = "—" if r["pct"] is None else f"{r['pct']:.0%}"
+        dv = deltas.get(r["value"])
+        if dv is None:
             d, cls = "—", "muted"
-        elif r["delta"] == 0:
+        elif dv == 0:
             d, cls = "0", "muted"
-        elif r["delta"] < 0:
-            d, cls = f"▼{abs(r['delta']):,}", "dn"
+        elif dv < 0:
+            d, cls = f"▼{abs(dv):,}", "dn"
         else:
-            d, cls = f"▲{r['delta']:,}", "up"
+            d, cls = f"▲{dv:,}", "up"
         trs.append(
-            f"<tr><td>{e(r['value'] or '—')}</td><td class='r'>{rem}</td>"
-            f"<td class='r {cls}'>{d}</td><td class='r muted'>×{r['weight']}</td></tr>"
+            f"<tr><td>{e(r['value'] or '—')}</td><td class='r'>{rem}{tot}</td>"
+            f"<td class='r'>{pct}</td><td class='r {cls}'>{d}</td>"
+            f"<td class='r muted'>×{r['weight']}</td></tr>"
         )
     return (
         f"<details><summary>{e(g.name)} — show all prizes</summary>"
-        f"<table class='tiers'><thead><tr><th>Prize</th><th class='r'>Wins left</th>"
-        f"<th class='r'>Δ last scrape</th><th class='r'>Weight</th></tr></thead>"
+        f"<table class='tiers'><thead><tr><th>Prize</th><th class='r'>Wins left / total</th>"
+        f"<th class='r'>% left</th><th class='r'>Δ last scrape</th><th class='r'>Weight</th></tr></thead>"
         f"<tbody>{''.join(trs)}</tbody></table></details>"
     )
 
@@ -296,6 +304,9 @@ def render_html(
         left = "—" if g.top_prizes_remaining is None else str(g.top_prizes_remaining)
         total = "" if g.top_prizes_total is None else f"/{g.top_prizes_total}"
         lower = "—" if g.lower_wins_remaining is None else f"{g.lower_wins_remaining:,}"
+        jd = g.jackpot_density
+        jd_s = "—" if jd is None else f"{jd:.2f}"
+        jd_cls = "up" if (jd is not None and jd >= 1.15) else ("dn" if (jd is not None and jd < 0.85) else "muted")
         moved = last_move_label(g, captured_at)
         moved_cls = "up" if (g.last_changed and _days_between(g.last_changed, captured_at) <= 1) else "muted"
         rows.append(
@@ -304,6 +315,7 @@ def render_html(
             f"<td class='odds'>{odds}</td>"
             f"<td class='r'>{left}{total} <span class='muted'>({pct_txt})</span>{bar}</td>"
             f"<td class='r'>{lower}</td>"
+            f"<td class='r {jd_cls}'>{jd_s}</td>"
             f"<td class='{moved_cls}'>{e(moved)}</td>"
             f"<td>{' '.join(badges)}</td></tr>"
         )
@@ -335,14 +347,16 @@ def render_html(
 {alert_html}
 <h2>Your games — sorted by win odds (your low-prize signal)</h2>
 <table><thead><tr><th>Game</th><th>#</th><th class="r">Price</th><th>Started</th>
-<th>Win odds</th><th class="r">Prizes left (est.)</th><th class="r">Lower prizes left</th><th>Last move</th><th>Status</th></tr></thead>
+<th>Win odds</th><th class="r">Prizes left (est.)</th><th class="r">Lower prizes left</th><th class="r" title="top-prize % ÷ sell-through; >1 = jackpots still dense, <1 = picked over">Jackpot density</th><th>Last move</th><th>Status</th></tr></thead>
 <tbody>{''.join(rows)}</tbody></table>
 <p class="sub" style="margin-top:12px"><b>Win odds (1:X) is the number that matters.</b> It's the chance a ticket wins
 <i>any</i> prize — and since the cheap break-even prizes hugely outnumber the jackpots, it's effectively a
 <b>low-prize-weighted</b> figure (lower = better chance to win something). <b>🔻 WEAK ODDS</b> = worse than 1:{thresholds.weak_odds:g}, a poor game to stock.
 <b>Prizes left (est.)</b> = how much of the <i>whole</i> game is unsold (estimated from the top prizes — works because prizes are shuffled evenly through the pack, so it tracks the cheap prizes too).
 <b>🟠 SWAP</b> = under 40% left. <b>Lower prizes left</b> = non-jackpot wins still in the pack. <b>🔴 ENDED</b> = sales stopped.<br>
-<i>A separate single-day "low-prize %" can't be computed — on any one day it's mathematically the same as the top-prize %, so we don't fake one.</i></p>
+<b>Jackpot density</b> = top-prize % ÷ sell-through (from PA's official prize structure). Above 1 = the big prizes are hanging around
+longer than the game's sell-through predicts (good for jackpot-hunting customers); below 1 = the jackpots got claimed early (picked over).
+Green ≥1.15, orange &lt;0.85.</p>
 <h2>All prize tiers — cheapest weighted heaviest</h2>
 <p class="sub">Every published prize per game, the wins still left, and the change since the last scrape
 (▼ = claimed). Weights run heaviest at the bottom (cheapest prize). We scrape twice a day, so this trend
