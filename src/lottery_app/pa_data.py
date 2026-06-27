@@ -106,9 +106,56 @@ def store_rows(catalog: Catalog, inventory: set[str], th: Thresholds,
             })
         else:
             rows.append(_row(g, th, weights))
+    # Pair every SEND BACK with the best same-price replacements you don't carry.
+    for r in rows:
+        r["swap_to"] = (swap_targets(catalog, inventory, r.get("price"), th, weights, n=3)
+                        if r["action"] == "send_back" else [])
     rows.sort(key=lambda r: (r["action"] != "send_back",
                              r["rating"] if r["rating"] is not None else 999))
     return rows
+
+
+def catalog_rankings(
+    catalog: Catalog, th: Thresholds, weights: RatingWeights | None = None,
+    *, inventory: set[str] | None = None,
+) -> list[dict]:
+    """Every active game, rated and ranked best-first. Marks which ones the store
+    already carries so the UI can show "carried" vs "available to bring in"."""
+    weights = weights or RatingWeights()
+    inv = inventory or set()
+    rows = []
+    for g in catalog.games.values():
+        if g.status != "active":
+            continue
+        row = _row(g, th, weights)
+        row["carried"] = g.game_number in inv
+        rows.append(row)
+    rows.sort(key=lambda r: (r["rating"] if r["rating"] is not None else -1), reverse=True)
+    return rows
+
+
+def swap_targets(
+    catalog: Catalog, inventory: set[str], price: float | None, th: Thresholds,
+    weights: RatingWeights | None = None, *, n: int = 3,
+) -> list[dict]:
+    """Best replacement games at the SAME price as something you're sending back:
+    active, not already carried, and KEEP-worthy (rating above the cutoff), highest
+    first. Freshness is already baked into the rating, so we don't double-gate it —
+    if nothing clears the cutoff, there simply isn't a good same-price swap (a useful
+    signal that the price point itself may be picked over)."""
+    weights = weights or RatingWeights()
+    if price is None:
+        return []
+    cands = []
+    for g in catalog.games.values():
+        if g.status != "active" or g.game_number in inventory or g.price != price:
+            continue
+        row = _row(g, th, weights)
+        if row["rating"] is None or row["rating"] < weights.cutoff:
+            continue
+        cands.append(row)
+    cands.sort(key=lambda r: r["rating"], reverse=True)
+    return cands[:n]
 
 
 def store_summary(rows: list[dict]) -> dict:

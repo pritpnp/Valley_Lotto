@@ -8,6 +8,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from lottery_app import db  # noqa: E402
 from lottery_app.auth import hash_password, verify_password  # noqa: E402
+from lottery_tracker.model import Game  # noqa: E402
 
 
 # --- password hashing -------------------------------------------------------
@@ -124,6 +125,31 @@ def test_login_and_dashboard(tmp_path, monkeypatch):
     assert page.status_code == 200
     assert "HIGH 5" in page.text          # carried game shows up
     assert "MONEY RUSH" in page.text      # appears in the bring-in board (not carried)
+
+
+def test_swap_targets_same_price_keepworthy():
+    from lottery_tracker.rules import RatingWeights, Thresholds
+    from lottery_app.pa_data import Catalog, swap_targets
+    games = {
+        "carried5": Game(game_number="carried5", price=5, status="active", odds="1:4.9",
+                         prize_tiers=[{"value": "$5", "remaining": 1}],
+                         tier_originals={"5.0": 100}),                 # bad, carried
+        "fresh5": Game(game_number="fresh5", price=5, status="active", odds="1:3.1",
+                       prize_tiers=[{"value": "$100", "remaining": 9}, {"value": "$5", "remaining": 9000}],
+                       tier_originals={"100.0": 10, "5.0": 10000}),    # great $5, not carried
+        "stale5": Game(game_number="stale5", price=5, status="active", odds="1:4.9",
+                       prize_tiers=[{"value": "$5", "remaining": 100}],
+                       tier_originals={"5.0": 10000}),                 # picked-over $5
+        "fresh10": Game(game_number="fresh10", price=10, status="active", odds="1:3.0",
+                        prize_tiers=[{"value": "$10", "remaining": 9000}],
+                        tier_originals={"10.0": 10000}),               # wrong price
+    }
+    cat = Catalog(games=games)
+    out = swap_targets(cat, {"carried5"}, 5.0, Thresholds(), RatingWeights())
+    nums = [r["game_number"] for r in out]
+    assert "fresh5" in nums            # the strong same-price option is offered
+    assert "stale5" not in nums        # picked-over (below cutoff) is not
+    assert "fresh10" not in nums       # wrong price excluded
 
 
 def test_inventory_add_remove_flow(tmp_path, monkeypatch):

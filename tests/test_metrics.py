@@ -106,6 +106,20 @@ def test_rating_excludes_noisy_jackpot_and_respects_weights():
     assert s_no_odds != score
 
 
+def test_emphasis_scales_weights_around_neutral():
+    from lottery_tracker.rules import RatingWeights
+    base = RatingWeights()
+    # Neutral sliders (all 0) leave the base weights untouched.
+    assert base.scaled({}).odds == base.odds
+    assert base.scaled({"odds": 0, "jackpot_density": 0}).jackpot_density == base.jackpot_density
+    # Push odds up, jackpot down: odds weight grows, jackpot shrinks; knobs unchanged.
+    s = base.scaled({"odds": 2, "jackpot_density": -2})
+    assert s.odds > base.odds and s.jackpot_density < base.jackpot_density
+    assert s.cutoff == base.cutoff and s.odds_good == base.odds_good
+    # Symmetric: +1 then -1 returns to base.
+    assert abs(base.scaled({"odds": 1}).scaled({"odds": -1}).odds - base.odds) < 1e-9
+
+
 def _bulletin_game(num, price, odds, frac):
     # A game where every tier has `frac` of its prizes left.
     tiers = [{"value": "$1000", "remaining": int(10 * frac)},

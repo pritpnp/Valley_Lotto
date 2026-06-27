@@ -59,3 +59,19 @@ td.why { color: var(--muted); }
 .error { background: rgba(239,68,68,.12); color: #fca5a5; border: 1px solid var(--send);
   border-radius: 8px; padding: 10px 12px; margin: 12px 0; }
 details summary { cursor: pointer; color: var(--accent); margin: 6px 0; }
+
+/* swap suggestions under a SEND BACK row */
+.swap-row td { background: rgba(56,189,248,.05); font-size: 13px; padding-top: 4px; padding-bottom: 8px; }
+.swap-pick { color: var(--text); }
+
+/* emphasis sliders */
+.slider-row { padding: 14px 0; border-bottom: 1px solid var(--line); }
+.slider-row:last-of-type { border-bottom: none; }
+.slider-head { display: flex; justify-content: space-between; align-items: baseline; }
+.slider-label { font-weight: 600; font-size: 15px; }
+.slider-pct { color: var(--accent); font-size: 13px; }
+.slider-desc { margin: 2px 0 8px; font-size: 13px; }
+.slider-track { display: flex; align-items: center; gap: 10px; }
+.slider-track input[type=range] { flex: 1; accent-color: var(--accent); }
+.slider-track .end { color: var(--muted); font-size: 12px; min-width: 30px; text-align: center; }
+.slider-track .notch { min-width: 28px; text-align: center; font-weight: 700; color: var(--accent); }

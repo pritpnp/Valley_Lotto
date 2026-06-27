@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Catalog · {{ store.name if store else 'Valley Lotto' }}{% endblock %}
+{% block content %}
+<h1>Full PA catalog — {{ total }} active games, ranked</h1>
+<p class="muted">Every active PA scratch-off, scored with <b>{{ store.name if store else 'this store' }}'s</b>
+emphasis. ★ = you carry it. Use this to pick same-price replacements for anything you send back.
+Data captured {{ captured_at or '—' }}.</p>
+
+{% for price, items in by_price.items() %}
+<h2>${{ '%g' % price }} games ({{ items|length }})</h2>
+<table class="grid">
+  <thead><tr><th>Rating</th><th>#</th><th>Game</th><th>Odds</th><th>% left (all)</th>
+    <th>Low-prize %</th><th>Density</th><th></th></tr></thead>
+  <tbody>
+  {% for r in items %}
+    <tr class="{{ 'row-keep' if r.rating is not none and r.rating >= 65 else ('row-send' if r.rating is not none and r.rating < 50 else '') }}">
+      <td><b>{{ r.rating_str }}</b><span class="muted">/100</span></td>
+      <td>{{ r.game_number }}</td>
+      <td>{% if r.carried %}<span title="you carry this">★</span> {% endif %}{{ r.name }}</td>
+      <td>{{ ('1:%g' % r.odds_value) if r.odds_value is not none else '—' }}</td>
+      <td>{{ r.pct_all_str }}</td>
+      <td>{{ r.low_prize_str }}</td>
+      <td>{% if r.jackpot_density is none %}—{% elif r.jackpot_significant %}{{ '%.2f' % r.jackpot_density }}{% else %}<span class="muted">{{ '%.2f' % r.jackpot_density }} n/s</span>{% endif %}</td>
+      <td>{% if not r.carried %}<form method="post" action="/inventory/add" class="inline">
+        <input type="hidden" name="game_number" value="{{ r.game_number }}">
+        <button class="link">+ carry</button></form>{% endif %}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endfor %}
+{% endblock %}

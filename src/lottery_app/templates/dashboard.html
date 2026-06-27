@@ -37,6 +37,19 @@
       <td>{% if r.jackpot_density is none %}—{% elif r.jackpot_significant %}{{ '%.2f' % r.jackpot_density }}{% else %}<span class="muted" title="small-sample noise — ignored in rating">{{ '%.2f' % r.jackpot_density }} n/s</span>{% endif %}</td>
       <td class="why">{{ r.reason }}</td>
     </tr>
+    {% if r.action == 'send_back' %}
+    <tr class="swap-row"><td></td><td colspan="9" class="muted">
+      {% if r.swap_to %}↳ swap to:
+      {% for s in r.swap_to %}
+        <span class="swap-pick">#{{ s.game_number }} {{ s.name }} <b>({{ s.rating_str }})</b>
+        {{ ('1:%g' % s.odds_value) if s.odds_value is not none else '' }}, {{ s.pct_all_str }} left</span>
+        <form method="post" action="/inventory/add" class="inline">
+          <input type="hidden" name="game_number" value="{{ s.game_number }}">
+          <button class="link">+ carry</button></form>{% if not loop.last %} · {% endif %}
+      {% endfor %}
+      {% else %}↳ no strong same-price replacement available — consider dropping this price point.{% endif %}
+    </td></tr>
+    {% endif %}
   {% endfor %}
   </tbody>
 </table>

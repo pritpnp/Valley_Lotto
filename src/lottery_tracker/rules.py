@@ -15,10 +15,13 @@ treated as "ended/removed" too.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from enum import Enum
 
 from .model import Game
+
+# The five factors a store can emphasize (slider order on the UI).
+RATING_FACTORS = ("odds", "prizes_left", "low_prize", "low_prize_skew", "jackpot_density")
 
 
 class Severity(str, Enum):
@@ -83,6 +86,19 @@ class RatingWeights:
             if f in cfg and cfg[f] is not None:
                 d[f] = float(cfg[f])
         return cls(**d)
+
+    def scaled(self, emphasis: dict[str, float] | None, *, step: float = 1.6) -> "RatingWeights":
+        """Apply per-store *emphasis* sliders to the base weights.
+
+        Each slider sits at 0 in the middle (use the base weight as-is). Pushing it
+        up/down by one notch multiplies/divides that factor's weight by ``step``
+        (~1.6×), so +2 ≈ 2.6× the emphasis and −2 ≈ 0.4×. Only the relative sizes
+        matter (the rating renormalizes by total weight), so this is exactly a
+        "more emphasis here / less there" control. Tuning knobs are unchanged.
+        """
+        emphasis = emphasis or {}
+        new = {f: getattr(self, f) * (step ** float(emphasis.get(f, 0.0))) for f in RATING_FACTORS}
+        return replace(self, **new)
 
 
 @dataclass

@@ -45,7 +45,21 @@ CREATE TABLE IF NOT EXISTS store_inventory (
     added_at    TEXT NOT NULL,
     PRIMARY KEY (store_id, game_number)
 );
+
+-- Per-store emphasis sliders (one notch = ×/÷ ~1.6 on that factor's weight).
+-- 0 = neutral (use the base weight). Missing row => all factors neutral.
+CREATE TABLE IF NOT EXISTS store_emphasis (
+    store_id       INTEGER PRIMARY KEY REFERENCES stores(id) ON DELETE CASCADE,
+    odds           REAL NOT NULL DEFAULT 0,
+    prizes_left    REAL NOT NULL DEFAULT 0,
+    low_prize      REAL NOT NULL DEFAULT 0,
+    low_prize_skew REAL NOT NULL DEFAULT 0,
+    jackpot_density REAL NOT NULL DEFAULT 0
+);
 """
+
+# Keep in sync with rules.RATING_FACTORS.
+_EMPHASIS_FACTORS = ("odds", "prizes_left", "low_prize", "low_prize_skew", "jackpot_density")
 
 
 def now_iso() -> str:
@@ -161,5 +175,28 @@ def set_inventory(conn: sqlite3.Connection, store_id: int, game_numbers: set[str
     conn.executemany(
         "INSERT OR IGNORE INTO store_inventory (store_id, game_number, added_at) VALUES (?, ?, ?)",
         [(store_id, gn, ts) for gn in game_numbers],
+    )
+    conn.commit()
+
+
+# --- emphasis (per-store slider profile) ------------------------------------
+def get_emphasis(conn: sqlite3.Connection, store_id: int) -> dict[str, float]:
+    """Return the store's slider positions (all 0.0 if none set yet)."""
+    row = conn.execute("SELECT * FROM store_emphasis WHERE store_id = ?", (store_id,)).fetchone()
+    if not row:
+        return {f: 0.0 for f in _EMPHASIS_FACTORS}
+    return {f: float(row[f]) for f in _EMPHASIS_FACTORS}
+
+
+def set_emphasis(conn: sqlite3.Connection, store_id: int, emphasis: dict[str, float]) -> None:
+    """Upsert the store's slider positions."""
+    vals = {f: float(emphasis.get(f, 0.0)) for f in _EMPHASIS_FACTORS}
+    cols = ", ".join(_EMPHASIS_FACTORS)
+    qs = ", ".join("?" for _ in _EMPHASIS_FACTORS)
+    sets = ", ".join(f"{f}=excluded.{f}" for f in _EMPHASIS_FACTORS)
+    conn.execute(
+        f"INSERT INTO store_emphasis (store_id, {cols}) VALUES (?, {qs}) "
+        f"ON CONFLICT(store_id) DO UPDATE SET {sets}",
+        (store_id, *[vals[f] for f in _EMPHASIS_FACTORS]),
     )
     conn.commit()

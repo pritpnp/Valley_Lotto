@@ -22,7 +22,20 @@
 
 ## Recommendation: send back 12, keep 22
 
-**🔴 Send back (stop selling / return):** #1693 Keys and Cash ($5, rating 14/100 — 8% of all prizes left; 9% of cheap prizes left), #1766 LOVE IS BLIND ($2, rating 21/100 — 1:4.54; 27% of cheap prizes left), #1736 High 5 ($5, rating 27/100 — 4% of cheap prizes left; 4% of all prizes left), #1767 $500 a Week for Life ($1, rating 30/100 — 1:4.77; 36% of all prizes left), #1758 ELF ($5, rating 31/100 — 14% of cheap prizes left; 14% of all prizes left), #1757 $2,500 Festive Frenzy ($10, rating 32/100 — 11% of all prizes left; 11% of cheap prizes left), #1744 Goat Load of Cash Crossword ($5, rating 34/100 — 1:4.44; 18% of cheap prizes left), #1756 Fro$ted Fortune ($20, rating 35/100 — 20% of all prizes left; 20% of cheap prizes left), #1739 MONOPOLY SECRET VAULT ($5, rating 36/100 — 1:4.59; 26% of all prizes left), #1751 Extreme Green ($10, rating 48/100 — 35% of all prizes left; 35% of cheap prizes left), #1772 Find the Leprechaun ($2, rating 48/100 — 26% of all prizes left; 26% of cheap prizes left), #1738 Jackpot ($20, rating 49/100 — 24% of cheap prizes left; 24% of all prizes left)
+**🔴 Send back — and what to swap in (same price):**
+
+- #1693 Keys and Cash ($5) — rating 14/100 — 8% of all prizes left; 9% of cheap prizes left. → swap to #1776 $100 Blowout, #1770 PHILADELPHIA 76ERS
+- #1766 LOVE IS BLIND ($2) — rating 21/100 — 1:4.54; 27% of cheap prizes left. → no strong same-price replacement (consider dropping this price)
+- #1736 High 5 ($5) — rating 27/100 — 4% of cheap prizes left; 4% of all prizes left. → swap to #1776 $100 Blowout, #1770 PHILADELPHIA 76ERS
+- #1767 $500 a Week for Life ($1) — rating 30/100 — 1:4.77; 36% of all prizes left. → swap to #1773 5 Star Wins
+- #1758 ELF ($5) — rating 31/100 — 14% of cheap prizes left; 14% of all prizes left. → swap to #1776 $100 Blowout, #1770 PHILADELPHIA 76ERS
+- #1757 $2,500 Festive Frenzy ($10) — rating 32/100 — 11% of all prizes left; 11% of cheap prizes left. → swap to #1786 Ruby Rich3s, #1775 $250 Blowout
+- #1744 Goat Load of Cash Crossword ($5) — rating 34/100 — 1:4.44; 18% of cheap prizes left. → swap to #1776 $100 Blowout, #1770 PHILADELPHIA 76ERS
+- #1756 Fro$ted Fortune ($20) — rating 35/100 — 20% of all prizes left; 20% of cheap prizes left. → swap to #1785 THE GAME OF LIFE Second-Chance Eligible
+- #1739 MONOPOLY SECRET VAULT ($5) — rating 36/100 — 1:4.59; 26% of all prizes left. → swap to #1776 $100 Blowout, #1770 PHILADELPHIA 76ERS
+- #1751 Extreme Green ($10) — rating 48/100 — 35% of all prizes left; 35% of cheap prizes left. → swap to #1786 Ruby Rich3s, #1775 $250 Blowout
+- #1772 Find the Leprechaun ($2) — rating 48/100 — 26% of all prizes left; 26% of cheap prizes left. → no strong same-price replacement (consider dropping this price)
+- #1738 Jackpot ($20) — rating 49/100 — 24% of cheap prizes left; 24% of all prizes left. → swap to #1785 THE GAME OF LIFE Second-Chance Eligible
 
 | Game | # | Price | Rating | Win odds | % left (all) | Low-prize % | Density | Action |
 |------|---|------:|:------:|:-------:|:-----------:|:-----------:|:-------:|--------|

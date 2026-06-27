@@ -106,9 +106,13 @@ def render_report(
         lines.append(f"## Recommendation: send back {len(send)}, keep {len(owned_games) - len(send)}")
         lines.append("")
         if send:
-            lines.append("**🔴 Send back (stop selling / return):** "
-                         + ", ".join(f"#{g.game_number} {g.name} (${g.price:g}, {recs[g.game_number][1]})"
-                                     for g in send))
+            lines.append("**🔴 Send back — and what to swap in (same price):**")
+            lines.append("")
+            for g in send:
+                swaps = swap_target(games, inventory, g.price, weights, n=2)
+                swap_s = (" → swap to " + ", ".join(f"#{s.game_number} {s.name}" for s in swaps)
+                          if swaps else " → no strong same-price replacement (consider dropping this price)")
+                lines.append(f"- #{g.game_number} {g.name} (${g.price:g}) — {recs[g.game_number][1]}.{swap_s}")
             lines.append("")
         lines.append("| Game | # | Price | Rating | Win odds | % left (all) | Low-prize % | Density | Action |")
         lines.append("|------|---|------:|:------:|:-------:|:-----------:|:-----------:|:-------:|--------|")
@@ -255,6 +259,24 @@ def bring_in_candidates(games: dict[str, Game], inventory: set[str], *,
         gs.sort(key=lambda g: (g.odds_value, -(g.jackpot_density or 0)))
         out[price] = gs[:per_price]
     return out
+
+
+def swap_target(games: dict[str, Game], inventory: set[str], price, weights: RatingWeights,
+                *, n: int = 2) -> list[Game]:
+    """Best same-price replacements for a game you're sending back: active, not
+    carried, KEEP-worthy (rating above cutoff), highest rating first."""
+    if price is None:
+        return []
+    cands = []
+    for num, g in games.items():
+        if g.status != "active" or num in inventory or g.price != price:
+            continue
+        score, _ = rate(g, weights)
+        if score is None or score < weights.cutoff:
+            continue
+        cands.append((score, g))
+    cands.sort(key=lambda t: t[0], reverse=True)
+    return [g for _, g in cands[:n]]
 
 
 def new_games(games: dict[str, Game], now_iso: str, within_days: int = 10) -> list[Game]:
@@ -407,7 +429,14 @@ def render_html(
         else:
             act_extra = ""
         if act == "send_back":
-            action_html = f'<span class="badge b-send" title="{e(reason)}">SEND BACK</span>{act_extra}'
+            swaps = swap_target(games, inventory, g.price, weights, n=2)
+            if swaps:
+                swap_line = ("<div class='muted' style='font-size:12px;margin-top:3px'>↳ swap to "
+                             + ", ".join(f"#{e(s.game_number)} {e(s.name)}" for s in swaps) + "</div>")
+            else:
+                swap_line = ("<div class='muted' style='font-size:12px;margin-top:3px'>↳ no strong "
+                             "same-price swap</div>")
+            action_html = f'<span class="badge b-send" title="{e(reason)}">SEND BACK</span>{act_extra}{swap_line}'
         else:
             action_html = f'<span class="badge b-keep" title="{e(reason)}">KEEP</span>{act_extra}'
         rows.append(

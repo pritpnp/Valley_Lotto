@@ -12,7 +12,9 @@
   <div class="brand">🎟️ Valley Lotto{% if store %} · <span class="store">{{ store.name }}</span>{% endif %}</div>
   <nav>
     <a href="/dashboard">Dashboard</a>
+    <a href="/catalog">Catalog</a>
     <a href="/inventory">Inventory</a>
+    <a href="/weights">Emphasis</a>
     {% if user.role in ('admin', 'owner') %}<a href="/admin">Manage</a>{% endif %}
     {% if user.role == 'admin' and stores and stores|length > 1 %}
     <form method="post" action="/switch-store" class="inline">

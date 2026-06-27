@@ -23,17 +23,27 @@ from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
 
 from lottery_tracker.config import Config
-from lottery_tracker.rules import Thresholds
+from lottery_tracker.rules import RATING_FACTORS, Thresholds
 
 from . import db
 from .auth import hash_password, verify_password
 from .pa_data import (
     bring_in_candidates,
+    catalog_rankings,
     load_catalog,
     new_games,
     store_rows,
     store_summary,
 )
+
+# Friendly labels + descriptions for the emphasis sliders.
+FACTOR_LABELS = {
+    "odds": ("Win odds", "Chance to win ANY prize (break-even shot)"),
+    "prizes_left": ("Prizes left", "How much of the whole game is still unsold"),
+    "low_prize": ("Low-prize stock", "Cheap, commonly-won prizes still in the pack"),
+    "low_prize_skew": ("Low-prize trend", "Penalize when cheap prizes drain faster than the rest"),
+    "jackpot_density": ("Jackpot density", "Big prizes still available (for jackpot chasers)"),
+}
 
 # --- paths / config ---------------------------------------------------------
 # Resolved at call time (not import time) so the running process — and tests —
@@ -98,6 +108,13 @@ def require_user(request: Request, conn=Depends(get_db)) -> dict:
     return user
 
 
+def effective_weights(conn, store_id: int):
+    """Base config weights with this store's emphasis sliders applied."""
+    cfg = _config()
+    emphasis = db.get_emphasis(conn, store_id)
+    return cfg.rating_weights.scaled(emphasis), cfg
+
+
 def active_store_id(request: Request, user: dict) -> int:
     """Which store the user is currently looking at.
 
@@ -159,9 +176,8 @@ def dashboard(request: Request, conn=Depends(get_db), user: dict = Depends(requi
     store = db.get_store(conn, sid)
     inv = db.get_inventory(conn, sid)
     catalog = load_catalog(_state_path())
-    cfg = _config()
+    weights, cfg = effective_weights(conn, sid)
     th = cfg.thresholds
-    weights = cfg.rating_weights
     rows = store_rows(catalog, inv, th, weights)
     summary = store_summary(rows)
     fresh = new_games(catalog, within_days=14, weights=weights)
@@ -187,6 +203,75 @@ def switch_store(request: Request, store_id: int = Form(...),
     if user["role"] == "admin":
         request.session["active_store_id"] = store_id
     return RedirectResponse("/dashboard", 303)
+
+
+@app.get("/catalog", response_class=HTMLResponse)
+def catalog_page(request: Request, conn=Depends(get_db), user: dict = Depends(require_user)):
+    sid = active_store_id(request, user)
+    store = db.get_store(conn, sid)
+    inv = db.get_inventory(conn, sid)
+    catalog = load_catalog(_state_path())
+    weights, cfg = effective_weights(conn, sid)
+    ranked = catalog_rankings(catalog, cfg.thresholds, weights, inventory=inv)
+    # Group by price (high → low) so it's easy to find a same-price swap.
+    by_price: dict[float, list[dict]] = {}
+    for r in ranked:
+        by_price.setdefault(r["price"] or 0, []).append(r)
+    by_price = dict(sorted(by_price.items(), key=lambda kv: -kv[0]))
+    return templates.TemplateResponse(
+        request, "catalog.html",
+        {"user": user, "store": dict(store) if store else None,
+         "by_price": by_price, "total": len(ranked),
+         "captured_at": catalog.captured_at},
+    )
+
+
+@app.get("/weights", response_class=HTMLResponse)
+def weights_page(request: Request, conn=Depends(get_db), user: dict = Depends(require_user)):
+    sid = active_store_id(request, user)
+    store = db.get_store(conn, sid)
+    emphasis = db.get_emphasis(conn, sid)
+    cfg = _config()
+    effective = cfg.rating_weights.scaled(emphasis)
+    # Build slider rows with the resulting effective weight (as a %, for feedback).
+    base = cfg.rating_weights
+    eff_total = sum(getattr(effective, f) for f in RATING_FACTORS) or 1.0
+    sliders = []
+    for f in RATING_FACTORS:
+        label, desc = FACTOR_LABELS[f]
+        sliders.append({
+            "key": f, "label": label, "desc": desc,
+            "value": emphasis.get(f, 0.0),
+            "base": getattr(base, f),
+            "eff_pct": 100 * getattr(effective, f) / eff_total,
+        })
+    return templates.TemplateResponse(
+        request, "weights.html",
+        {"user": user, "store": dict(store) if store else None,
+         "sliders": sliders, "cutoff": cfg.rating_weights.cutoff},
+    )
+
+
+@app.post("/weights")
+def weights_save(
+    request: Request,
+    odds: float = Form(0.0),
+    prizes_left: float = Form(0.0),
+    low_prize: float = Form(0.0),
+    low_prize_skew: float = Form(0.0),
+    jackpot_density: float = Form(0.0),
+    conn=Depends(get_db),
+    user: dict = Depends(require_user),
+):
+    sid = active_store_id(request, user)
+    emphasis = {
+        "odds": odds, "prizes_left": prizes_left, "low_prize": low_prize,
+        "low_prize_skew": low_prize_skew, "jackpot_density": jackpot_density,
+    }
+    # Clamp sliders to a sane range (−3..+3 notches).
+    emphasis = {k: max(-3.0, min(3.0, v)) for k, v in emphasis.items()}
+    db.set_emphasis(conn, sid, emphasis)
+    return RedirectResponse("/weights", 303)
 
 
 @app.get("/inventory", response_class=HTMLResponse)
