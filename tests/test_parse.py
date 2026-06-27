@@ -32,6 +32,25 @@ def test_parse_sales_ended():
     assert set(games) == {"5210", "5432"}
     assert games["5432"].status == "ended"
     assert games["5432"].sales_end_date == "06/15/2026"
+    assert games["5432"].on_sale_date == "06/2024"   # start date captured
+
+
+def test_parse_ended_real_row_1759():
+    # The exact row from PA's SalesEnded page.
+    html = (
+        "<table><tr><th>Game #</th><th>Game Name</th><th>Price</th>"
+        "<th>On Sale</th><th>End Sale*</th></tr>"
+        "<tr><td>1759</td><td>Trim the Tree X-word</td><td>$3</td>"
+        "<td>11/2025</td><td>05/12/2026</td></tr></table>"
+    )
+    g = parse.parse_sales_ended(html)[0]
+    assert g.game_number == "1759" and g.status == "ended"
+    assert g.on_sale_date == "11/2025" and g.sales_end_date == "05/12/2026"
+
+
+def test_parse_active_captures_start_date():
+    games = {g.game_number: g for g in parse.parse_active((FIX / "active.html").read_text())}
+    assert games["5432"].on_sale_date == "06/2026"
 
 
 def test_parse_active_strips_new_prefix():

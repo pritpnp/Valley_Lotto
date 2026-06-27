@@ -106,6 +106,8 @@ def evaluate(
         if just_ended:
             sev = Severity.CRITICAL if owned(num) else Severity.INFO
             who = "A game you carry" if owned(num) else "A game"
+            when = f" (ended {g.sales_end_date})" if g.sales_end_date else ""
+            started = f" Started {g.on_sale_date}." if g.on_sale_date else ""
             extra = ""
             if g.claim_deadline:
                 extra = f" Last day to redeem winners: {g.claim_deadline}."
@@ -116,8 +118,9 @@ def evaluate(
                     name=g.name,
                     severity=sev,
                     owned=owned(num),
-                    message=f"{who} ENDED sales: #{num} {g.name}.{extra}",
+                    message=f"{who} ENDED sales: #{num} {g.name}{when}.{started}{extra}",
                     details={
+                        "on_sale_date": g.on_sale_date,
                         "sales_end_date": g.sales_end_date,
                         "claim_deadline": g.claim_deadline,
                         "price": g.price,

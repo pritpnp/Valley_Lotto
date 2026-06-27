@@ -67,8 +67,8 @@ def render_report(
     if owned_games:
         lines.append("## Your games — sorted best odds first")
         lines.append("")
-        lines.append("| Game | # | Price | Win odds | Top prize | Top prizes left | Flags |")
-        lines.append("|------|---|------:|:--------:|-----------|----------------:|-------|")
+        lines.append("| Game | # | Price | Started | Win odds | Top prize | Top prizes left | Flags |")
+        lines.append("|------|---|------:|:-------:|:--------:|-----------|----------------:|-------|")
         for g in owned_games:
             pct = g.top_prize_pct_remaining
             pct_s = "" if pct is None else (f" (~{pct:.0%})" if g.total_is_estimate else f" ({pct:.0%})")
@@ -77,7 +77,10 @@ def render_report(
             low, _ = _is_low(g, thresholds)
             flags = []
             if g.status == "ended":
-                flags.append("🔴 ENDED")
+                ended_txt = "🔴 ENDED"
+                if g.sales_end_date:
+                    ended_txt += f" {g.sales_end_date}"
+                flags.append(ended_txt)
             if low:
                 flags.append("🟠 SWAP")
             if (thresholds.weak_odds is not None and g.odds_value is not None
@@ -86,8 +89,9 @@ def render_report(
             flag = " ".join(flags) if flags else "✅"
             price = "—" if g.price is None else f"${g.price:g}"
             odds = f"1:{g.odds_value:g}" if g.odds_value is not None else "—"
+            started = g.on_sale_date or "—"
             lines.append(
-                f"| {g.name} | {g.game_number} | {price} | {odds} | "
+                f"| {g.name} | {g.game_number} | {price} | {started} | {odds} | "
                 f"{g.top_prize_value or '—'} | {left}{total}{pct_s} | {flag} |"
             )
         lines.append("")
@@ -96,8 +100,9 @@ def render_report(
             "\"will they at least break even?\" number; lower is better and it stays ~constant "
             "all game long. **🔻 WEAK ODDS** = worse than your odds cutoff (a poor game to keep "
             "stocked). **🟠 SWAP** = the big prizes are mostly gone (value drained), even if the "
-            "odds are fine. **🔴 ENDED** = sales stopped. *PA only publishes the top six prizes, "
-            "so the % is for those; the small break-even prizes aren't published — the odds cover them.*"
+            "odds are fine. **🔴 ENDED** = sales stopped (date shown). **Started** = when the game "
+            "first went on sale. *PA only publishes the top six prizes, so the % is for those; the "
+            "small break-even prizes aren't published — the odds cover them.*"
         )
         lines.append("")
 
