@@ -10,11 +10,39 @@ rather than the same status every single day.
 from __future__ import annotations
 
 import gzip
+import hashlib
 import json
 import shutil
 from pathlib import Path
 
 from .model import Game
+
+
+def content_hash(games: dict[str, Game]) -> str:
+    """Stable fingerprint of the *data we care about* (ignores the timestamp).
+
+    Two scrapes hash the same only if every game's status and every prize tier's
+    remaining count are identical — so a difference of even one number changes it.
+    """
+    canon = {
+        num: {
+            "status": g.status,
+            "on_sale_date": g.on_sale_date,
+            "sales_end_date": g.sales_end_date,
+            "tiers": [[t.get("value"), t.get("remaining")] for t in (g.prize_tiers or [])],
+        }
+        for num, g in games.items()
+    }
+    blob = json.dumps(canon, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha1(blob.encode()).hexdigest()
+
+
+def append_scrape_log(path: str | Path, entry: dict) -> None:
+    """Append-only archive of every scrape (kept forever — never pruned)."""
+    p = Path(path)
+    p.parent.mkdir(parents=True, exist_ok=True)
+    with p.open("a", encoding="utf-8") as fh:
+        fh.write(json.dumps(entry, sort_keys=True) + "\n")
 
 
 def slugify(captured_at: str) -> str:

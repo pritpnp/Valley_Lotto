@@ -22,7 +22,7 @@ from .model import estimate_top_prize_totals, merge_games
 from .notify import render_html, render_report, send_email, write_outputs
 from .rules import Severity, evaluate
 from .state import (
-    load_originals, load_state, prune_keep_newest, save_originals,
+    append_scrape_log, content_hash, load_originals, load_state, save_originals,
     save_raw_html, save_snapshot, save_state, slugify,
 )
 
@@ -154,17 +154,26 @@ def run(argv: list[str] | None = None) -> int:
     # doesn't swallow a transition we never reported.
     save_state(state_path, current, captured_at=captured_at)
 
-    # Store both the scraped (raw HTML, gzipped) and parsed (JSON) data per scrape,
-    # keeping a rolling retention window so the history can train future logic.
+    # Archive EVERY scrape in an append-only log (never deleted). Only store a full
+    # snapshot + raw HTML when the data actually changed (even by one number);
+    # identical scrapes are recorded in the log but not duplicated on disk.
     slug = slugify(captured_at)
-    keep = max(2, cfg.retention_days * 2)  # twice-daily scrapes
-    save_snapshot(DATA_DIR / "snapshots", slug, current, captured_at=captured_at)
-    if not args.offline:
-        save_raw_html(DATA_DIR / "raw", slug, {
-            "active": active_html, "remaining": remaining_html, "sales_ended": ended_html,
-        })
-    prune_keep_newest(DATA_DIR / "snapshots", keep)
-    prune_keep_newest(DATA_DIR / "raw", keep)
+    chash = content_hash(current)
+    changed = baseline or (chash != content_hash(previous))
+    append_scrape_log(DATA_DIR / "scrape_log.jsonl", {
+        "captured_at": captured_at, "slug": slug, "hash": chash,
+        "changed": changed, "games": len(current),
+    })
+    if changed:
+        save_snapshot(DATA_DIR / "snapshots", slug, current, captured_at=captured_at)
+        if not args.offline:
+            save_raw_html(DATA_DIR / "raw", slug, {
+                "active": active_html, "remaining": remaining_html, "sales_ended": ended_html,
+            })
+        print(f"Data changed -> stored snapshot {slug}", file=sys.stderr)
+    else:
+        print(f"Identical to previous scrape -> archived in scrape_log only ({slug})",
+              file=sys.stderr)
 
     if alerts and not args.no_email:
         crit = sum(1 for a in alerts if a.severity == Severity.CRITICAL)

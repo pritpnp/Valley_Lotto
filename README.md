@@ -29,12 +29,19 @@ page shows. That check runs first.
 
 ### Data collected (twice a day, 30-day history)
 
-The tracker scrapes **twice daily** (~12am & 12pm Eastern) and commits both the
-**raw HTML** (`data/raw/`, gzipped) and the **parsed snapshot** (`data/snapshots/`)
-each run, keeping the newest ~30 days (`retention_days` in config). Every report
-shows **all published prize tiers** per game with the **change since the last
-scrape** and bottom-to-top weights (cheapest prize heaviest), so the trend builds
-up over time and can train better swap logic later.
+The tracker scrapes **twice daily** (~12am & 12pm Eastern). Storage is
+change-aware:
+
+- **`data/scrape_log.jsonl`** — every scrape is recorded here (timestamp + content
+  hash). Append-only; **never deleted** — the full archive of when we checked.
+- **`data/snapshots/<ts>.json`** (parsed) and **`data/raw/<ts>/*.html.gz`** (raw
+  HTML) — saved **only when the data actually changed** since the last scrape
+  (even by one number). Identical scrapes are archived in the log without
+  duplicating the data, and anything that *did* change is **kept** (not pruned).
+
+Every report shows **all published prize tiers** per game with the **change since
+the last scrape** and bottom-to-top weights (cheapest prize heaviest), so the
+trend builds up over time and can train better swap logic later.
 
 ### How a game's quality is judged
 

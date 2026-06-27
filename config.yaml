@@ -70,7 +70,9 @@ thresholds:
 # request each, cached). Ended-game alerts always cover every game.
 report_all_games: true
 
-# How many days of scraped (raw HTML) + parsed (JSON) snapshots to keep in the
-# repo. We scrape twice a day, so this keeps the newest retention_days * 2 files
-# under data/snapshots and data/raw, pruning anything older.
-retention_days: 30
+# Storage: we scrape twice a day. EVERY scrape is recorded (timestamp + content
+# hash) in data/scrape_log.jsonl — an append-only archive that is never deleted.
+# A full parsed snapshot (data/snapshots/) + the raw HTML (data/raw/) are stored
+# ONLY when the data actually changed since the last scrape (even by one number);
+# identical scrapes are archived in the log without duplicating the data. Nothing
+# that differs is ever pruned, so the change history is kept in full.
