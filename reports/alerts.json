@@ -1,1 +1,35 @@
-[]
+[
+  {
+    "kind": "low_prizes",
+    "game_number": "1767",
+    "name": "$500 a Week for Life",
+    "severity": "warning",
+    "message": "A game you carry is running low \u2014 consider swapping it for a fresh game: #1767 $500 a Week for Life (only 25% of top prizes left (1/4); 1 top prize(s) remaining).",
+    "owned": true,
+    "details": {
+      "reasons": [
+        "only 25% of top prizes left (1/4)",
+        "1 top prize(s) remaining"
+      ],
+      "top_prizes_remaining": 1,
+      "top_prizes_total": 4,
+      "top_prize_value": "$350,000"
+    }
+  },
+  {
+    "kind": "low_prizes",
+    "game_number": "1719",
+    "name": "Fast $1,000",
+    "severity": "info",
+    "message": "A game is running low \u2014 consider swapping it for a fresh game: #1719 Fast $1,000 (only 38% of top prizes left (19/50)).",
+    "owned": false,
+    "details": {
+      "reasons": [
+        "only 38% of top prizes left (19/50)"
+      ],
+      "top_prizes_remaining": 19,
+      "top_prizes_total": 50,
+      "top_prize_value": "$100,000"
+    }
+  }
+]
