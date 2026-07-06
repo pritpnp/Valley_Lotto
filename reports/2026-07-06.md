@@ -1,24 +1,38 @@
-# Valley Lotto report — 2026-07-06T08:37:43Z
+# Valley Lotto report — 2026-07-06T18:16:25Z
 
-## ✅ No new alerts
+## ⚠️ 6 new alert(s)
 
-Nothing ended and nothing crossed your low-prize threshold since the last run.
+- 🔵 🆕 New game now on sale: #1790 $1,500,000 Super Star ($30, odds 1:3) — consider stocking it.
+- 🔵 🆕 New game now on sale: #1791 VIP Bonus Cash ($10, odds 1:3.36) — consider stocking it.
+- 🔵 🆕 New game now on sale: #1792 Wild Side ($5, odds 1:3.45) — consider stocking it.
+- 🔵 🆕 New game now on sale: #1793 Crossword Deluxe ($5, odds 1:3.86) — consider stocking it.
+- 🔵 🆕 New game now on sale: #1794 $20 Frenzy ($2, odds 1:3.59) — consider stocking it.
+- 🔵 🆕 New game now on sale: #1795 Bright Buck$ ($1, odds 1:4.25) — consider stocking it.
+
+## 🆕 New games just on sale (6)
+
+- **#1790 $1,500,000 Super Star** ($30, odds 1:3, on sale 07/2026)
+- **#1791 VIP Bonus Cash** ($10, odds 1:3.36, on sale 07/2026)
+- **#1792 Wild Side** ($5, odds 1:3.45, on sale 07/2026)
+- **#1793 Crossword Deluxe** ($5, odds 1:3.86, on sale 07/2026)
+- **#1794 $20 Frenzy** ($2, odds 1:3.59, on sale 07/2026)
+- **#1795 Bright Buck$** ($1, odds 1:4.25, on sale 07/2026)
 
 ## Recommendation: send back 12, keep 22
 
 **🔴 Send back — and what to swap in (same price):**
 
-- #1693 Keys and Cash ($5) — rating 14/100 — 8% of all prizes left; 9% of cheap prizes left. → swap to #1776 $100 Blowout, #1770 PHILADELPHIA 76ERS
-- #1766 LOVE IS BLIND ($2) — rating 20/100 — 1:4.54; 24% of cheap prizes left. → no strong same-price replacement (consider dropping this price)
-- #1767 $500 a Week for Life ($1) — rating 27/100 — 1:4.77; 34% of all prizes left. → swap to #1773 5 Star Wins
-- #1736 High 5 ($5) — rating 30/100 — 4% of cheap prizes left; 4% of all prizes left. → swap to #1776 $100 Blowout, #1770 PHILADELPHIA 76ERS
-- #1758 ELF ($5) — rating 30/100 — 13% of cheap prizes left; 13% of all prizes left. → swap to #1776 $100 Blowout, #1770 PHILADELPHIA 76ERS
-- #1757 $2,500 Festive Frenzy ($10) — rating 32/100 — 10% of all prizes left; 10% of cheap prizes left. → swap to #1786 Ruby Rich3s, #1775 $250 Blowout
-- #1744 Goat Load of Cash Crossword ($5) — rating 33/100 — 1:4.44; 16% of cheap prizes left. → swap to #1776 $100 Blowout, #1770 PHILADELPHIA 76ERS
+- #1693 Keys and Cash ($5) — rating 14/100 — 8% of all prizes left; 9% of cheap prizes left. → swap to #1792 Wild Side, #1793 Crossword Deluxe
+- #1766 LOVE IS BLIND ($2) — rating 20/100 — 1:4.54; 24% of cheap prizes left. → swap to #1794 $20 Frenzy
+- #1767 $500 a Week for Life ($1) — rating 27/100 — 1:4.77; 34% of all prizes left. → swap to #1795 Bright Buck$, #1773 5 Star Wins
+- #1736 High 5 ($5) — rating 30/100 — 4% of cheap prizes left; 4% of all prizes left. → swap to #1792 Wild Side, #1793 Crossword Deluxe
+- #1758 ELF ($5) — rating 30/100 — 13% of cheap prizes left; 13% of all prizes left. → swap to #1792 Wild Side, #1793 Crossword Deluxe
+- #1757 $2,500 Festive Frenzy ($10) — rating 32/100 — 10% of all prizes left; 10% of cheap prizes left. → swap to #1791 VIP Bonus Cash, #1786 Ruby Rich3s
+- #1744 Goat Load of Cash Crossword ($5) — rating 33/100 — 1:4.44; 16% of cheap prizes left. → swap to #1792 Wild Side, #1793 Crossword Deluxe
 - #1756 Fro$ted Fortune ($20) — rating 35/100 — 19% of all prizes left; 19% of cheap prizes left. → swap to #1785 THE GAME OF LIFE Second-Chance Eligible
-- #1739 MONOPOLY SECRET VAULT ($5) — rating 36/100 — 1:4.59; 26% of all prizes left. → swap to #1776 $100 Blowout, #1770 PHILADELPHIA 76ERS
-- #1751 Extreme Green ($10) — rating 46/100 — 33% of all prizes left; 33% of cheap prizes left. → swap to #1786 Ruby Rich3s, #1775 $250 Blowout
-- #1772 Find the Leprechaun ($2) — rating 46/100 — 23% of all prizes left; 23% of cheap prizes left. → no strong same-price replacement (consider dropping this price)
+- #1739 MONOPOLY SECRET VAULT ($5) — rating 36/100 — 1:4.59; 26% of all prizes left. → swap to #1792 Wild Side, #1793 Crossword Deluxe
+- #1751 Extreme Green ($10) — rating 46/100 — 33% of all prizes left; 33% of cheap prizes left. → swap to #1791 VIP Bonus Cash, #1786 Ruby Rich3s
+- #1772 Find the Leprechaun ($2) — rating 46/100 — 23% of all prizes left; 23% of cheap prizes left. → swap to #1794 $20 Frenzy
 - #1738 Jackpot ($20) — rating 49/100 — 22% of cheap prizes left; 22% of all prizes left. → swap to #1785 THE GAME OF LIFE Second-Chance Eligible
 
 | Game | # | Price | Rating | Win odds | % left (all) | Low-prize % | Density | Action |
@@ -444,7 +458,13 @@ Nothing ended and nothing crossed your low-prize threshold since the last run.
 |------:|------|---|:-------:|:-------:|:------:|
 | $50 | Million Dollar Win It All | 1784 | 1:3.61 | 0.97 | 98% |
 | $50 | $1,000,000 a Year for Life | 1762 | 1:3.74 | 0.93 | 75% |
+| $30 | $1,500,000 Super Star | 1790 | 1:3 | 0.98 | 100% |
 | $30 | $120,000,000 Payout | 1768 | 1:3.09 | 0.91 | 67% |
 | $20 | THE GAME OF LIFE Second-Chance Eligible | 1785 | 1:3.43 | 1.12 | 89% |
 | $10 | $250 Blowout | 1775 | 1:2.89 | 0.98 | 67% |
+| $10 | VIP Bonus Cash | 1791 | 1:3.36 | 0.98 | 100% |
 | $10 | Ruby Rich3s | 1786 | 1:3.45 | 1.03 | 89% |
+| $5 | Wild Side | 1792 | 1:3.45 | 0.98 | 100% |
+| $5 | Crossword Deluxe | 1793 | 1:3.86 | 0.98 | 100% |
+| $2 | $20 Frenzy | 1794 | 1:3.59 | 0.97 | 100% |
+| $1 | Bright Buck$ | 1795 | 1:4.25 | 0.97 | 100% |

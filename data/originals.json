@@ -1416,5 +1416,138 @@
     },
     "tickets_printed": 7200000,
     "top_prizes_original": 7
+  },
+  "1790": {
+    "bulletin_url": "https://www.pacodeandbulletin.gov/Display/pabull?file=/secure/pabulletin/data/vol56/56-27/955.html",
+    "detail_id": "3364",
+    "odds": "1:3.00",
+    "odds_computed": "1:3.00",
+    "payout_pct": 79.25,
+    "prize_originals": {
+      "100.0": 144000,
+      "10000.0": 15,
+      "150.0": 128000,
+      "1500.0": 1840,
+      "150000.0": 10,
+      "1500000.0": 5,
+      "30.0": 624000,
+      "300.0": 57800,
+      "3000.0": 440,
+      "40.0": 272000,
+      "50.0": 368000,
+      "600.0": 3240
+    },
+    "tickets_printed": 4800000,
+    "top_prizes_original": 5
+  },
+  "1791": {
+    "bulletin_url": "https://www.pacodeandbulletin.gov/Display/pabull?file=/secure/pabulletin/data/vol56/56-27/960.html",
+    "detail_id": "3365",
+    "odds": "1:3.36",
+    "odds_computed": "1:3.36",
+    "payout_pct": 76.87,
+    "prize_originals": {
+      "10.0": 1314000,
+      "1000.0": 450,
+      "10000.0": 40,
+      "15.0": 954000,
+      "150.0": 71550,
+      "25.0": 450000,
+      "250.0": 6930,
+      "50.0": 198000,
+      "500.0": 810,
+      "75.0": 216000,
+      "750000.0": 6
+    },
+    "tickets_printed": 10800000,
+    "top_prizes_original": 6
+  },
+  "1792": {
+    "bulletin_url": "https://www.pacodeandbulletin.gov/Display/pabull?file=/secure/pabulletin/data/vol56/56-27/961.html",
+    "detail_id": "3366",
+    "odds": "1:3.45",
+    "odds_computed": "1:3.45",
+    "payout_pct": 74.51,
+    "prize_originals": {
+      "10.0": 770000,
+      "100.0": 13300,
+      "1000.0": 40,
+      "10000.0": 30,
+      "150000.0": 10,
+      "20.0": 238000,
+      "200.0": 1330,
+      "30.0": 98000,
+      "40.0": 98000,
+      "5.0": 1176000,
+      "500.0": 700,
+      "60.0": 38500
+    },
+    "tickets_printed": 8400000,
+    "top_prizes_original": 10
+  },
+  "1793": {
+    "bulletin_url": "https://www.pacodeandbulletin.gov/Display/pabull?file=/secure/pabulletin/data/vol56/56-27/958.html",
+    "detail_id": "3367",
+    "odds": "1:3.86",
+    "odds_computed": "1:3.86",
+    "payout_pct": 74.5,
+    "prize_originals": {
+      "10.0": 735000,
+      "100.0": 33600,
+      "1000.0": 525,
+      "10000.0": 45,
+      "150.0": 8505,
+      "25.0": 420000,
+      "250.0": 6300,
+      "250000.0": 8,
+      "5.0": 1890000,
+      "50.0": 168000,
+      "500.0": 3045,
+      "5000.0": 105
+    },
+    "tickets_printed": 12600000,
+    "top_prizes_original": 8
+  },
+  "1794": {
+    "bulletin_url": "https://www.pacodeandbulletin.gov/Display/pabull?file=/secure/pabulletin/data/vol56/56-27/953.html",
+    "detail_id": "3368",
+    "odds": "1:3.59",
+    "odds_computed": "1:3.59",
+    "payout_pct": 70.52,
+    "prize_originals": {
+      "10.0": 27000,
+      "100.0": 720,
+      "2.0": 864000,
+      "20.0": 162000,
+      "200.0": 495,
+      "2000.0": 100,
+      "4.0": 351000,
+      "40.0": 2925,
+      "5.0": 97200
+    },
+    "tickets_printed": 5400000,
+    "top_prizes_original": null
+  },
+  "1795": {
+    "bulletin_url": "https://www.pacodeandbulletin.gov/Display/pabull?file=/secure/pabulletin/data/vol56/56-27/956.html",
+    "detail_id": "3369",
+    "odds": "1:4.25",
+    "odds_computed": "1:4.25",
+    "payout_pct": 65.61,
+    "prize_originals": {
+      "1.0": 1058400,
+      "10.0": 84000,
+      "100.0": 1050,
+      "2.0": 445200,
+      "20.0": 42350,
+      "2500.0": 15,
+      "4.0": 142800,
+      "40.0": 1400,
+      "5.0": 201600,
+      "50.0": 1750,
+      "500.0": 20
+    },
+    "tickets_printed": 8400000,
+    "top_prizes_original": 15
   }
 }
