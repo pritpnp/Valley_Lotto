@@ -1,18 +1,1 @@
-[
-  {
-    "kind": "low_prizes",
-    "game_number": "1771",
-    "name": "Big Bonus Triple Play",
-    "severity": "info",
-    "message": "A game is running low \u2014 consider swapping it for a fresh game: #1771 Big Bonus Triple Play (only 27% of top prizes left (4/15)).",
-    "owned": false,
-    "details": {
-      "reasons": [
-        "only 27% of top prizes left (4/15)"
-      ],
-      "top_prizes_remaining": 4,
-      "top_prizes_total": 15,
-      "top_prize_value": "$130,000"
-    }
-  }
-]
+[]
