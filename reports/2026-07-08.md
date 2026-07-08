@@ -1,8 +1,8 @@
-# Valley Lotto report — 2026-07-08T06:34:57Z
+# Valley Lotto report — 2026-07-08T17:46:23Z
 
-## ✅ No new alerts
+## ⚠️ 1 new alert(s)
 
-Nothing ended and nothing crossed your low-prize threshold since the last run.
+- 🔴 **[YOUR GAME]** A game you carry ENDED sales: #1756 Fro$ted Fortune (ended 07/08/2026). Started 11/2025.
 
 ## 🆕 New games just on sale (6)
 
@@ -24,7 +24,7 @@ Nothing ended and nothing crossed your low-prize threshold since the last run.
 - #1758 ELF ($5) — rating 30/100 — 13% of cheap prizes left; 13% of all prizes left. → swap to #1792 Wild Side, #1793 Crossword Deluxe
 - #1757 $2,500 Festive Frenzy ($10) — rating 32/100 — 10% of all prizes left; 10% of cheap prizes left. → swap to #1791 VIP Bonus Cash, #1786 Ruby Rich3s
 - #1744 Goat Load of Cash Crossword ($5) — rating 32/100 — 1:4.44; 15% of cheap prizes left. → swap to #1792 Wild Side, #1793 Crossword Deluxe
-- #1756 Fro$ted Fortune ($20) — rating 35/100 — 19% of all prizes left; 19% of cheap prizes left. → swap to #1785 THE GAME OF LIFE Second-Chance Eligible
+- #1756 Fro$ted Fortune ($20) — sales ended 07/08/2026 — pull it. → swap to #1785 THE GAME OF LIFE Second-Chance Eligible
 - #1739 MONOPOLY SECRET VAULT ($5) — rating 35/100 — 1:4.59; 25% of all prizes left. → swap to #1792 Wild Side, #1793 Crossword Deluxe
 - #1772 Find the Leprechaun ($2) — rating 46/100 — 22% of all prizes left; 22% of cheap prizes left. → swap to #1794 $20 Frenzy
 - #1751 Extreme Green ($10) — rating 46/100 — 32% of all prizes left; 32% of cheap prizes left. → swap to #1791 VIP Bonus Cash, #1786 Ruby Rich3s
@@ -40,7 +40,7 @@ Nothing ended and nothing crossed your low-prize threshold since the last run.
 | ELF | 1758 | $5 | 30/100 | 1:3.52 | 13% | 13% | 2.96 (n/s) | 🔴 **SEND BACK** — rating 30/100 — 13% of cheap prizes left; 13% of all prizes left |
 | $2,500 Festive Frenzy | 1757 | $10 | 32/100 | 1:3.32 | 10% | 10% | 0.95 (n/s) | 🔴 **SEND BACK** — rating 32/100 — 10% of all prizes left; 10% of cheap prizes left |
 | Goat Load of Cash Crossword | 1744 | $5 | 32/100 | 1:4.44 | 15% | 15% | 0.67 (n/s) | 🔴 **SEND BACK** — rating 32/100 — 1:4.44; 15% of cheap prizes left |
-| Fro$ted Fortune | 1756 | $20 | 35/100 | 1:3.42 | 19% | 19% | 0.00 (n/s) | 🔴 **SEND BACK** — rating 35/100 — 19% of all prizes left; 19% of cheap prizes left |
+| Fro$ted Fortune | 1756 | $20 | 35/100 | 1:3.42 | 19% | 19% | 0.00 (n/s) | 🔴 **SEND BACK** — sales ended 07/08/2026 — pull it |
 | MONOPOLY SECRET VAULT | 1739 | $5 | 35/100 | 1:4.59 | 25% | 25% | 1.59 (n/s) | 🔴 **SEND BACK** — rating 35/100 — 1:4.59; 25% of all prizes left |
 | Find the Leprechaun | 1772 | $2 | 46/100 | 1:3.84 | 22% | 22% | 2.15 (n/s) | 🔴 **SEND BACK** — rating 46/100 — 22% of all prizes left; 22% of cheap prizes left |
 | Extreme Green | 1751 | $10 | 46/100 | 1:3.49 | 32% | 32% | 0.78 (n/s) | 🔴 **SEND BACK** — rating 46/100 — 32% of all prizes left; 32% of cheap prizes left |
@@ -152,7 +152,7 @@ Nothing ended and nothing crossed your low-prize threshold since the last run.
 | $500 | 633 | 0 | ×5 |
 | $250 | 658 | 0 | ×6 |
 
-**#1756 Fro$ted Fortune** — active
+**#1756 Fro$ted Fortune** — ended
 
 | Prize | Wins left | Δ since last | Weight |
 |-------|----------:|:------------:|:------:|
