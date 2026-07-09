@@ -1,16 +1,1 @@
-[
-  {
-    "kind": "ended",
-    "game_number": "1756",
-    "name": "Fro$ted Fortune",
-    "severity": "critical",
-    "message": "A game you carry ENDED sales: #1756 Fro$ted Fortune (ended 07/08/2026). Started 11/2025.",
-    "owned": true,
-    "details": {
-      "on_sale_date": "11/2025",
-      "sales_end_date": "07/08/2026",
-      "claim_deadline": null,
-      "price": 20.0
-    }
-  }
-]
+[]
