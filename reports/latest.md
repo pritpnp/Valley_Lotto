@@ -1,4 +1,4 @@
-# Valley Lotto report — 2026-07-15T06:22:31Z
+# Valley Lotto report — 2026-07-15T17:25:07Z
 
 ## ✅ No new alerts
 
@@ -17,56 +17,56 @@ Nothing ended and nothing crossed your low-prize threshold since the last run.
 
 **🔴 Send back — and what to swap in (same price):**
 
-- #1693 Keys and Cash ($5) — rating 14/100 — 8% of all prizes left; 9% of cheap prizes left. → swap to #1792 Wild Side, #1793 Crossword Deluxe
-- #1766 LOVE IS BLIND ($2) — rating 20/100 — 1:4.54; 23% of cheap prizes left. → swap to #1794 $20 Frenzy
-- #1767 $500 a Week for Life ($1) — rating 27/100 — 1:4.77; 32% of all prizes left. → swap to #1795 Bright Buck$, #1773 5 Star Wins
-- #1736 High 5 ($5) — rating 30/100 — 4% of cheap prizes left; 4% of all prizes left. → swap to #1792 Wild Side, #1793 Crossword Deluxe
-- #1758 ELF ($5) — rating 30/100 — 13% of cheap prizes left; 13% of all prizes left. → swap to #1792 Wild Side, #1793 Crossword Deluxe
+- #1693 Keys and Cash ($5) — rating 14/100 — 8% of all prizes left; 9% of cheap prizes left. → swap to #1793 Crossword Deluxe, #1792 Wild Side
+- #1766 LOVE IS BLIND ($2) — rating 19/100 — 1:4.54; 23% of cheap prizes left. → swap to #1794 $20 Frenzy
+- #1767 $500 a Week for Life ($1) — rating 27/100 — 1:4.77; 31% of all prizes left. → swap to #1795 Bright Buck$, #1773 5 Star Wins
+- #1736 High 5 ($5) — rating 30/100 — 4% of cheap prizes left; 4% of all prizes left. → swap to #1793 Crossword Deluxe, #1792 Wild Side
+- #1758 ELF ($5) — rating 30/100 — 13% of cheap prizes left; 13% of all prizes left. → swap to #1793 Crossword Deluxe, #1792 Wild Side
 - #1757 $2,500 Festive Frenzy ($10) — rating 32/100 — 10% of all prizes left; 10% of cheap prizes left. → swap to #1791 VIP Bonus Cash, #1786 Ruby Rich3s
-- #1744 Goat Load of Cash Crossword ($5) — rating 32/100 — 1:4.44; 15% of cheap prizes left. → swap to #1792 Wild Side, #1793 Crossword Deluxe
+- #1744 Goat Load of Cash Crossword ($5) — rating 32/100 — 1:4.44; 14% of cheap prizes left. → swap to #1793 Crossword Deluxe, #1792 Wild Side
 - #1756 Fro$ted Fortune ($20) — sales ended 07/08/2026 — pull it. → swap to #1785 THE GAME OF LIFE Second-Chance Eligible
-- #1739 MONOPOLY SECRET VAULT ($5) — rating 35/100 — 1:4.59; 25% of all prizes left. → swap to #1792 Wild Side, #1793 Crossword Deluxe
-- #1772 Find the Leprechaun ($2) — rating 46/100 — 22% of all prizes left; 22% of cheap prizes left. → swap to #1794 $20 Frenzy
-- #1751 Extreme Green ($10) — rating 46/100 — 32% of all prizes left; 32% of cheap prizes left. → swap to #1791 VIP Bonus Cash, #1786 Ruby Rich3s
-- #1783 GOLD FISH® ($1) — rating 46/100 — 1:4.32; cheap prizes -5.6σ vs game — drying up. → swap to #1795 Bright Buck$, #1773 5 Star Wins
-- #1738 Jackpot ($20) — rating 48/100 — 22% of cheap prizes left; 22% of all prizes left. → swap to #1785 THE GAME OF LIFE Second-Chance Eligible
+- #1739 MONOPOLY SECRET VAULT ($5) — rating 35/100 — 1:4.59; 25% of all prizes left. → swap to #1793 Crossword Deluxe, #1792 Wild Side
+- #1783 GOLD FISH® ($1) — rating 45/100 — 1:4.32; cheap prizes -5.8σ vs game — drying up. → swap to #1795 Bright Buck$, #1773 5 Star Wins
+- #1751 Extreme Green ($10) — rating 45/100 — 31% of all prizes left; 31% of cheap prizes left. → swap to #1791 VIP Bonus Cash, #1786 Ruby Rich3s
+- #1772 Find the Leprechaun ($2) — rating 48/100 — 21% of all prizes left; 21% of cheap prizes left. → swap to #1794 $20 Frenzy
+- #1738 Jackpot ($20) — rating 48/100 — 21% of cheap prizes left; 21% of all prizes left. → swap to #1785 THE GAME OF LIFE Second-Chance Eligible
 
 | Game | # | Price | Rating | Win odds | % left (all) | Low-prize % | Density | Action |
 |------|---|------:|:------:|:-------:|:-----------:|:-----------:|:-------:|--------|
-| Keys and Cash | 1693 | $5 | 14/100 | 1:4.42 | 8% | 9% | 1.85 (n/s) | 🔴 **SEND BACK** — rating 14/100 — 8% of all prizes left; 9% of cheap prizes left |
-| LOVE IS BLIND | 1766 | $2 | 20/100 | 1:4.54 | 23% | 23% | 0.86 (n/s) | 🔴 **SEND BACK** — rating 20/100 — 1:4.54; 23% of cheap prizes left |
-| $500 a Week for Life | 1767 | $1 | 27/100 | 1:4.77 | 32% | 32% | 1.24 (n/s) | 🔴 **SEND BACK** — rating 27/100 — 1:4.77; 32% of all prizes left |
-| High 5 | 1736 | $5 | 30/100 | 1:4.46 | 4% | 4% | 5.33 | 🔴 **SEND BACK** — rating 30/100 — 4% of cheap prizes left; 4% of all prizes left |
-| ELF | 1758 | $5 | 30/100 | 1:3.52 | 13% | 13% | 2.96 (n/s) | 🔴 **SEND BACK** — rating 30/100 — 13% of cheap prizes left; 13% of all prizes left |
-| $2,500 Festive Frenzy | 1757 | $10 | 32/100 | 1:3.32 | 10% | 10% | 0.95 (n/s) | 🔴 **SEND BACK** — rating 32/100 — 10% of all prizes left; 10% of cheap prizes left |
-| Goat Load of Cash Crossword | 1744 | $5 | 32/100 | 1:4.44 | 15% | 15% | 0.67 (n/s) | 🔴 **SEND BACK** — rating 32/100 — 1:4.44; 15% of cheap prizes left |
+| Keys and Cash | 1693 | $5 | 14/100 | 1:4.42 | 8% | 9% | 1.87 (n/s) | 🔴 **SEND BACK** — rating 14/100 — 8% of all prizes left; 9% of cheap prizes left |
+| LOVE IS BLIND | 1766 | $2 | 19/100 | 1:4.54 | 23% | 23% | 0.89 (n/s) | 🔴 **SEND BACK** — rating 19/100 — 1:4.54; 23% of cheap prizes left |
+| $500 a Week for Life | 1767 | $1 | 27/100 | 1:4.77 | 31% | 31% | 1.29 (n/s) | 🔴 **SEND BACK** — rating 27/100 — 1:4.77; 31% of all prizes left |
+| High 5 | 1736 | $5 | 30/100 | 1:4.46 | 4% | 4% | 5.50 | 🔴 **SEND BACK** — rating 30/100 — 4% of cheap prizes left; 4% of all prizes left |
+| ELF | 1758 | $5 | 30/100 | 1:3.52 | 13% | 13% | 3.00 (n/s) | 🔴 **SEND BACK** — rating 30/100 — 13% of cheap prizes left; 13% of all prizes left |
+| $2,500 Festive Frenzy | 1757 | $10 | 32/100 | 1:3.32 | 10% | 10% | 0.93 (n/s) | 🔴 **SEND BACK** — rating 32/100 — 10% of all prizes left; 10% of cheap prizes left |
+| Goat Load of Cash Crossword | 1744 | $5 | 32/100 | 1:4.44 | 14% | 14% | 0.72 (n/s) | 🔴 **SEND BACK** — rating 32/100 — 1:4.44; 14% of cheap prizes left |
 | Fro$ted Fortune | 1756 | $20 | 35/100 | 1:3.42 | 19% | 19% | 0.00 (n/s) | 🔴 **SEND BACK** — sales ended 07/08/2026 — pull it |
-| MONOPOLY SECRET VAULT | 1739 | $5 | 35/100 | 1:4.59 | 25% | 25% | 1.59 (n/s) | 🔴 **SEND BACK** — rating 35/100 — 1:4.59; 25% of all prizes left |
-| Find the Leprechaun | 1772 | $2 | 46/100 | 1:3.84 | 22% | 22% | 2.15 (n/s) | 🔴 **SEND BACK** — rating 46/100 — 22% of all prizes left; 22% of cheap prizes left |
-| Extreme Green | 1751 | $10 | 46/100 | 1:3.49 | 32% | 32% | 0.78 (n/s) | 🔴 **SEND BACK** — rating 46/100 — 32% of all prizes left; 32% of cheap prizes left |
-| GOLD FISH® | 1783 | $1 | 46/100 | 1:4.32 | 66% | 66% | 0.83 (n/s) | 🔴 **SEND BACK** — rating 46/100 — 1:4.32; cheap prizes -5.6σ vs game — drying up |
-| Jackpot | 1738 | $20 | 48/100 | 1:3.67 | 22% | 22% | 0.95 (n/s) | 🔴 **SEND BACK** — rating 48/100 — 22% of cheap prizes left; 22% of all prizes left |
-| Millionaire Loading | 1746 | $20 | 51/100 | 1:3.46 | 21% | 21% | 0.99 (n/s) | 🟢 KEEP — rating 51/100 — watch: 21% of cheap prizes left |
-| Bonus Ball Bingo | 1740 | $3 | 52/100 | 1:4.38 | 51% | 51% | 1.37 (n/s) | 🟢 KEEP — rating 52/100 — watch: 1:4.38 |
-| Crossword Extra | 1753 | $3 | 52/100 | 1:4 | 40% | 40% | 1.00 (n/s) | 🟢 KEEP — rating 52/100 — watch: 40% of cheap prizes left |
-| GAME OF THRONES™ | 1706 | $10 | 55/100 | 1:3.68 | 35% | 35% | 0.87 (n/s) | 🟢 KEEP — rating 55/100 — watch: 35% of cheap prizes left |
-| $3 Million Mega Moolah Multiplier | 1742 | $30 | 59/100 | 1:3.49 | 36% | 36% | 1.91 (n/s) | 🟢 KEEP — rating 59/100 — watch: 36% of cheap prizes left |
+| MONOPOLY SECRET VAULT | 1739 | $5 | 35/100 | 1:4.59 | 25% | 25% | 1.62 (n/s) | 🔴 **SEND BACK** — rating 35/100 — 1:4.59; 25% of all prizes left |
+| GOLD FISH® | 1783 | $1 | 45/100 | 1:4.32 | 64% | 64% | 0.86 (n/s) | 🔴 **SEND BACK** — rating 45/100 — 1:4.32; cheap prizes -5.8σ vs game — drying up |
+| Extreme Green | 1751 | $10 | 45/100 | 1:3.49 | 31% | 31% | 0.80 (n/s) | 🔴 **SEND BACK** — rating 45/100 — 31% of all prizes left; 31% of cheap prizes left |
+| Find the Leprechaun | 1772 | $2 | 48/100 | 1:3.84 | 21% | 21% | 2.27 | 🔴 **SEND BACK** — rating 48/100 — 21% of all prizes left; 21% of cheap prizes left |
+| Jackpot | 1738 | $20 | 48/100 | 1:3.67 | 21% | 21% | 0.00 (n/s) | 🔴 **SEND BACK** — rating 48/100 — 21% of cheap prizes left; 21% of all prizes left |
+| Millionaire Loading | 1746 | $20 | 50/100 | 1:3.46 | 20% | 20% | 1.03 (n/s) | 🟢 KEEP — rating 50/100 — watch: 20% of cheap prizes left |
+| Code Word Crossword | 1769 | $10 | 51/100 | 1:3.62 | 40% | 40% | 1.00 (n/s) | 🟢 KEEP — rating 51/100 — watch: 40% of cheap prizes left |
+| Crossword Extra | 1753 | $3 | 52/100 | 1:4 | 39% | 39% | 1.03 (n/s) | 🟢 KEEP — rating 52/100 — watch: 39% of cheap prizes left |
+| Bonus Ball Bingo | 1740 | $3 | 52/100 | 1:4.38 | 50% | 50% | 1.39 (n/s) | 🟢 KEEP — rating 52/100 — watch: 1:4.38 |
+| GAME OF THRONES™ | 1706 | $10 | 55/100 | 1:3.68 | 34% | 34% | 0.87 (n/s) | 🟢 KEEP — rating 55/100 — watch: 34% of cheap prizes left |
+| $3 Million Mega Moolah Multiplier | 1742 | $30 | 58/100 | 1:3.49 | 36% | 36% | 1.93 (n/s) | 🟢 KEEP — rating 58/100 — watch: 36% of cheap prizes left |
 | JURASSIC PARK | 1747 | $10 | 59/100 | 1:3.82 | 47% | 47% | 1.07 (n/s) | 🟢 KEEP — rating 59/100 — watch: 47% of cheap prizes left |
-| Code Word Crossword | 1769 | $10 | 60/100 | 1:3.62 | 43% | 43% | 1.18 (n/s) | 🟢 KEEP — rating 60/100 — watch: 43% of cheap prizes left |
-| A Latte Money | 1779 | $1 | 61/100 | 1:4.25 | 64% | 64% | 0.63 (n/s) | 🟢 KEEP — rating 61/100 — watch: 1:4.25 |
-| Money Rush | 1778 | $2 | 63/100 | 1:3.54 | 46% | 46% | 0.98 (n/s) | 🟢 KEEP — rating 63/100 — watch: 46% of all prizes left |
-| GUS® | 1782 | $5 | 63/100 | 1:3.76 | 53% | 53% | 1.13 (n/s) | 🟢 KEEP — rating 63/100 — watch: 53% of cheap prizes left |
-| Cash Spectacular | 1750 | $30 | 66/100 | 1:3.57 | 52% | 52% | 1.18 (n/s) | 🟢 KEEP — rating 66/100 — watch: 52% of cheap prizes left |
-| $20,000 a Month for Life | 1764 | $10 | 66/100 | 1:3.6 | 53% | 53% | 1.02 (n/s) | 🟢 KEEP — rating 66/100 — watch: 53% of all prizes left |
-| Fever Doubler | 1787 | $5 | 66/100 | 1:3.56 | 77% | 77% | 1.05 (n/s) | 🟢 KEEP — rating 66/100 — watch: cheap prizes -4.8σ vs game — drying up |
-| $500 Blowout | 1774 | $20 | 67/100 | 1:2.72 | 64% | 64% | 0.99 (n/s) | 🟢 KEEP — rating 67/100 — watch: cheap prizes -5.4σ vs game — drying up |
-| Mega Bucks | 1696 | $30 | 67/100 | 1:3.12 | 42% | 42% | 0.97 (n/s) | 🟢 KEEP — rating 67/100 — watch: 42% of cheap prizes left |
-| Money Box Bingo | 1777 | $5 | 69/100 | 1:3.66 | 60% | 60% | 1.16 (n/s) | 🟢 KEEP — rating 69/100 — healthy |
-| Triple Red 777 | 1780 | $30 | 70/100 | 1:3.11 | 77% | 76% | 1.14 (n/s) | 🟢 KEEP — rating 70/100 — watch: cheap prizes -7.9σ vs game — drying up |
-| $500,000 a Year for Life | 1763 | $20 | 72/100 | 1:3.46 | 61% | 60% | 0.99 (n/s) | 🟢 KEEP — rating 72/100 — healthy |
-| Win Win Win | 1781 | $10 | 78/100 | 1:3.12 | 62% | 62% | 0.97 (n/s) | 🟢 KEEP — rating 78/100 — healthy |
-| Lights, Camera, Crossword | 1788 | $3 | 81/100 | 1:3.57 | 94% | 94% | 0.96 (n/s) | 🟢 KEEP — rating 81/100 — watch: cheap prizes -2.7σ vs game — drying up |
-| Super 7s | 1789 | $2 | 85/100 | 1:3.38 | 84% | 84% | 1.03 (n/s) | 🟢 KEEP — rating 85/100 — healthy |
+| A Latte Money | 1779 | $1 | 60/100 | 1:4.25 | 62% | 62% | 0.64 (n/s) | 🟢 KEEP — rating 60/100 — watch: 1:4.25 |
+| Money Rush | 1778 | $2 | 62/100 | 1:3.54 | 43% | 43% | 1.03 (n/s) | 🟢 KEEP — rating 62/100 — watch: 43% of all prizes left |
+| GUS® | 1782 | $5 | 62/100 | 1:3.76 | 50% | 50% | 1.09 (n/s) | 🟢 KEEP — rating 62/100 — watch: 50% of cheap prizes left |
+| Cash Spectacular | 1750 | $30 | 65/100 | 1:3.57 | 51% | 51% | 0.99 (n/s) | 🟢 KEEP — rating 65/100 — watch: 51% of cheap prizes left |
+| $20,000 a Month for Life | 1764 | $10 | 65/100 | 1:3.6 | 52% | 52% | 1.04 (n/s) | 🟢 KEEP — rating 65/100 — watch: 52% of all prizes left |
+| $500 Blowout | 1774 | $20 | 66/100 | 1:2.72 | 63% | 63% | 0.99 (n/s) | 🟢 KEEP — rating 66/100 — watch: cheap prizes -5.6σ vs game — drying up |
+| Fever Doubler | 1787 | $5 | 67/100 | 1:3.56 | 72% | 72% | 1.11 (n/s) | 🟢 KEEP — rating 67/100 — watch: cheap prizes -3.7σ vs game — drying up |
+| Mega Bucks | 1696 | $30 | 67/100 | 1:3.12 | 41% | 41% | 0.98 (n/s) | 🟢 KEEP — rating 67/100 — watch: 41% of cheap prizes left |
+| Money Box Bingo | 1777 | $5 | 68/100 | 1:3.66 | 59% | 59% | 1.19 (n/s) | 🟢 KEEP — rating 68/100 — watch: 59% of cheap prizes left |
+| Triple Red 777 | 1780 | $30 | 69/100 | 1:3.11 | 75% | 74% | 1.17 (n/s) | 🟢 KEEP — rating 69/100 — watch: cheap prizes -7.0σ vs game — drying up |
+| $500,000 a Year for Life | 1763 | $20 | 71/100 | 1:3.46 | 60% | 60% | 1.01 (n/s) | 🟢 KEEP — rating 71/100 — watch: 60% of cheap prizes left |
+| Win Win Win | 1781 | $10 | 77/100 | 1:3.12 | 59% | 59% | 1.01 (n/s) | 🟢 KEEP — rating 77/100 — watch: 59% of cheap prizes left |
+| Super 7s | 1789 | $2 | 84/100 | 1:3.38 | 80% | 80% | 1.06 (n/s) | 🟢 KEEP — rating 84/100 — healthy |
+| Lights, Camera, Crossword | 1788 | $3 | 87/100 | 1:3.57 | 92% | 92% | 0.87 (n/s) | 🟢 KEEP — rating 87/100 — healthy |
 
 > **Rating (0–100)** is a weighted blend of the factors below; under 50 → SEND BACK. Set the weights in `config.yaml`.
 > - **Win odds (1:X)** — chance a ticket wins *any* prize (the break-even signal). Lower is better.
@@ -83,8 +83,8 @@ Nothing ended and nothing crossed your low-prize threshold since the last run.
 | $5,000 | 6 | 0 | ×1 |
 | $1,000 | 4 | 0 | ×2 |
 | $500 | 16 | 0 | ×3 |
-| $300 | 615 | 0 | ×4 |
-| $100 | 1,942 | 0 | ×5 |
+| $300 | 609 | ▼6 | ×4 |
+| $100 | 1,921 | ▼21 | ×5 |
 
 **#1766 LOVE IS BLIND** — active
 
@@ -92,10 +92,10 @@ Nothing ended and nothing crossed your low-prize threshold since the last run.
 |-------|----------:|:------------:|:------:|
 | $20,000 | 1 | 0 | ×1 |
 | $2,000 | 6 | 0 | ×2 |
-| $400 | 236 | 0 | ×3 |
-| $100 | 391 | 0 | ×4 |
-| $40 | 1,869 | 0 | ×5 |
-| $20 | 33,610 | 0 | ×6 |
+| $400 | 228 | ▼8 | ×3 |
+| $100 | 379 | ▼12 | ×4 |
+| $40 | 1,812 | ▼57 | ×5 |
+| $20 | 32,321 | ▼1,289 | ×6 |
 
 **#1767 $500 a Week for Life** — active
 
@@ -103,10 +103,10 @@ Nothing ended and nothing crossed your low-prize threshold since the last run.
 |-------|----------:|:------------:|:------:|
 | $350,000 | 1 | 0 | ×1 |
 | $1,000 | 4 | 0 | ×2 |
-| $100 | 261 | 0 | ×3 |
-| $40 | 1,835 | 0 | ×4 |
-| $20 | 3,030 | 0 | ×5 |
-| $10 | 48,898 | 0 | ×6 |
+| $100 | 246 | ▼15 | ×3 |
+| $40 | 1,742 | ▼93 | ×4 |
+| $20 | 2,899 | ▼131 | ×5 |
+| $10 | 46,835 | ▼2,063 | ×6 |
 
 **#1736 High 5** — active
 
@@ -115,9 +115,9 @@ Nothing ended and nothing crossed your low-prize threshold since the last run.
 | $155,000 | 2 | 0 | ×1 |
 | $5,000 | 3 | 0 | ×2 |
 | $1,500 | 4 | 0 | ×3 |
-| $500 | 512 | 0 | ×4 |
-| $250 | 193 | 0 | ×5 |
-| $100 | 1,091 | 0 | ×6 |
+| $500 | 493 | ▼19 | ×4 |
+| $250 | 187 | ▼6 | ×5 |
+| $100 | 1,058 | ▼33 | ×6 |
 
 **#1758 ELF** — active
 
@@ -125,32 +125,32 @@ Nothing ended and nothing crossed your low-prize threshold since the last run.
 |-------|----------:|:------------:|:------:|
 | $250,000 | 2 | 0 | ×1 |
 | $10,000 | 5 | 0 | ×2 |
-| $1,000 | 21 | 0 | ×3 |
-| $500 | 278 | 0 | ×4 |
-| $100 | 3,352 | 0 | ×5 |
-| $50 | 8,329 | 0 | ×6 |
+| $1,000 | 19 | ▼2 | ×3 |
+| $500 | 274 | ▼4 | ×4 |
+| $100 | 3,300 | ▼52 | ×5 |
+| $50 | 8,203 | ▼126 | ×6 |
 
 **#1757 $2,500 Festive Frenzy** — active
 
 | Prize | Wins left | Δ since last | Weight |
 |-------|----------:|:------------:|:------:|
-| $2,500 | 203 | 0 | ×1 |
-| $500 | 604 | 0 | ×2 |
-| $250 | 1,473 | 0 | ×3 |
-| $100 | 5,852 | 0 | ×4 |
-| $50 | 12,135 | 0 | ×5 |
-| $20 | 77,942 | 0 | ×6 |
+| $2,500 | 193 | ▼10 | ×1 |
+| $500 | 593 | ▼11 | ×2 |
+| $250 | 1,426 | ▼47 | ×3 |
+| $100 | 5,678 | ▼174 | ×4 |
+| $50 | 11,800 | ▼335 | ×5 |
+| $20 | 76,009 | ▼1,933 | ×6 |
 
 **#1744 Goat Load of Cash Crossword** — active
 
 | Prize | Wins left | Δ since last | Weight |
 |-------|----------:|:------------:|:------:|
 | $200,000 | 1 | 0 | ×1 |
-| $10,000 | 1 | 0 | ×2 |
-| $5,000 | 42 | 0 | ×3 |
-| $1,000 | 33 | 0 | ×4 |
-| $500 | 633 | 0 | ×5 |
-| $250 | 658 | 0 | ×6 |
+| $10,000 | 0 | ▼1 | ×2 |
+| $5,000 | 37 | ▼5 | ×3 |
+| $1,000 | 32 | ▼1 | ×4 |
+| $500 | 585 | ▼48 | ×5 |
+| $250 | 614 | ▼44 | ×6 |
 
 **#1756 Fro$ted Fortune** — ended
 
@@ -159,9 +159,9 @@ Nothing ended and nothing crossed your low-prize threshold since the last run.
 | $500,000 | 0 | 0 | ×1 |
 | $10,000 | 4 | 0 | ×2 |
 | $1,000 | 90 | 0 | ×3 |
-| $500 | 8,216 | 0 | ×4 |
-| $100 | 16,155 | 0 | ×5 |
-| $50 | 60,094 | 0 | ×6 |
+| $500 | 8,183 | ▼33 | ×4 |
+| $100 | 16,103 | ▼52 | ×5 |
+| $50 | 59,921 | ▼173 | ×6 |
 
 **#1739 MONOPOLY SECRET VAULT** — active
 
@@ -169,32 +169,10 @@ Nothing ended and nothing crossed your low-prize threshold since the last run.
 |-------|----------:|:------------:|:------:|
 | $200,000 | 4 | 0 | ×1 |
 | $10,000 | 10 | 0 | ×2 |
-| $1,000 | 134 | 0 | ×3 |
-| $500 | 1,100 | 0 | ×4 |
-| $400 | 5,108 | 0 | ×5 |
-| $100 | 8,018 | 0 | ×6 |
-
-**#1772 Find the Leprechaun** — active
-
-| Prize | Wins left | Δ since last | Weight |
-|-------|----------:|:------------:|:------:|
-| $10,000 | 8 | 0 | ×1 |
-| $3,000 | 5 | 0 | ×2 |
-| $300 | 167 | 0 | ×3 |
-| $100 | 507 | 0 | ×4 |
-| $70 | 601 | 0 | ×5 |
-| $30 | 6,310 | 0 | ×6 |
-
-**#1751 Extreme Green** — active
-
-| Prize | Wins left | Δ since last | Weight |
-|-------|----------:|:------------:|:------:|
-| $500,000 | 3 | 0 | ×1 |
-| $5,000 | 17 | 0 | ×2 |
-| $500 | 2,944 | 0 | ×3 |
-| $200 | 3,219 | 0 | ×4 |
-| $100 | 4,081 | 0 | ×5 |
-| $50 | 115,017 | 0 | ×6 |
+| $1,000 | 131 | ▼3 | ×3 |
+| $500 | 1,074 | ▼26 | ×4 |
+| $400 | 5,009 | ▼99 | ×5 |
+| $100 | 7,858 | ▼160 | ×6 |
 
 **#1783 GOLD FISH®** — active
 
@@ -202,32 +180,76 @@ Nothing ended and nothing crossed your low-prize threshold since the last run.
 |-------|----------:|:------------:|:------:|
 | $2,500 | 11 | 0 | ×1 |
 | $500 | 92 | 0 | ×2 |
-| $100 | 542 | 0 | ×3 |
-| $50 | 941 | 0 | ×4 |
-| $20 | 27,996 | 0 | ×5 |
-| $10 | 66,891 | 0 | ×6 |
+| $100 | 522 | ▼20 | ×3 |
+| $50 | 912 | ▼29 | ×4 |
+| $20 | 26,959 | ▼1,037 | ×5 |
+| $10 | 64,519 | ▼2,372 | ×6 |
+
+**#1751 Extreme Green** — active
+
+| Prize | Wins left | Δ since last | Weight |
+|-------|----------:|:------------:|:------:|
+| $500,000 | 3 | 0 | ×1 |
+| $5,000 | 16 | ▼1 | ×2 |
+| $500 | 2,853 | ▼91 | ×3 |
+| $200 | 3,133 | ▼86 | ×4 |
+| $100 | 3,960 | ▼121 | ×5 |
+| $50 | 111,907 | ▼3,110 | ×6 |
+
+**#1772 Find the Leprechaun** — active
+
+| Prize | Wins left | Δ since last | Weight |
+|-------|----------:|:------------:|:------:|
+| $10,000 | 8 | 0 | ×1 |
+| $3,000 | 5 | 0 | ×2 |
+| $300 | 158 | ▼9 | ×3 |
+| $100 | 480 | ▼27 | ×4 |
+| $70 | 558 | ▼43 | ×5 |
+| $30 | 5,959 | ▼351 | ×6 |
 
 **#1738 Jackpot** — active
 
 | Prize | Wins left | Δ since last | Weight |
 |-------|----------:|:------------:|:------:|
-| $1,000,000 | 1 | 0 | ×1 |
+| $1,000,000 | 0 | ▼1 | ×1 |
 | $50,000 | 5 | 0 | ×2 |
-| $5,000 | 17 | 0 | ×3 |
-| $1,000 | 4,558 | 0 | ×4 |
-| $500 | 4,334 | 0 | ×5 |
-| $250 | 2,364 | 0 | ×6 |
+| $5,000 | 16 | ▼1 | ×3 |
+| $1,000 | 4,400 | ▼158 | ×4 |
+| $500 | 4,210 | ▼124 | ×5 |
+| $250 | 2,279 | ▼85 | ×6 |
 
 **#1746 Millionaire Loading** — active
 
 | Prize | Wins left | Δ since last | Weight |
 |-------|----------:|:------------:|:------:|
 | $1,000,000 | 1 | 0 | ×1 |
-| $10,000 | 9 | 0 | ×2 |
-| $4,000 | 35 | 0 | ×3 |
-| $1,000 | 1,276 | 0 | ×4 |
-| $400 | 8,589 | 0 | ×5 |
-| $200 | 3,288 | 0 | ×6 |
+| $10,000 | 8 | ▼1 | ×2 |
+| $4,000 | 34 | ▼1 | ×3 |
+| $1,000 | 1,213 | ▼63 | ×4 |
+| $400 | 8,149 | ▼440 | ×5 |
+| $200 | 3,131 | ▼157 | ×6 |
+
+**#1769 Code Word Crossword** — active
+
+| Prize | Wins left | Δ since last | Weight |
+|-------|----------:|:------------:|:------:|
+| $500,000 | 4 | ▼1 | ×1 |
+| $50,000 | 8 | 0 | ×2 |
+| $10,000 | 14 | 0 | ×3 |
+| $5,000 | 13 | 0 | ×4 |
+| $2,500 | 13 | 0 | ×5 |
+| $1,000 | 718 | ▼47 | ×6 |
+
+**#1753 Crossword Extra** — active
+
+| Prize | Wins left | Δ since last | Weight |
+|-------|----------:|:------------:|:------:|
+| $50,000 | 4 | 0 | ×1 |
+| $5,000 | 10 | 0 | ×2 |
+| $300 | 147 | ▼4 | ×3 |
+| $250 | 158 | ▼4 | ×4 |
+| $150 | 1,338 | ▼37 | ×5 |
+| $75 | 2,718 | ▼74 | ×6 |
 
 **#1740 Bonus Ball Bingo** — active
 
@@ -236,20 +258,9 @@ Nothing ended and nothing crossed your low-prize threshold since the last run.
 | $50,000 | 7 | 0 | ×1 |
 | $3,000 | 18 | 0 | ×2 |
 | $1,000 | 33 | 0 | ×3 |
-| $300 | 540 | 0 | ×4 |
-| $150 | 1,018 | 0 | ×5 |
-| $100 | 5,347 | 0 | ×6 |
-
-**#1753 Crossword Extra** — active
-
-| Prize | Wins left | Δ since last | Weight |
-|-------|----------:|:------------:|:------:|
-| $50,000 | 4 | 0 | ×1 |
-| $5,000 | 10 | 0 | ×2 |
-| $300 | 151 | 0 | ×3 |
-| $250 | 162 | 0 | ×4 |
-| $150 | 1,375 | 0 | ×5 |
-| $75 | 2,792 | 0 | ×6 |
+| $300 | 534 | ▼6 | ×4 |
+| $150 | 1,009 | ▼9 | ×5 |
+| $100 | 5,289 | ▼58 | ×6 |
 
 **#1706 GAME OF THRONES™** — active
 
@@ -257,10 +268,10 @@ Nothing ended and nothing crossed your low-prize threshold since the last run.
 |-------|----------:|:------------:|:------:|
 | $500,000 | 3 | 0 | ×1 |
 | $5,000 | 6 | 0 | ×2 |
-| $1,000 | 590 | 0 | ×3 |
-| $500 | 2,578 | 0 | ×4 |
-| $300 | 2,279 | 0 | ×5 |
-| $200 | 28,666 | 0 | ×6 |
+| $1,000 | 585 | ▼5 | ×3 |
+| $500 | 2,556 | ▼22 | ×4 |
+| $300 | 2,269 | ▼10 | ×5 |
+| $200 | 28,495 | ▼171 | ×6 |
 
 **#1742 $3 Million Mega Moolah Multiplier** — active
 
@@ -269,9 +280,9 @@ Nothing ended and nothing crossed your low-prize threshold since the last run.
 | $3,000,000 | 2 | 0 | ×1 |
 | $300,000 | 6 | 0 | ×2 |
 | $30,000 | 4 | 0 | ×3 |
-| $3,000 | 227 | 0 | ×4 |
-| $1,000 | 2,183 | 0 | ×5 |
-| $500 | 811 | 0 | ×6 |
+| $3,000 | 225 | ▼2 | ×4 |
+| $1,000 | 2,149 | ▼34 | ×5 |
+| $500 | 800 | ▼11 | ×6 |
 
 **#1747 JURASSIC PARK** — active
 
@@ -279,65 +290,54 @@ Nothing ended and nothing crossed your low-prize threshold since the last run.
 |-------|----------:|:------------:|:------:|
 | $500,000 | 5 | 0 | ×1 |
 | $10,000 | 14 | 0 | ×2 |
-| $1,000 | 284 | 0 | ×3 |
-| $500 | 376 | 0 | ×4 |
-| $250 | 3,932 | 0 | ×5 |
-| $150 | 43,181 | 0 | ×6 |
-
-**#1769 Code Word Crossword** — active
-
-| Prize | Wins left | Δ since last | Weight |
-|-------|----------:|:------------:|:------:|
-| $500,000 | 5 | 0 | ×1 |
-| $50,000 | 8 | 0 | ×2 |
-| $10,000 | 14 | 0 | ×3 |
-| $5,000 | 13 | 0 | ×4 |
-| $2,500 | 13 | 0 | ×5 |
-| $1,000 | 765 | 0 | ×6 |
+| $1,000 | 281 | ▼3 | ×3 |
+| $500 | 373 | ▼3 | ×4 |
+| $250 | 3,888 | ▼44 | ×5 |
+| $150 | 42,828 | ▼353 | ×6 |
 
 **#1779 A Latte Money** — active
 
 | Prize | Wins left | Δ since last | Weight |
 |-------|----------:|:------------:|:------:|
 | $10,000 | 2 | 0 | ×1 |
-| $400 | 89 | 0 | ×2 |
+| $400 | 85 | ▼4 | ×2 |
 | $200 | 89 | 0 | ×3 |
-| $100 | 526 | 0 | ×4 |
-| $40 | 1,086 | 0 | ×5 |
-| $20 | 16,483 | 0 | ×6 |
+| $100 | 511 | ▼15 | ×4 |
+| $40 | 1,067 | ▼19 | ×5 |
+| $20 | 16,125 | ▼358 | ×6 |
 
 **#1778 Money Rush** — active
 
 | Prize | Wins left | Δ since last | Weight |
 |-------|----------:|:------------:|:------:|
 | $5,000 | 18 | 0 | ×1 |
-| $1,000 | 19 | 0 | ×2 |
-| $500 | 32 | 0 | ×3 |
-| $100 | 1,627 | 0 | ×4 |
-| $50 | 2,435 | 0 | ×5 |
-| $30 | 6,874 | 0 | ×6 |
+| $1,000 | 18 | ▼1 | ×2 |
+| $500 | 31 | ▼1 | ×3 |
+| $100 | 1,549 | ▼78 | ×4 |
+| $50 | 2,332 | ▼103 | ×5 |
+| $30 | 6,554 | ▼320 | ×6 |
 
 **#1782 GUS®** — active
 
 | Prize | Wins left | Δ since last | Weight |
 |-------|----------:|:------------:|:------:|
-| $100,000 | 12 | 0 | ×1 |
+| $100,000 | 11 | ▼1 | ×1 |
 | $10,000 | 5 | 0 | ×2 |
-| $1,000 | 14 | 0 | ×3 |
-| $500 | 175 | 0 | ×4 |
-| $200 | 493 | 0 | ×5 |
-| $100 | 1,671 | 0 | ×6 |
+| $1,000 | 13 | ▼1 | ×3 |
+| $500 | 166 | ▼9 | ×4 |
+| $200 | 467 | ▼26 | ×5 |
+| $100 | 1,583 | ▼88 | ×6 |
 
 **#1750 Cash Spectacular** — active
 
 | Prize | Wins left | Δ since last | Weight |
 |-------|----------:|:------------:|:------:|
-| $1,500,000 | 6 | 0 | ×1 |
+| $1,500,000 | 5 | ▼1 | ×1 |
 | $150,000 | 3 | 0 | ×2 |
 | $30,000 | 9 | 0 | ×3 |
 | $5,000 | 23 | 0 | ×4 |
-| $1,000 | 2,008 | 0 | ×5 |
-| $500 | 2,655 | 0 | ×6 |
+| $1,000 | 1,975 | ▼33 | ×5 |
+| $500 | 2,615 | ▼40 | ×6 |
 
 **#1764 $20,000 a Month for Life** — active
 
@@ -345,31 +345,31 @@ Nothing ended and nothing crossed your low-prize threshold since the last run.
 |-------|----------:|:------------:|:------:|
 | $3,200,000 | 4 | 0 | ×1 |
 | $10,000 | 13 | 0 | ×2 |
-| $1,000 | 439 | 0 | ×3 |
-| $500 | 7,669 | 0 | ×4 |
-| $100 | 45,869 | 0 | ×5 |
-| $50 | 105,626 | 0 | ×6 |
+| $1,000 | 430 | ▼9 | ×3 |
+| $500 | 7,508 | ▼161 | ×4 |
+| $100 | 44,927 | ▼942 | ×5 |
+| $50 | 103,497 | ▼2,129 | ×6 |
+
+**#1774 $500 Blowout** — active
+
+| Prize | Wins left | Δ since last | Weight |
+|-------|----------:|:------------:|:------:|
+| $500 | 35,404 | ▼937 | ×1 |
+| $200 | 20,546 | ▼521 | ×2 |
+| $100 | 80,299 | ▼1,988 | ×3 |
+| $50 | 388,795 | ▼9,641 | ×4 |
+| $20 | 1,128,613 | ▼27,541 | ×5 |
 
 **#1787 Fever Doubler** — active
 
 | Prize | Wins left | Δ since last | Weight |
 |-------|----------:|:------------:|:------:|
 | $250,000 | 4 | 0 | ×1 |
-| $10,000 | 27 | 0 | ×2 |
-| $1,000 | 115 | 0 | ×3 |
-| $500 | 1,867 | 0 | ×4 |
-| $100 | 21,798 | 0 | ×5 |
-| $50 | 47,031 | 0 | ×6 |
-
-**#1774 $500 Blowout** — active
-
-| Prize | Wins left | Δ since last | Weight |
-|-------|----------:|:------------:|:------:|
-| $500 | 36,341 | 0 | ×1 |
-| $200 | 21,067 | 0 | ×2 |
-| $100 | 82,287 | 0 | ×3 |
-| $50 | 398,436 | 0 | ×4 |
-| $20 | 1,156,154 | 0 | ×5 |
+| $10,000 | 25 | ▼2 | ×2 |
+| $1,000 | 109 | ▼6 | ×3 |
+| $500 | 1,774 | ▼93 | ×4 |
+| $100 | 20,555 | ▼1,243 | ×5 |
+| $50 | 44,433 | ▼2,598 | ×6 |
 
 **#1696 Mega Bucks** — active
 
@@ -378,20 +378,20 @@ Nothing ended and nothing crossed your low-prize threshold since the last run.
 | $3,000,000 | 2 | 0 | ×1 |
 | $300,000 | 4 | 0 | ×2 |
 | $30,000 | 9 | 0 | ×3 |
-| $3,000 | 970 | 0 | ×4 |
-| $1,000 | 4,645 | 0 | ×5 |
-| $500 | 7,534 | 0 | ×6 |
+| $3,000 | 966 | ▼4 | ×4 |
+| $1,000 | 4,628 | ▼17 | ×5 |
+| $500 | 7,503 | ▼31 | ×6 |
 
 **#1777 Money Box Bingo** — active
 
 | Prize | Wins left | Δ since last | Weight |
 |-------|----------:|:------------:|:------:|
 | $200,000 | 7 | 0 | ×1 |
-| $10,000 | 28 | 0 | ×2 |
-| $5,000 | 27 | 0 | ×3 |
-| $1,000 | 34 | 0 | ×4 |
-| $500 | 254 | 0 | ×5 |
-| $250 | 3,375 | 0 | ×6 |
+| $10,000 | 26 | ▼2 | ×2 |
+| $5,000 | 24 | ▼3 | ×3 |
+| $1,000 | 32 | ▼2 | ×4 |
+| $500 | 243 | ▼11 | ×5 |
+| $250 | 3,285 | ▼90 | ×6 |
 
 **#1780 Triple Red 777** — active
 
@@ -399,10 +399,10 @@ Nothing ended and nothing crossed your low-prize threshold since the last run.
 |-------|----------:|:------------:|:------:|
 | $1,000,000 | 6 | 0 | ×1 |
 | $150,000 | 6 | 0 | ×2 |
-| $7,000 | 1,812 | 0 | ×3 |
-| $3,000 | 408 | 0 | ×4 |
-| $1,500 | 1,612 | 0 | ×5 |
-| $500 | 4,096 | 0 | ×6 |
+| $7,000 | 1,762 | ▼50 | ×3 |
+| $3,000 | 392 | ▼16 | ×4 |
+| $1,500 | 1,566 | ▼46 | ×5 |
+| $500 | 3,989 | ▼107 | ×6 |
 
 **#1763 $500,000 a Year for Life** — active
 
@@ -410,10 +410,10 @@ Nothing ended and nothing crossed your low-prize threshold since the last run.
 |-------|----------:|:------------:|:------:|
 | $7,250,000 | 4 | 0 | ×1 |
 | $50,000 | 6 | 0 | ×2 |
-| $5,000 | 176 | 0 | ×3 |
-| $1,000 | 1,078 | 0 | ×4 |
-| $500 | 12,913 | 0 | ×5 |
-| $200 | 13,551 | 0 | ×6 |
+| $5,000 | 171 | ▼5 | ×3 |
+| $1,000 | 1,061 | ▼17 | ×4 |
+| $500 | 12,725 | ▼188 | ×5 |
+| $200 | 13,344 | ▼207 | ×6 |
 
 **#1781 Win Win Win** — active
 
@@ -421,21 +421,10 @@ Nothing ended and nothing crossed your low-prize threshold since the last run.
 |-------|----------:|:------------:|:------:|
 | $1,000,000 | 3 | 0 | ×1 |
 | $10,000 | 9 | 0 | ×2 |
-| $1,000 | 32 | 0 | ×3 |
-| $500 | 1,862 | 0 | ×4 |
-| $250 | 4,421 | 0 | ×5 |
-| $150 | 54,399 | 0 | ×6 |
-
-**#1788 Lights, Camera, Crossword** — active
-
-| Prize | Wins left | Δ since last | Weight |
-|-------|----------:|:------------:|:------:|
-| $30,000 | 9 | 0 | ×1 |
-| $1,000 | 18 | 0 | ×2 |
-| $200 | 1,968 | 0 | ×3 |
-| $100 | 6,547 | 0 | ×4 |
-| $80 | 9,924 | 0 | ×5 |
-| $50 | 16,487 | 0 | ×6 |
+| $1,000 | 30 | ▼2 | ×3 |
+| $500 | 1,795 | ▼67 | ×4 |
+| $250 | 4,242 | ▼179 | ×5 |
+| $150 | 52,305 | ▼2,094 | ×6 |
 
 **#1789 Super 7s** — active
 
@@ -443,24 +432,35 @@ Nothing ended and nothing crossed your low-prize threshold since the last run.
 |-------|----------:|:------------:|:------:|
 | $17,000 | 6 | 0 | ×1 |
 | $1,000 | 17 | 0 | ×2 |
-| $200 | 296 | 0 | ×3 |
-| $70 | 5,284 | 0 | ×4 |
-| $35 | 2,499 | 0 | ×5 |
-| $17 | 86,293 | 0 | ×6 |
+| $200 | 285 | ▼11 | ×3 |
+| $70 | 5,082 | ▼202 | ×4 |
+| $35 | 2,398 | ▼101 | ×5 |
+| $17 | 83,071 | ▼3,222 | ×6 |
+
+**#1788 Lights, Camera, Crossword** — active
+
+| Prize | Wins left | Δ since last | Weight |
+|-------|----------:|:------------:|:------:|
+| $30,000 | 8 | ▼1 | ×1 |
+| $1,000 | 18 | 0 | ×2 |
+| $200 | 1,917 | ▼51 | ×3 |
+| $100 | 6,411 | ▼136 | ×4 |
+| $80 | 9,704 | ▼220 | ×5 |
+| $50 | 16,140 | ▼347 | ×6 |
 
 ## Best games to bring in (fresh, by price)
 
 | Price | Game | # | Win odds | Density | % left |
 |------:|------|---|:-------:|:-------:|:------:|
-| $50 | Million Dollar Win It All | 1784 | 1:3.61 | 0.88 | 97% |
-| $50 | $1,000,000 a Year for Life | 1762 | 1:3.74 | 0.94 | 75% |
-| $30 | $1,500,000 Super Star | 1790 | 1:3 | 0.98 | 100% |
-| $30 | $120,000,000 Payout | 1768 | 1:3.09 | 0.92 | 66% |
-| $20 | THE GAME OF LIFE Second-Chance Eligible | 1785 | 1:3.43 | 1.15 | 87% |
-| $10 | $250 Blowout | 1775 | 1:2.89 | 0.98 | 66% |
-| $10 | VIP Bonus Cash | 1791 | 1:3.36 | 0.98 | 100% |
-| $10 | Ruby Rich3s | 1786 | 1:3.45 | 0.89 | 87% |
-| $5 | Wild Side | 1792 | 1:3.45 | 0.98 | 100% |
-| $5 | Crossword Deluxe | 1793 | 1:3.86 | 0.98 | 100% |
-| $2 | $20 Frenzy | 1794 | 1:3.59 | 0.97 | 100% |
-| $1 | Bright Buck$ | 1795 | 1:4.25 | 0.97 | 100% |
+| $50 | Million Dollar Win It All | 1784 | 1:3.61 | 0.89 | 95% |
+| $50 | $1,000,000 a Year for Life | 1762 | 1:3.74 | 0.95 | 74% |
+| $30 | $1,500,000 Super Star | 1790 | 1:3 | 1.01 | 99% |
+| $30 | $120,000,000 Payout | 1768 | 1:3.09 | 0.94 | 65% |
+| $20 | THE GAME OF LIFE Second-Chance Eligible | 1785 | 1:3.43 | 1.18 | 85% |
+| $10 | $250 Blowout | 1775 | 1:2.89 | 0.98 | 64% |
+| $10 | VIP Bonus Cash | 1791 | 1:3.36 | 1.02 | 98% |
+| $10 | Ruby Rich3s | 1786 | 1:3.45 | 0.82 | 85% |
+| $5 | Wild Side | 1792 | 1:3.45 | 1.04 | 97% |
+| $5 | Crossword Deluxe | 1793 | 1:3.86 | 1.01 | 99% |
+| $2 | $20 Frenzy | 1794 | 1:3.59 | 0.99 | 99% |
+| $1 | Bright Buck$ | 1795 | 1:4.25 | 1.00 | 100% |
