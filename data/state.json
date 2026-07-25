@@ -1,5 +1,5 @@
 {
-  "captured_at": "2026-07-24T17:44:44Z",
+  "captured_at": "2026-07-25T06:25:00Z",
   "games": {
     "1000": {
       "claim_deadline": null,
@@ -21367,11 +21367,11 @@
       "total_is_estimate": false
     },
     "1748": {
-      "claim_deadline": null,
+      "claim_deadline": "8/14/2027 12:00:00 AM",
       "detail_id": "3322",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1748",
-      "last_changed": "2026-07-21T17:37:12Z",
+      "last_changed": "2026-07-25T06:25:00Z",
       "name": "Money Maker",
       "odds": "1:4.45",
       "on_sale_date": "08/2025",
@@ -21403,7 +21403,7 @@
           "value": "$50"
         }
       ],
-      "sales_end_date": null,
+      "sales_end_date": "8/14/2026 12:00:00 AM",
       "source_pages": [
         "remaining"
       ],
