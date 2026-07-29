@@ -1,5 +1,5 @@
 {
-  "captured_at": "2026-07-29T06:39:07Z",
+  "captured_at": "2026-07-29T17:22:14Z",
   "games": {
     "1000": {
       "claim_deadline": null,
@@ -17655,7 +17655,7 @@
       "detail_id": "3240",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1668",
-      "last_changed": "2026-07-15T17:25:07Z",
+      "last_changed": "2026-07-29T17:22:14Z",
       "name": "MONOPOLY Own It All",
       "odds": null,
       "on_sale_date": "12/2023",
@@ -17683,7 +17683,7 @@
           "value": "$10,000"
         },
         {
-          "remaining": 678,
+          "remaining": 677,
           "value": "$5,000"
         }
       ],
@@ -18079,7 +18079,7 @@
       "detail_id": "3254",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1682",
-      "last_changed": "2026-07-21T17:37:12Z",
+      "last_changed": "2026-07-29T17:22:14Z",
       "name": "$160 Million Cash Blowout",
       "odds": "1:3.03",
       "on_sale_date": "03/2024",
@@ -18103,11 +18103,11 @@
           "value": "$3,000"
         },
         {
-          "remaining": 1612,
+          "remaining": 1599,
           "value": "$1,000"
         },
         {
-          "remaining": 4296,
+          "remaining": 4259,
           "value": "$500"
         }
       ],
@@ -18387,7 +18387,7 @@
       "detail_id": "3262",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1690",
-      "last_changed": "2026-07-21T17:37:12Z",
+      "last_changed": "2026-07-29T17:22:14Z",
       "name": "Crossword Bonus Cash",
       "odds": "1:4.39",
       "on_sale_date": "04/2024",
@@ -18411,11 +18411,11 @@
           "value": "$150"
         },
         {
-          "remaining": 598,
+          "remaining": 596,
           "value": "$100"
         },
         {
-          "remaining": 4428,
+          "remaining": 4410,
           "value": "$50"
         }
       ],
@@ -18522,7 +18522,7 @@
       "detail_id": "3265",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1693",
-      "last_changed": "2026-07-21T17:37:12Z",
+      "last_changed": "2026-07-29T17:22:14Z",
       "name": "Keys and Cash",
       "odds": "1:4.42",
       "on_sale_date": "05/2024",
@@ -18542,11 +18542,11 @@
           "value": "$500"
         },
         {
-          "remaining": 603,
+          "remaining": 599,
           "value": "$300"
         },
         {
-          "remaining": 1902,
+          "remaining": 1874,
           "value": "$100"
         }
       ],
@@ -18679,7 +18679,7 @@
       "detail_id": "3268",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1696",
-      "last_changed": "2026-07-21T17:37:12Z",
+      "last_changed": "2026-07-29T17:22:14Z",
       "name": "Mega Bucks",
       "odds": "1:3.12",
       "on_sale_date": "06/2024",
@@ -18699,15 +18699,15 @@
           "value": "$30,000"
         },
         {
-          "remaining": 964,
+          "remaining": 961,
           "value": "$3,000"
         },
         {
-          "remaining": 4608,
+          "remaining": 4599,
           "value": "$1,000"
         },
         {
-          "remaining": 7466,
+          "remaining": 7430,
           "value": "$500"
         }
       ],
@@ -18866,7 +18866,7 @@
       "detail_id": "3272",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1700",
-      "last_changed": "2026-07-21T17:37:12Z",
+      "last_changed": "2026-07-29T17:22:14Z",
       "name": "All Cash",
       "odds": "1:3.55",
       "on_sale_date": "08/2024",
@@ -18890,11 +18890,11 @@
           "value": "$1,000"
         },
         {
-          "remaining": 413,
+          "remaining": 411,
           "value": "$500"
         },
         {
-          "remaining": 2028,
+          "remaining": 2019,
           "value": "$200"
         }
       ],
@@ -18976,7 +18976,7 @@
       "detail_id": "3274",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1702",
-      "last_changed": "2026-07-21T17:37:12Z",
+      "last_changed": "2026-07-29T17:22:14Z",
       "name": "Power $500",
       "odds": null,
       "on_sale_date": "08/2024",
@@ -19004,7 +19004,7 @@
           "value": "$100"
         },
         {
-          "remaining": 2327,
+          "remaining": 2325,
           "value": "$50"
         }
       ],
@@ -19026,7 +19026,7 @@
       "detail_id": "3275",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1703",
-      "last_changed": "2026-07-21T17:37:12Z",
+      "last_changed": "2026-07-29T17:22:14Z",
       "name": "S\u2019more Crossword",
       "odds": "1:4.64",
       "on_sale_date": "08/2024",
@@ -19046,7 +19046,7 @@
           "value": "$500"
         },
         {
-          "remaining": 166,
+          "remaining": 164,
           "value": "$150"
         },
         {
@@ -19054,7 +19054,7 @@
           "value": "$100"
         },
         {
-          "remaining": 2486,
+          "remaining": 2472,
           "value": "$50"
         }
       ],
@@ -19137,7 +19137,7 @@
       "detail_id": "3277",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1705",
-      "last_changed": "2026-07-21T17:37:12Z",
+      "last_changed": "2026-07-29T17:22:14Z",
       "name": "$3,000,000 Golden Ticket",
       "odds": "1:3.17",
       "on_sale_date": "09/2024",
@@ -19157,15 +19157,15 @@
           "value": "$30,000"
         },
         {
-          "remaining": 452,
+          "remaining": 443,
           "value": "$3,000"
         },
         {
-          "remaining": 992,
+          "remaining": 985,
           "value": "$1,000"
         },
         {
-          "remaining": 8494,
+          "remaining": 8433,
           "value": "$600"
         }
       ],
@@ -19198,7 +19198,7 @@
       "detail_id": "3278",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1706",
-      "last_changed": "2026-07-21T17:37:12Z",
+      "last_changed": "2026-07-29T17:22:14Z",
       "name": "GAME OF THRONES\u2122",
       "odds": "1:3.68",
       "on_sale_date": "09/2024",
@@ -19214,19 +19214,19 @@
           "value": "$5,000"
         },
         {
-          "remaining": 583,
+          "remaining": 582,
           "value": "$1,000"
         },
         {
-          "remaining": 2549,
+          "remaining": 2539,
           "value": "$500"
         },
         {
-          "remaining": 2261,
+          "remaining": 2247,
           "value": "$300"
         },
         {
-          "remaining": 28378,
+          "remaining": 28242,
           "value": "$200"
         }
       ],
@@ -19260,7 +19260,7 @@
       "detail_id": "3279",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1707",
-      "last_changed": "2026-07-21T17:37:12Z",
+      "last_changed": "2026-07-29T17:22:14Z",
       "name": "Lucky 13",
       "odds": "1:4.51",
       "on_sale_date": "09/2024",
@@ -19280,15 +19280,15 @@
           "value": "$1,300"
         },
         {
-          "remaining": 604,
+          "remaining": 602,
           "value": "$500"
         },
         {
-          "remaining": 13729,
+          "remaining": 13619,
           "value": "$130"
         },
         {
-          "remaining": 8308,
+          "remaining": 8230,
           "value": "$100"
         }
       ],
@@ -19694,7 +19694,7 @@
       "detail_id": "3291",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1717",
-      "last_changed": "2026-07-21T17:37:12Z",
+      "last_changed": "2026-07-29T17:22:14Z",
       "name": "$5,000,000 Lion\u2019s Share",
       "odds": "1:4.16",
       "on_sale_date": "12/2024",
@@ -19722,7 +19722,7 @@
           "value": "$25,000"
         },
         {
-          "remaining": 676,
+          "remaining": 671,
           "value": "$5,000"
         }
       ],
@@ -19755,7 +19755,7 @@
       "detail_id": "3292",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1718",
-      "last_changed": "2026-07-21T17:37:12Z",
+      "last_changed": "2026-07-29T17:22:14Z",
       "name": "$1,000,000 Winnings",
       "odds": null,
       "on_sale_date": "12/2024",
@@ -19783,7 +19783,7 @@
           "value": "$400"
         },
         {
-          "remaining": 1942,
+          "remaining": 1941,
           "value": "$200"
         }
       ],
@@ -19805,7 +19805,7 @@
       "detail_id": "3293",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1719",
-      "last_changed": "2026-07-21T17:37:12Z",
+      "last_changed": "2026-07-29T17:22:14Z",
       "name": "Fast $1,000",
       "odds": "1:4.03",
       "on_sale_date": "12/2024",
@@ -19821,19 +19821,19 @@
           "value": "$5,000"
         },
         {
-          "remaining": 18822,
+          "remaining": 18718,
           "value": "$1,000"
         },
         {
-          "remaining": 2110,
+          "remaining": 2094,
           "value": "$150"
         },
         {
-          "remaining": 31859,
+          "remaining": 31693,
           "value": "$100"
         },
         {
-          "remaining": 53031,
+          "remaining": 52759,
           "value": "$50"
         }
       ],
@@ -19961,7 +19961,7 @@
       "detail_id": "3297",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1723",
-      "last_changed": "2026-07-21T17:37:12Z",
+      "last_changed": "2026-07-29T17:22:14Z",
       "name": "The Hunt for $3,000,000",
       "odds": "1:3.32",
       "on_sale_date": "01/2025",
@@ -19981,15 +19981,15 @@
           "value": "$15,000"
         },
         {
-          "remaining": 182,
+          "remaining": 181,
           "value": "$5,000"
         },
         {
-          "remaining": 345,
+          "remaining": 341,
           "value": "$1,500"
         },
         {
-          "remaining": 8483,
+          "remaining": 8413,
           "value": "$750"
         }
       ],
@@ -20022,7 +20022,7 @@
       "detail_id": "3298",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1724",
-      "last_changed": "2026-07-21T17:37:12Z",
+      "last_changed": "2026-07-29T17:22:14Z",
       "name": "Lady Luck",
       "odds": "1:3.74",
       "on_sale_date": "01/2025",
@@ -20038,19 +20038,19 @@
           "value": "$7,000"
         },
         {
-          "remaining": 494,
+          "remaining": 490,
           "value": "$1,000"
         },
         {
-          "remaining": 3895,
+          "remaining": 3866,
           "value": "$700"
         },
         {
-          "remaining": 6634,
+          "remaining": 6587,
           "value": "$300"
         },
         {
-          "remaining": 79567,
+          "remaining": 79048,
           "value": "$100"
         }
       ],
@@ -20082,7 +20082,7 @@
       "detail_id": "3299",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1725",
-      "last_changed": "2026-07-21T17:37:12Z",
+      "last_changed": "2026-07-29T17:22:14Z",
       "name": "All About Money",
       "odds": null,
       "on_sale_date": "01/2025",
@@ -20106,11 +20106,11 @@
           "value": "$500"
         },
         {
-          "remaining": 573,
+          "remaining": 572,
           "value": "$200"
         },
         {
-          "remaining": 6421,
+          "remaining": 6414,
           "value": "$100"
         }
       ],
@@ -20182,7 +20182,7 @@
       "detail_id": "3301",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1727",
-      "last_changed": "2026-07-21T17:37:12Z",
+      "last_changed": "2026-07-29T17:22:14Z",
       "name": "Four Leaf Frenzy",
       "odds": null,
       "on_sale_date": "01/2025",
@@ -20206,11 +20206,11 @@
           "value": "$100"
         },
         {
-          "remaining": 2793,
+          "remaining": 2792,
           "value": "$80"
         },
         {
-          "remaining": 1419,
+          "remaining": 1418,
           "value": "$40"
         }
       ],
@@ -20232,7 +20232,7 @@
       "detail_id": "3302",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1728",
-      "last_changed": "2026-07-21T17:37:12Z",
+      "last_changed": "2026-07-29T17:22:14Z",
       "name": "Sham-rockin\u2019 Surprize",
       "odds": null,
       "on_sale_date": "01/2025",
@@ -20260,7 +20260,7 @@
           "value": "$20"
         },
         {
-          "remaining": 4404,
+          "remaining": 4403,
           "value": "$17"
         }
       ],
@@ -20282,7 +20282,7 @@
       "detail_id": "3303",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1729",
-      "last_changed": "2026-07-21T17:37:12Z",
+      "last_changed": "2026-07-29T17:22:14Z",
       "name": "200X the Cash",
       "odds": null,
       "on_sale_date": "03/2025",
@@ -20306,11 +20306,11 @@
           "value": "$4,000"
         },
         {
-          "remaining": 1338,
+          "remaining": 1335,
           "value": "$1,000"
         },
         {
-          "remaining": 7942,
+          "remaining": 7939,
           "value": "$400"
         }
       ],
@@ -20332,7 +20332,7 @@
       "detail_id": "3304",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1730",
-      "last_changed": "2026-07-21T17:37:12Z",
+      "last_changed": "2026-07-29T17:22:14Z",
       "name": "100X the Cash",
       "odds": "1:4.51",
       "on_sale_date": "03/2025",
@@ -20352,15 +20352,15 @@
           "value": "$1,000"
         },
         {
-          "remaining": 415,
+          "remaining": 411,
           "value": "$500"
         },
         {
-          "remaining": 2380,
+          "remaining": 2362,
           "value": "$100"
         },
         {
-          "remaining": 3473,
+          "remaining": 3452,
           "value": "$50"
         }
       ],
@@ -20392,7 +20392,7 @@
       "detail_id": "3305",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1731",
-      "last_changed": "2026-07-21T17:37:12Z",
+      "last_changed": "2026-07-29T17:22:14Z",
       "name": "Blingo",
       "odds": "1:4.45",
       "on_sale_date": "03/2025",
@@ -20416,11 +20416,11 @@
           "value": "$1,000"
         },
         {
-          "remaining": 110,
+          "remaining": 109,
           "value": "$500"
         },
         {
-          "remaining": 285,
+          "remaining": 284,
           "value": "$200"
         }
       ],
@@ -20454,7 +20454,7 @@
       "detail_id": "3306",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1732",
-      "last_changed": "2026-07-21T17:37:12Z",
+      "last_changed": "2026-07-29T17:22:14Z",
       "name": "50X the Cash",
       "odds": null,
       "on_sale_date": "03/2025",
@@ -20478,11 +20478,11 @@
           "value": "$200"
         },
         {
-          "remaining": 2287,
+          "remaining": 2284,
           "value": "$100"
         },
         {
-          "remaining": 4516,
+          "remaining": 4514,
           "value": "$50"
         }
       ],
@@ -20504,7 +20504,7 @@
       "detail_id": "3307",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1733",
-      "last_changed": "2026-07-21T17:37:12Z",
+      "last_changed": "2026-07-29T17:22:14Z",
       "name": "20X the Cash",
       "odds": null,
       "on_sale_date": "03/2025",
@@ -20528,11 +20528,11 @@
           "value": "$100"
         },
         {
-          "remaining": 3561,
+          "remaining": 3560,
           "value": "$40"
         },
         {
-          "remaining": 11012,
+          "remaining": 11009,
           "value": "$20"
         }
       ],
@@ -20554,7 +20554,7 @@
       "detail_id": "3308",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1734",
-      "last_changed": "2026-07-21T17:37:12Z",
+      "last_changed": "2026-07-29T17:22:14Z",
       "name": "3s a Charm",
       "odds": "1:3.44",
       "on_sale_date": "04/2025",
@@ -20578,11 +20578,11 @@
           "value": "$3,000"
         },
         {
-          "remaining": 718,
+          "remaining": 714,
           "value": "$1,500"
         },
         {
-          "remaining": 3962,
+          "remaining": 3938,
           "value": "$900"
         }
       ],
@@ -20616,7 +20616,7 @@
       "detail_id": "3309",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1735",
-      "last_changed": "2026-07-21T17:37:12Z",
+      "last_changed": "2026-07-29T17:22:14Z",
       "name": "Six Figures",
       "odds": "1:3.83",
       "on_sale_date": "04/2025",
@@ -20632,19 +20632,19 @@
           "value": "$6,000"
         },
         {
-          "remaining": 95,
+          "remaining": 90,
           "value": "$1,000"
         },
         {
-          "remaining": 2369,
+          "remaining": 2282,
           "value": "$600"
         },
         {
-          "remaining": 639,
+          "remaining": 608,
           "value": "$300"
         },
         {
-          "remaining": 2244,
+          "remaining": 2149,
           "value": "$200"
         }
       ],
@@ -20677,7 +20677,7 @@
       "detail_id": "3310",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1736",
-      "last_changed": "2026-07-21T17:37:12Z",
+      "last_changed": "2026-07-29T17:22:14Z",
       "name": "High 5",
       "odds": "1:4.46",
       "on_sale_date": "04/2025",
@@ -20697,15 +20697,15 @@
           "value": "$1,500"
         },
         {
-          "remaining": 485,
+          "remaining": 470,
           "value": "$500"
         },
         {
-          "remaining": 181,
+          "remaining": 180,
           "value": "$250"
         },
         {
-          "remaining": 1032,
+          "remaining": 1013,
           "value": "$100"
         }
       ],
@@ -20738,7 +20738,7 @@
       "detail_id": "3311",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1737",
-      "last_changed": "2026-07-21T17:37:12Z",
+      "last_changed": "2026-07-29T17:22:14Z",
       "name": "Neon 9s",
       "odds": null,
       "on_sale_date": "04/2025",
@@ -20758,15 +20758,15 @@
           "value": "$300"
         },
         {
-          "remaining": 2590,
+          "remaining": 2586,
           "value": "$90"
         },
         {
-          "remaining": 968,
+          "remaining": 967,
           "value": "$50"
         },
         {
-          "remaining": 2880,
+          "remaining": 2879,
           "value": "$30"
         }
       ],
@@ -20788,7 +20788,7 @@
       "detail_id": "3312",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1738",
-      "last_changed": "2026-07-21T17:37:12Z",
+      "last_changed": "2026-07-29T17:22:14Z",
       "name": "Jackpot",
       "odds": "1:3.67",
       "on_sale_date": "05/2025",
@@ -20808,15 +20808,15 @@
           "value": "$5,000"
         },
         {
-          "remaining": 4326,
+          "remaining": 4262,
           "value": "$1,000"
         },
         {
-          "remaining": 4132,
+          "remaining": 4086,
           "value": "$500"
         },
         {
-          "remaining": 2241,
+          "remaining": 2208,
           "value": "$250"
         }
       ],
@@ -20848,7 +20848,7 @@
       "detail_id": "3313",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1739",
-      "last_changed": "2026-07-21T17:37:12Z",
+      "last_changed": "2026-07-29T17:22:14Z",
       "name": "MONOPOLY SECRET VAULT",
       "odds": "1:4.59",
       "on_sale_date": "05/2025",
@@ -20864,19 +20864,19 @@
           "value": "$10,000"
         },
         {
-          "remaining": 129,
+          "remaining": 128,
           "value": "$1,000"
         },
         {
-          "remaining": 1060,
+          "remaining": 1042,
           "value": "$500"
         },
         {
-          "remaining": 4939,
+          "remaining": 4851,
           "value": "$400"
         },
         {
-          "remaining": 7745,
+          "remaining": 7613,
           "value": "$100"
         }
       ],
@@ -20909,7 +20909,7 @@
       "detail_id": "3314",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1740",
-      "last_changed": "2026-07-21T17:37:12Z",
+      "last_changed": "2026-07-29T17:22:14Z",
       "name": "Bonus Ball Bingo",
       "odds": "1:4.38",
       "on_sale_date": "05/2025",
@@ -20929,15 +20929,15 @@
           "value": "$1,000"
         },
         {
-          "remaining": 531,
+          "remaining": 521,
           "value": "$300"
         },
         {
-          "remaining": 999,
+          "remaining": 989,
           "value": "$150"
         },
         {
-          "remaining": 5248,
+          "remaining": 5187,
           "value": "$100"
         }
       ],
@@ -20972,7 +20972,7 @@
       "detail_id": "3315",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1741",
-      "last_changed": "2026-07-21T17:37:12Z",
+      "last_changed": "2026-07-29T17:22:14Z",
       "name": "Win It All",
       "odds": null,
       "on_sale_date": "05/2025",
@@ -20996,11 +20996,11 @@
           "value": "$100"
         },
         {
-          "remaining": 154,
+          "remaining": 153,
           "value": "$50"
         },
         {
-          "remaining": 3073,
+          "remaining": 3070,
           "value": "$25"
         }
       ],
@@ -21022,7 +21022,7 @@
       "detail_id": "3316",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1742",
-      "last_changed": "2026-07-21T17:37:12Z",
+      "last_changed": "2026-07-29T17:22:14Z",
       "name": "$3 Million Mega Moolah Multiplier",
       "odds": "1:3.49",
       "on_sale_date": "07/2025",
@@ -21030,7 +21030,7 @@
       "price": 30.0,
       "prize_tiers": [
         {
-          "remaining": 2,
+          "remaining": 1,
           "value": "$3,000,000"
         },
         {
@@ -21042,15 +21042,15 @@
           "value": "$30,000"
         },
         {
-          "remaining": 222,
+          "remaining": 220,
           "value": "$3,000"
         },
         {
-          "remaining": 2123,
+          "remaining": 2096,
           "value": "$1,000"
         },
         {
-          "remaining": 791,
+          "remaining": 779,
           "value": "$500"
         }
       ],
@@ -21075,7 +21075,7 @@
         "500.0": 2320
       },
       "top_prize_value": "$3,000,000",
-      "top_prizes_remaining": 2,
+      "top_prizes_remaining": 1,
       "top_prizes_total": 3,
       "total_is_estimate": false
     },
@@ -21084,7 +21084,7 @@
       "detail_id": "3317",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1743",
-      "last_changed": "2026-07-21T17:37:12Z",
+      "last_changed": "2026-07-29T17:22:14Z",
       "name": "$50, $100 or $500",
       "odds": "1:9.12",
       "on_sale_date": "07/2025",
@@ -21092,15 +21092,15 @@
       "price": 10.0,
       "prize_tiers": [
         {
-          "remaining": 485,
+          "remaining": 476,
           "value": "$500"
         },
         {
-          "remaining": 8449,
+          "remaining": 8241,
           "value": "$100"
         },
         {
-          "remaining": 28572,
+          "remaining": 27889,
           "value": "$50"
         }
       ],
@@ -21116,7 +21116,7 @@
         "500.0": 14760
       },
       "top_prize_value": "$500",
-      "top_prizes_remaining": 485,
+      "top_prizes_remaining": 476,
       "top_prizes_total": 591,
       "total_is_estimate": true
     },
@@ -21125,7 +21125,7 @@
       "detail_id": "3318",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1744",
-      "last_changed": "2026-07-21T17:37:12Z",
+      "last_changed": "2026-07-29T17:22:14Z",
       "name": "Goat Load of Cash Crossword",
       "odds": "1:4.44",
       "on_sale_date": "07/2025",
@@ -21145,15 +21145,15 @@
           "value": "$5,000"
         },
         {
-          "remaining": 30,
+          "remaining": 28,
           "value": "$1,000"
         },
         {
-          "remaining": 561,
+          "remaining": 531,
           "value": "$500"
         },
         {
-          "remaining": 576,
+          "remaining": 542,
           "value": "$250"
         }
       ],
@@ -21189,7 +21189,7 @@
       "detail_id": "3319",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1745",
-      "last_changed": "2026-07-21T17:37:12Z",
+      "last_changed": "2026-07-29T17:22:14Z",
       "name": "Win Pigs Fly",
       "odds": "1:4.65",
       "on_sale_date": "07/2025",
@@ -21209,15 +21209,15 @@
           "value": "$400"
         },
         {
-          "remaining": 2377,
+          "remaining": 2371,
           "value": "$100"
         },
         {
-          "remaining": 2056,
+          "remaining": 2048,
           "value": "$40"
         },
         {
-          "remaining": 14563,
+          "remaining": 14500,
           "value": "$20"
         }
       ],
@@ -21249,7 +21249,7 @@
       "detail_id": "3320",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1746",
-      "last_changed": "2026-07-21T17:37:12Z",
+      "last_changed": "2026-07-29T17:22:14Z",
       "name": "Millionaire Loading",
       "odds": "1:3.46",
       "on_sale_date": "08/2025",
@@ -21265,19 +21265,19 @@
           "value": "$10,000"
         },
         {
-          "remaining": 33,
+          "remaining": 31,
           "value": "$4,000"
         },
         {
-          "remaining": 1165,
+          "remaining": 1102,
           "value": "$1,000"
         },
         {
-          "remaining": 7829,
+          "remaining": 7395,
           "value": "$400"
         },
         {
-          "remaining": 2991,
+          "remaining": 2829,
           "value": "$200"
         }
       ],
@@ -21310,7 +21310,7 @@
       "detail_id": "3321",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1747",
-      "last_changed": "2026-07-21T17:37:12Z",
+      "last_changed": "2026-07-29T17:22:14Z",
       "name": "JURASSIC PARK",
       "odds": "1:3.82",
       "on_sale_date": "08/2025",
@@ -21322,23 +21322,23 @@
           "value": "$500,000"
         },
         {
-          "remaining": 14,
+          "remaining": 13,
           "value": "$10,000"
         },
         {
-          "remaining": 279,
+          "remaining": 277,
           "value": "$1,000"
         },
         {
-          "remaining": 372,
+          "remaining": 369,
           "value": "$500"
         },
         {
-          "remaining": 3860,
+          "remaining": 3834,
           "value": "$250"
         },
         {
-          "remaining": 42541,
+          "remaining": 42198,
           "value": "$150"
         }
       ],
@@ -21371,7 +21371,7 @@
       "detail_id": "3322",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1748",
-      "last_changed": "2026-07-25T06:25:00Z",
+      "last_changed": "2026-07-29T17:22:14Z",
       "name": "Money Maker",
       "odds": "1:4.45",
       "on_sale_date": "08/2025",
@@ -21379,27 +21379,27 @@
       "price": 5.0,
       "prize_tiers": [
         {
-          "remaining": 1,
+          "remaining": 0,
           "value": "$200,000"
         },
         {
-          "remaining": 16,
+          "remaining": 15,
           "value": "$1,000"
         },
         {
-          "remaining": 501,
+          "remaining": 489,
           "value": "$500"
         },
         {
-          "remaining": 1193,
+          "remaining": 1161,
           "value": "$150"
         },
         {
-          "remaining": 19821,
+          "remaining": 19309,
           "value": "$75"
         },
         {
-          "remaining": 30322,
+          "remaining": 29503,
           "value": "$50"
         }
       ],
@@ -21422,7 +21422,7 @@
         "75.0": 90500
       },
       "top_prize_value": "$200,000",
-      "top_prizes_remaining": 1,
+      "top_prizes_remaining": 0,
       "top_prizes_total": 10,
       "total_is_estimate": false
     },
@@ -21431,7 +21431,7 @@
       "detail_id": "3323",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1749",
-      "last_changed": "2026-07-21T17:37:12Z",
+      "last_changed": "2026-07-29T17:22:14Z",
       "name": "Simply A Buck",
       "odds": "1:4.66",
       "on_sale_date": "08/2025",
@@ -21443,7 +21443,7 @@
           "value": "$1,000"
         },
         {
-          "remaining": 4,
+          "remaining": 3,
           "value": "$500"
         },
         {
@@ -21451,15 +21451,15 @@
           "value": "$100"
         },
         {
-          "remaining": 940,
+          "remaining": 933,
           "value": "$50"
         },
         {
-          "remaining": 1833,
+          "remaining": 1814,
           "value": "$20"
         },
         {
-          "remaining": 8601,
+          "remaining": 8557,
           "value": "$10"
         }
       ],
@@ -21490,7 +21490,7 @@
       "detail_id": "3324",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1750",
-      "last_changed": "2026-07-21T17:37:12Z",
+      "last_changed": "2026-07-29T17:22:14Z",
       "name": "Cash Spectacular",
       "odds": "1:3.57",
       "on_sale_date": "09/2025",
@@ -21502,7 +21502,7 @@
           "value": "$1,500,000"
         },
         {
-          "remaining": 3,
+          "remaining": 2,
           "value": "$150,000"
         },
         {
@@ -21514,11 +21514,11 @@
           "value": "$5,000"
         },
         {
-          "remaining": 1965,
+          "remaining": 1945,
           "value": "$1,000"
         },
         {
-          "remaining": 2587,
+          "remaining": 2560,
           "value": "$500"
         }
       ],
@@ -21551,7 +21551,7 @@
       "detail_id": "3325",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1751",
-      "last_changed": "2026-07-21T17:37:12Z",
+      "last_changed": "2026-07-29T17:22:14Z",
       "name": "Extreme Green",
       "odds": "1:3.49",
       "on_sale_date": "09/2025",
@@ -21563,23 +21563,23 @@
           "value": "$500,000"
         },
         {
-          "remaining": 16,
+          "remaining": 15,
           "value": "$5,000"
         },
         {
-          "remaining": 2789,
+          "remaining": 2712,
           "value": "$500"
         },
         {
-          "remaining": 3065,
+          "remaining": 2994,
           "value": "$200"
         },
         {
-          "remaining": 3862,
+          "remaining": 3767,
           "value": "$100"
         },
         {
-          "remaining": 109524,
+          "remaining": 106840,
           "value": "$50"
         }
       ],
@@ -21611,7 +21611,7 @@
       "detail_id": "3326",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1752",
-      "last_changed": "2026-07-21T17:37:12Z",
+      "last_changed": "2026-07-29T17:22:14Z",
       "name": "Winning 7s",
       "odds": "1:4.94",
       "on_sale_date": "09/2025",
@@ -21635,11 +21635,11 @@
           "value": "$1,000"
         },
         {
-          "remaining": 34,
+          "remaining": 31,
           "value": "$500"
         },
         {
-          "remaining": 68,
+          "remaining": 64,
           "value": "$200"
         }
       ],
@@ -21673,7 +21673,7 @@
       "detail_id": "3327",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1753",
-      "last_changed": "2026-07-21T17:37:12Z",
+      "last_changed": "2026-07-29T17:22:14Z",
       "name": "Crossword Extra",
       "odds": "1:4.00",
       "on_sale_date": "09/2025",
@@ -21689,19 +21689,19 @@
           "value": "$5,000"
         },
         {
-          "remaining": 147,
+          "remaining": 146,
           "value": "$300"
         },
         {
-          "remaining": 158,
+          "remaining": 155,
           "value": "$250"
         },
         {
-          "remaining": 1308,
+          "remaining": 1262,
           "value": "$150"
         },
         {
-          "remaining": 2665,
+          "remaining": 2582,
           "value": "$75"
         }
       ],
@@ -21738,7 +21738,7 @@
       "detail_id": "3328",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1754",
-      "last_changed": "2026-07-21T17:37:12Z",
+      "last_changed": "2026-07-29T17:22:14Z",
       "name": "Mini Monsters $100 Blowout",
       "odds": "1:5.17",
       "on_sale_date": "09/2025",
@@ -21746,27 +21746,27 @@
       "price": 2.0,
       "prize_tiers": [
         {
-          "remaining": 7352,
+          "remaining": 7321,
           "value": "$100"
         },
         {
-          "remaining": 802,
+          "remaining": 800,
           "value": "$50"
         },
         {
-          "remaining": 1793,
+          "remaining": 1788,
           "value": "$40"
         },
         {
-          "remaining": 18919,
+          "remaining": 18855,
           "value": "$10"
         },
         {
-          "remaining": 52230,
+          "remaining": 52019,
           "value": "$5"
         },
         {
-          "remaining": 97204,
+          "remaining": 96874,
           "value": "$4"
         }
       ],
@@ -21786,7 +21786,7 @@
         "50.0": 2640
       },
       "top_prize_value": "$100",
-      "top_prizes_remaining": 7352,
+      "top_prizes_remaining": 7321,
       "top_prizes_total": 7517,
       "total_is_estimate": true
     },
@@ -21795,7 +21795,7 @@
       "detail_id": "3329",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1755",
-      "last_changed": "2026-07-21T17:37:12Z",
+      "last_changed": "2026-07-29T17:22:14Z",
       "name": "Merry Money Match",
       "odds": "1:2.79",
       "on_sale_date": "11/2025",
@@ -21815,15 +21815,15 @@
           "value": "$30,000"
         },
         {
-          "remaining": 348,
+          "remaining": 346,
           "value": "$3,000"
         },
         {
-          "remaining": 1782,
+          "remaining": 1774,
           "value": "$500"
         },
         {
-          "remaining": 13701,
+          "remaining": 13647,
           "value": "$300"
         }
       ],
@@ -21856,7 +21856,7 @@
       "detail_id": "3330",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1756",
-      "last_changed": "2026-07-21T17:37:12Z",
+      "last_changed": "2026-07-29T17:22:14Z",
       "name": "Fro$ted Fortune",
       "odds": "1:3.42",
       "on_sale_date": "11/2025",
@@ -21876,15 +21876,15 @@
           "value": "$1,000"
         },
         {
-          "remaining": 8174,
+          "remaining": 8148,
           "value": "$500"
         },
         {
-          "remaining": 16069,
+          "remaining": 16038,
           "value": "$100"
         },
         {
-          "remaining": 59808,
+          "remaining": 59679,
           "value": "$50"
         }
       ],
@@ -21914,7 +21914,7 @@
       "detail_id": "3331",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1757",
-      "last_changed": "2026-07-21T17:37:12Z",
+      "last_changed": "2026-07-29T17:22:14Z",
       "name": "$2,500 Festive Frenzy",
       "odds": "1:3.32",
       "on_sale_date": "11/2025",
@@ -21922,27 +21922,27 @@
       "price": 10.0,
       "prize_tiers": [
         {
-          "remaining": 190,
+          "remaining": 186,
           "value": "$2,500"
         },
         {
-          "remaining": 583,
+          "remaining": 570,
           "value": "$500"
         },
         {
-          "remaining": 1388,
+          "remaining": 1359,
           "value": "$250"
         },
         {
-          "remaining": 5553,
+          "remaining": 5418,
           "value": "$100"
         },
         {
-          "remaining": 11558,
+          "remaining": 11299,
           "value": "$50"
         },
         {
-          "remaining": 74607,
+          "remaining": 72980,
           "value": "$20"
         }
       ],
@@ -21962,7 +21962,7 @@
         "500.0": 7150
       },
       "top_prize_value": "$2,500",
-      "top_prizes_remaining": 190,
+      "top_prizes_remaining": 186,
       "top_prizes_total": 219,
       "total_is_estimate": true
     },
@@ -21971,7 +21971,7 @@
       "detail_id": "3332",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1758",
-      "last_changed": "2026-07-21T17:37:12Z",
+      "last_changed": "2026-07-29T17:22:14Z",
       "name": "ELF",
       "odds": "1:3.52",
       "on_sale_date": "11/2025",
@@ -21991,15 +21991,15 @@
           "value": "$1,000"
         },
         {
-          "remaining": 270,
+          "remaining": 268,
           "value": "$500"
         },
         {
-          "remaining": 3266,
+          "remaining": 3207,
           "value": "$100"
         },
         {
-          "remaining": 8135,
+          "remaining": 8043,
           "value": "$50"
         }
       ],
@@ -22031,7 +22031,7 @@
       "detail_id": "3333",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1759",
-      "last_changed": "2026-07-21T17:37:12Z",
+      "last_changed": "2026-07-29T17:22:14Z",
       "name": "Trim the Tree X-word",
       "odds": null,
       "on_sale_date": "11/2025",
@@ -22055,11 +22055,11 @@
           "value": "$500"
         },
         {
-          "remaining": 140,
+          "remaining": 139,
           "value": "$250"
         },
         {
-          "remaining": 901,
+          "remaining": 898,
           "value": "$100"
         }
       ],
@@ -22081,7 +22081,7 @@
       "detail_id": "3334",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1760",
-      "last_changed": "2026-07-21T17:37:12Z",
+      "last_changed": "2026-07-29T17:22:14Z",
       "name": "Snow Place Like Home",
       "odds": "1:4.05",
       "on_sale_date": "11/2025",
@@ -22097,19 +22097,19 @@
           "value": "$1,000"
         },
         {
-          "remaining": 25,
+          "remaining": 24,
           "value": "$500"
         },
         {
-          "remaining": 566,
+          "remaining": 561,
           "value": "$100"
         },
         {
-          "remaining": 1043,
+          "remaining": 1039,
           "value": "$50"
         },
         {
-          "remaining": 3576,
+          "remaining": 3558,
           "value": "$30"
         }
       ],
@@ -22142,7 +22142,7 @@
       "detail_id": "3335",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1761",
-      "last_changed": "2026-07-21T17:37:12Z",
+      "last_changed": "2026-07-29T17:22:14Z",
       "name": "Ho Ho Ho",
       "odds": "1:4.15",
       "on_sale_date": "11/2025",
@@ -22158,19 +22158,19 @@
           "value": "$50"
         },
         {
-          "remaining": 861,
+          "remaining": 856,
           "value": "$25"
         },
         {
-          "remaining": 14677,
+          "remaining": 14572,
           "value": "$10"
         },
         {
-          "remaining": 30521,
+          "remaining": 30346,
           "value": "$5"
         },
         {
-          "remaining": 51633,
+          "remaining": 51345,
           "value": "$4"
         }
       ],
@@ -22200,7 +22200,7 @@
       "detail_id": "3336",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1762",
-      "last_changed": "2026-07-21T17:37:12Z",
+      "last_changed": "2026-07-29T17:22:14Z",
       "name": "$1,000,000 a Year for Life",
       "odds": "1:3.74",
       "on_sale_date": "12/2025",
@@ -22220,15 +22220,15 @@
           "value": "$10,000"
         },
         {
-          "remaining": 209,
+          "remaining": 206,
           "value": "$5,000"
         },
         {
-          "remaining": 10289,
+          "remaining": 10213,
           "value": "$1,000"
         },
         {
-          "remaining": 72745,
+          "remaining": 72257,
           "value": "$500"
         }
       ],
@@ -22258,7 +22258,7 @@
       "detail_id": "3337",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1763",
-      "last_changed": "2026-07-21T17:37:12Z",
+      "last_changed": "2026-07-29T17:22:14Z",
       "name": "$500,000 a Year for Life",
       "odds": "1:3.46",
       "on_sale_date": "12/2025",
@@ -22274,19 +22274,19 @@
           "value": "$50,000"
         },
         {
-          "remaining": 170,
+          "remaining": 168,
           "value": "$5,000"
         },
         {
-          "remaining": 1041,
+          "remaining": 1030,
           "value": "$1,000"
         },
         {
-          "remaining": 12543,
+          "remaining": 12353,
           "value": "$500"
         },
         {
-          "remaining": 13186,
+          "remaining": 13003,
           "value": "$200"
         }
       ],
@@ -22318,7 +22318,7 @@
       "detail_id": "3338",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1764",
-      "last_changed": "2026-07-21T17:37:12Z",
+      "last_changed": "2026-07-29T17:22:14Z",
       "name": "$20,000 a Month for Life",
       "odds": "1:3.60",
       "on_sale_date": "12/2025",
@@ -22334,19 +22334,19 @@
           "value": "$10,000"
         },
         {
-          "remaining": 424,
+          "remaining": 421,
           "value": "$1,000"
         },
         {
-          "remaining": 7390,
+          "remaining": 7262,
           "value": "$500"
         },
         {
-          "remaining": 44259,
+          "remaining": 43464,
           "value": "$100"
         },
         {
-          "remaining": 101947,
+          "remaining": 100170,
           "value": "$50"
         }
       ],
@@ -22377,7 +22377,7 @@
       "detail_id": "3339",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1765",
-      "last_changed": "2026-07-21T17:37:12Z",
+      "last_changed": "2026-07-29T17:22:14Z",
       "name": "$10,000 a Month for Life",
       "odds": "1:4.07",
       "on_sale_date": "12/2025",
@@ -22393,19 +22393,19 @@
           "value": "$5,000"
         },
         {
-          "remaining": 303,
+          "remaining": 297,
           "value": "$1,000"
         },
         {
-          "remaining": 1557,
+          "remaining": 1499,
           "value": "$500"
         },
         {
-          "remaining": 13130,
+          "remaining": 12673,
           "value": "$100"
         },
         {
-          "remaining": 29623,
+          "remaining": 28598,
           "value": "$50"
         }
       ],
@@ -22435,7 +22435,7 @@
       "detail_id": "3340",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1766",
-      "last_changed": "2026-07-21T17:37:12Z",
+      "last_changed": "2026-07-29T17:22:14Z",
       "name": "LOVE IS BLIND",
       "odds": "1:4.54",
       "on_sale_date": "12/2025",
@@ -22451,19 +22451,19 @@
           "value": "$2,000"
         },
         {
-          "remaining": 223,
+          "remaining": 220,
           "value": "$400"
         },
         {
-          "remaining": 371,
+          "remaining": 361,
           "value": "$100"
         },
         {
-          "remaining": 1768,
+          "remaining": 1713,
           "value": "$40"
         },
         {
-          "remaining": 31544,
+          "remaining": 30672,
           "value": "$20"
         }
       ],
@@ -22494,7 +22494,7 @@
       "detail_id": "3341",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1767",
-      "last_changed": "2026-07-21T17:37:12Z",
+      "last_changed": "2026-07-29T17:22:14Z",
       "name": "$500 a Week for Life",
       "odds": "1:4.77",
       "on_sale_date": "12/2025",
@@ -22510,19 +22510,19 @@
           "value": "$1,000"
         },
         {
-          "remaining": 240,
+          "remaining": 233,
           "value": "$100"
         },
         {
-          "remaining": 1697,
+          "remaining": 1633,
           "value": "$40"
         },
         {
-          "remaining": 2811,
+          "remaining": 2695,
           "value": "$20"
         },
         {
-          "remaining": 45540,
+          "remaining": 44049,
           "value": "$10"
         }
       ],
@@ -22553,7 +22553,7 @@
       "detail_id": "3342",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1768",
-      "last_changed": "2026-07-21T17:37:12Z",
+      "last_changed": "2026-07-29T17:22:14Z",
       "name": "$120,000,000 Payout",
       "odds": "1:3.09",
       "on_sale_date": "01/2026",
@@ -22565,23 +22565,23 @@
           "value": "$2,500,000"
         },
         {
-          "remaining": 7,
+          "remaining": 6,
           "value": "$250,000"
         },
         {
-          "remaining": 9,
+          "remaining": 8,
           "value": "$10,000"
         },
         {
-          "remaining": 396,
+          "remaining": 391,
           "value": "$3,000"
         },
         {
-          "remaining": 1316,
+          "remaining": 1302,
           "value": "$1,500"
         },
         {
-          "remaining": 3436,
+          "remaining": 3388,
           "value": "$600"
         }
       ],
@@ -22615,7 +22615,7 @@
       "detail_id": "3343",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1769",
-      "last_changed": "2026-07-21T17:37:12Z",
+      "last_changed": "2026-07-29T17:22:14Z",
       "name": "Code Word Crossword",
       "odds": "1:3.62",
       "on_sale_date": "01/2026",
@@ -22631,7 +22631,7 @@
           "value": "$50,000"
         },
         {
-          "remaining": 14,
+          "remaining": 13,
           "value": "$10,000"
         },
         {
@@ -22639,11 +22639,11 @@
           "value": "$5,000"
         },
         {
-          "remaining": 13,
+          "remaining": 11,
           "value": "$2,500"
         },
         {
-          "remaining": 690,
+          "remaining": 653,
           "value": "$1,000"
         }
       ],
@@ -22679,7 +22679,7 @@
       "detail_id": "3344",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1770",
-      "last_changed": "2026-07-21T17:37:12Z",
+      "last_changed": "2026-07-29T17:22:14Z",
       "name": "PHILADELPHIA 76ERS",
       "odds": "1:3.79",
       "on_sale_date": "01/2026",
@@ -22699,15 +22699,15 @@
           "value": "$5,000"
         },
         {
-          "remaining": 190,
+          "remaining": 188,
           "value": "$1,776"
         },
         {
-          "remaining": 391,
+          "remaining": 385,
           "value": "$500"
         },
         {
-          "remaining": 1721,
+          "remaining": 1699,
           "value": "$100"
         }
       ],
@@ -22741,7 +22741,7 @@
       "detail_id": "3345",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1771",
-      "last_changed": "2026-07-21T17:37:12Z",
+      "last_changed": "2026-07-29T17:22:14Z",
       "name": "Big Bonus Triple Play",
       "odds": "1:3.77",
       "on_sale_date": "01/2026",
@@ -22753,7 +22753,7 @@
           "value": "$130,000"
         },
         {
-          "remaining": 6,
+          "remaining": 5,
           "value": "$15,000"
         },
         {
@@ -22761,15 +22761,15 @@
           "value": "$1,500"
         },
         {
-          "remaining": 456,
+          "remaining": 425,
           "value": "$300"
         },
         {
-          "remaining": 522,
+          "remaining": 487,
           "value": "$150"
         },
         {
-          "remaining": 584,
+          "remaining": 510,
           "value": "$90"
         }
       ],
@@ -22802,7 +22802,7 @@
       "detail_id": "3346",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1772",
-      "last_changed": "2026-07-21T17:37:12Z",
+      "last_changed": "2026-07-29T17:22:14Z",
       "name": "Find the Leprechaun",
       "odds": "1:3.84",
       "on_sale_date": "01/2026",
@@ -22818,19 +22818,19 @@
           "value": "$3,000"
         },
         {
-          "remaining": 151,
+          "remaining": 144,
           "value": "$300"
         },
         {
-          "remaining": 455,
+          "remaining": 436,
           "value": "$100"
         },
         {
-          "remaining": 522,
+          "remaining": 498,
           "value": "$70"
         },
         {
-          "remaining": 5712,
+          "remaining": 5493,
           "value": "$30"
         }
       ],
@@ -22863,7 +22863,7 @@
       "detail_id": "3347",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1773",
-      "last_changed": "2026-07-21T17:37:12Z",
+      "last_changed": "2026-07-29T17:22:14Z",
       "name": "5 Star Wins",
       "odds": "1:4.21",
       "on_sale_date": "01/2026",
@@ -22879,19 +22879,19 @@
           "value": "$1,000"
         },
         {
-          "remaining": 287,
+          "remaining": 279,
           "value": "$100"
         },
         {
-          "remaining": 365,
+          "remaining": 351,
           "value": "$50"
         },
         {
-          "remaining": 7934,
+          "remaining": 7744,
           "value": "$25"
         },
         {
-          "remaining": 36969,
+          "remaining": 36093,
           "value": "$10"
         }
       ],
@@ -22923,7 +22923,7 @@
       "detail_id": "3348",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1774",
-      "last_changed": "2026-07-21T17:37:12Z",
+      "last_changed": "2026-07-29T17:22:14Z",
       "name": "$500 Blowout",
       "odds": "1:2.72",
       "on_sale_date": "03/2026",
@@ -22931,23 +22931,23 @@
       "price": 20.0,
       "prize_tiers": [
         {
-          "remaining": 34745,
+          "remaining": 33956,
           "value": "$500"
         },
         {
-          "remaining": 20175,
+          "remaining": 19733,
           "value": "$200"
         },
         {
-          "remaining": 78778,
+          "remaining": 76936,
           "value": "$100"
         },
         {
-          "remaining": 381490,
+          "remaining": 372708,
           "value": "$50"
         },
         {
-          "remaining": 1107838,
+          "remaining": 1082959,
           "value": "$20"
         }
       ],
@@ -22965,7 +22965,7 @@
         "500.0": 57000
       },
       "top_prize_value": "$500",
-      "top_prizes_remaining": 34745,
+      "top_prizes_remaining": 33956,
       "top_prizes_total": 38971,
       "total_is_estimate": true
     },
@@ -22974,7 +22974,7 @@
       "detail_id": "3349",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1775",
-      "last_changed": "2026-07-21T17:37:12Z",
+      "last_changed": "2026-07-29T17:22:14Z",
       "name": "$250 Blowout",
       "odds": "1:2.89",
       "on_sale_date": "03/2026",
@@ -22982,23 +22982,23 @@
       "price": 10.0,
       "prize_tiers": [
         {
-          "remaining": 41981,
+          "remaining": 41199,
           "value": "$250"
         },
         {
-          "remaining": 41395,
+          "remaining": 40682,
           "value": "$100"
         },
         {
-          "remaining": 88480,
+          "remaining": 86848,
           "value": "$50"
         },
         {
-          "remaining": 811858,
+          "remaining": 797131,
           "value": "$25"
         },
         {
-          "remaining": 1376412,
+          "remaining": 1352483,
           "value": "$10"
         }
       ],
@@ -23016,7 +23016,7 @@
         "50.0": 141750
       },
       "top_prize_value": "$250",
-      "top_prizes_remaining": 41981,
+      "top_prizes_remaining": 41199,
       "top_prizes_total": 46405,
       "total_is_estimate": true
     },
@@ -23025,7 +23025,7 @@
       "detail_id": "3350",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1776",
-      "last_changed": "2026-07-21T17:37:12Z",
+      "last_changed": "2026-07-29T17:22:14Z",
       "name": "$100 Blowout",
       "odds": "1:3.01",
       "on_sale_date": "03/2026",
@@ -23033,23 +23033,23 @@
       "price": 5.0,
       "prize_tiers": [
         {
-          "remaining": 20244,
+          "remaining": 19047,
           "value": "$100"
         },
         {
-          "remaining": 15140,
+          "remaining": 14279,
           "value": "$50"
         },
         {
-          "remaining": 102559,
+          "remaining": 96588,
           "value": "$25"
         },
         {
-          "remaining": 242999,
+          "remaining": 229535,
           "value": "$10"
         },
         {
-          "remaining": 589798,
+          "remaining": 557757,
           "value": "$5"
         }
       ],
@@ -23067,7 +23067,7 @@
         "50.0": 45500
       },
       "top_prize_value": "$100",
-      "top_prizes_remaining": 20244,
+      "top_prizes_remaining": 19047,
       "top_prizes_total": 27206,
       "total_is_estimate": true
     },
@@ -23076,7 +23076,7 @@
       "detail_id": "3351",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1777",
-      "last_changed": "2026-07-21T17:37:12Z",
+      "last_changed": "2026-07-29T17:22:14Z",
       "name": "Money Box Bingo",
       "odds": "1:3.66",
       "on_sale_date": "03/2026",
@@ -23092,7 +23092,7 @@
           "value": "$10,000"
         },
         {
-          "remaining": 22,
+          "remaining": 21,
           "value": "$5,000"
         },
         {
@@ -23100,11 +23100,11 @@
           "value": "$1,000"
         },
         {
-          "remaining": 235,
+          "remaining": 229,
           "value": "$500"
         },
         {
-          "remaining": 3202,
+          "remaining": 3109,
           "value": "$250"
         }
       ],
@@ -23138,7 +23138,7 @@
       "detail_id": "3352",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1778",
-      "last_changed": "2026-07-21T17:37:12Z",
+      "last_changed": "2026-07-29T17:22:14Z",
       "name": "Money Rush",
       "odds": "1:3.54",
       "on_sale_date": "03/2026",
@@ -23150,23 +23150,23 @@
           "value": "$5,000"
         },
         {
-          "remaining": 17,
+          "remaining": 14,
           "value": "$1,000"
         },
         {
-          "remaining": 30,
+          "remaining": 29,
           "value": "$500"
         },
         {
-          "remaining": 1496,
+          "remaining": 1439,
           "value": "$100"
         },
         {
-          "remaining": 2244,
+          "remaining": 2171,
           "value": "$50"
         },
         {
-          "remaining": 6347,
+          "remaining": 6106,
           "value": "$30"
         }
       ],
@@ -23199,7 +23199,7 @@
       "detail_id": "3353",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1779",
-      "last_changed": "2026-07-21T17:37:12Z",
+      "last_changed": "2026-07-29T17:22:14Z",
       "name": "A Latte Money",
       "odds": "1:4.25",
       "on_sale_date": "03/2026",
@@ -23219,15 +23219,15 @@
           "value": "$200"
         },
         {
-          "remaining": 503,
+          "remaining": 491,
           "value": "$100"
         },
         {
-          "remaining": 1056,
+          "remaining": 1039,
           "value": "$40"
         },
         {
-          "remaining": 15883,
+          "remaining": 15615,
           "value": "$20"
         }
       ],
@@ -23260,7 +23260,7 @@
       "detail_id": "3354",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1780",
-      "last_changed": "2026-07-21T17:37:12Z",
+      "last_changed": "2026-07-29T17:22:14Z",
       "name": "Triple Red 777",
       "odds": "1:3.11",
       "on_sale_date": "04/2026",
@@ -23268,7 +23268,7 @@
       "price": 30.0,
       "prize_tiers": [
         {
-          "remaining": 6,
+          "remaining": 5,
           "value": "$1,000,000"
         },
         {
@@ -23276,19 +23276,19 @@
           "value": "$150,000"
         },
         {
-          "remaining": 1726,
+          "remaining": 1695,
           "value": "$7,000"
         },
         {
-          "remaining": 383,
+          "remaining": 377,
           "value": "$3,000"
         },
         {
-          "remaining": 1538,
+          "remaining": 1504,
           "value": "$1,500"
         },
         {
-          "remaining": 3922,
+          "remaining": 3846,
           "value": "$500"
         }
       ],
@@ -23313,7 +23313,7 @@
         "7000.0": 2250
       },
       "top_prize_value": "$1,000,000",
-      "top_prizes_remaining": 6,
+      "top_prizes_remaining": 5,
       "top_prizes_total": 7,
       "total_is_estimate": false
     },
@@ -23322,7 +23322,7 @@
       "detail_id": "3355",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1781",
-      "last_changed": "2026-07-21T17:37:12Z",
+      "last_changed": "2026-07-29T17:22:14Z",
       "name": "Win Win Win",
       "odds": "1:3.12",
       "on_sale_date": "04/2026",
@@ -23338,19 +23338,19 @@
           "value": "$10,000"
         },
         {
-          "remaining": 29,
+          "remaining": 27,
           "value": "$1,000"
         },
         {
-          "remaining": 1750,
+          "remaining": 1690,
           "value": "$500"
         },
         {
-          "remaining": 4110,
+          "remaining": 3966,
           "value": "$250"
         },
         {
-          "remaining": 50796,
+          "remaining": 49112,
           "value": "$150"
         }
       ],
@@ -23383,7 +23383,7 @@
       "detail_id": "3356",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1782",
-      "last_changed": "2026-07-21T17:37:12Z",
+      "last_changed": "2026-07-29T17:22:14Z",
       "name": "GUS\u00ae",
       "odds": "1:3.76",
       "on_sale_date": "04/2026",
@@ -23399,19 +23399,19 @@
           "value": "$10,000"
         },
         {
-          "remaining": 13,
+          "remaining": 12,
           "value": "$1,000"
         },
         {
-          "remaining": 157,
+          "remaining": 154,
           "value": "$500"
         },
         {
-          "remaining": 452,
+          "remaining": 431,
           "value": "$200"
         },
         {
-          "remaining": 1526,
+          "remaining": 1469,
           "value": "$100"
         }
       ],
@@ -23445,7 +23445,7 @@
       "detail_id": "3357",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1783",
-      "last_changed": "2026-07-21T17:37:12Z",
+      "last_changed": "2026-07-29T17:22:14Z",
       "name": "GOLD FISH\u00ae",
       "odds": "1:4.32",
       "on_sale_date": "04/2026",
@@ -23457,23 +23457,23 @@
           "value": "$2,500"
         },
         {
-          "remaining": 90,
+          "remaining": 88,
           "value": "$500"
         },
         {
-          "remaining": 509,
+          "remaining": 492,
           "value": "$100"
         },
         {
-          "remaining": 883,
+          "remaining": 864,
           "value": "$50"
         },
         {
-          "remaining": 26315,
+          "remaining": 25497,
           "value": "$20"
         },
         {
-          "remaining": 63073,
+          "remaining": 61391,
           "value": "$10"
         }
       ],
@@ -23505,7 +23505,7 @@
       "detail_id": "3358",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1784",
-      "last_changed": "2026-07-21T17:37:12Z",
+      "last_changed": "2026-07-29T17:22:14Z",
       "name": "Million Dollar Win It All",
       "odds": "1:3.61",
       "on_sale_date": "06/2026",
@@ -23521,19 +23521,19 @@
           "value": "$100,000"
         },
         {
-          "remaining": 168,
+          "remaining": 163,
           "value": "$10,000"
         },
         {
-          "remaining": 289,
+          "remaining": 282,
           "value": "$5,000"
         },
         {
-          "remaining": 2285,
+          "remaining": 2255,
           "value": "$1,000"
         },
         {
-          "remaining": 83402,
+          "remaining": 82482,
           "value": "$500"
         }
       ],
@@ -23565,7 +23565,7 @@
       "detail_id": "3359",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1785",
-      "last_changed": "2026-07-21T17:37:12Z",
+      "last_changed": "2026-07-29T17:22:14Z",
       "name": "THE GAME OF LIFE Second-Chance Eligible",
       "odds": "1:3.43",
       "on_sale_date": "06/2026",
@@ -23577,23 +23577,23 @@
           "value": "$1,000,000"
         },
         {
-          "remaining": 37,
+          "remaining": 35,
           "value": "$10,000"
         },
         {
-          "remaining": 60,
+          "remaining": 59,
           "value": "$5,000"
         },
         {
-          "remaining": 4174,
+          "remaining": 4097,
           "value": "$1,000"
         },
         {
-          "remaining": 8793,
+          "remaining": 8626,
           "value": "$500"
         },
         {
-          "remaining": 68446,
+          "remaining": 67037,
           "value": "$250"
         }
       ],
@@ -23626,7 +23626,7 @@
       "detail_id": "3360",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1786",
-      "last_changed": "2026-07-21T17:37:12Z",
+      "last_changed": "2026-07-29T17:22:14Z",
       "name": "Ruby Rich3s",
       "odds": "1:3.45",
       "on_sale_date": "06/2026",
@@ -23638,23 +23638,23 @@
           "value": "$300,000"
         },
         {
-          "remaining": 24,
+          "remaining": 23,
           "value": "$30,000"
         },
         {
-          "remaining": 448,
+          "remaining": 440,
           "value": "$1,500"
         },
         {
-          "remaining": 885,
+          "remaining": 868,
           "value": "$600"
         },
         {
-          "remaining": 8581,
+          "remaining": 8403,
           "value": "$300"
         },
         {
-          "remaining": 18806,
+          "remaining": 18451,
           "value": "$150"
         }
       ],
@@ -23687,7 +23687,7 @@
       "detail_id": "3361",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1787",
-      "last_changed": "2026-07-21T17:37:12Z",
+      "last_changed": "2026-07-29T17:22:14Z",
       "name": "Fever Doubler",
       "odds": "1:3.56",
       "on_sale_date": "06/2026",
@@ -23699,23 +23699,23 @@
           "value": "$250,000"
         },
         {
-          "remaining": 25,
+          "remaining": 24,
           "value": "$10,000"
         },
         {
-          "remaining": 105,
+          "remaining": 100,
           "value": "$1,000"
         },
         {
-          "remaining": 1704,
+          "remaining": 1634,
           "value": "$500"
         },
         {
-          "remaining": 19750,
+          "remaining": 18856,
           "value": "$100"
         },
         {
-          "remaining": 42649,
+          "remaining": 40593,
           "value": "$50"
         }
       ],
@@ -23747,7 +23747,7 @@
       "detail_id": "3362",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1788",
-      "last_changed": "2026-07-21T17:37:12Z",
+      "last_changed": "2026-07-29T17:22:14Z",
       "name": "Lights, Camera, Crossword",
       "odds": "1:3.57",
       "on_sale_date": "06/2026",
@@ -23763,19 +23763,19 @@
           "value": "$1,000"
         },
         {
-          "remaining": 1884,
+          "remaining": 1843,
           "value": "$200"
         },
         {
-          "remaining": 6309,
+          "remaining": 6209,
           "value": "$100"
         },
         {
-          "remaining": 9579,
+          "remaining": 9391,
           "value": "$80"
         },
         {
-          "remaining": 15893,
+          "remaining": 15599,
           "value": "$50"
         }
       ],
@@ -23809,7 +23809,7 @@
       "detail_id": "3363",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1789",
-      "last_changed": "2026-07-21T17:37:12Z",
+      "last_changed": "2026-07-29T17:22:14Z",
       "name": "Super 7s",
       "odds": "1:3.38",
       "on_sale_date": "06/2026",
@@ -23821,23 +23821,23 @@
           "value": "$17,000"
         },
         {
-          "remaining": 17,
+          "remaining": 16,
           "value": "$1,000"
         },
         {
-          "remaining": 279,
+          "remaining": 267,
           "value": "$200"
         },
         {
-          "remaining": 4944,
+          "remaining": 4807,
           "value": "$70"
         },
         {
-          "remaining": 2334,
+          "remaining": 2276,
           "value": "$35"
         },
         {
-          "remaining": 81001,
+          "remaining": 78633,
           "value": "$17"
         }
       ],
@@ -23870,7 +23870,7 @@
       "detail_id": "3364",
       "first_seen": "2026-07-06T18:16:25Z",
       "game_number": "1790",
-      "last_changed": "2026-07-21T17:37:12Z",
+      "last_changed": "2026-07-29T17:22:14Z",
       "name": "$1,500,000 Super Star",
       "odds": "1:3.00",
       "on_sale_date": "07/2026",
@@ -23878,7 +23878,7 @@
       "price": 30.0,
       "prize_tiers": [
         {
-          "remaining": 5,
+          "remaining": 4,
           "value": "$1,500,000"
         },
         {
@@ -23886,19 +23886,19 @@
           "value": "$150,000"
         },
         {
-          "remaining": 15,
+          "remaining": 14,
           "value": "$10,000"
         },
         {
-          "remaining": 445,
+          "remaining": 438,
           "value": "$3,000"
         },
         {
-          "remaining": 1763,
+          "remaining": 1710,
           "value": "$1,500"
         },
         {
-          "remaining": 3128,
+          "remaining": 3035,
           "value": "$600"
         }
       ],
@@ -23923,7 +23923,7 @@
         "600.0": 3240
       },
       "top_prize_value": "$1,500,000",
-      "top_prizes_remaining": 5,
+      "top_prizes_remaining": 4,
       "top_prizes_total": 5,
       "total_is_estimate": false
     },
@@ -23932,7 +23932,7 @@
       "detail_id": "3365",
       "first_seen": "2026-07-06T18:16:25Z",
       "game_number": "1791",
-      "last_changed": "2026-07-21T17:37:12Z",
+      "last_changed": "2026-07-29T17:22:14Z",
       "name": "VIP Bonus Cash",
       "odds": "1:3.36",
       "on_sale_date": "07/2026",
@@ -23944,23 +23944,23 @@
           "value": "$750,000"
         },
         {
-          "remaining": 39,
+          "remaining": 35,
           "value": "$10,000"
         },
         {
-          "remaining": 441,
+          "remaining": 427,
           "value": "$1,000"
         },
         {
-          "remaining": 761,
+          "remaining": 742,
           "value": "$500"
         },
         {
-          "remaining": 6598,
+          "remaining": 6379,
           "value": "$250"
         },
         {
-          "remaining": 67943,
+          "remaining": 65611,
           "value": "$150"
         }
       ],
@@ -23993,7 +23993,7 @@
       "detail_id": "3366",
       "first_seen": "2026-07-06T18:16:25Z",
       "game_number": "1792",
-      "last_changed": "2026-07-21T17:37:12Z",
+      "last_changed": "2026-07-29T17:22:14Z",
       "name": "Wild Side",
       "odds": "1:3.45",
       "on_sale_date": "07/2026",
@@ -24009,19 +24009,19 @@
           "value": "$10,000"
         },
         {
-          "remaining": 37,
+          "remaining": 35,
           "value": "$1,000"
         },
         {
-          "remaining": 656,
+          "remaining": 629,
           "value": "$500"
         },
         {
-          "remaining": 1251,
+          "remaining": 1195,
           "value": "$200"
         },
         {
-          "remaining": 12231,
+          "remaining": 11721,
           "value": "$100"
         }
       ],
@@ -24055,7 +24055,7 @@
       "detail_id": "3367",
       "first_seen": "2026-07-06T18:16:25Z",
       "game_number": "1793",
-      "last_changed": "2026-07-21T17:37:12Z",
+      "last_changed": "2026-07-29T17:22:14Z",
       "name": "Crossword Deluxe",
       "odds": "1:3.86",
       "on_sale_date": "07/2026",
@@ -24071,19 +24071,19 @@
           "value": "$10,000"
         },
         {
-          "remaining": 102,
+          "remaining": 101,
           "value": "$5,000"
         },
         {
-          "remaining": 509,
+          "remaining": 500,
           "value": "$1,000"
         },
         {
-          "remaining": 2968,
+          "remaining": 2896,
           "value": "$500"
         },
         {
-          "remaining": 6110,
+          "remaining": 5980,
           "value": "$250"
         }
       ],
@@ -24117,7 +24117,7 @@
       "detail_id": "3368",
       "first_seen": "2026-07-06T18:16:25Z",
       "game_number": "1794",
-      "last_changed": "2026-07-21T17:37:12Z",
+      "last_changed": "2026-07-29T17:22:14Z",
       "name": "$20 Frenzy",
       "odds": "1:3.59",
       "on_sale_date": "07/2026",
@@ -24125,27 +24125,27 @@
       "price": 2.0,
       "prize_tiers": [
         {
-          "remaining": 97,
+          "remaining": 90,
           "value": "$2,000"
         },
         {
-          "remaining": 465,
+          "remaining": 439,
           "value": "$200"
         },
         {
-          "remaining": 674,
+          "remaining": 644,
           "value": "$100"
         },
         {
-          "remaining": 2746,
+          "remaining": 2616,
           "value": "$40"
         },
         {
-          "remaining": 154082,
+          "remaining": 146910,
           "value": "$20"
         },
         {
-          "remaining": 25710,
+          "remaining": 24540,
           "value": "$10"
         }
       ],
@@ -24167,7 +24167,7 @@
         "5.0": 97200
       },
       "top_prize_value": "$2,000",
-      "top_prizes_remaining": 97,
+      "top_prizes_remaining": 90,
       "top_prizes_total": 100,
       "total_is_estimate": true
     },
@@ -24176,7 +24176,7 @@
       "detail_id": "3369",
       "first_seen": "2026-07-06T18:16:25Z",
       "game_number": "1795",
-      "last_changed": "2026-07-21T17:37:12Z",
+      "last_changed": "2026-07-29T17:22:14Z",
       "name": "Bright Buck$",
       "odds": "1:4.25",
       "on_sale_date": "07/2026",
@@ -24192,19 +24192,19 @@
           "value": "$500"
         },
         {
-          "remaining": 1039,
+          "remaining": 1014,
           "value": "$100"
         },
         {
-          "remaining": 1701,
+          "remaining": 1651,
           "value": "$50"
         },
         {
-          "remaining": 1369,
+          "remaining": 1320,
           "value": "$40"
         },
         {
-          "remaining": 41434,
+          "remaining": 40219,
           "value": "$20"
         }
       ],
