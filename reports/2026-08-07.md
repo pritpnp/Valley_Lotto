@@ -1,4 +1,4 @@
-# Valley Lotto report — 2026-08-07T05:45:54Z
+# Valley Lotto report — 2026-08-07T16:59:13Z
 
 ## ✅ No new alerts
 
@@ -16,13 +16,13 @@ Nothing ended and nothing crossed your low-prize threshold since the last run.
 - #1744 Goat Load of Cash Crossword ($5) — rating 31/100 — 11% of cheap prizes left; 11% of all prizes left. → swap to #1793 Crossword Deluxe, #1792 Wild Side
 - #1757 $2,500 Festive Frenzy ($10) — rating 31/100 — 9% of all prizes left; 9% of cheap prizes left. → swap to #1791 VIP Bonus Cash, #1786 Ruby Rich3s
 - #1739 MONOPOLY SECRET VAULT ($5) — rating 35/100 — 1:4.59; 23% of cheap prizes left. → swap to #1793 Crossword Deluxe, #1792 Wild Side
-- #1756 Fro$ted Fortune ($20) — sales ended 07/08/2026 — pull it. → swap to #1785 THE GAME OF LIFE Second-Chance Eligible
+- #1756 Fro$ted Fortune ($20) — sales ended 07/08/2026 — pull it. → swap to #1785 THE GAME OF LIFE
 - #1769 Code Word Crossword ($10) — rating 39/100 — 33% of cheap prizes left; 34% of all prizes left. → swap to #1791 VIP Bonus Cash, #1786 Ruby Rich3s
 - #1783 GOLD FISH® ($1) — rating 42/100 — 1:4.32; cheap prizes -7.2σ vs game — drying up. → swap to #1795 Bright Buck$, #1773 5 Star Wins
 - #1751 Extreme Green ($10) — rating 43/100 — 29% of all prizes left; 29% of cheap prizes left. → swap to #1791 VIP Bonus Cash, #1786 Ruby Rich3s
 - #1772 Find the Leprechaun ($2) — rating 46/100 — 18% of all prizes left; 18% of cheap prizes left. → swap to #1794 $20 Frenzy
-- #1738 Jackpot ($20) — sales ended 08/03/2026 — pull it. → swap to #1785 THE GAME OF LIFE Second-Chance Eligible
-- #1746 Millionaire Loading ($20) — rating 49/100 — 17% of cheap prizes left; 17% of all prizes left. → swap to #1785 THE GAME OF LIFE Second-Chance Eligible
+- #1738 Jackpot ($20) — sales ended 08/03/2026 — pull it. → swap to #1785 THE GAME OF LIFE
+- #1746 Millionaire Loading ($20) — rating 49/100 — 17% of cheap prizes left; 17% of all prizes left. → swap to #1785 THE GAME OF LIFE
 
 | Game | # | Price | Rating | Win odds | % left (all) | Low-prize % | Density | Action |
 |------|---|------:|:------:|:-------:|:-----------:|:-----------:|:-------:|--------|
@@ -449,7 +449,7 @@ Nothing ended and nothing crossed your low-prize threshold since the last run.
 | $50 | $1,000,000 a Year for Life | 1762 | 1:3.74 | 0.97 | 73% |
 | $30 | $1,500,000 Super Star | 1790 | 1:3 | 0.89 | 91% |
 | $30 | $120,000,000 Payout | 1768 | 1:3.09 | 0.97 | 62% |
-| $20 | THE GAME OF LIFE Second-Chance Eligible | 1785 | 1:3.43 | 1.25 | 80% |
+| $20 | THE GAME OF LIFE | 1785 | 1:3.43 | 1.25 | 80% |
 | $10 | $250 Blowout | 1775 | 1:2.89 | 0.97 | 61% |
 | $10 | VIP Bonus Cash | 1791 | 1:3.36 | 1.13 | 88% |
 | $10 | Ruby Rich3s | 1786 | 1:3.45 | 0.86 | 80% |
