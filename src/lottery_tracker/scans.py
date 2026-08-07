@@ -98,21 +98,42 @@ class SoldResult:
 
 
 def compute_sold(open_scan: Scan, close_scan: Scan,
-                 *, price: Optional[float] = None) -> SoldResult:
-    """Tickets sold between an open scan and a close scan of the same pack.
+                 *, price: Optional[float] = None,
+                 pack_size: Optional[int] = None) -> SoldResult:
+    """Tickets sold between an open scan and a close scan of one dispenser slot.
 
     ``price`` (the ticket's dollar price, from the game catalog) is optional; when
     given, ``revenue`` is filled in. Direction handling honors ``COUNT_DIRECTION``
     when set, otherwise falls back to the absolute delta and reports which way the
     number moved so a human can confirm the convention from real data.
+
+    ``pack_size`` (tickets per pack, from :mod:`.packs`) lets us bridge a *pack
+    changeover*: if the slot rolled from one pack to the next between open and
+    close, sold = (tickets left in the old pack) + (tickets sold from the new one).
+    That bridge assumes the old pack sold out — the usual case when a slot is
+    reloaded — and is reported as an estimate. Without ``pack_size`` a changeover
+    can't be quantified, so we flag it rather than guess.
     """
     if open_scan.pack != close_scan.pack:
+        if pack_size is not None:
+            # Old pack: tickets open_ticket .. pack_size-1 sold out => (pack_size - open).
+            # New pack: 0 .. close_ticket-1 sold => close_ticket. Single-rollover model.
+            sold = (pack_size - open_scan.ticket) + close_scan.ticket
+            revenue = None if price is None or sold < 0 else round(sold * price, 2)
+            return SoldResult(
+                game_number=close_scan.game_number, pack=close_scan.pack,
+                tickets_sold=sold, revenue=revenue, same_pack=False,
+                direction="up", open_ticket=open_scan.ticket, close_ticket=close_scan.ticket,
+                note=(f"estimate across a pack changeover ({open_scan.pack} -> {close_scan.pack}), "
+                      f"assuming the prior pack (size {pack_size}) sold out; "
+                      "true count needs the actual last ticket of the old pack"),
+            )
         return SoldResult(
             game_number=close_scan.game_number, pack=close_scan.pack,
             tickets_sold=None, revenue=None, same_pack=False,
             direction="none", open_ticket=open_scan.ticket, close_ticket=close_scan.ticket,
             note=(f"pack changed during the period ({open_scan.pack} -> {close_scan.pack}); "
-                  "sold count needs pack size to bridge the rollover"),
+                  "pass pack_size to bridge the rollover, or scan the old pack's last ticket"),
         )
 
     delta = close_scan.ticket - open_scan.ticket
