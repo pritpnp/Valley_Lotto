@@ -2,9 +2,11 @@
 
 from lottery_tracker.packs import (
     pack_size_for, observed_max_ticket, DEFAULT_PACK_SIZE_BY_PRICE, PackSizeInfo,
+    PackSizeResolver,
 )
 from lottery_tracker.barcode import parse_ticket
 from lottery_tracker.scans import Scan, compute_sold
+from lottery_tracker.config import Config
 
 
 def _scan(pack, ticket):
@@ -75,3 +77,42 @@ def test_rollover_without_pack_size_still_flags():
     res = compute_sold(o, c, price=30.0)  # no pack_size
     assert res.tickets_sold is None
     assert "pack changed" in res.note
+
+
+# --- config-driven resolver -------------------------------------------------
+
+def test_resolver_by_price_config_overrides_builtin():
+    r = PackSizeResolver(by_price={30: 30})   # user says $30 packs are 30, not the 20 guess
+    info = r.size_for(30.0)
+    assert info.size == 30
+    assert info.confidence == "config-price"
+
+
+def test_resolver_by_game_is_authoritative():
+    r = PackSizeResolver(by_price={30: 30}, by_game={"1750": 40})
+    info = r.size_for(30.0, game_number="1750")
+    assert info.size == 40
+    assert info.confidence == "config-game"
+
+
+def test_resolver_scan_corrects_impossible_config_and_warns():
+    r = PackSizeResolver(by_game={"1750": 20})
+    info = r.size_for(30.0, game_number="1750", observed_max=28)  # can't fit in 20
+    assert info.size == 29
+    assert info.confidence == "observed"
+    assert "check config" in info.source
+
+
+def test_resolver_falls_back_to_builtin_when_enabled_and_unknown_when_not():
+    assert PackSizeResolver().size_for(5.0).size == 60           # built-in fallback
+    off = PackSizeResolver(use_builtin_fallback=False).size_for(5.0)
+    assert off.size is None and off.confidence == "unknown"
+
+
+def test_config_yaml_pack_sizes_load_and_resolve():
+    cfg = Config.load("config.yaml")
+    r = cfg.pack_resolver()
+    assert r.size_for(5.0).size == 60
+    assert r.size_for(20.0).size == 30
+    # the $30 row is present but flagged unverified in the file
+    assert r.size_for(30.0).size == 20

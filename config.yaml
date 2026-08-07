@@ -60,3 +60,31 @@ thresholds:
 # fresh games worth stocking). If false, only the games in `inventory` above are
 # checked for the low-prize alert (ended-game alerts always cover everything).
 report_all_games: true
+
+# ---------------------------------------------------------------------------
+# Pack (book) sizes: how many tickets are in a full pack. Used by the scan
+# tracker to turn "open ticket -> close ticket" into tickets sold, and to bridge
+# a pack changeover. PA packs are built to a fixed DOLLAR VALUE, so the ticket
+# count depends on price (tickets = pack_value / price). Tickets in a pack are
+# numbered 000..N-1 and count UP as they sell.
+#
+# EDIT THESE to your confirmed numbers. The values below are best-effort and the
+# $30/$40 rows in particular are UNVERIFIED guesses — confirm from the PA retailer
+# "Settled Packs" report (or Retailer Services, 1-800-692-7481) and correct them.
+# You don't have to be perfect: a real scan that runs past a configured size
+# auto-corrects it upward (you can't have ticket 028 in a 20-ticket pack).
+pack_sizes:
+  by_price:            # tickets per pack, keyed by ticket price in dollars
+    1: 300             # $300 book  (derived)
+    2: 150             # $300 book  (well-attested)
+    3: 100             # $300 book  (derived)
+    5: 60              # $300 book  (well-attested)
+    10: 60             # $600 book  (well-attested)
+    20: 30             # $600 book  (well-attested)
+    30: 20             # ?? UNVERIFIED — could be 20/30/50. FIX ME.
+    40: 15             # ?? UNVERIFIED — undocumented. FIX ME.
+    50: 50             # $2,500 book
+
+  by_game: {}          # exact per-game overrides, e.g.  "1750": 20
+
+  use_builtin_fallback: true   # if a price isn't listed above, use built-in guesses

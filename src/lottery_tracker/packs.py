@@ -50,7 +50,11 @@ class PackSizeInfo:
         return {"size": self.size, "confidence": self.confidence, "source": self.source}
 
 
-# Default tickets-per-pack by ticket price (dollars). Keyed by float price.
+# Built-in tickets-per-pack by ticket price (dollars), keyed by float price.
+# This is an UNVERIFIED FALLBACK only — see the caveats in this module's docstring.
+# The source of truth is ``config.yaml`` (``pack_sizes:``); anything you set there
+# overrides these. Prefer to confirm the real numbers from the PA retailer
+# "Settled Packs" report and put them in config.
 DEFAULT_PACK_SIZE_BY_PRICE: dict[float, PackSizeInfo] = {
     1.0:  PackSizeInfo(300, "medium", "$300 book / $1 (derived)"),
     2.0:  PackSizeInfo(150, "high",   "$300 book / $2 (stated)"),
@@ -117,3 +121,66 @@ def pack_size_for(
     if default is not None:
         return default
     return PackSizeInfo(None, "unknown", f"no default for price {price!r}; need a scan or override")
+
+
+class PackSizeResolver:
+    """Resolve a game's pack size from config first, then scans, then the fallback.
+
+    Configuration lives in ``config.yaml`` under ``pack_sizes:`` and is the
+    authoritative source — the built-in :data:`DEFAULT_PACK_SIZE_BY_PRICE` is only
+    consulted when config says nothing and ``use_builtin_fallback`` is on.
+
+    Resolution order (most specific / most trusted first):
+      1. ``by_game`` — an explicit size you set for one game number. Authoritative.
+      2. real scans — a scanned ticket index proves a *lower bound*; it corrects a
+         per-price number *upward* if the pack is demonstrably bigger (you can't
+         have ticket 028 in a 20-ticket pack). It never shrinks a configured size.
+      3. ``by_price`` — your per-price default from config.
+      4. the built-in fallback table (unverified), if enabled.
+    """
+
+    def __init__(self, by_price: dict | None = None, by_game: dict | None = None,
+                 *, use_builtin_fallback: bool = True):
+        self.by_price = {}
+        for k, v in (by_price or {}).items():
+            key = _price_key(k)
+            if key is not None and v is not None:
+                self.by_price[key] = int(v)
+        self.by_game = {str(k).strip(): int(v) for k, v in (by_game or {}).items() if v is not None}
+        self.use_builtin_fallback = use_builtin_fallback
+
+    def size_for(self, price: Optional[float], *, game_number: Optional[str] = None,
+                 observed_max: Optional[int] = None) -> PackSizeInfo:
+        # 1. explicit per-game size — what you set wins.
+        if game_number is not None and str(game_number).strip() in self.by_game:
+            size = self.by_game[str(game_number).strip()]
+            if observed_max is not None and (observed_max + 1) > size:
+                # A scan physically contradicts the configured size — trust reality
+                # and make the discrepancy loud so config can be fixed.
+                corrected = observed_max - TICKET_INDEX_BASE + 1
+                return PackSizeInfo(
+                    corrected, "observed",
+                    f"config says {size} for game {game_number}, but a scan hit ticket "
+                    f"{observed_max}; using {corrected} — check config.yaml",
+                )
+            return PackSizeInfo(size, "config-game", f"per-game size from config.yaml (game {game_number})")
+
+        # 2. base default: per-price config, else the built-in fallback.
+        key = _price_key(price)
+        if key in self.by_price:
+            base: Optional[PackSizeInfo] = PackSizeInfo(
+                self.by_price[key], "config-price", f"per-price size from config.yaml (${key:g})")
+        elif self.use_builtin_fallback:
+            base = DEFAULT_PACK_SIZE_BY_PRICE.get(key)
+        else:
+            base = None
+
+        # 3. correct upward from real scans.
+        observed_size = None if observed_max is None else observed_max - TICKET_INDEX_BASE + 1
+        if observed_size is not None and (base is None or observed_size > base.size):
+            return PackSizeInfo(
+                observed_size, "observed",
+                f"from scans: saw ticket {observed_max}, so pack holds ≥ {observed_size}")
+        if base is not None:
+            return base
+        return PackSizeInfo(None, "unknown", f"no config or fallback for price {price!r}")
