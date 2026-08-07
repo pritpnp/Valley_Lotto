@@ -34,13 +34,12 @@ from typing import Optional
 
 from .barcode import TicketCode, parse_ticket
 
-# How a PA pack's ticket number moves as tickets sell. Not yet field-confirmed for
-# every price point, so sold-math defaults to the absolute delta and records the
-# observed direction; set this once we've confirmed it from real open/close data.
+# How a PA pack's ticket number moves as tickets sell. Field-confirmed on this
+# project: PA ticket numbers count UP as tickets are sold (open < close).
 #   "up"   -> ticket number increases as tickets sell (open < close)
 #   "down" -> ticket number decreases as tickets sell (open > close)
 #   None   -> unknown; use abs(delta) and report which way it moved
-COUNT_DIRECTION: Optional[str] = None
+COUNT_DIRECTION: Optional[str] = "up"
 
 
 @dataclass
