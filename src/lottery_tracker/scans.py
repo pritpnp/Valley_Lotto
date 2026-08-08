@@ -178,6 +178,9 @@ class ScanLog:
     def for_pack(self, pack: str) -> list:
         return [s for s in self.scans if s.pack == pack]
 
+    def for_game(self, game_number: str) -> list:
+        return [s for s in self.scans if s.game_number == str(game_number)]
+
     def to_dict(self) -> dict:
         return {"scans": [s.to_dict() for s in self.scans]}
 
@@ -198,3 +201,114 @@ def save_scans(path: str | Path, log: ScanLog) -> None:
     p = Path(path)
     p.parent.mkdir(parents=True, exist_ok=True)
     p.write_text(json.dumps(log.to_dict(), indent=2, sort_keys=True))
+
+
+# --------------------------------------------------------------------------- #
+# Learning from the log: detect pack changes and learn pack size, so pack size
+# never has to be configured up front — the scan history teaches it.
+#
+# The key facts that make this work:
+#   * Every scan carries the pack ID, so a pack change is a FACT (the id differs),
+#     not an inference. The ticket number resetting toward 0 corroborates it.
+#   * Tickets count 0..N-1, so the highest ticket ever seen for a game is a lower
+#     bound on its pack size N; once a pack is scanned near its end before it
+#     rolls, that peak == N-1, i.e. learned size = peak + 1.
+# --------------------------------------------------------------------------- #
+
+def learn_pack_size(scans: list) -> Optional[int]:
+    """Best-known pack size for one game, learned purely from its scans.
+
+    Returns ``max(ticket) + 1`` over the given scans, or ``None`` if there are
+    none. This is a *lower bound* that converges to the true size as tickets are
+    scanned closer to a pack's end; it becomes exact once any pack of the game has
+    been scanned at its final ticket before rolling to the next pack.
+    """
+    tickets = [s.ticket for s in scans if s.ticket is not None]
+    return (max(tickets) + 1) if tickets else None
+
+
+def learn_pack_sizes(log: "ScanLog") -> dict:
+    """Learn a pack size for every game present in the log: ``{game_number: size}``."""
+    by_game: dict[str, list] = {}
+    for s in log.scans:
+        by_game.setdefault(s.game_number, []).append(s)
+    return {g: learn_pack_size(ss) for g, ss in by_game.items()}
+
+
+@dataclass
+class SequenceResult:
+    """Tickets sold across a whole chronological run of scans for one game/slot,
+    accounting for any pack changes along the way."""
+
+    game_number: str
+    tickets_sold: int
+    revenue: Optional[float]
+    pack_changes: int               # how many times the pack rolled over
+    packs_seen: list                # ordered, de-duplicated pack ids
+    pack_size_used: Optional[int]   # the size used to bridge rollovers (given or learned)
+    estimated: bool                 # True if any rollover was bridged with an assumed size
+    notes: list = field(default_factory=list)
+
+    def to_dict(self) -> dict:
+        return asdict(self)
+
+
+def sold_over_sequence(scans: list, *, price: Optional[float] = None,
+                       pack_size: Optional[int] = None) -> SequenceResult:
+    """Total tickets sold across a time-ordered run of scans for ONE game/slot.
+
+    Walks consecutive scans. Within a pack, sold is the ticket delta (needs no
+    pack size). At a pack change (different pack id), bridges the rollover using
+    ``pack_size`` if given, else the size *learned from these very scans*
+    (:func:`learn_pack_size`). If no size is available yet (e.g. the first-ever
+    rollover for a brand-new game), the old pack's unseen tail can't be counted —
+    that's noted, and only the new pack's portion is added.
+
+    Scans are sorted by ``scanned_at`` (ISO strings sort chronologically).
+    """
+    ordered = sorted(scans, key=lambda s: s.scanned_at)
+    if not ordered:
+        return SequenceResult(game_number="", tickets_sold=0, revenue=None,
+                              pack_changes=0, packs_seen=[], pack_size_used=None,
+                              estimated=False, notes=["no scans"])
+
+    game = ordered[0].game_number
+    size = pack_size if pack_size is not None else learn_pack_size(ordered)
+
+    sold = 0
+    estimated = False
+    pack_changes = 0
+    packs_seen: list = []
+    notes: list = []
+
+    for s in ordered:
+        if not packs_seen or packs_seen[-1] != s.pack:
+            packs_seen.append(s.pack)
+
+    for a, b in zip(ordered, ordered[1:]):
+        if a.pack == b.pack:
+            delta = b.ticket - a.ticket
+            if delta < 0:
+                notes.append(f"ticket went backwards within pack {a.pack} "
+                             f"({a.ticket}->{b.ticket}); skipped")
+                continue
+            sold += delta
+        else:
+            pack_changes += 1
+            new_portion = b.ticket  # tickets 0..b.ticket-1 sold from the new pack
+            if size is not None and size > a.ticket:
+                old_tail = size - a.ticket   # a.ticket..size-1 sold from the old pack
+                sold += old_tail + new_portion
+                estimated = True
+            else:
+                sold += new_portion
+                notes.append(f"pack {a.pack}->{b.pack}: no learned size yet, "
+                             f"old pack's tail after ticket {a.ticket} not counted")
+                estimated = True
+
+    revenue = None if price is None else round(sold * price, 2)
+    return SequenceResult(
+        game_number=game, tickets_sold=sold, revenue=revenue,
+        pack_changes=pack_changes, packs_seen=packs_seen,
+        pack_size_used=size, estimated=estimated, notes=notes,
+    )
