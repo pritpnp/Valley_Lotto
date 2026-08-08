@@ -50,25 +50,30 @@ class Scan:
     pack: str
     ticket: int
     scanned_at: str                 # ISO timestamp, supplied by the caller (never invented here)
-    kind: str = "single"            # "open" | "close" | "single"
+    kind: str = "single"            # "open" | "close" | "single" (legacy; see `session`)
     store: str = "default"          # store id, for multi-location rollups later
+    slot: Optional[str] = None      # dispenser box this ticket came from, e.g. "A1".."B24"
+    session: Optional[str] = None   # which daily count: "morning" | "midday" | "night"
     user: Optional[str] = None      # who scanned, if the client knows
     raw: str = ""                   # exact scanner output, for audit
 
     @classmethod
     def from_ticket(cls, tc: TicketCode, *, scanned_at: str, kind: str = "single",
-                    store: str = "default", user: Optional[str] = None) -> "Scan":
+                    store: str = "default", slot: Optional[str] = None,
+                    session: Optional[str] = None, user: Optional[str] = None) -> "Scan":
         return cls(
             game_number=tc.game_number, pack=tc.pack, ticket=tc.ticket,
-            scanned_at=scanned_at, kind=kind, store=store, user=user, raw=tc.raw,
+            scanned_at=scanned_at, kind=kind, store=store, slot=slot,
+            session=session, user=user, raw=tc.raw,
         )
 
     @classmethod
     def from_raw(cls, raw: str, *, scanned_at: str, kind: str = "single",
-                 store: str = "default", user: Optional[str] = None) -> "Scan":
+                 store: str = "default", slot: Optional[str] = None,
+                 session: Optional[str] = None, user: Optional[str] = None) -> "Scan":
         """Parse a scanner string and build a Scan in one step."""
-        return cls.from_ticket(parse_ticket(raw), scanned_at=scanned_at,
-                               kind=kind, store=store, user=user)
+        return cls.from_ticket(parse_ticket(raw), scanned_at=scanned_at, kind=kind,
+                               store=store, slot=slot, session=session, user=user)
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -181,6 +186,13 @@ class ScanLog:
     def for_game(self, game_number: str) -> list:
         return [s for s in self.scans if s.game_number == str(game_number)]
 
+    def for_slot(self, slot: str) -> list:
+        return [s for s in self.scans if s.slot == slot]
+
+    def slots(self) -> list:
+        """Distinct slot labels seen, in sorted order (e.g. A1, A2, ... B24)."""
+        return sorted({s.slot for s in self.scans if s.slot}, key=_slot_sort_key)
+
     def to_dict(self) -> dict:
         return {"scans": [s.to_dict() for s in self.scans]}
 
@@ -201,6 +213,23 @@ def save_scans(path: str | Path, log: ScanLog) -> None:
     p = Path(path)
     p.parent.mkdir(parents=True, exist_ok=True)
     p.write_text(json.dumps(log.to_dict(), indent=2, sort_keys=True))
+
+
+def append_scan(path: str | Path, scan: Scan) -> ScanLog:
+    """Durably record ONE scan: load the log, append, save. This is the function
+    the capture path calls so nothing is ever lost — the file is the archive
+    (and, in production, the same rows go to the database). Returns the new log."""
+    log = load_scans(path)
+    log.add(scan)
+    save_scans(path, log)
+    return log
+
+
+def _slot_sort_key(slot: str):
+    """Sort slot labels like A1, A2, ..., A24, B1, ... naturally (letter, then number)."""
+    letters = "".join(c for c in slot if c.isalpha())
+    digits = "".join(c for c in slot if c.isdigit())
+    return (letters, int(digits) if digits else 0, slot)
 
 
 # --------------------------------------------------------------------------- #
