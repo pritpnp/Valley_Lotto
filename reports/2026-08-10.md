@@ -1,28 +1,42 @@
-# Valley Lotto report — 2026-08-10T05:38:52Z
+# Valley Lotto report — 2026-08-10T17:00:29Z
 
-## ✅ No new alerts
+## ⚠️ 6 new alert(s)
 
-Nothing ended and nothing crossed your low-prize threshold since the last run.
+- 🔵 🆕 New game now on sale: #1796 Ca$h Money ($50, odds 1:3.63) — consider stocking it.
+- 🔵 🆕 New game now on sale: #1797 Snake, Rattle and Roll ($20, odds 1:3.43) — consider stocking it.
+- 🔵 🆕 New game now on sale: #1798 THE WIZARD OF OZ™ THE GREAT AND POWERFUL OZ Second-Chance Eligible ($10, odds 1:3.52) — consider stocking it.
+- 🔵 🆕 New game now on sale: #1799 THE WIZARD OF OZ™ YELLOW BRICK ROAD Second-Chance Eligible ($5, odds 1:3.92) — consider stocking it.
+- 🔵 🆕 New game now on sale: #1800 Winner Winner Chicken Dinner ($2, odds 1:4.05) — consider stocking it.
+- 🔵 🆕 New game now on sale: #1801 THE WIZARD OF OZ™ GLINDA THE GOOD WITCH Second-Chance Eligible ($1, odds 1:4.13) — consider stocking it.
+
+## 🆕 New games just on sale (6)
+
+- **#1796 Ca$h Money** ($50, odds 1:3.63, on sale 08/2026)
+- **#1797 Snake, Rattle and Roll** ($20, odds 1:3.43, on sale 08/2026)
+- **#1798 THE WIZARD OF OZ™ THE GREAT AND POWERFUL OZ Second-Chance Eligible** ($10, odds 1:3.52, on sale 08/2026)
+- **#1799 THE WIZARD OF OZ™ YELLOW BRICK ROAD Second-Chance Eligible** ($5, odds 1:3.92, on sale 08/2026)
+- **#1800 Winner Winner Chicken Dinner** ($2, odds 1:4.05, on sale 08/2026)
+- **#1801 THE WIZARD OF OZ™ GLINDA THE GOOD WITCH Second-Chance Eligible** ($1, odds 1:4.13, on sale 08/2026)
 
 ## Recommendation: send back 15, keep 19
 
 **🔴 Send back — and what to swap in (same price):**
 
-- #1693 Keys and Cash ($5) — rating 13/100 — 8% of all prizes left; 9% of cheap prizes left. → swap to #1793 Crossword Deluxe, #1792 Wild Side
-- #1766 LOVE IS BLIND ($2) — rating 18/100 — 1:4.54; 21% of cheap prizes left. → swap to #1794 $20 Frenzy
-- #1767 $500 a Week for Life ($1) — rating 25/100 — 1:4.77; 28% of all prizes left. → swap to #1795 Bright Buck$, #1773 5 Star Wins
-- #1736 High 5 ($5) — rating 30/100 — 3% of cheap prizes left; 3% of all prizes left. → swap to #1793 Crossword Deluxe, #1792 Wild Side
-- #1758 ELF ($5) — rating 30/100 — 12% of cheap prizes left; 12% of all prizes left. → swap to #1793 Crossword Deluxe, #1792 Wild Side
-- #1744 Goat Load of Cash Crossword ($5) — rating 31/100 — 11% of cheap prizes left; 11% of all prizes left. → swap to #1793 Crossword Deluxe, #1792 Wild Side
-- #1757 $2,500 Festive Frenzy ($10) — rating 31/100 — 9% of all prizes left; 9% of cheap prizes left. → swap to #1791 VIP Bonus Cash, #1786 Ruby Rich3s
-- #1739 MONOPOLY SECRET VAULT ($5) — rating 35/100 — 1:4.59; 23% of cheap prizes left. → swap to #1793 Crossword Deluxe, #1792 Wild Side
-- #1756 Fro$ted Fortune ($20) — sales ended 07/08/2026 — pull it. → swap to #1785 THE GAME OF LIFE
-- #1769 Code Word Crossword ($10) — rating 39/100 — 33% of cheap prizes left; 34% of all prizes left. → swap to #1791 VIP Bonus Cash, #1786 Ruby Rich3s
-- #1783 GOLD FISH® ($1) — rating 42/100 — 1:4.32; cheap prizes -7.2σ vs game — drying up. → swap to #1795 Bright Buck$, #1773 5 Star Wins
-- #1751 Extreme Green ($10) — rating 43/100 — 29% of all prizes left; 29% of cheap prizes left. → swap to #1791 VIP Bonus Cash, #1786 Ruby Rich3s
-- #1772 Find the Leprechaun ($2) — rating 46/100 — 18% of all prizes left; 18% of cheap prizes left. → swap to #1794 $20 Frenzy
-- #1738 Jackpot ($20) — sales ended 08/03/2026 — pull it. → swap to #1785 THE GAME OF LIFE
-- #1746 Millionaire Loading ($20) — rating 49/100 — 17% of cheap prizes left; 17% of all prizes left. → swap to #1785 THE GAME OF LIFE
+- #1693 Keys and Cash ($5) — rating 13/100 — 8% of all prizes left; 9% of cheap prizes left. → swap to #1799 THE WIZARD OF OZ™ YELLOW BRICK ROAD Second-Chance Eligible, #1793 Crossword Deluxe
+- #1766 LOVE IS BLIND ($2) — rating 18/100 — 1:4.54; 21% of cheap prizes left. → swap to #1800 Winner Winner Chicken Dinner, #1794 $20 Frenzy
+- #1767 $500 a Week for Life ($1) — rating 25/100 — 1:4.77; 28% of all prizes left. → swap to #1801 THE WIZARD OF OZ™ GLINDA THE GOOD WITCH Second-Chance Eligible, #1795 Bright Buck$
+- #1736 High 5 ($5) — rating 30/100 — 3% of cheap prizes left; 3% of all prizes left. → swap to #1799 THE WIZARD OF OZ™ YELLOW BRICK ROAD Second-Chance Eligible, #1793 Crossword Deluxe
+- #1758 ELF ($5) — rating 30/100 — 12% of cheap prizes left; 12% of all prizes left. → swap to #1799 THE WIZARD OF OZ™ YELLOW BRICK ROAD Second-Chance Eligible, #1793 Crossword Deluxe
+- #1744 Goat Load of Cash Crossword ($5) — rating 31/100 — 11% of cheap prizes left; 11% of all prizes left. → swap to #1799 THE WIZARD OF OZ™ YELLOW BRICK ROAD Second-Chance Eligible, #1793 Crossword Deluxe
+- #1757 $2,500 Festive Frenzy ($10) — rating 31/100 — 9% of all prizes left; 9% of cheap prizes left. → swap to #1798 THE WIZARD OF OZ™ THE GREAT AND POWERFUL OZ Second-Chance Eligible, #1791 VIP Bonus Cash
+- #1739 MONOPOLY SECRET VAULT ($5) — rating 35/100 — 1:4.59; 23% of cheap prizes left. → swap to #1799 THE WIZARD OF OZ™ YELLOW BRICK ROAD Second-Chance Eligible, #1793 Crossword Deluxe
+- #1756 Fro$ted Fortune ($20) — sales ended 07/08/2026 — pull it. → swap to #1797 Snake, Rattle and Roll, #1785 THE GAME OF LIFE
+- #1769 Code Word Crossword ($10) — rating 39/100 — 33% of cheap prizes left; 34% of all prizes left. → swap to #1798 THE WIZARD OF OZ™ THE GREAT AND POWERFUL OZ Second-Chance Eligible, #1791 VIP Bonus Cash
+- #1783 GOLD FISH® ($1) — rating 42/100 — 1:4.32; cheap prizes -7.2σ vs game — drying up. → swap to #1801 THE WIZARD OF OZ™ GLINDA THE GOOD WITCH Second-Chance Eligible, #1795 Bright Buck$
+- #1751 Extreme Green ($10) — rating 43/100 — 29% of all prizes left; 29% of cheap prizes left. → swap to #1798 THE WIZARD OF OZ™ THE GREAT AND POWERFUL OZ Second-Chance Eligible, #1791 VIP Bonus Cash
+- #1772 Find the Leprechaun ($2) — rating 46/100 — 18% of all prizes left; 18% of cheap prizes left. → swap to #1800 Winner Winner Chicken Dinner, #1794 $20 Frenzy
+- #1738 Jackpot ($20) — sales ended 08/03/2026 — pull it. → swap to #1797 Snake, Rattle and Roll, #1785 THE GAME OF LIFE
+- #1746 Millionaire Loading ($20) — rating 49/100 — 17% of cheap prizes left; 17% of all prizes left. → swap to #1797 Snake, Rattle and Roll, #1785 THE GAME OF LIFE
 
 | Game | # | Price | Rating | Win odds | % left (all) | Low-prize % | Density | Action |
 |------|---|------:|:------:|:-------:|:-----------:|:-----------:|:-------:|--------|
@@ -446,14 +460,20 @@ Nothing ended and nothing crossed your low-prize threshold since the last run.
 | Price | Game | # | Win odds | Density | % left |
 |------:|------|---|:-------:|:-------:|:------:|
 | $50 | Million Dollar Win It All | 1784 | 1:3.61 | 0.92 | 92% |
+| $50 | Ca$h Money | 1796 | 1:3.63 | 0.02 | 100% |
 | $50 | $1,000,000 a Year for Life | 1762 | 1:3.74 | 0.97 | 73% |
 | $30 | $1,500,000 Super Star | 1790 | 1:3 | 0.89 | 91% |
 | $30 | $120,000,000 Payout | 1768 | 1:3.09 | 0.97 | 62% |
 | $20 | THE GAME OF LIFE | 1785 | 1:3.43 | 1.25 | 80% |
+| $20 | Snake, Rattle and Roll | 1797 | 1:3.43 | 1.00 | 100% |
 | $10 | $250 Blowout | 1775 | 1:2.89 | 0.97 | 61% |
 | $10 | VIP Bonus Cash | 1791 | 1:3.36 | 1.13 | 88% |
 | $10 | Ruby Rich3s | 1786 | 1:3.45 | 0.86 | 80% |
+| $10 | THE WIZARD OF OZ™ THE GREAT AND POWERFUL OZ Second-Chance Eligible | 1798 | 1:3.52 | 0.97 | 100% |
 | $5 | Wild Side | 1792 | 1:3.45 | 1.07 | 84% |
 | $5 | Crossword Deluxe | 1793 | 1:3.86 | 0.95 | 93% |
+| $5 | THE WIZARD OF OZ™ YELLOW BRICK ROAD Second-Chance Eligible | 1799 | 1:3.92 | 0.95 | 100% |
 | $2 | $20 Frenzy | 1794 | 1:3.59 | 0.97 | 86% |
+| $2 | Winner Winner Chicken Dinner | 1800 | 1:4.05 | 0.98 | 100% |
+| $1 | THE WIZARD OF OZ™ GLINDA THE GOOD WITCH Second-Chance Eligible | 1801 | 1:4.13 | 0.95 | 100% |
 | $1 | Bright Buck$ | 1795 | 1:4.25 | 1.02 | 92% |
