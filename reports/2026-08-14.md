@@ -1,17 +1,8 @@
-# Valley Lotto report — 2026-08-14T05:41:59Z
+# Valley Lotto report — 2026-08-14T17:00:24Z
 
-## ⚠️ 10 new alert(s)
+## ✅ No new alerts
 
-- 🔵 A game ENDED sales: #1690 Crossword Bonus Cash (ended 08/12/2026). Started 04/2024.
-- 🔵 A game ENDED sales: #1700 All Cash (ended 08/12/2026). Started 08/2024.
-- 🔵 A game ENDED sales: #1703 S’more Crossword (ended 08/12/2026). Started 08/2024.
-- 🔵 A game ENDED sales: #1730 100X the Cash (ended 08/12/2026). Started 03/2025.
-- 🔵 A game ENDED sales: #1731 Blingo (ended 08/12/2026). Started 03/2025.
-- 🔵 A game ENDED sales: #1745 Win Pigs Fly (ended 08/12/2026). Started 07/2025.
-- 🔵 A game ENDED sales: #1749 Simply A Buck (ended 08/12/2026). Started 08/2025.
-- 🔵 A game ENDED sales: #1754 Mini Monsters $100 Blowout (ended 08/12/2026). Started 09/2025.
-- 🔵 A game ENDED sales: #1760 Snow Place Like Home (ended 08/12/2026). Started 11/2025.
-- 🔵 A game ENDED sales: #1761 Ho Ho Ho (ended 08/12/2026). Started 11/2025.
+Nothing ended and nothing crossed your low-prize threshold since the last run.
 
 ## 🆕 New games just on sale (6)
 
