@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}Staff — Valley Lotto{% endblock %}
+{% block body %}
+<div class="card">
+  <h2 style="margin:0 0 4px">Staff &amp; PINs</h2>
+  <p class="muted" style="font-size:13px">
+    People who can unlock a shift on this store's devices. The store account stays
+    signed in; each person enters their own PIN so counts are attributed to them.
+  </p>
+  {% if error %}<div class="flash err">{{ error }}</div>{% endif %}
+
+  <form method="post" class="row" style="align-items:flex-end;gap:8px">
+    <input type="hidden" name="action" value="add">
+    <div style="flex:2;min-width:140px">
+      <label>Name</label>
+      <input type="text" name="name" placeholder="Priya" required>
+    </div>
+    <div style="flex:1;min-width:110px">
+      <label>PIN (4–8 digits)</label>
+      <input type="text" name="pin" inputmode="numeric" pattern="\d{4,8}" required>
+    </div>
+    <button class="primary" type="submit">Add person</button>
+  </form>
+</div>
+
+<div class="card">
+  <b>People ({{ staff|length }})</b>
+  {% if staff %}
+  <table>
+    <thead><tr><th>Name</th><th>Role</th><th>Reset PIN</th><th></th></tr></thead>
+    <tbody>
+    {% for s in staff %}
+      <tr>
+        <td><b>{{ s.name }}</b>{% if staff_name == s.name %} <span class="muted">(you)</span>{% endif %}</td>
+        <td class="muted">{{ s.role }}</td>
+        <td>
+          <form method="post" class="row" style="gap:6px">
+            <input type="hidden" name="action" value="reset_pin">
+            <input type="hidden" name="staff_id" value="{{ s.id }}">
+            <input type="text" name="pin" inputmode="numeric" pattern="\d{4,8}"
+                   placeholder="new PIN" style="width:110px;padding:6px" required>
+            <button style="padding:6px 10px;font-size:12px">Set</button>
+          </form>
+        </td>
+        <td>
+          <form method="post" onsubmit="return confirm('Remove {{ s.name }}?')">
+            <input type="hidden" name="action" value="remove">
+            <input type="hidden" name="staff_id" value="{{ s.id }}">
+            <button style="padding:6px 10px;font-size:12px">Remove</button>
+          </form>
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+    <p class="muted">No one yet. Until you add someone, scanning works without a PIN.</p>
+  {% endif %}
+</div>
+{% endblock %}

@@ -60,8 +60,12 @@
         <a href="{{ url_for('weights_page') }}">Emphasis</a> ·
         <a href="{{ url_for('count') }}">Scan</a> ·
         <a href="{{ url_for('report') }}">Sales</a> ·
-        <form method="post" action="{{ url_for('logout') }}" style="display:inline">
-          <button style="padding:4px 10px;font-size:13px">Log out</button></form>
+        <a href="{{ url_for('staff_page') }}">Staff</a> ·
+        {% if staff_name %}
+          <a href="{{ url_for('pin') }}" title="switch user">👤 {{ staff_name }}</a> ·
+        {% endif %}
+        <a class="btn" href="{{ url_for('logout_confirm') }}"
+           style="padding:4px 10px;font-size:13px">Log out</a>
       {% endif %}
     </div>
   </header>

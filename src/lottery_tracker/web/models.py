@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from sqlalchemy import String, Integer, Float, DateTime, Text, UniqueConstraint
+from sqlalchemy import String, Integer, Float, Boolean, DateTime, Text, UniqueConstraint
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
@@ -99,3 +99,29 @@ class ActiveCount(Base):
     user_email: Mapped[str | None] = mapped_column(String(255), nullable=True)
     state_json: Mapped[str] = mapped_column(Text)   # CountSession.to_state() as JSON
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+
+
+class StaffRow(Base):
+    """A person who works at a store, unlocked by a short PIN.
+
+    Two layers on purpose: the *device* stays signed in to the store account
+    (email + password, entered once), and each person unlocks their shift with a
+    PIN. That keeps a counter tablet usable all day without anyone typing a
+    password, while still attributing every scan to a named person.
+
+    The PIN is hashed, never stored in the clear. PINs are short by nature, so
+    they are only ever accepted for staff *within one store* and are not a
+    substitute for the store password — you cannot reach the site with a PIN
+    alone.
+    """
+
+    __tablename__ = "staff"
+    __table_args__ = (UniqueConstraint("store", "name", name="uq_staff_store_name"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    store: Mapped[str] = mapped_column(String(64), index=True, default="default")
+    name: Mapped[str] = mapped_column(String(64))
+    pin_hash: Mapped[str] = mapped_column(String(255))
+    role: Mapped[str] = mapped_column(String(32), default="clerk")   # "clerk" | "manager"
+    active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)

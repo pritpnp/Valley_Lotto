@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}Who's working? — Valley Lotto{% endblock %}
+{% block body %}
+<style>
+  .people { display:grid; grid-template-columns:repeat(auto-fill,minmax(110px,1fr)); gap:10px; }
+  .person { padding:14px 8px; border:1px solid var(--line); border-radius:12px;
+            background:var(--panel2); text-align:center; font-weight:700; cursor:pointer; }
+  .person.sel { outline:2px solid var(--accent); }
+  .pinbox { font-size:30px; text-align:center; letter-spacing:10px; }
+  .keys { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:12px; }
+  .keys button { padding:20px 0; font-size:24px; font-weight:700; }
+</style>
+
+<div class="card">
+  <h2 style="margin:0 0 4px">Who's working?</h2>
+  <p class="muted" style="font-size:13px">
+    Pick your name and enter your PIN. The store stays signed in — this just
+    records who is doing the counts.
+  </p>
+  {% if error %}<div class="flash err">{{ error }}</div>{% endif %}
+
+  <form method="post" id="pinForm">
+    <input type="hidden" name="next" value="{{ next }}">
+    <input type="hidden" name="staff_id" id="staffId" value="">
+
+    {% if staff %}
+      <div class="people">
+        {% for s in staff %}
+          <div class="person" data-id="{{ s.id }}" onclick="pick(this)">{{ s.name }}</div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="flash warn">No staff set up yet. <a href="{{ url_for('staff_page') }}">Add people →</a></div>
+    {% endif %}
+
+    <label style="margin-top:16px">PIN</label>
+    <input class="pinbox" type="password" name="pin" id="pinInput"
+           inputmode="numeric" autocomplete="off" maxlength="8" required>
+
+    <div class="keys">
+      {% for n in ['1','2','3','4','5','6','7','8','9'] %}
+        <button type="button" onclick="tap('{{ n }}')">{{ n }}</button>
+      {% endfor %}
+      <button type="button" onclick="clr()">Clear</button>
+      <button type="button" onclick="tap('0')">0</button>
+      <button class="primary" type="submit">Enter</button>
+    </div>
+  </form>
+</div>
+
+<script>
+  function pick(el){
+    document.querySelectorAll(".person").forEach(p => p.classList.remove("sel"));
+    el.classList.add("sel");
+    document.getElementById("staffId").value = el.dataset.id;
+    document.getElementById("pinInput").focus();
+  }
+  function tap(n){ const i = document.getElementById("pinInput"); i.value += n; }
+  function clr(){ document.getElementById("pinInput").value = ""; }
+  document.getElementById("pinInput").focus();
+</script>
+{% endblock %}

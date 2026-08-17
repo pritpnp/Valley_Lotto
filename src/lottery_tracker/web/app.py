@@ -16,7 +16,7 @@ from __future__ import annotations
 import json
 import os
 import re
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from functools import wraps
 from pathlib import Path
 
@@ -32,7 +32,8 @@ from ..session import CountSession, standard_slots
 from ..reporting import daily_report, render_daily_report_md
 from ..config import Config
 from ..rules import RATING_FACTORS
-from .models import Base, User, ScanRow, ActiveCount, InventoryRow, EmphasisRow
+from .models import (Base, User, ScanRow, ActiveCount, InventoryRow, EmphasisRow,
+                     StaffRow)
 
 # The KEEP/SEND-BACK engine. pa_data is framework-neutral (it imports only from
 # lottery_tracker), so the dashboard math is shared with the FastAPI app and the
@@ -158,6 +159,7 @@ def create_app(config: dict | None = None) -> Flask:
         SLOTS=_parse_slots(cfg.get("SLOTS", _env("SLOTS"))),
     )
 
+    app.permanent_session_lifetime = timedelta(days=90)   # keep the device signed in
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     engine = create_engine(_normalize_db_url(db_url), future=True,
                            connect_args={"check_same_thread": False} if db_url.startswith("sqlite") else {})
@@ -178,11 +180,34 @@ def _db():
 # Auth
 # --------------------------------------------------------------------------- #
 def login_required(view):
+    """Layer 1: the device must be signed in to a STORE account."""
     @wraps(view)
     def wrapped(*a, **kw):
         if not session.get("user_id"):
             return redirect(url_for("login", next=request.path))
         return view(*a, **kw)
+    return wrapped
+
+
+def staff_required(view):
+    """Layer 2: a person must be unlocked by PIN.
+
+    The store login stays put; this only asks *who* is working. Pages that
+    record who did something (scanning) use this; read-only pages don't need to.
+    If the store has no staff configured yet, this is a no-op so a brand-new
+    install isn't locked out of its own scanner.
+    """
+    @wraps(view)
+    def wrapped(*a, **kw):
+        if not session.get("user_id"):
+            return redirect(url_for("login", next=request.path))
+        if session.get("staff_id"):
+            return view(*a, **kw)
+        has_staff = _db().scalar(select(StaffRow).where(
+            StaffRow.store == g.store, StaffRow.active.is_(True)).limit(1))
+        if has_staff is None:
+            return view(*a, **kw)          # no PINs set up yet
+        return redirect(url_for("pin", next=request.path))
     return wrapped
 
 
@@ -198,6 +223,17 @@ def _register_routes(app: Flask):
     @app.before_request
     def _open_db():
         g.session_factory = app.config["SESSION_FACTORY"]
+        g.store = app.config["DEFAULT_STORE"]
+        # The store login is meant to persist on a counter device for weeks, so
+        # the clerk never types a password; the PIN layer identifies the person.
+        session.permanent = True
+
+    @app.context_processor
+    def _inject_identity():
+        """Every page shows who's signed in (store) and who's working (person),
+        so routes don't each have to pass them."""
+        return {"email": session.get("email"),
+                "staff_name": session.get("staff_name")}
 
     @app.teardown_request
     def _close_db(exc):
@@ -252,6 +288,15 @@ def _register_routes(app: Flask):
             session["email"] = user.email
             return redirect(request.args.get("next") or url_for("count"))
         return render_template("login.html", error=None, email="")
+
+    @app.get("/logout")
+    def logout_confirm():
+        """Ask before signing the STORE out — on a counter device that means
+        re-entering the store password, which a clerk usually can't do."""
+        if not session.get("user_id"):
+            return redirect(url_for("login"))
+        return render_template("logout.html", email=session.get("email"),
+                               staff_name=session.get("staff_name"))
 
     @app.post("/logout")
     def logout():
@@ -312,7 +357,7 @@ def _register_routes(app: Flask):
 
     # --- scan page & API --------------------------------------------------
     @app.get("/count")
-    @login_required
+    @staff_required
     def count():
         cs = _load_session()
         return render_template("count.html", has_active=cs is not None,
@@ -320,12 +365,12 @@ def _register_routes(app: Flask):
                                email=session.get("email"))
 
     @app.post("/count/start")
-    @login_required
+    @staff_required
     def count_start():
         body = request.get_json(silent=True) or {}
         label = request.form.get("session") or body.get("session") or "morning"
         cs = CountSession(slots=app.config["SLOTS"], store=_store(),
-                          session=label, user=session.get("email"),
+                          session=label, user=session.get("staff_name") or session.get("email"),
                           known_games=_known_games())
         _save_session(cs)
         return jsonify(_state_payload(cs))
@@ -337,13 +382,13 @@ def _register_routes(app: Flask):
         return cs
 
     @app.get("/api/state")
-    @login_required
+    @staff_required
     def api_state():
         cs = _load_session()
         return jsonify(_state_payload(cs) if cs else {"current_slot": None, "complete": False, "slots": []})
 
     @app.post("/api/scan")
-    @login_required
+    @staff_required
     def api_scan():
         cs = _require_session()
         raw = (request.get_json(silent=True) or {}).get("raw", "")
@@ -352,7 +397,7 @@ def _register_routes(app: Flask):
         return jsonify(_state_payload(cs, step))
 
     @app.post("/api/rescan")
-    @login_required
+    @staff_required
     def api_rescan():
         cs = _require_session()
         body = request.get_json(silent=True) or {}
@@ -361,7 +406,7 @@ def _register_routes(app: Flask):
         return jsonify(_state_payload(cs, step))
 
     @app.post("/api/back")
-    @login_required
+    @staff_required
     def api_back():
         cs = _require_session()
         step = cs.back()
@@ -369,7 +414,7 @@ def _register_routes(app: Flask):
         return jsonify(_state_payload(cs, step))
 
     @app.post("/api/skip")
-    @login_required
+    @staff_required
     def api_skip():
         cs = _require_session()
         step = cs.skip()
@@ -377,7 +422,7 @@ def _register_routes(app: Flask):
         return jsonify(_state_payload(cs, step))
 
     @app.post("/api/goto")
-    @login_required
+    @staff_required
     def api_goto():
         cs = _require_session()
         step = cs.goto((request.get_json(silent=True) or {}).get("slot", ""))
@@ -385,7 +430,7 @@ def _register_routes(app: Flask):
         return jsonify(_state_payload(cs, step))
 
     @app.post("/api/commit")
-    @login_required
+    @staff_required
     def api_commit():
         cs = _require_session()
         scans = cs.finalize()
@@ -396,6 +441,88 @@ def _register_routes(app: Flask):
         _db().commit()
         _clear_session()
         return jsonify({"committed": len(scans), "date": _today()})
+
+    # --- who is working: PIN layer ----------------------------------------
+    def _staff_list(active_only: bool = True):
+        q = select(StaffRow).where(StaffRow.store == _store())
+        if active_only:
+            q = q.where(StaffRow.active.is_(True))
+        return _db().scalars(q.order_by(StaffRow.name)).all()
+
+    @app.route("/pin", methods=["GET", "POST"])
+    @login_required
+    def pin():
+        """Unlock a shift with a PIN. The store stays signed in either way."""
+        staff = _staff_list()
+        nxt = request.args.get("next") or request.form.get("next") or url_for("count")
+        if request.method == "POST":
+            entered = (request.form.get("pin") or "").strip()
+            who = request.form.get("staff_id")
+            # Match the PIN against the named person, or any person if none picked.
+            candidates = [s for s in staff if str(s.id) == str(who)] if who else staff
+            for member in candidates:
+                if entered and check_password_hash(member.pin_hash, entered):
+                    session["staff_id"] = member.id
+                    session["staff_name"] = member.name
+                    return redirect(nxt)
+            return render_template("pin.html", staff=staff, error="Wrong PIN.",
+                                   next=nxt, email=session.get("email"),
+                                   staff_name=session.get("staff_name"))
+        return render_template("pin.html", staff=staff, error=None, next=nxt,
+                               email=session.get("email"),
+                               staff_name=session.get("staff_name"))
+
+    @app.post("/pin/clear")
+    @login_required
+    def pin_clear():
+        """End this person's shift without signing the store out."""
+        session.pop("staff_id", None)
+        session.pop("staff_name", None)
+        return redirect(url_for("pin"))
+
+    @app.route("/staff", methods=["GET", "POST"])
+    @login_required
+    def staff_page():
+        """Manage who can sign in with a PIN at this store."""
+        error = None
+        if request.method == "POST":
+            action = request.form.get("action") or "add"
+            if action == "add":
+                name = (request.form.get("name") or "").strip()
+                pin_val = (request.form.get("pin") or "").strip()
+                if not name or not pin_val:
+                    error = "Name and PIN are required."
+                elif not re.fullmatch(r"\d{4,8}", pin_val):
+                    error = "PIN must be 4-8 digits."
+                elif _db().scalar(select(StaffRow).where(
+                        StaffRow.store == _store(), StaffRow.name == name)):
+                    error = f"{name} already exists."
+                else:
+                    _db().add(StaffRow(store=_store(), name=name,
+                                       pin_hash=generate_password_hash(pin_val),
+                                       role=request.form.get("role") or "clerk"))
+                    _db().commit()
+            elif action == "remove":
+                row = _db().get(StaffRow, int(request.form.get("staff_id") or 0))
+                if row and row.store == _store():
+                    _db().delete(row)
+                    _db().commit()
+                    if session.get("staff_id") == row.id:
+                        session.pop("staff_id", None)
+                        session.pop("staff_name", None)
+            elif action == "reset_pin":
+                row = _db().get(StaffRow, int(request.form.get("staff_id") or 0))
+                pin_val = (request.form.get("pin") or "").strip()
+                if row and row.store == _store() and re.fullmatch(r"\d{4,8}", pin_val):
+                    row.pin_hash = generate_password_hash(pin_val)
+                    _db().commit()
+                else:
+                    error = "PIN must be 4-8 digits."
+            if not error:
+                return redirect(url_for("staff_page"))
+        return render_template("staff.html", staff=_staff_list(active_only=False),
+                               error=error, email=session.get("email"),
+                               staff_name=session.get("staff_name"))
 
     # --- KEEP / SEND-BACK dashboard ---------------------------------------
     # The rating math is imported (pa_data -> lottery_tracker.rules), so these
