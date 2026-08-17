@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Catalog — Valley Lotto{% endblock %}
+{% block body %}
+<style>
+  .row-keep td { background: rgba(34,197,94,.07); }
+  .row-send td { background: rgba(239,68,68,.07); }
+  .rating { font-variant-numeric:tabular-nums; font-weight:700; }
+  td, th { font-size:13.5px; }
+  .scroll { overflow-x:auto; }
+</style>
+<div class="card">
+  <div class="row" style="justify-content:space-between;align-items:baseline">
+    <h2 style="margin:0">Full PA catalog — ranked</h2>
+    <span class="muted" style="font-size:12px">PA data: {{ captured_at or '—' }}</span>
+  </div>
+  <p class="muted" style="font-size:13px">Every active PA game, rated with your emphasis. ★ = you carry it.</p>
+
+  {% for price, rows in by_price.items() %}
+    <h3 style="margin:18px 0 4px">${{ '%g'|format(price) }}</h3>
+    <div class="scroll"><table>
+      <thead><tr><th>Rating</th><th>#</th><th>Game</th><th>Odds</th><th>% left</th>
+                 <th>Low-prize</th><th>Density</th><th></th></tr></thead>
+      <tbody>
+      {% for r in rows %}
+        <tr class="{% if r.rating is not none and r.rating >= 65 %}row-keep{% elif r.rating is not none and r.rating < cutoff %}row-send{% endif %}">
+          <td class="rating">{{ r.rating_str }}</td>
+          <td class="muted">{{ r.game_number }}</td>
+          <td>{% if r.carried %}★ {% endif %}{{ r.name }}</td>
+          <td>{% if r.odds_value %}1:{{ '%g'|format(r.odds_value) }}{% else %}—{% endif %}</td>
+          <td>{{ r.pct_all_str }}</td>
+          <td>{{ r.low_prize_str }}</td>
+          <td>
+            {%- if r.jackpot_density is none -%}—
+            {%- elif r.jackpot_significant -%}{{ '%.2f'|format(r.jackpot_density) }}
+            {%- else -%}<span class="muted" title="small-sample noise — ignored in rating">{{ '%.2f'|format(r.jackpot_density) }} n/s</span>
+            {%- endif -%}
+          </td>
+          <td>{% if not r.carried %}
+            <form method="post" action="{{ url_for('inventory_add') }}">
+              <input type="hidden" name="game_number" value="{{ r.game_number }}">
+              <input type="hidden" name="next" value="{{ url_for('catalog') }}">
+              <button style="padding:2px 8px;font-size:12px">+ carry</button></form>
+          {% endif %}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table></div>
+  {% else %}
+    <p class="muted">No catalog data yet — run the scraper to populate <code>data/state.json</code>.</p>
+  {% endfor %}
+</div>
+{% endblock %}

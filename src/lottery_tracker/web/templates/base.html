@@ -53,8 +53,13 @@
   <header class="bar">
     <div class="brand">🎟️ Valley Lotto</div>
     <div class="who">
-      {% if email %}<span class="muted">{{ email }}</span> ·
-        <a href="{{ url_for('report') }}">Report</a> ·
+      {% if email %}
+        <a href="{{ url_for('dashboard') }}">Dashboard</a> ·
+        <a href="{{ url_for('catalog') }}">Catalog</a> ·
+        <a href="{{ url_for('inventory') }}">Inventory</a> ·
+        <a href="{{ url_for('weights_page') }}">Emphasis</a> ·
+        <a href="{{ url_for('count') }}">Scan</a> ·
+        <a href="{{ url_for('report') }}">Sales</a> ·
         <form method="post" action="{{ url_for('logout') }}" style="display:inline">
           <button style="padding:4px 10px;font-size:13px">Log out</button></form>
       {% endif %}

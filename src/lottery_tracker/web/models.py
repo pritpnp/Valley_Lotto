@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from sqlalchemy import String, Integer, DateTime, Text, UniqueConstraint
+from sqlalchemy import String, Integer, Float, DateTime, Text, UniqueConstraint
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
@@ -51,6 +51,40 @@ class ScanRow(Base):
         return Scan(game_number=self.game_number, pack=self.pack, ticket=self.ticket,
                     scanned_at=self.scanned_at, store=self.store, slot=self.slot,
                     session=self.session, user=self.user_email, raw=self.raw)
+
+
+class InventoryRow(Base):
+    """A game this store currently carries. Mirrors lottery_app's store_inventory,
+    but keyed by the store slug so it works without the FastAPI app's store table."""
+
+    __tablename__ = "store_inventory"
+    __table_args__ = (UniqueConstraint("store", "game_number", name="uq_inv_store_game"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    store: Mapped[str] = mapped_column(String(64), index=True, default="default")
+    game_number: Mapped[str] = mapped_column(String(16), index=True)
+    added_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+
+
+class EmphasisRow(Base):
+    """Per-store emphasis sliders for the KEEP/SEND-BACK rating.
+
+    One notch multiplies that factor's base weight by 1.6**notch (see
+    ``RatingWeights.scaled``). 0 = neutral; the UI clamps to -3..+3.
+    """
+
+    __tablename__ = "store_emphasis"
+
+    store: Mapped[str] = mapped_column(String(64), primary_key=True)
+    odds: Mapped[float] = mapped_column(Float, default=0.0)
+    prizes_left: Mapped[float] = mapped_column(Float, default=0.0)
+    low_prize: Mapped[float] = mapped_column(Float, default=0.0)
+    low_prize_skew: Mapped[float] = mapped_column(Float, default=0.0)
+    jackpot_density: Mapped[float] = mapped_column(Float, default=0.0)
+
+    def to_emphasis(self) -> dict:
+        return {f: float(getattr(self, f)) for f in
+                ("odds", "prizes_left", "low_prize", "low_prize_skew", "jackpot_density")}
 
 
 class ActiveCount(Base):

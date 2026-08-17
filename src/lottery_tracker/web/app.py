@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 from datetime import datetime, timezone
 from functools import wraps
 from pathlib import Path
@@ -29,10 +30,25 @@ from ..scans import Scan, ScanLog
 from ..session import CountSession, standard_slots
 from ..reporting import daily_report, render_daily_report_md
 from ..config import Config
-from .models import Base, User, ScanRow, ActiveCount
+from ..rules import RATING_FACTORS
+from .models import Base, User, ScanRow, ActiveCount, InventoryRow, EmphasisRow
+
+# The KEEP/SEND-BACK engine. pa_data is framework-neutral (it imports only from
+# lottery_tracker), so the dashboard math is shared with the FastAPI app and the
+# static GitHub Pages report rather than reimplemented here.
+from lottery_app import pa_data
 
 ROOT = Path(__file__).resolve().parents[3]
 DATA_DIR = ROOT / "data"
+
+# Slider copy for the rating factors (same wording as the FastAPI dashboard).
+FACTOR_LABELS = {
+    "odds": ("Win odds", "Chance to win ANY prize (break-even shot)"),
+    "prizes_left": ("Prizes left", "How much of the whole game is still unsold"),
+    "low_prize": ("Low-prize stock", "Cheap, commonly-won prizes still in the pack"),
+    "low_prize_skew": ("Low-prize trend", "Penalize when cheap prizes drain faster than the rest"),
+    "jackpot_density": ("Jackpot density", "Big prizes still available (for jackpot chasers)"),
+}
 
 
 # --------------------------------------------------------------------------- #
@@ -342,6 +358,139 @@ def _register_routes(app: Flask):
         _db().commit()
         _clear_session()
         return jsonify({"committed": len(scans), "date": _today()})
+
+    # --- KEEP / SEND-BACK dashboard ---------------------------------------
+    # The rating math is imported (pa_data -> lottery_tracker.rules), so these
+    # pages agree exactly with the twice-daily static report and never re-derive
+    # the algorithm.
+    def _catalog():
+        return pa_data.load_catalog(DATA_DIR / "state.json")
+
+    def _inventory() -> set:
+        rows = _db().scalars(select(InventoryRow).where(InventoryRow.store == _store())).all()
+        return {r.game_number for r in rows}
+
+    def _emphasis_row() -> EmphasisRow:
+        row = _db().get(EmphasisRow, _store())
+        if row is None:
+            row = EmphasisRow(store=_store())
+            _db().add(row)
+            _db().commit()
+        return row
+
+    def _cfg() -> Config:
+        try:
+            return Config.load(str(ROOT / "config.yaml"))
+        except Exception:  # noqa: BLE001 — a bad config must not take the app down
+            return Config({})
+
+    def _effective_weights():
+        """Base weights from config.yaml, scaled by this store's sliders."""
+        cfg = _cfg()
+        return cfg.rating_weights.scaled(_emphasis_row().to_emphasis()), cfg
+
+    @app.get("/dashboard")
+    @login_required
+    def dashboard():
+        cat = _catalog()
+        inv = _inventory()
+        weights, cfg = _effective_weights()
+        rows = pa_data.store_rows(cat, inv, cfg.thresholds, weights)
+        return render_template(
+            "dashboard.html", email=session.get("email"),
+            rows=rows, summary=pa_data.store_summary(rows),
+            captured_at=cat.captured_at, weights=weights,
+            new_games=pa_data.new_games(cat, within_days=14, weights=weights),
+            bring_in=pa_data.bring_in_candidates(
+                cat, inv, cfg.thresholds, weights=weights,
+                min_left=cfg.bring_in_min_left, per_price=cfg.bring_in_per_price),
+        )
+
+    @app.get("/catalog")
+    @login_required
+    def catalog():
+        cat = _catalog()
+        inv = _inventory()
+        weights, cfg = _effective_weights()
+        rows = pa_data.catalog_rankings(cat, cfg.thresholds, weights, inventory=inv)
+        by_price: dict = {}
+        for r in rows:
+            by_price.setdefault(r["price"] or 0, []).append(r)
+        by_price = dict(sorted(by_price.items(), key=lambda kv: -kv[0]))
+        return render_template("catalog.html", email=session.get("email"),
+                               by_price=by_price, cutoff=weights.cutoff,
+                               captured_at=cat.captured_at)
+
+    @app.get("/inventory")
+    @login_required
+    def inventory():
+        cat = _catalog()
+        inv = _inventory()
+        weights, cfg = _effective_weights()
+        games = cat.games
+        carried = sorted((games[n] for n in inv if n in games),
+                         key=lambda g: (-(g.price or 0), g.game_number))
+        missing = sorted(n for n in inv if n not in games)
+        available = sorted((g for n, g in games.items()
+                            if g.status == "active" and n not in inv),
+                           key=lambda g: (-(g.price or 0), g.game_number))
+        return render_template("inventory.html", email=session.get("email"),
+                               carried=carried, missing=missing, available=available)
+
+    @app.post("/inventory/add")
+    @login_required
+    def inventory_add():
+        raw = (request.form.get("game_number") or "").strip()
+        added = 0
+        for num in re.split(r"[\s,]+", raw):
+            num = num.strip()
+            if not num:
+                continue
+            exists = _db().scalar(select(InventoryRow).where(
+                InventoryRow.store == _store(), InventoryRow.game_number == num))
+            if not exists:
+                _db().add(InventoryRow(store=_store(), game_number=num))
+                added += 1
+        if added:
+            _db().commit()
+        return redirect(request.form.get("next") or url_for("inventory"))
+
+    @app.post("/inventory/remove")
+    @login_required
+    def inventory_remove():
+        num = (request.form.get("game_number") or "").strip()
+        row = _db().scalar(select(InventoryRow).where(
+            InventoryRow.store == _store(), InventoryRow.game_number == num))
+        if row:
+            _db().delete(row)
+            _db().commit()
+        return redirect(request.form.get("next") or url_for("inventory"))
+
+    @app.route("/weights", methods=["GET", "POST"])
+    @login_required
+    def weights_page():
+        row = _emphasis_row()
+        if request.method == "POST":
+            for f in RATING_FACTORS:
+                try:
+                    v = float(request.form.get(f, 0.0) or 0.0)
+                except ValueError:
+                    v = 0.0
+                setattr(row, f, max(-3.0, min(3.0, v)))   # clamp to the slider range
+            _db().commit()
+            return redirect(url_for("weights_page"))
+
+        cfg = _cfg()
+        base = cfg.rating_weights
+        effective = base.scaled(row.to_emphasis())
+        total = sum(getattr(effective, f) for f in RATING_FACTORS) or 1.0
+        sliders = [{
+            "key": f, "label": FACTOR_LABELS[f][0], "desc": FACTOR_LABELS[f][1],
+            "value": getattr(row, f), "base": getattr(base, f),
+            "eff_pct": 100 * getattr(effective, f) / total,
+        } for f in RATING_FACTORS]
+        return render_template("weights.html", email=session.get("email"),
+                               sliders=sliders, cutoff=effective.cutoff)
 
     # --- report -----------------------------------------------------------
     @app.get("/report")
