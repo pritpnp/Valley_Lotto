@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+{% block title %}Count — Valley Lotto{% endblock %}
+{% block body %}
+<style>
+  .big-prompt { font-size:15px; color:var(--muted); }
+  .big-slot { font-size:44px; font-weight:800; letter-spacing:1px; margin:2px 0 8px; }
+  #scan { font-size:22px; text-align:center; letter-spacing:1px; }
+  .progress { font-variant-numeric: tabular-nums; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(64px,1fr)); gap:8px; margin-top:8px; }
+  .box { border:1px solid var(--line); border-radius:10px; padding:8px 6px; text-align:center;
+    background:var(--pending); cursor:pointer; user-select:none; }
+  .box .lbl { font-weight:700; font-size:14px; }
+  .box .sub { font-size:11px; color:var(--muted); min-height:13px; }
+  .box.scanned { background:var(--ok-bg); border-color:transparent; }
+  .box.current { outline:2px solid var(--accent); }
+  .box.fixing { outline:2px dashed var(--warn); }
+  .hint { font-size:13px; color:var(--muted); }
+  .done-banner { background:var(--ok-bg); }
+</style>
+
+<div id="start" class="card" style="display:none">
+  <h2>Start a count</h2>
+  <p class="muted">Pick which count this is, then scan every box in order.</p>
+  <div class="row">
+    <button class="primary" onclick="startCount('morning')">Morning</button>
+    <button onclick="startCount('midday')">Midday</button>
+    <button onclick="startCount('night')">Night</button>
+  </div>
+</div>
+
+<div id="live" style="display:none">
+  <div class="card">
+    <div class="row" style="justify-content:space-between;align-items:center">
+      <div><span id="sessLabel" class="muted"></span></div>
+      <div class="progress muted"><b id="doneN">0</b> / <span id="totalN">0</span></div>
+    </div>
+    <div id="fixBanner" class="flash warn" style="display:none"></div>
+    <div class="big-prompt" id="promptLine">Scan box</div>
+    <div class="big-slot" id="slotName">—</div>
+    <input id="scan" type="text" inputmode="none" autocomplete="off" autocapitalize="off"
+           spellcheck="false" placeholder="scan here…">
+    <div id="result" class="flash" style="display:none"></div>
+    <div class="row" style="margin-top:12px">
+      <button onclick="back()">◀ Back</button>
+      <button onclick="skip()">Skip</button>
+      <button class="primary" id="finishBtn" onclick="commit()">Finish &amp; Save</button>
+    </div>
+    <p class="hint">Tip: the gun types the barcode and this jumps to the next box automatically.
+       Tap any box below to fix it without losing your place.</p>
+  </div>
+
+  <div class="card">
+    <div class="row" style="justify-content:space-between">
+      <b>Boxes</b><span class="hint">green = scanned · blue = current · tap to fix</span>
+    </div>
+    <div id="grid" class="grid"></div>
+  </div>
+</div>
+
+<script>
+const INITIAL = {{ state|tojson }};
+let state = INITIAL;
+let fixSlot = null;
+
+const $ = id => document.getElementById(id);
+const scanEl = $("scan");
+
+async function postJSON(url, body) {
+  const r = await fetch(url, {method:"POST", headers:{"Content-Type":"application/json"},
+                             body: JSON.stringify(body||{})});
+  if (!r.ok) { const t = await r.text(); throw new Error(t || r.status); }
+  return r.json();
+}
+
+function startCount(label){ postJSON("{{ url_for('count_start') }}", {session:label}).then(applyState); }
+
+function applyState(s){
+  state = s;
+  if (!s || (s.current_slot===null && (!s.slots || s.slots.length===0) && !s.complete)) {
+    $("start").style.display = "block"; $("live").style.display = "none"; return;
+  }
+  $("start").style.display = "none"; $("live").style.display = "block";
+  $("sessLabel").textContent = (s.session||"").toUpperCase() + " count";
+  $("doneN").textContent = s.done; $("totalN").textContent = s.total;
+
+  // current prompt
+  if (s.complete && !fixSlot) {
+    $("promptLine").textContent = "All boxes scanned 🎉";
+    $("slotName").textContent = "Finish & Save";
+  } else {
+    $("promptLine").textContent = fixSlot ? "Fixing box" : "Scan box";
+    $("slotName").textContent = fixSlot || s.current_slot || "—";
+  }
+
+  // fix banner
+  if (fixSlot) {
+    $("fixBanner").style.display = "block";
+    $("fixBanner").innerHTML = "Fixing <b>"+fixSlot+"</b> — scan its ticket, or " +
+      "<a href='#' onclick='cancelFix();return false'>cancel</a>.";
+  } else { $("fixBanner").style.display = "none"; }
+
+  // step result / warning
+  const res = $("result");
+  if (s.step) {
+    res.style.display = "block";
+    res.className = "flash " + (s.step.ok ? (s.step.warning ? "warn" : "ok") : "err");
+    res.textContent = s.step.message + (s.step.warning ? "  ⚠ " + s.step.warning : "");
+  } else { res.style.display = "none"; }
+
+  // grid
+  const g = $("grid"); g.innerHTML = "";
+  (s.slots||[]).forEach(b => {
+    const d = document.createElement("div");
+    d.className = "box" + (b.scanned ? " scanned" : "") +
+      (b.slot===s.current_slot && !fixSlot ? " current" : "") +
+      (b.slot===fixSlot ? " fixing" : "");
+    d.innerHTML = "<div class='lbl'>"+b.slot+"</div><div class='sub'>" +
+      (b.scanned ? ("#"+String(b.ticket).padStart(3,"0")) : "") + "</div>";
+    d.onclick = () => setFix(b.slot);
+    g.appendChild(d);
+  });
+  scanEl.focus();
+}
+
+function setFix(slot){ fixSlot = slot; applyState(state); scanEl.focus(); }
+function cancelFix(){ fixSlot = null; applyState(state); }
+
+// Guard against double submission: guns vary — some send Enter, and the
+// auto-submit debounce may also fire. Ignore an identical scan within 1s and
+// don't overlap in-flight requests.
+let busy = false, lastRaw = "", lastAt = 0, debounce;
+async function submitScan(raw){
+  raw = (raw||"").trim();
+  clearTimeout(debounce);
+  if (!raw || busy) return;
+  const t = Date.now();
+  if (raw === lastRaw && (t - lastAt) < 1000) return;   // same barcode fired twice
+  busy = true; lastRaw = raw; lastAt = t; scanEl.value = "";
+  try {
+    let s;
+    if (fixSlot) { s = await postJSON("{{ url_for('api_rescan') }}", {slot:fixSlot, raw}); fixSlot = null; }
+    else { s = await postJSON("{{ url_for('api_scan') }}", {raw}); }
+    applyState(s);
+  } catch(e){ alert("Scan failed: " + e.message); scanEl.focus(); }
+  finally { busy = false; }
+}
+
+// Enter submits; also auto-submit when a full barcode is present (guns vary on Enter).
+scanEl.addEventListener("keydown", e => { if (e.key==="Enter"){ e.preventDefault(); submitScan(scanEl.value); }});
+scanEl.addEventListener("input", () => {
+  clearTimeout(debounce);
+  const v = scanEl.value.trim();
+  if (/^\d{4}[-\s]?\d{7}[-\s]?\d{3}$/.test(v)) debounce = setTimeout(()=>submitScan(scanEl.value.trim()), 140);
+});
+
+async function back(){ applyState(await postJSON("{{ url_for('api_back') }}")); }
+async function skip(){ applyState(await postJSON("{{ url_for('api_skip') }}")); }
+async function commit(){
+  if (!confirm("Save this count?")) return;
+  const r = await postJSON("{{ url_for('api_commit') }}");
+  window.location = "{{ url_for('report') }}";
+}
+
+// keep focus on the scan field (gun needs it focused)
+document.addEventListener("click", e => { if (!e.target.closest("button,a,.box")) scanEl.focus(); });
+applyState(INITIAL);
+</script>
+{% endblock %}

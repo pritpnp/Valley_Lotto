@@ -10,3 +10,5 @@ debug/
 # App database (per-deployment; never commit store logins/inventory)
 data/app.db
 data/app.db-*
+*.db
+data/*.db

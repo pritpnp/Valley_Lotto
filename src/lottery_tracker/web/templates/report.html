@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Daily report — Valley Lotto{% endblock %}
+{% block body %}
+<div class="card">
+  <div class="row" style="justify-content:space-between;align-items:center">
+    <h2 style="margin:0">Daily sales</h2>
+    <form method="get" class="row" style="align-items:center;gap:8px">
+      <input type="date" name="date" value="{{ date }}"
+             style="width:auto;padding:8px" onchange="this.form.submit()">
+    </form>
+  </div>
+  <p class="muted" style="margin:6px 0 0">{{ report.store }} · {{ date }}</p>
+
+  <div class="flash ok" style="font-size:18px">
+    <b>{{ report.total_tickets }}</b> tickets sold
+    {% if report.total_revenue is not none %} · <b>${{ '%.2f'|format(report.total_revenue) }}</b>{% endif %}
+  </div>
+
+  {% if report.rows %}
+  <table>
+    <thead><tr><th>Box</th><th>Game</th><th>Sold</th><th>Revenue</th><th>Counts (ticket #)</th></tr></thead>
+    <tbody>
+    {% for r in report.rows %}
+      <tr>
+        <td><b>{{ r.slot or '—' }}</b></td>
+        <td>{{ r.game_number }}</td>
+        <td>{{ r.total_sold }}{% if r.estimated %} <span class="muted" title="bridged a pack change">*</span>{% endif %}</td>
+        <td>{% if r.revenue is not none %}${{ '%.2f'|format(r.revenue) }}{% else %}—{% endif %}</td>
+        <td class="muted">
+          {%- for c in r.counts -%}
+            {{ (c.session or c.scanned_at[11:16]) }}:{{ '%03d'|format(c.ticket) }}{% if not loop.last %} → {% endif %}
+          {%- endfor -%}
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% if report.rows | selectattr('estimated') | list %}
+    <p class="hint">* estimated across a pack changeover (bridged with the learned pack size).</p>
+  {% endif %}
+  {% else %}
+    <p class="muted">No scans for this date yet. <a href="{{ url_for('count') }}">Start a count →</a></p>
+  {% endif %}
+</div>
+
+<div class="card">
+  <b>By game</b>
+  <table>
+    <thead><tr><th>Game</th><th>Tickets</th><th>Revenue</th></tr></thead>
+    <tbody>
+      {% for game, g in report.per_game.items() %}
+      <tr><td>{{ game }}</td><td>{{ g.tickets }}</td>
+        <td>{% if g.revenue is not none %}${{ '%.2f'|format(g.revenue) }}{% else %}—{% endif %}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <p style="margin-top:14px"><a class="btn" href="{{ url_for('count') }}">← New count</a></p>
+</div>
+{% endblock %}

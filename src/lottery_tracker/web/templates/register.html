@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Create account — Valley Lotto{% endblock %}
+{% block body %}
+<div class="card">
+  <h2>Create account</h2>
+  {% if error %}<div class="flash err">{{ error }}</div>{% endif %}
+  <form method="post">
+    <label>Email</label>
+    <input type="email" name="email" value="{{ email }}" autocomplete="username" required>
+    <label>Password</label>
+    <input type="password" name="password" autocomplete="new-password" required>
+    {% if need_code %}
+    <label>Registration code <span class="muted">(from the owner)</span></label>
+    <input type="text" name="code" required>
+    {% endif %}
+    <div class="row" style="margin-top:16px">
+      <button class="primary" type="submit">Create account</button>
+      <a class="btn" href="{{ url_for('login') }}">Back to log in</a>
+    </div>
+  </form>
+</div>
+{% endblock %}
