@@ -32,7 +32,7 @@
     {% endif %}
     <a class="btn" href="{{ url_for('count') }}">Cancel</a>
     <form method="post" action="{{ url_for('logout') }}">
-      <button type="submit" style="background:var(--err-bg);color:#ef4444">
+      <button type="submit" style="background:var(--err-bg);color:var(--err)">
         Yes, sign the store out</button>
     </form>
   </div>

@@ -5,44 +5,89 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
   <title>{% block title %}Valley Lotto{% endblock %}</title>
   <style>
+    /* Brand palette, taken from the logo: gold sun, red heart, deep + leaf green.
+       Light is the default; dark redefines only the tokens, so every component
+       below is written once against the variables. */
     :root {
-      --bg: #0f1420; --panel: #1a2131; --panel2: #232c40; --ink: #eef2f8;
-      --muted: #9aa7bd; --line: #313c54; --accent: #3b82f6; --accent-ink: #fff;
-      --ok: #22c55e; --ok-bg: #0f3d24; --warn: #f59e0b; --warn-bg: #3d2f0f;
-      --err: #ef4444; --err-bg: #3d1616; --pending: #2a3348;
+      --brand-gold:  #FFCE00;
+      --brand-amber: #F7941E;
+      --brand-red:   #E01F26;
+      --brand-green: #00954C;   /* deep leaf */
+      --brand-leaf:  #8CC63E;   /* light leaf */
+
+      --bg:      #FAF7EC;       /* warm paper, picked up from the sun */
+      --panel:   #FFFFFF;
+      --panel2:  #F1EDDD;
+      --ink:     #17251C;       /* near-black with a green cast */
+      --muted:   #5F6F63;
+      --line:    #E4DFCC;
+      --pending: #EDE8D8;
+
+      --accent:     #0B7A43;    /* deep green — actions, links */
+      --accent-ink: #FFFFFF;
+
+      --ok:    #1F8A4C;  --ok-bg:   #E4F3E9;
+      --warn:  #9A5B00;  --warn-bg: #FDF1D8;
+      --err:   #C4181E;  --err-bg:  #FBE5E5;
     }
-    @media (prefers-color-scheme: light) {
-      :root {
-        --bg:#f4f6fb; --panel:#fff; --panel2:#eef2f8; --ink:#141a26; --muted:#5b6779;
-        --line:#dce3ee; --pending:#e6ebf4; --ok-bg:#dcfce7; --warn-bg:#fef3c7; --err-bg:#fee2e2;
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --bg:      #0E1611;
+        --panel:   #16211A;
+        --panel2:  #1F2D24;
+        --ink:     #E9F2EA;
+        --muted:   #9BB0A1;
+        --line:    #2C3E33;
+        --pending: #24332A;
+
+        --accent:     #34C271;
+        --accent-ink: #062B14;
+
+        --ok:    #4ADE80;  --ok-bg:   #10321F;
+        --warn:  #FBBF24;  --warn-bg: #3A2B0B;
+        --err:   #FF7A70;  --err-bg:  #3A1717;
       }
+    }
+    :root[data-theme="dark"] {
+      --bg:#0E1611; --panel:#16211A; --panel2:#1F2D24; --ink:#E9F2EA;
+      --muted:#9BB0A1; --line:#2C3E33; --pending:#24332A;
+      --accent:#34C271; --accent-ink:#062B14;
+      --ok:#4ADE80; --ok-bg:#10321F; --warn:#FBBF24; --warn-bg:#3A2B0B;
+      --err:#FF7A70; --err-bg:#3A1717;
     }
     * { box-sizing: border-box; }
     body { margin:0; background:var(--bg); color:var(--ink);
       font:16px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; }
     .wrap { max-width: 760px; margin: 0 auto; padding: 16px; }
     header.bar { display:flex; align-items:center; justify-content:space-between;
-      padding:12px 16px; border-bottom:1px solid var(--line); background:var(--panel); }
-    header.bar .brand { font-weight:700; letter-spacing:.2px; }
-    header.bar .who { color:var(--muted); font-size:13px; }
+      gap:12px; padding:10px 16px; background:var(--panel);
+      border-bottom:3px solid transparent;
+      border-image:linear-gradient(90deg,var(--brand-green),var(--brand-leaf),
+                   var(--brand-gold),var(--brand-amber),var(--brand-red)) 1; }
+    header.bar .brand { display:flex; align-items:center; gap:8px;
+      font-weight:800; letter-spacing:.2px; white-space:nowrap; }
+    header.bar .who { color:var(--muted); font-size:13px; text-align:right; }
     a { color:var(--accent); text-decoration:none; }
+    a:hover { text-decoration:underline; }
     .card { background:var(--panel); border:1px solid var(--line); border-radius:14px;
       padding:18px; margin:14px 0; }
     label { display:block; font-size:13px; color:var(--muted); margin:10px 0 4px; }
-    input[type=text], input[type=email], input[type=password] {
+    input[type=text], input[type=email], input[type=password], input[type=date] {
       width:100%; padding:14px; font-size:17px; border-radius:10px;
       border:1px solid var(--line); background:var(--panel2); color:var(--ink); }
-    button, .btn { cursor:pointer; border:none; border-radius:10px; padding:13px 16px;
+    input:focus { outline:2px solid var(--accent); outline-offset:1px; }
+    button, .btn { cursor:pointer; border-radius:10px; padding:13px 16px;
       font-size:16px; font-weight:600; background:var(--panel2); color:var(--ink);
       border:1px solid var(--line); }
-    button.primary, .btn.primary { background:var(--accent); color:var(--accent-ink); border-color:transparent; }
+    button.primary, .btn.primary { background:var(--accent); color:var(--accent-ink);
+      border-color:transparent; }
     button:active { transform: translateY(1px); }
     .row { display:flex; gap:10px; flex-wrap:wrap; }
     .muted { color:var(--muted); }
     .flash { padding:12px 14px; border-radius:10px; margin:10px 0; }
-    .flash.err { background:var(--err-bg); }
-    .flash.warn { background:var(--warn-bg); }
-    .flash.ok { background:var(--ok-bg); }
+    .flash.err  { background:var(--err-bg);  color:var(--err); }
+    .flash.warn { background:var(--warn-bg); color:var(--warn); }
+    .flash.ok   { background:var(--ok-bg);   color:var(--ok); }
     table { width:100%; border-collapse:collapse; }
     th,td { text-align:left; padding:8px 10px; border-bottom:1px solid var(--line); }
     th { color:var(--muted); font-weight:600; font-size:13px; }
@@ -51,7 +96,19 @@
 </head>
 <body>
   <header class="bar">
-    <div class="brand">🎟️ Valley Lotto</div>
+    <div class="brand">
+      <svg width="28" height="28" viewBox="0 0 64 64" aria-hidden="true" focusable="false">
+        <g fill="var(--brand-amber)">
+          <path d="M32 1l4 9h-8zM14 7l7 7-6 3zM50 7l-1 10-6-3zM3 22l9 4-8 4zM61 22l-1 8-8-4z"/>
+        </g>
+        <circle cx="32" cy="26" r="16" fill="var(--brand-gold)"/>
+        <path d="M32 37c-7-5-11-8-11-13a5.5 5.5 0 0 1 11-2.6A5.5 5.5 0 0 1 43 24c0 5-4 8-11 13z"
+              fill="var(--brand-red)"/>
+        <path d="M31 62C31 51 23 44 12 44c0 11 8 18 19 18z" fill="var(--brand-green)"/>
+        <path d="M33 62c0-11 8-18 19-18 0 11-8 18-19 18z" fill="var(--brand-leaf)"/>
+      </svg>
+      Valley Lotto
+    </div>
     <div class="who">
       {% if signed_in %}
         <a href="{{ url_for('dashboard') }}">Dashboard</a> ·
