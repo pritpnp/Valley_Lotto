@@ -1,5 +1,5 @@
 {
-  "captured_at": "2026-08-17T04:51:09Z",
+  "captured_at": "2026-08-17T16:35:54Z",
   "games": {
     "1000": {
       "claim_deadline": null,
@@ -19101,11 +19101,11 @@
       "total_is_estimate": true
     },
     "1705": {
-      "claim_deadline": null,
+      "claim_deadline": "9/4/2027 12:00:00 AM",
       "detail_id": "3277",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1705",
-      "last_changed": "2026-08-12T05:42:15Z",
+      "last_changed": "2026-08-17T16:35:54Z",
       "name": "$3,000,000 Golden Ticket",
       "odds": "1:3.17",
       "on_sale_date": "09/2024",
@@ -19137,7 +19137,7 @@
           "value": "$600"
         }
       ],
-      "sales_end_date": null,
+      "sales_end_date": "9/4/2026 12:00:00 AM",
       "source_pages": [
         "remaining"
       ],
@@ -20619,11 +20619,11 @@
       "total_is_estimate": false
     },
     "1736": {
-      "claim_deadline": null,
+      "claim_deadline": "9/28/2027 12:00:00 AM",
       "detail_id": "3310",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1736",
-      "last_changed": "2026-08-12T05:42:15Z",
+      "last_changed": "2026-08-17T16:35:54Z",
       "name": "High 5",
       "odds": "1:4.46",
       "on_sale_date": "04/2025",
@@ -20655,7 +20655,7 @@
           "value": "$100"
         }
       ],
-      "sales_end_date": null,
+      "sales_end_date": "9/28/2026 12:00:00 AM",
       "source_pages": [
         "remaining"
       ],
@@ -21027,11 +21027,11 @@
       "total_is_estimate": false
     },
     "1743": {
-      "claim_deadline": null,
+      "claim_deadline": "9/28/2027 12:00:00 AM",
       "detail_id": "3317",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1743",
-      "last_changed": "2026-08-12T05:42:15Z",
+      "last_changed": "2026-08-17T16:35:54Z",
       "name": "$50, $100 or $500",
       "odds": "1:9.12",
       "on_sale_date": "07/2025",
@@ -21051,7 +21051,7 @@
           "value": "$50"
         }
       ],
-      "sales_end_date": null,
+      "sales_end_date": "9/28/2026 12:00:00 AM",
       "source_pages": [
         "remaining"
       ],
@@ -21304,13 +21304,13 @@
       "total_is_estimate": false
     },
     "1748": {
-      "claim_deadline": "8/14/2027 12:00:00 AM",
+      "claim_deadline": null,
       "detail_id": "3322",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1748",
-      "last_changed": "2026-08-12T05:42:15Z",
+      "last_changed": "2026-08-17T16:35:54Z",
       "name": "Money Maker",
-      "odds": "1:4.45",
+      "odds": null,
       "on_sale_date": "08/2025",
       "payout_pct": null,
       "price": 5.0,
@@ -21340,28 +21340,18 @@
           "value": "$50"
         }
       ],
-      "sales_end_date": "8/14/2026 12:00:00 AM",
+      "sales_end_date": "08/14/2026",
       "source_pages": [
-        "remaining"
+        "remaining",
+        "sales_ended"
       ],
-      "status": "active",
-      "tickets_printed": 12000000,
-      "tier_originals": {
-        "10.0": 860000,
-        "1000.0": 60,
-        "150.0": 5700,
-        "200000.0": 10,
-        "25.0": 280000,
-        "40.0": 80000,
-        "5.0": 1240000,
-        "50.0": 140000,
-        "500.0": 2400,
-        "75.0": 90500
-      },
+      "status": "ended",
+      "tickets_printed": null,
+      "tier_originals": {},
       "top_prize_value": "$200,000",
       "top_prizes_remaining": 0,
-      "top_prizes_total": 10,
-      "total_is_estimate": false
+      "top_prizes_total": 0,
+      "total_is_estimate": true
     },
     "1749": {
       "claim_deadline": null,
@@ -21535,11 +21525,11 @@
       "total_is_estimate": false
     },
     "1752": {
-      "claim_deadline": null,
+      "claim_deadline": "9/28/2027 12:00:00 AM",
       "detail_id": "3326",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1752",
-      "last_changed": "2026-08-12T05:42:15Z",
+      "last_changed": "2026-08-17T16:35:54Z",
       "name": "Winning 7s",
       "odds": "1:4.94",
       "on_sale_date": "09/2025",
@@ -21571,7 +21561,7 @@
           "value": "$200"
         }
       ],
-      "sales_end_date": null,
+      "sales_end_date": "9/28/2026 12:00:00 AM",
       "source_pages": [
         "remaining"
       ],
@@ -22333,11 +22323,11 @@
       "total_is_estimate": false
     },
     "1766": {
-      "claim_deadline": null,
+      "claim_deadline": "9/28/2027 12:00:00 AM",
       "detail_id": "3340",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1766",
-      "last_changed": "2026-08-12T05:42:15Z",
+      "last_changed": "2026-08-17T16:35:54Z",
       "name": "LOVE IS BLIND",
       "odds": "1:4.54",
       "on_sale_date": "12/2025",
@@ -22369,7 +22359,7 @@
           "value": "$20"
         }
       ],
-      "sales_end_date": null,
+      "sales_end_date": "9/28/2026 12:00:00 AM",
       "source_pages": [
         "remaining"
       ],
@@ -22700,11 +22690,11 @@
       "total_is_estimate": false
     },
     "1772": {
-      "claim_deadline": null,
+      "claim_deadline": "9/28/2027 12:00:00 AM",
       "detail_id": "3346",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1772",
-      "last_changed": "2026-08-12T05:42:15Z",
+      "last_changed": "2026-08-17T16:35:54Z",
       "name": "Find the Leprechaun",
       "odds": "1:3.84",
       "on_sale_date": "01/2026",
@@ -22736,7 +22726,7 @@
           "value": "$30"
         }
       ],
-      "sales_end_date": null,
+      "sales_end_date": "9/28/2026 12:00:00 AM",
       "source_pages": [
         "remaining"
       ],

@@ -1,8 +1,8 @@
-# Valley Lotto report — 2026-08-17T04:51:09Z
+# Valley Lotto report — 2026-08-17T16:35:54Z
 
-## ✅ No new alerts
+## ⚠️ 1 new alert(s)
 
-Nothing ended and nothing crossed your low-prize threshold since the last run.
+- 🔵 A game ENDED sales: #1748 Money Maker (ended 08/14/2026). Started 08/2025.
 
 ## 🆕 New games just on sale (6)
 
