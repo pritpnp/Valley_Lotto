@@ -71,22 +71,46 @@ def _normalize_db_url(url: str) -> str:
     return url
 
 
+def _env(name: str, default: str | None = None) -> str | None:
+    """Read an env var, tolerating quotes.
+
+    Some hosting dashboards (Railway's raw editor among them) may pass values
+    through with the surrounding quotes intact, so SLOTS="48" can arrive as the
+    literal 6-character string. Strip them rather than crashing on boot.
+    """
+    val = os.environ.get(name, default)
+    if isinstance(val, str):
+        val = val.strip()
+        if len(val) >= 2 and val[0] == val[-1] and val[0] in "\"'":
+            val = val[1:-1].strip()
+    return val
+
+
 def _parse_slots(spec: str | None) -> list:
-    """Parse the SLOTS env into box labels.
+    """Parse the SLOTS setting into box labels.
       "48"          -> 1..48 (plain numeric — the current layout)
       "A:24,B:24"   -> A1..A24, B1..B24 (lettered units)
+    A malformed value falls back to the default layout instead of taking the
+    app down — a typo in a dashboard shouldn't cost you the whole site.
     """
     if not spec:
         return standard_slots()
+    if isinstance(spec, str):
+        spec = spec.strip().strip("\"'").strip()
     pairs = []
-    for part in spec.split(","):
-        part = part.strip()
-        if ":" in part:
-            letter, _, count = part.partition(":")
-            pairs.append((letter.strip(), int(count)))
-        elif part:
-            pairs.append(("", int(part)))   # bare number => plain 1..N
-    return standard_slots(tuple(pairs))
+    try:
+        for part in str(spec).split(","):
+            part = part.strip().strip("\"'").strip()
+            if not part:
+                continue
+            if ":" in part:
+                letter, _, count = part.partition(":")
+                pairs.append((letter.strip(), int(count.strip())))
+            else:
+                pairs.append(("", int(part)))   # bare number => plain 1..N
+    except (TypeError, ValueError):
+        return standard_slots()
+    return standard_slots(tuple(pairs)) if pairs else standard_slots()
 
 
 def _load_prices() -> dict:
@@ -111,18 +135,26 @@ def create_app(config: dict | None = None) -> Flask:
     app = Flask(__name__)
     cfg = config or {}
 
-    db_url = cfg.get("DATABASE_URL") or os.environ.get("DATABASE_URL") \
+    db_url = cfg.get("DATABASE_URL") or _env("DATABASE_URL") \
         or f"sqlite:///{DATA_DIR / 'valley.db'}"
-    secret = cfg.get("SECRET_KEY") or os.environ.get("SECRET_KEY")
+    if db_url.startswith("sqlite"):
+        # Loud, because on an ephemeral host (Railway/Render) this means every
+        # redeploy silently wipes accounts, inventory, and scans.
+        app.logger.warning(
+            "DATABASE_URL is not set — falling back to local SQLite at %s. "
+            "On a hosted platform this data is LOST on every redeploy; set "
+            "DATABASE_URL to your Postgres/Supabase connection string.", db_url)
+
+    secret = cfg.get("SECRET_KEY") or _env("SECRET_KEY")
     if not secret:
         app.logger.warning("SECRET_KEY not set — using an insecure dev key. Set it in prod!")
         secret = "dev-insecure-key-change-me"
 
     app.config.update(
         SECRET_KEY=secret,
-        REGISTER_CODE=cfg.get("REGISTER_CODE", os.environ.get("REGISTER_CODE")),
-        DEFAULT_STORE=cfg.get("DEFAULT_STORE", os.environ.get("DEFAULT_STORE", "valley")),
-        SLOTS=_parse_slots(cfg.get("SLOTS", os.environ.get("SLOTS"))),
+        REGISTER_CODE=cfg.get("REGISTER_CODE", _env("REGISTER_CODE")),
+        DEFAULT_STORE=cfg.get("DEFAULT_STORE", _env("DEFAULT_STORE", "valley")),
+        SLOTS=_parse_slots(cfg.get("SLOTS", _env("SLOTS"))),
     )
 
     DATA_DIR.mkdir(parents=True, exist_ok=True)
