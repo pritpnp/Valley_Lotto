@@ -20,8 +20,8 @@ from datetime import datetime, timedelta, timezone
 from functools import wraps
 from pathlib import Path
 
-from flask import (Flask, g, redirect, render_template, request, session,
-                   url_for, jsonify, abort)
+from flask import (Flask, current_app, g, redirect, render_template, request,
+                   session, url_for, jsonify, abort)
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -33,7 +33,7 @@ from ..reporting import daily_report, render_daily_report_md
 from ..config import Config
 from ..rules import RATING_FACTORS
 from .models import (Base, User, ScanRow, ActiveCount, InventoryRow, EmphasisRow,
-                     StaffRow)
+                     StaffRow, AccessRow)
 
 # The KEEP/SEND-BACK engine. pa_data is framework-neutral (it imports only from
 # lottery_tracker), so the dashboard math is shared with the FastAPI app and the
@@ -86,6 +86,13 @@ def _env(name: str, default: str | None = None) -> str | None:
         if len(val) >= 2 and val[0] == val[-1] and val[0] in "\"'":
             val = val[1:-1].strip()
     return val
+
+
+def _as_bool(val) -> bool:
+    """Env values arrive as strings: '1', 'true', 'yes', 'on' all mean True."""
+    if isinstance(val, bool):
+        return val
+    return str(val or "").strip().strip("\"'").lower() in {"1", "true", "yes", "on"}
 
 
 def _parse_slots(spec: str | None) -> list:
@@ -157,6 +164,11 @@ def create_app(config: dict | None = None) -> Flask:
         REGISTER_CODE=cfg.get("REGISTER_CODE", _env("REGISTER_CODE")),
         DEFAULT_STORE=cfg.get("DEFAULT_STORE", _env("DEFAULT_STORE", "valley")),
         SLOTS=_parse_slots(cfg.get("SLOTS", _env("SLOTS"))),
+        # PIN_ONLY drops the store email/password from the front end: the site
+        # opens straight to the PIN pad. Convenient on a counter device, but it
+        # means anyone with the URL only has a short PIN in their way — keep the
+        # URL private, and turn this off to restore the password gate.
+        PIN_ONLY=_as_bool(cfg.get("PIN_ONLY", _env("PIN_ONLY"))),
     )
 
     app.permanent_session_lifetime = timedelta(days=90)   # keep the device signed in
@@ -179,13 +191,66 @@ def _db():
 # --------------------------------------------------------------------------- #
 # Auth
 # --------------------------------------------------------------------------- #
+def client_ip() -> str:
+    """The real client address.
+
+    Behind Railway (and any proxy) ``remote_addr`` is the proxy, so prefer the
+    left-most entry of X-Forwarded-For, which is the original client. That header
+    is client-supplied and therefore spoofable — it's good enough to spot an
+    unfamiliar device, not to prove identity.
+    """
+    fwd = request.headers.get("X-Forwarded-For", "")
+    if fwd:
+        return fwd.split(",")[0].strip()[:64]
+    return (request.headers.get("X-Real-IP") or request.remote_addr or "")[:64]
+
+
+def log_access(event: str = "page", status: int = 0) -> None:
+    """Record one request. Never let logging break the request it's logging."""
+    try:
+        _db().add(AccessRow(
+            store=getattr(g, "store", "default"), ip=client_ip(),
+            method=request.method, path=request.path[:255], status=status,
+            event=event, staff_name=session.get("staff_name"),
+            user_agent=(request.headers.get("User-Agent") or "")[:255],
+        ))
+        _db().commit()
+    except Exception:  # noqa: BLE001
+        try:
+            _db().rollback()
+        except Exception:  # noqa: BLE001
+            pass
+
+
+def _pin_only() -> bool:
+    return bool(current_app.config.get("PIN_ONLY"))
+
+
+def _store_has_staff() -> bool:
+    return _db().scalar(select(StaffRow).where(
+        StaffRow.store == g.store, StaffRow.active.is_(True)).limit(1)) is not None
+
+
+def _signed_in() -> bool:
+    """Is this request allowed past the front door?
+
+    Password mode: the store account must be signed in.
+    PIN-only mode: a person must be unlocked — unless no staff exist yet, which
+    would otherwise lock a fresh install out of the page used to create them.
+    """
+    if _pin_only():
+        return bool(session.get("staff_id")) or not _store_has_staff()
+    return bool(session.get("user_id"))
+
+
 def login_required(view):
-    """Layer 1: the device must be signed in to a STORE account."""
+    """The front door. Store password, or a PIN when PIN_ONLY is set."""
     @wraps(view)
     def wrapped(*a, **kw):
-        if not session.get("user_id"):
-            return redirect(url_for("login", next=request.path))
-        return view(*a, **kw)
+        if _signed_in():
+            return view(*a, **kw)
+        dest = "pin" if _pin_only() else "login"
+        return redirect(url_for(dest, next=request.path))
     return wrapped
 
 
@@ -199,14 +264,11 @@ def staff_required(view):
     """
     @wraps(view)
     def wrapped(*a, **kw):
-        if not session.get("user_id"):
-            return redirect(url_for("login", next=request.path))
-        if session.get("staff_id"):
-            return view(*a, **kw)
-        has_staff = _db().scalar(select(StaffRow).where(
-            StaffRow.store == g.store, StaffRow.active.is_(True)).limit(1))
-        if has_staff is None:
-            return view(*a, **kw)          # no PINs set up yet
+        if not _signed_in():
+            dest = "pin" if _pin_only() else "login"
+            return redirect(url_for(dest, next=request.path))
+        if session.get("staff_id") or not _store_has_staff():
+            return view(*a, **kw)          # unlocked, or no PINs set up yet
         return redirect(url_for("pin", next=request.path))
     return wrapped
 
@@ -232,8 +294,26 @@ def _register_routes(app: Flask):
     def _inject_identity():
         """Every page shows who's signed in (store) and who's working (person),
         so routes don't each have to pass them."""
+        try:
+            signed_in = _signed_in()
+        except Exception:  # noqa: BLE001 — never let the chrome break a page
+            signed_in = bool(session.get("user_id") or session.get("staff_id"))
         return {"email": session.get("email"),
-                "staff_name": session.get("staff_name")}
+                "staff_name": session.get("staff_name"),
+                "pin_only": bool(app.config.get("PIN_ONLY")),
+                "signed_in": signed_in}
+
+    # Skip the noise: Railway health checks and static assets would otherwise
+    # dominate the log and hide the traffic you actually want to see.
+    _NO_LOG = {"/healthz", "/favicon.ico"}
+
+    @app.after_request
+    def _log_request(resp):
+        if request.path not in _NO_LOG and not request.path.startswith("/static"):
+            # PIN attempts log themselves with a precise outcome; don't double-log.
+            if not (request.path == "/pin" and request.method == "POST"):
+                log_access("page", resp.status_code)
+        return resp
 
     @app.teardown_request
     def _close_db(exc):
@@ -247,7 +327,9 @@ def _register_routes(app: Flask):
 
     @app.get("/")
     def index():
-        return redirect(url_for("count" if session.get("user_id") else "login"))
+        if _signed_in():
+            return redirect(url_for("count"))
+        return redirect(url_for("pin" if _pin_only() else "login"))
 
     # --- registration & login --------------------------------------------
     @app.route("/register", methods=["GET", "POST"])
@@ -291,15 +373,23 @@ def _register_routes(app: Flask):
 
     @app.get("/logout")
     def logout_confirm():
-        """Ask before signing the STORE out — on a counter device that means
-        re-entering the store password, which a clerk usually can't do."""
-        if not session.get("user_id"):
-            return redirect(url_for("login"))
-        return render_template("logout.html", email=session.get("email"),
-                               staff_name=session.get("staff_name"))
+        """Ask before signing out.
+
+        Password mode: this drops the STORE session, which needs the owner's
+        password to restore — worth confirming. PIN-only mode: there is no store
+        password, so this just ends the current person's shift.
+        """
+        if not _signed_in():
+            return redirect(url_for("pin" if _pin_only() else "login"))
+        return render_template("logout.html")
 
     @app.post("/logout")
     def logout():
+        if _pin_only():
+            # Only end the shift; there's no store credential to give up.
+            session.pop("staff_id", None)
+            session.pop("staff_name", None)
+            return redirect(url_for("pin"))
         session.clear()
         return redirect(url_for("login"))
 
@@ -450,9 +540,16 @@ def _register_routes(app: Flask):
         return _db().scalars(q.order_by(StaffRow.name)).all()
 
     @app.route("/pin", methods=["GET", "POST"])
-    @login_required
     def pin():
-        """Unlock a shift with a PIN. The store stays signed in either way."""
+        """Unlock a shift with a PIN.
+
+        This is deliberately NOT behind ``login_required``: in PIN-only mode it
+        *is* the front door, and guarding it would redirect the page to itself.
+        In password mode it still requires the store session, since it's only the
+        second layer there.
+        """
+        if not _pin_only() and not session.get("user_id"):
+            return redirect(url_for("login", next=request.path))
         staff = _staff_list()
         nxt = request.args.get("next") or request.form.get("next") or url_for("count")
         if request.method == "POST":
@@ -464,7 +561,9 @@ def _register_routes(app: Flask):
                 if entered and check_password_hash(member.pin_hash, entered):
                     session["staff_id"] = member.id
                     session["staff_name"] = member.name
+                    log_access("pin_ok", 302)
                     return redirect(nxt)
+            log_access("pin_fail", 200)   # the row that matters if someone probes
             return render_template("pin.html", staff=staff, error="Wrong PIN.",
                                    next=nxt, email=session.get("email"),
                                    staff_name=session.get("staff_name"))
@@ -473,7 +572,6 @@ def _register_routes(app: Flask):
                                staff_name=session.get("staff_name"))
 
     @app.post("/pin/clear")
-    @login_required
     def pin_clear():
         """End this person's shift without signing the store out."""
         session.pop("staff_id", None)
@@ -523,6 +621,36 @@ def _register_routes(app: Flask):
         return render_template("staff.html", staff=_staff_list(active_only=False),
                                error=error, email=session.get("email"),
                                staff_name=session.get("staff_name"))
+
+    @app.get("/access")
+    @login_required
+    def access_log():
+        """Who has been reaching this site. Worth a glance whenever the front
+        door is PIN-only, especially the failed-PIN rows."""
+        rows = _db().scalars(
+            select(AccessRow).where(AccessRow.store == _store())
+            .order_by(AccessRow.at.desc()).limit(300)).all()
+
+        # Roll up per IP so an unfamiliar device stands out immediately.
+        by_ip: dict = {}
+        for r in rows:
+            e = by_ip.setdefault(r.ip or "?", {
+                "ip": r.ip or "?", "hits": 0, "fails": 0, "people": set(),
+                "first": r.at, "last": r.at, "agent": r.user_agent})
+            e["hits"] += 1
+            if r.event == "pin_fail":
+                e["fails"] += 1
+            if r.staff_name:
+                e["people"].add(r.staff_name)
+            e["first"] = min(e["first"], r.at)
+            e["last"] = max(e["last"], r.at)
+        summary = sorted(by_ip.values(), key=lambda e: e["last"], reverse=True)
+        for e in summary:
+            e["people"] = ", ".join(sorted(e["people"])) or "—"
+
+        fails = [r for r in rows if r.event == "pin_fail"]
+        return render_template("access.html", rows=rows[:120], summary=summary,
+                               fail_count=len(fails))
 
     # --- KEEP / SEND-BACK dashboard ---------------------------------------
     # The rating math is imported (pa_data -> lottery_tracker.rules), so these

@@ -125,3 +125,31 @@ class StaffRow(Base):
     role: Mapped[str] = mapped_column(String(32), default="clerk")   # "clerk" | "manager"
     active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+
+
+class AccessRow(Base):
+    """Who reached the site, from where.
+
+    Exists because the front door can be run PIN-only (no store password), which
+    trades security for convenience. An access log is the compensating control:
+    you can see every device that touched the site and every PIN attempt,
+    including the failures that a password would otherwise have stopped.
+
+    One row per request (health checks and static files excluded), so this table
+    grows steadily — prune it periodically if it ever gets unwieldy.
+    """
+
+    __tablename__ = "access_log"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, index=True)
+    store: Mapped[str] = mapped_column(String(64), index=True, default="default")
+    ip: Mapped[str] = mapped_column(String(64), index=True, default="")
+    method: Mapped[str] = mapped_column(String(8), default="GET")
+    path: Mapped[str] = mapped_column(String(255), default="")
+    status: Mapped[int] = mapped_column(Integer, default=0)
+    # "page" for ordinary traffic; "pin_ok" / "pin_fail" for sign-in attempts,
+    # which are the rows worth watching.
+    event: Mapped[str] = mapped_column(String(24), default="page", index=True)
+    staff_name: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    user_agent: Mapped[str] = mapped_column(String(255), default="")

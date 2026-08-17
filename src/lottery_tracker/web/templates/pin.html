@@ -14,8 +14,12 @@
 <div class="card">
   <h2 style="margin:0 0 4px">Who's working?</h2>
   <p class="muted" style="font-size:13px">
-    Pick your name and enter your PIN. The store stays signed in — this just
-    records who is doing the counts.
+    {% if pin_only %}
+      Pick your name and enter your PIN to sign in.
+    {% else %}
+      Pick your name and enter your PIN. The store stays signed in — this just
+      records who is doing the counts.
+    {% endif %}
   </p>
   {% if error %}<div class="flash err">{{ error }}</div>{% endif %}
 

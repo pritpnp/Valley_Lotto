@@ -1,13 +1,22 @@
 {% extends "base.html" %}
-{% block title %}Sign out? — Valley Lotto{% endblock %}
+{% block title %}{{ "End shift?" if pin_only else "Sign out?" }} — Valley Lotto{% endblock %}
 {% block body %}
 <div class="card">
+{% if pin_only %}
+  <h2 style="margin:0 0 6px">End {{ staff_name or "this" }} shift?</h2>
+  <p class="muted">The next person will be asked for their PIN. Nothing else changes.</p>
+  <div class="row" style="margin-top:16px">
+    <form method="post" action="{{ url_for('logout') }}">
+      <button class="primary" type="submit">End shift</button>
+    </form>
+    <a class="btn" href="{{ url_for('count') }}">Cancel</a>
+  </div>
+{% else %}
   <h2 style="margin:0 0 6px">Sign the store out?</h2>
   <div class="flash warn">
     This signs out <b>{{ email }}</b> — the whole store account on this device.
     You'll need the store email and password to get back in.
   </div>
-
   {% if staff_name %}
   <p class="muted" style="font-size:14px">
     If you just want to end <b>{{ staff_name }}</b>'s shift and let the next person
@@ -15,7 +24,6 @@
     a PIN is needed.
   </p>
   {% endif %}
-
   <div class="row" style="margin-top:16px">
     {% if staff_name %}
       <form method="post" action="{{ url_for('pin_clear') }}">
@@ -28,5 +36,6 @@
         Yes, sign the store out</button>
     </form>
   </div>
+{% endif %}
 </div>
 {% endblock %}

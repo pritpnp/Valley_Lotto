@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Access log — Valley Lotto{% endblock %}
+{% block body %}
+<style>
+  td,th { font-size:13px; }
+  .fail { color:#ef4444; font-weight:700; }
+  .scroll { overflow-x:auto; }
+  .mono { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; }
+</style>
+
+<div class="card">
+  <h2 style="margin:0 0 4px">Who's reaching this site</h2>
+  <p class="muted" style="font-size:13px">
+    Every device that loaded a page, newest first. Check this while the front door
+    is PIN-only — an IP you don't recognize, or a run of failed PINs, is the signal
+    to turn the store password back on.
+  </p>
+  {% if fail_count %}
+    <div class="flash err"><b>{{ fail_count }}</b> failed PIN attempt(s) in the recent log.</div>
+  {% else %}
+    <div class="flash ok">No failed PIN attempts in the recent log.</div>
+  {% endif %}
+
+  <b>By device (IP)</b>
+  <div class="scroll"><table>
+    <thead><tr><th>IP</th><th>Hits</th><th>Failed PINs</th><th>People</th><th>Last seen</th></tr></thead>
+    <tbody>
+    {% for e in summary %}
+      <tr>
+        <td class="mono">{{ e.ip }}</td>
+        <td>{{ e.hits }}</td>
+        <td {% if e.fails %}class="fail"{% endif %}>{{ e.fails }}</td>
+        <td>{{ e.people }}</td>
+        <td class="muted">{{ e.last.strftime('%Y-%m-%d %H:%M') }} UTC</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+</div>
+
+<div class="card">
+  <b>Recent requests</b>
+  <div class="scroll"><table>
+    <thead><tr><th>When (UTC)</th><th>IP</th><th>Who</th><th>Request</th><th></th></tr></thead>
+    <tbody>
+    {% for r in rows %}
+      <tr>
+        <td class="muted">{{ r.at.strftime('%m-%d %H:%M:%S') }}</td>
+        <td class="mono">{{ r.ip }}</td>
+        <td>{{ r.staff_name or '—' }}</td>
+        <td class="muted">{{ r.method }} {{ r.path }}</td>
+        <td>{% if r.event == 'pin_fail' %}<span class="fail">FAILED PIN</span>
+            {% elif r.event == 'pin_ok' %}signed in{% endif %}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+</div>
+{% endblock %}
