@@ -150,7 +150,11 @@ scanEl.addEventListener("keydown", e => { if (e.key==="Enter"){ e.preventDefault
 scanEl.addEventListener("input", () => {
   clearTimeout(debounce);
   const v = scanEl.value.trim();
-  if (/^\d{4}[-\s]?\d{7}[-\s]?\d{3}$/.test(v)) debounce = setTimeout(()=>submitScan(scanEl.value.trim()), 140);
+  // Fire once we have at least the 14 printed digits. Real guns emit more (16
+  // observed: 14 + check digits), so allow any trailing digits and wait a beat
+  // for the rest of a longer code to finish arriving before submitting.
+  const digits = v.replace(/[-\s]/g, "");
+  if (/^\d{14,}$/.test(digits)) debounce = setTimeout(()=>submitScan(scanEl.value.trim()), 180);
 });
 
 async function back(){ applyState(await postJSON("{{ url_for('api_back') }}")); }

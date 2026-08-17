@@ -26,6 +26,7 @@ from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker
 from werkzeug.security import generate_password_hash, check_password_hash
 
+from ..barcode import try_parse_ticket
 from ..scans import Scan, ScanLog
 from ..session import CountSession, standard_slots
 from ..reporting import daily_report, render_daily_report_md
@@ -472,12 +473,29 @@ def _register_routes(app: Flask):
     @app.post("/inventory/add")
     @login_required
     def inventory_add():
+        """Add games by number — or by scanning a ticket.
+
+        A clerk with the gun in hand will scan a ticket into this box, which sends
+        the full barcode (e.g. 1742011331200893). Pull the game number out of it
+        rather than storing the whole code as a bogus "game". Anything that is
+        neither a barcode nor a plausible 3-5 digit game number is ignored, so a
+        stray scan can't pollute the inventory.
+        """
         raw = (request.form.get("game_number") or "").strip()
         added = 0
-        for num in re.split(r"[\s,]+", raw):
-            num = num.strip()
-            if not num:
+        for token in re.split(r"[\s,]+", raw):
+            token = token.strip()
+            if not token:
                 continue
+
+            tc = try_parse_ticket(token)
+            if tc is not None:
+                num = tc.game_number              # scanned a ticket -> use its game
+            elif re.fullmatch(r"\d{3,5}", token):
+                num = token.lstrip("0") or token  # typed a game number
+            else:
+                continue                          # not a game number or a ticket
+
             exists = _db().scalar(select(InventoryRow).where(
                 InventoryRow.store == _store(), InventoryRow.game_number == num))
             if not exists:

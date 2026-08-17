@@ -89,3 +89,35 @@ def test_scanlog_roundtrip(tmp_path):
     # tolerate unknown keys from a future schema
     assert Scan.from_dict({"game_number": "1750", "pack": "x", "ticket": 1,
                            "scanned_at": "t", "future_field": 99}).ticket == 1
+
+
+# --- real-world gun output -------------------------------------------------
+# The scan gun emits MORE digits than the ticket prints. Captured from a real
+# PA ticket scanned on the store's gun: 16 digits = the printed 14 + 2 trailing.
+REAL_GUN = "1742011331200893"
+
+
+def test_parse_real_16_digit_gun_output():
+    tc = parse_ticket(REAL_GUN)
+    assert tc.game_number == "1742"      # $3M MEGA MOOLAH MULTIPLIER
+    assert tc.pack == "0113312"
+    assert tc.ticket == 8
+    assert tc.extra == "93"              # kept, not discarded
+    assert tc.raw == REAL_GUN
+
+
+def test_printed_14_digit_form_still_parses_with_no_extra():
+    tc = parse_ticket("1750-0091798-010")
+    assert (tc.game_number, tc.pack, tc.ticket) == ("1750", "0091798", 10)
+    assert tc.extra == ""
+
+
+def test_dashed_form_with_trailing_check_digits():
+    tc = parse_ticket("1742-0113312-008-93")
+    assert (tc.game_number, tc.pack, tc.ticket, tc.extra) == ("1742", "0113312", 8, "93")
+
+
+def test_too_short_or_absurdly_long_still_rejected():
+    for bad in ["1742011331200", "1" * 40, "1742011331200893123"]:  # 13, 40, 19 digits
+        with pytest.raises(BarcodeError):
+            parse_ticket(bad)

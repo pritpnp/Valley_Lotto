@@ -33,12 +33,27 @@ PACK_LEN = 7
 TICKET_LEN = 3
 BARCODE_LEN = GAME_LEN + PACK_LEN + TICKET_LEN  # 14 digits, dashes aside
 
-# Accept the dashed form with flexible separators (space or dash), or a bare run
-# of digits we split by the fixed widths above.
+# The scanned barcode can carry MORE digits than the number printed on the ticket.
+# Observed on a real PA ticket + retail scan gun:
+#   printed on the back : 1750-0091798-010            (14 digits)
+#   scan gun emits      : 1742011331200893            (16 digits)
+#                         ^^^^ ^^^^^^^ ^^^ ^^
+#                         game pack    tkt trailing
+# The leading 14 carry game/pack/ticket; anything after is extra data the symbol
+# encodes but the human-readable line omits (check digits / validation). We keep
+# it verbatim in ``extra`` rather than discarding it, and never let its presence
+# reject a scan.
+# Ceiling on those trailing digits. 2 are confirmed in the field (16 total); this
+# leaves headroom for a longer symbology without accepting arbitrary digit soup.
+# A too-long scan fails loudly with a clear message, which beats silently
+# mis-parsing it into wrong sales numbers.
+MAX_EXTRA = 4  # accept 14..18 digits
+
 _DASHED = re.compile(
-    rf"^(?P<game>\d{{{GAME_LEN}}})[-\s]+(?P<pack>\d{{{PACK_LEN}}})[-\s]+(?P<ticket>\d{{{TICKET_LEN}}})$"
+    rf"^(?P<game>\d{{{GAME_LEN}}})[-\s]+(?P<pack>\d{{{PACK_LEN}}})[-\s]+"
+    rf"(?P<ticket>\d{{{TICKET_LEN}}})(?:[-\s]*(?P<extra>\d{{1,{MAX_EXTRA}}}))?$"
 )
-_DIGITS_ONLY = re.compile(rf"^(?P<all>\d{{{BARCODE_LEN}}})$")
+_DIGITS_ONLY = re.compile(rf"^(?P<all>\d{{{BARCODE_LEN},{BARCODE_LEN + MAX_EXTRA}}})$")
 
 
 class BarcodeError(ValueError):
@@ -53,6 +68,7 @@ class TicketCode:
     pack: str          # kept zero-padded; it's an identifier, not a quantity
     ticket: int        # position within the pack, as an int for arithmetic
     raw: str           # exactly what the scanner emitted (for audit/debugging)
+    extra: str = ""    # digits past the printed 14 (check/validation), kept verbatim
 
     @property
     def game_padded(self) -> str:
@@ -79,9 +95,11 @@ def parse_ticket(raw: str) -> TicketCode:
     """Parse a scanned string into a :class:`TicketCode`.
 
     Accepts the dashed form (``1750-0091798-010``), space-separated, or a bare
-    14-digit run (``17500091798010``). Raises :class:`BarcodeError` otherwise so
-    callers can distinguish "not a ticket" (e.g. a pack/settlement barcode) from a
-    real parse and surface a clear message instead of a wrong number.
+    digit run of 14+ digits (``17500091798010``, ``1742011331200893``). Digits past
+    the printed 14 are kept in ``extra`` rather than rejected — real guns emit them.
+    Raises :class:`BarcodeError` otherwise so callers can distinguish "not a ticket"
+    (e.g. a pack/settlement barcode) from a real parse and surface a clear message
+    instead of a wrong number.
     """
     if raw is None:
         raise BarcodeError("empty scan")
@@ -93,24 +111,25 @@ def parse_ticket(raw: str) -> TicketCode:
     if m is None:
         # Fall back to a bare digit run, but only after removing separators so a
         # gun that strips dashes still parses. We do NOT blindly strip non-digits
-        # from arbitrary input — we require the exact expected length.
+        # from arbitrary input — we require a plausible length.
         compact = re.sub(r"[-\s]", "", s)
         m = _DIGITS_ONLY.match(compact)
         if m is None:
             raise BarcodeError(
-                f"not a {BARCODE_LEN}-digit ticket barcode: {raw!r}"
+                f"not a ticket barcode (need {BARCODE_LEN}+ digits): {raw!r}"
             )
         allnum = m.group("all")
-        game, pack, ticket = (
-            allnum[:GAME_LEN],
-            allnum[GAME_LEN:GAME_LEN + PACK_LEN],
-            allnum[GAME_LEN + PACK_LEN:],
-        )
+        game = allnum[:GAME_LEN]
+        pack = allnum[GAME_LEN:GAME_LEN + PACK_LEN]
+        ticket = allnum[GAME_LEN + PACK_LEN:BARCODE_LEN]
+        extra = allnum[BARCODE_LEN:]
     else:
         game, pack, ticket = m.group("game"), m.group("pack"), m.group("ticket")
+        extra = m.group("extra") or ""
 
     game_norm = game.lstrip("0") or "0"  # "0993" -> "993"; matches un-padded config keys
-    return TicketCode(game_number=game_norm, pack=pack, ticket=int(ticket), raw=raw)
+    return TicketCode(game_number=game_norm, pack=pack, ticket=int(ticket),
+                      raw=raw, extra=extra)
 
 
 def try_parse_ticket(raw: str) -> TicketCode | None:

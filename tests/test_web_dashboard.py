@@ -125,7 +125,30 @@ def test_catalog_renders_and_marks_carried(client):
 
 
 def test_unknown_game_shows_as_pull_it(client):
-    client.post("/inventory/add", data={"game_number": "999999"})
+    client.post("/inventory/add", data={"game_number": "9999"})   # valid shape, not a real game
     html = client.get("/dashboard").data.decode()
     assert "SEND BACK" in html
     assert "not found in PA catalog" in html
+
+
+# --- scanning a ticket into the inventory box -------------------------------
+REAL_GUN = "1742011331200893"   # real gun output: game 1742, pack 0113312, tkt 008
+
+
+def test_scanning_a_ticket_into_inventory_adds_the_game(client):
+    """A clerk with the gun will scan a ticket here — store the GAME, not the
+    16-digit barcode (which previously landed as a bogus 'not on PA list' row)."""
+    client.post("/inventory/add", data={"game_number": REAL_GUN})
+    carried = _carried_numbers(client)
+    assert "1742" in carried
+    assert REAL_GUN not in carried
+
+
+def test_inventory_ignores_junk_tokens(client):
+    client.post("/inventory/add", data={"game_number": "hello ?? 12"})
+    assert _carried_numbers(client) == set()
+
+
+def test_inventory_mixed_typed_and_scanned(client):
+    client.post("/inventory/add", data={"game_number": f"1750 {REAL_GUN}, 1744"})
+    assert {"1750", "1742", "1744"} <= _carried_numbers(client)
