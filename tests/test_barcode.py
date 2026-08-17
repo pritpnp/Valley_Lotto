@@ -117,7 +117,34 @@ def test_dashed_form_with_trailing_check_digits():
     assert (tc.game_number, tc.pack, tc.ticket, tc.extra) == ("1742", "0113312", 8, "93")
 
 
-def test_too_short_or_absurdly_long_still_rejected():
-    for bad in ["1742011331200", "1" * 40, "1742011331200893123"]:  # 13, 40, 19 digits
+def test_absurd_lengths_rejected():
+    for bad in ["12345", "1" * 40, ""]:      # far too short / far too long
         with pytest.raises(BarcodeError):
             parse_ticket(bad)
+
+
+def test_catalog_flags_a_game_that_does_not_exist():
+    """A truncated/misread scan can still split cleanly. When we know the real
+    game list, say so rather than silently accepting a bogus game."""
+    catalog = {"1742", "1750"}
+    tc = parse_ticket("1742011331200893", known_games=catalog)
+    assert tc.game_known is True and tc.game_number == "1742"
+
+    bogus = parse_ticket("9999011331200893", known_games=catalog)
+    assert bogus.game_known is False            # no split yields a real game -> flagged
+    assert parse_ticket("9999011331200893").game_known is None   # unchecked without a catalog
+
+
+def test_catalog_picks_the_split_that_yields_a_real_game():
+    """The decisive check: prefer the segmentation whose game actually exists."""
+    # 15 digits: a 5-digit-game reading and a 4-digit-game reading both fit.
+    raw = "175000917980107"
+    assert parse_ticket(raw, known_games={"1750"}).game_number == "1750"
+    assert parse_ticket(raw, known_games={"17500"}).game_number == "17500"
+
+
+def test_impossible_ticket_number_rejects_that_split():
+    """A 'ticket' of 893 can't exist (no pack holds that many), so the parser
+    must not choose that segmentation."""
+    tc = parse_ticket("1742011331200893")
+    assert tc.ticket == 8 and tc.ticket <= 400

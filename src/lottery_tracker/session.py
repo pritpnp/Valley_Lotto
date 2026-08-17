@@ -64,11 +64,16 @@ class CountSession:
     """An in-progress count. Feed it scans; commit when done."""
 
     def __init__(self, slots: Optional[list] = None, *, store: str = "default",
-                 session: str = "morning", user: Optional[str] = None):
+                 session: str = "morning", user: Optional[str] = None,
+                 known_games=None):
         self.slots: list = list(slots) if slots is not None else standard_slots()
         self.store = store
         self.session = session
         self.user = user
+        # Real game numbers (the PA catalog), passed to the barcode parser so a
+        # scan is validated against games that actually exist rather than trusted
+        # by digit position. Not serialized — it's supplied fresh each request.
+        self.known_games = set(known_games) if known_games else None
         self.entries: dict = {}     # slot -> Scan
         self.index = 0              # pointer into self.slots
         self.committed = False
@@ -98,6 +103,14 @@ class CountSession:
         self.entries[slot] = scan
         return scan
 
+    def _scan_warning(self, slot: str, tc: TicketCode) -> Optional[str]:
+        """Non-fatal things worth a second look. The scan is still recorded — a
+        clerk mid-count shouldn't be blocked — but the UI shows the warning."""
+        if tc.game_known is False:
+            return (f"game {tc.game_number} isn't in the PA catalog — "
+                    "check the scan (or it may be a brand-new game)")
+        return self._dupe_warning(slot, tc)
+
     def _dupe_warning(self, slot: str, tc: TicketCode) -> Optional[str]:
         # The exact same ticket (game+pack+ticket) in two different boxes almost
         # always means a mis-scan (wrong box, or scanned one ticket twice).
@@ -114,12 +127,12 @@ class CountSession:
         if slot is None:
             return ScanStep(False, None, "count already complete", None)
         try:
-            tc = parse_ticket(raw)
+            tc = parse_ticket(raw, self.known_games)
         except BarcodeError as e:
             return ScanStep(False, slot, f"not a ticket barcode ({e}); scan {slot} again",
                             next_slot=slot)
         self._record(slot, tc, at or _now_iso())
-        warning = self._dupe_warning(slot, tc)
+        warning = self._scan_warning(slot, tc)
         self._advance()
         nxt = self.current_slot
         msg = f"{slot} = game {tc.game_number}" + (f"  ➜ next: {nxt}" if nxt else "  ➜ done")
@@ -151,12 +164,12 @@ class CountSession:
         if slot not in self.slots:
             return ScanStep(False, slot, f"unknown box {slot}", next_slot=self.current_slot)
         try:
-            tc = parse_ticket(raw)
+            tc = parse_ticket(raw, self.known_games)
         except BarcodeError as e:
             return ScanStep(False, slot, f"not a ticket barcode ({e}); {slot} unchanged",
                             next_slot=self.current_slot)
         self._record(slot, tc, at or _now_iso())
-        warning = self._dupe_warning(slot, tc)
+        warning = self._scan_warning(slot, tc)
         return ScanStep(True, slot, f"{slot} corrected = game {tc.game_number}",
                         next_slot=self.current_slot, parsed=tc, warning=warning)
 

@@ -269,7 +269,11 @@ def _register_routes(app: Flask):
 
     def _load_session() -> CountSession | None:
         row = _active_row()
-        return CountSession.from_state(json.loads(row.state_json)) if row else None
+        if not row:
+            return None
+        cs = CountSession.from_state(json.loads(row.state_json))
+        cs.known_games = _known_games()   # refreshed per request, never serialized
+        return cs
 
     def _save_session(cs: CountSession):
         row = _active_row()
@@ -321,7 +325,8 @@ def _register_routes(app: Flask):
         body = request.get_json(silent=True) or {}
         label = request.form.get("session") or body.get("session") or "morning"
         cs = CountSession(slots=app.config["SLOTS"], store=_store(),
-                          session=label, user=session.get("email"))
+                          session=label, user=session.get("email"),
+                          known_games=_known_games())
         _save_session(cs)
         return jsonify(_state_payload(cs))
 
@@ -398,6 +403,14 @@ def _register_routes(app: Flask):
     # the algorithm.
     def _catalog():
         return pa_data.load_catalog(DATA_DIR / "state.json")
+
+    def _known_games() -> set:
+        """Real PA game numbers, handed to the barcode parser so a scan is
+        validated against games that exist instead of trusted by digit offset."""
+        try:
+            return set(_catalog().games.keys())
+        except Exception:  # noqa: BLE001 — scanning must work even if the catalog is missing
+            return set()
 
     def _inventory() -> set:
         rows = _db().scalars(select(InventoryRow).where(InventoryRow.store == _store())).all()
@@ -482,13 +495,14 @@ def _register_routes(app: Flask):
         stray scan can't pollute the inventory.
         """
         raw = (request.form.get("game_number") or "").strip()
+        known = _known_games()
         added = 0
         for token in re.split(r"[\s,]+", raw):
             token = token.strip()
             if not token:
                 continue
 
-            tc = try_parse_ticket(token)
+            tc = try_parse_ticket(token, known)
             if tc is not None:
                 num = tc.game_number              # scanned a ticket -> use its game
             elif re.fullmatch(r"\d{3,5}", token):
