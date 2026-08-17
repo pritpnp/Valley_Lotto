@@ -244,16 +244,67 @@ def _slot_sort_key(slot: str):
 #     rolls, that peak == N-1, i.e. learned size = peak + 1.
 # --------------------------------------------------------------------------- #
 
+# A single misread can otherwise set a game's pack size forever: taking the raw
+# maximum means one bogus "ticket 399" teaches a 400-ticket pack, which then
+# inflates every rollover estimate. Two defences below: prefer packs we watched
+# roll over, and refuse to let a lone outlier define the size.
+MAX_LEARNABLE_PACK = 300      # PA's largest real pack (the $1 game)
+
+
+def _completed_pack_sizes(scans: list) -> list:
+    """Sizes implied by packs we actually saw finish.
+
+    When a slot moves from pack A to pack B, the highest ticket ever seen in A is
+    (near) its last ticket, so A held about that many. This is the trustworthy
+    signal — unlike a bare maximum, it can't be invented by one stray scan,
+    because a stray scan's pack never rolls.
+    """
+    ordered = sorted((s for s in scans if s.ticket is not None),
+                     key=lambda s: s.scanned_at)
+    max_by_pack: dict = {}
+    order: list = []
+    for s in ordered:
+        if s.pack not in max_by_pack:
+            order.append(s.pack)
+        max_by_pack[s.pack] = max(max_by_pack.get(s.pack, -1), s.ticket)
+    # Every pack except the one currently in use has been superseded.
+    return [max_by_pack[p] + 1 for p in order[:-1]
+            if 0 < max_by_pack[p] + 1 <= MAX_LEARNABLE_PACK]
+
+
 def learn_pack_size(scans: list) -> Optional[int]:
     """Best-known pack size for one game, learned purely from its scans.
 
-    Returns ``max(ticket) + 1`` over the given scans, or ``None`` if there are
-    none. This is a *lower bound* that converges to the true size as tickets are
-    scanned closer to a pack's end; it becomes exact once any pack of the game has
-    been scanned at its final ticket before rolling to the next pack.
+    Preference order:
+
+    1. **Packs observed rolling over** — the strongest evidence. Uses the largest
+       such size, since a pack can be swapped early but never runs past its end.
+    2. Otherwise the highest ticket seen + 1, as a lower bound — but a lone
+       value far above the rest is treated as a misread and ignored, and anything
+       beyond a real pack's capacity is discarded outright.
+
+    Returns ``None`` when there's nothing to go on.
     """
-    tickets = [s.ticket for s in scans if s.ticket is not None]
-    return (max(tickets) + 1) if tickets else None
+    tickets = sorted(t for t in (s.ticket for s in scans) if t is not None)
+    if not tickets:
+        return None
+
+    completed = _completed_pack_sizes(scans)
+    if completed:
+        return max(completed)
+
+    plausible = [t for t in tickets if t < MAX_LEARNABLE_PACK]
+    if not plausible:
+        return min(max(tickets) + 1, MAX_LEARNABLE_PACK)
+
+    top = plausible[-1]
+    if len(plausible) >= 3:
+        runner_up = plausible[-2]
+        # A top value more than double the next one, with nothing in between, is
+        # far more likely a misread than a genuinely fuller pack.
+        if runner_up > 0 and top > runner_up * 2:
+            top = runner_up
+    return top + 1
 
 
 def learn_pack_sizes(log: "ScanLog") -> dict:

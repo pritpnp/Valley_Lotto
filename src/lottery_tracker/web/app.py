@@ -29,7 +29,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from ..barcode import try_parse_ticket
 from ..scans import Scan, ScanLog
 from ..session import CountSession, standard_slots
-from ..reporting import daily_report, render_daily_report_md
+from ..reporting import daily_report, render_daily_report_md, as_zone
 from ..config import Config
 from ..rules import RATING_FACTORS
 from .models import (Base, User, ScanRow, ActiveCount, InventoryRow, EmphasisRow,
@@ -60,8 +60,13 @@ def _now_iso() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
-def _today() -> str:
-    return datetime.now(timezone.utc).strftime("%Y-%m-%d")
+def _today(tz=None) -> str:
+    """Today's date in the STORE's timezone, not UTC."""
+    zone = as_zone(tz)
+    now = datetime.now(timezone.utc)
+    if zone is not None:
+        now = now.astimezone(zone)
+    return now.strftime("%Y-%m-%d")
 
 
 def _normalize_db_url(url: str) -> str:
@@ -169,6 +174,10 @@ def create_app(config: dict | None = None) -> Flask:
         # means anyone with the URL only has a short PIN in their way — keep the
         # URL private, and turn this off to restore the password gate.
         PIN_ONLY=_as_bool(cfg.get("PIN_ONLY", _env("PIN_ONLY"))),
+        # The store's own timezone. Scans are stored in UTC, but a "day" —
+        # morning count to night count — is local. Without this a 9pm PA count
+        # (1am UTC) files under tomorrow and splits the day in two.
+        TIMEZONE=cfg.get("TIMEZONE", _env("TIMEZONE", "America/New_York")),
     )
 
     app.permanent_session_lifetime = timedelta(days=90)   # keep the device signed in
@@ -397,10 +406,19 @@ def _register_routes(app: Flask):
     def _store():
         return app.config["DEFAULT_STORE"]
 
+    def _counter_key() -> str:
+        """Who owns the in-progress count.
+
+        Keyed to the PERSON, not the store account: in PIN-only mode there is no
+        per-device email, so keying by email put every clerk on one shared row —
+        two people counting at once would overwrite each other's walk.
+        """
+        return (session.get("staff_name") or session.get("email") or "default")[:255]
+
     def _active_row():
         return _db().scalar(select(ActiveCount).where(
             ActiveCount.store == _store(),
-            ActiveCount.user_email == session.get("email")))
+            ActiveCount.user_email == _counter_key()))
 
     def _load_session() -> CountSession | None:
         row = _active_row()
@@ -417,7 +435,7 @@ def _register_routes(app: Flask):
             row.state_json = payload
             row.updated_at = datetime.now(timezone.utc)
         else:
-            _db().add(ActiveCount(store=_store(), user_email=session.get("email"),
+            _db().add(ActiveCount(store=_store(), user_email=_counter_key(),
                                   state_json=payload))
         _db().commit()
 
@@ -530,7 +548,7 @@ def _register_routes(app: Flask):
                               scanned_at=sc.scanned_at, user_email=sc.user, raw=sc.raw))
         _db().commit()
         _clear_session()
-        return jsonify({"committed": len(scans), "date": _today()})
+        return jsonify({"committed": len(scans), "date": _today(app.config["TIMEZONE"])})
 
     # --- who is working: PIN layer ----------------------------------------
     def _staff_list(active_only: bool = True):
@@ -815,14 +833,15 @@ def _register_routes(app: Flask):
     @app.get("/report")
     @login_required
     def report():
-        date = request.args.get("date") or _today()
+        date = request.args.get("date") or _today(app.config["TIMEZONE"])
         rows = _db().scalars(select(ScanRow).where(ScanRow.store == _store())).all()
         log = ScanLog(scans=[r.to_scan() for r in rows])
         try:
             resolver = Config.load(str(ROOT / "config.yaml")).pack_resolver()
         except Exception:  # noqa: BLE001 — report must render even without config
             resolver = None
-        rep = daily_report(log, date, prices=_load_prices(), resolver=resolver, store=_store())
+        rep = daily_report(log, date, prices=_load_prices(), resolver=resolver,
+                           store=_store(), tz=app.config["TIMEZONE"])
         return render_template("report.html", date=date, report=rep,
                                md=render_daily_report_md(rep), email=session.get("email"))
 

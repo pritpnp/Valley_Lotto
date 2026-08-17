@@ -17,13 +17,61 @@ price map and a pack-size resolver, and it returns numbers. Rendering to Markdow
 from __future__ import annotations
 
 from dataclasses import dataclass, field, asdict
+from datetime import datetime, timezone
 from typing import Optional
+from zoneinfo import ZoneInfo
 
 from .scans import ScanLog, compute_sold, sold_over_sequence, learn_pack_size, _slot_sort_key
 
 # Canonical ordering of the named daily counts. Unknown labels sort last but keep
 # their real timestamp order, so custom labels still work.
 SESSION_ORDER = {"morning": 0, "midday": 1, "afternoon": 1, "evening": 2, "night": 2, "close": 3}
+
+
+def as_zone(tz):
+    """Accept a tz name, a tzinfo, or None."""
+    if tz is None or isinstance(tz, ZoneInfo):
+        return tz
+    try:
+        return ZoneInfo(str(tz))
+    except Exception:  # noqa: BLE001 — a bad tz name must not break reporting
+        return None
+
+
+def business_date(iso: str, tz=None) -> str:
+    """The LOCAL calendar date a scan belongs to.
+
+    Scans are stamped in UTC (correct — it's unambiguous), but a store's "day"
+    is local. In Pennsylvania a 9pm night count is already 1am UTC *tomorrow*, so
+    matching on the raw UTC prefix would file it under the next day and split one
+    day's sales across two reports. Convert before grouping.
+    """
+    zone = as_zone(tz)
+    if not iso:
+        return ""
+    if zone is None:
+        return iso[:10]
+    try:
+        dt = datetime.fromisoformat(iso.replace("Z", "+00:00"))
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt.astimezone(zone).strftime("%Y-%m-%d")
+    except ValueError:
+        return iso[:10]
+
+
+def local_time(iso: str, tz=None) -> str:
+    """HH:MM in the store's own timezone, for display."""
+    zone = as_zone(tz)
+    try:
+        dt = datetime.fromisoformat((iso or "").replace("Z", "+00:00"))
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        if zone is not None:
+            dt = dt.astimezone(zone)
+        return dt.strftime("%H:%M")
+    except ValueError:
+        return (iso or "")[11:16]
 
 
 def _session_sort_key(scan):
@@ -88,7 +136,7 @@ def _price_for(prices, game_number):
 
 
 def daily_report(log: ScanLog, date: str, *, prices: dict | None = None,
-                 resolver=None, store: Optional[str] = None) -> DailyReport:
+                 resolver=None, store: Optional[str] = None, tz=None) -> DailyReport:
     """Build a day's report for one store.
 
     ``date`` is a ``YYYY-MM-DD`` prefix matched against each scan's timestamp.
@@ -97,7 +145,8 @@ def daily_report(log: ScanLog, date: str, *, prices: dict | None = None,
     if omitted, pack size is learned from the log alone.
     """
     todays = [s for s in log.scans
-              if s.scanned_at.startswith(date) and (store is None or s.store == store)]
+              if business_date(s.scanned_at, tz) == date
+              and (store is None or s.store == store)]
     store_label = store or (todays[0].store if todays else "default")
 
     # Group by box; fall back to a game-keyed bucket if a scan has no slot.
@@ -137,6 +186,7 @@ def daily_report(log: ScanLog, date: str, *, prices: dict | None = None,
             slot=None if key.startswith("game:") else key,
             game_number=game, price=price,
             counts=[{"session": s.session, "scanned_at": s.scanned_at,
+                     "at_local": local_time(s.scanned_at, tz),
                      "pack": s.pack, "ticket": s.ticket} for s in scans],
             intervals=intervals,
             total_sold=seq.tickets_sold, revenue=seq.revenue,
@@ -173,7 +223,8 @@ def render_daily_report_md(report: DailyReport) -> str:
     lines.append("|-----|------|-----:|--------:|-------------------|-------|")
     for r in report.rows:
         counts = " → ".join(
-            f"{(c['session'] or c['scanned_at'][11:16])}:{c['ticket']:03d}" for c in r.counts
+            f"{(c['session'] or c.get('at_local') or c['scanned_at'][11:16])}:{c['ticket']:03d}"
+            for c in r.counts
         )
         rev = f"${r.revenue:,.2f}" if r.revenue is not None else "—"
         flags = []
