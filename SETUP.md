@@ -65,3 +65,28 @@ variables and walk the first deploy with you.
 - **Pack sizes** are learned from real scans automatically; `config.yaml`'s
   `pack_sizes` are just optional seeds (see that file).
 - Run with a **single web worker** (the Procfile already does) — fine for one store.
+
+
+---
+
+## Security: Row Level Security on Supabase
+
+**Short answer: leave RLS ON.** The app enables it automatically on every boot,
+so there is nothing to do — but it is worth understanding why.
+
+Supabase serves every table in the `public` schema through an auto-generated
+REST API. With RLS off, anyone holding the project's anon key could read or write
+store data directly and skip this app's permission checks entirely.
+
+With RLS **on and no policies defined**, those API roles (`anon`,
+`authenticated`) are denied outright, which is what we want: this data should
+only be reachable through the app.
+
+It does not lock the app out, because a table's owner bypasses RLS and the app
+owns the tables it created. For the same reason the app never issues
+`FORCE ROW LEVEL SECURITY` — that would apply the (non-existent) policies to the
+owner too and cut the app off from its own data.
+
+If Supabase's Table Editor shows "RLS disabled" on a table, redeploy — the next
+boot turns it on. Do **not** add permissive policies to silence the warning;
+"RLS on, zero policies" is the intended state here.

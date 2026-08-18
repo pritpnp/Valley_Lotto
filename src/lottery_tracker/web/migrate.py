@@ -99,6 +99,38 @@ def backfill(engine, default_slug: str, default_name: str,
     return out
 
 
+def enable_rls(engine) -> list:
+    """Turn on Row Level Security for our tables, on Postgres only.
+
+    Why this matters on Supabase: every table in the ``public`` schema is also
+    served by Supabase's auto-generated REST API. Without RLS, anyone holding the
+    project's anon key could read or write store data directly, bypassing this
+    app entirely — the app's own permission checks would be irrelevant.
+
+    Enabling RLS **with no policies** denies all access to the API roles (anon,
+    authenticated), which is exactly what we want: this data should only ever be
+    reached through the app.
+
+    It does not lock the app out, because a table's OWNER bypasses RLS, and the
+    app owns these tables (it created them). We deliberately do NOT use FORCE ROW
+    LEVEL SECURITY, which would subject the owner to the policies too and — with
+    no policies defined — would cut the app off from its own data.
+
+    Runs on every boot so a table added later can't be left unprotected.
+    """
+    if engine.dialect.name != "postgresql":
+        return []
+    done = []
+    for table in sorted(Base.metadata.tables):
+        try:
+            with engine.begin() as conn:
+                conn.execute(text(f'ALTER TABLE "{table}" ENABLE ROW LEVEL SECURITY'))
+            done.append(table)
+        except Exception as e:  # noqa: BLE001 — never block boot on this
+            log.warning("could not enable RLS on %s: %s", table, e)
+    return done
+
+
 def ensure_schema(engine, *, default_slug: str, default_name: str,
                   timezone: str = "America/New_York", slots: str = "48") -> dict:
     """Create tables, add new columns, then backfill. Safe on every boot."""
@@ -109,4 +141,5 @@ def ensure_schema(engine, *, default_slug: str, default_name: str,
     relax_legacy_not_null(engine)
     result = backfill(engine, default_slug, default_name, timezone, slots)
     result["added_columns"] = added
+    result["rls_enabled"] = enable_rls(engine)
     return result
