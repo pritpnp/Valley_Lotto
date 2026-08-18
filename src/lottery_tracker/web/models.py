@@ -71,8 +71,16 @@ class Store(Base):
 
     @property
     def title(self) -> str:
-        """What the header shows for this store's people: 'Valley Mart WB Lottery'."""
-        return f"{self.name} Lottery"
+        """What the header shows for this store's people: 'Valley Mart WB Lottery'.
+
+        A name that already ends in Lotto/Lottery is left alone — otherwise the
+        default store, carried over from the single-store install, would read
+        "Valley Lotto Lottery".
+        """
+        name = (self.name or "").strip()
+        if name.lower().endswith(("lottery", "lotto")):
+            return name
+        return f"{name} Lottery"
 
 
 class AuditRow(Base):
