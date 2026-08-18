@@ -136,10 +136,18 @@ def _logo_file() -> str | None:
     swapped by dropping an image in, with no code change.
     """
     static = Path(__file__).resolve().parent / "static"
-    for name in ("logo.svg", "logo.png", "logo.webp", "logo.jpg", "logo.jpeg"):
+    if not static.exists():
+        return None
+    exts = (".svg", ".png", ".webp", ".jpg", ".jpeg")
+    # An exact logo.* wins, but any image with "logo" in the name is accepted too,
+    # so a file can be uploaded under its own name without being renamed first.
+    for name in ("logo" + e for e in exts):
         if (static / name).exists():
             return name
-    return None
+    named = sorted(p.name for p in static.iterdir()
+                   if p.suffix.lower() in exts and "logo" in p.stem.lower()
+                   and "favicon" not in p.stem.lower())
+    return named[0] if named else None
 
 
 def _load_prices() -> dict:

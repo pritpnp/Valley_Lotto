@@ -4,6 +4,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
   <title>{% block title %}{{ site_title or 'Valley Lotto' }}{% endblock %}</title>
+  <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" sizes="any">
+  <link rel="icon" type="image/png" sizes="32x32"
+        href="{{ url_for('static', filename='favicon-32.png') }}">
+  <link rel="apple-touch-icon"
+        href="{{ url_for('static', filename='apple-touch-icon.png') }}">
   <style>
     /* Brand palette, taken from the logo: gold sun, red heart, deep + leaf green.
        Light is the default; dark redefines only the tokens, so every component
@@ -99,7 +104,7 @@
     <div class="brand">
       {% if logo_file %}
         <img src="{{ url_for('static', filename=logo_file) }}" alt=""
-             width="32" height="32" style="display:block;border-radius:4px">
+             style="display:block;height:34px;width:auto">
       {% else %}
       <svg width="30" height="30" viewBox="0 0 64 64" aria-hidden="true" focusable="false">
         <!-- Sun rays fanning across the top, springing from the disc edge -->
