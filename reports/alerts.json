@@ -1,16 +1,1 @@
-[
-  {
-    "kind": "ended",
-    "game_number": "1748",
-    "name": "Money Maker",
-    "severity": "info",
-    "message": "A game ENDED sales: #1748 Money Maker (ended 08/14/2026). Started 08/2025.",
-    "owned": false,
-    "details": {
-      "on_sale_date": "08/2025",
-      "sales_end_date": "08/14/2026",
-      "claim_deadline": null,
-      "price": 5.0
-    }
-  }
-]
+[]
