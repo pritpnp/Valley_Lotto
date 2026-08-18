@@ -61,17 +61,41 @@
       --err:#FF7A70; --err-bg:#3A1717;
     }
     * { box-sizing: border-box; }
+    /* A phone screen is the constraint: nothing may push the page wider than
+       the viewport. Wide content (tables) scrolls inside its own container. */
+    html, body { max-width:100%; overflow-x:hidden; }
     body { margin:0; background:var(--bg); color:var(--ink);
       font:16px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; }
     .wrap { max-width: 760px; margin: 0 auto; padding: 16px; }
     header.bar { display:flex; align-items:center; justify-content:space-between;
-      gap:12px; padding:10px 16px; background:var(--panel);
+      gap:10px; padding:8px 12px; background:var(--panel);
       border-bottom:3px solid transparent;
       border-image:linear-gradient(90deg,var(--brand-green),var(--brand-leaf),
                    var(--brand-gold),var(--brand-amber),var(--brand-red)) 1; }
-    header.bar .brand { display:flex; align-items:center; gap:8px;
-      font-weight:800; letter-spacing:.2px; white-space:nowrap; }
-    header.bar .who { color:var(--muted); font-size:13px; text-align:right; }
+    header.bar .brand { display:flex; align-items:center; gap:8px; min-width:0;
+      font-weight:800; letter-spacing:.2px; font-size:17px;
+      overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    header.bar .brand span { overflow:hidden; text-overflow:ellipsis; }
+    .menu-btn { flex:none; padding:10px 14px; font-size:15px; font-weight:700;
+      border-radius:10px; background:var(--panel2); color:var(--ink);
+      border:1px solid var(--line); }
+
+    /* Full-screen sheet: big targets for a counter device, closes on choice. */
+    .sheet { position:fixed; inset:0; z-index:60; background:var(--bg);
+      display:none; flex-direction:column; overflow-y:auto; }
+    .sheet.open { display:flex; }
+    .sheet-head { display:flex; align-items:center; justify-content:space-between;
+      padding:14px 16px; border-bottom:1px solid var(--line); background:var(--panel);
+      position:sticky; top:0; }
+    .sheet-head b { font-size:17px; }
+    .sheet a.item, .sheet button.item { display:block; width:100%; text-align:left;
+      padding:16px 18px; font-size:17px; font-weight:600; color:var(--ink);
+      background:none; border:none; border-bottom:1px solid var(--line); }
+    .sheet a.item:hover { text-decoration:none; background:var(--panel2); }
+    .sheet .group { padding:14px 18px 6px; font-size:12px; font-weight:700;
+      letter-spacing:.06em; text-transform:uppercase; color:var(--muted); }
+    .sheet select { width:100%; padding:14px; font-size:16px; border-radius:10px;
+      background:var(--panel2); color:var(--ink); border:1px solid var(--line); }
     a { color:var(--accent); text-decoration:none; }
     a:hover { text-decoration:underline; }
     .card { background:var(--panel); border:1px solid var(--line); border-radius:14px;
@@ -119,46 +143,78 @@
         <path d="M32 63A27 27 0 0 0 58 33A27 27 0 0 0 32 63Z" fill="var(--brand-leaf)"/>
       </svg>
       {% endif %}
-      {{ site_title or 'Valley Lotto' }}
+      <span>{{ site_title or 'Valley Lotto' }}</span>
     </div>
-    <div class="who">
-      {% if signed_in %}
-        {% if is_superadmin and all_stores %}
-          <form method="post" action="{{ url_for('admin_act_as') }}" style="display:inline">
-            <input type="hidden" name="next" value="{{ request.path }}">
-            <select name="store" onchange="this.form.submit()"
-                    style="padding:4px 6px;border-radius:8px;background:var(--panel2);
-                           color:var(--ink);border:1px solid var(--line);font-size:13px">
-              {% for st in all_stores %}
-                <option value="{{ st.slug }}" {% if store and store.slug == st.slug %}selected{% endif %}>
-                  {{ st.name }}</option>
-              {% endfor %}
-            </select>
-          </form> ·
-        {% endif %}
-        <a href="{{ url_for('dashboard') }}">Dashboard</a> ·
-        <a href="{{ url_for('catalog') }}">Catalog</a> ·
-        <a href="{{ url_for('inventory') }}">Inventory</a> ·
-        <a href="{{ url_for('count') }}">Scan</a> ·
-        <a href="{{ url_for('report') }}">Sales</a> ·
-        <a href="{{ url_for('history') }}">History</a> ·
-        {% if is_manager %}
-          <a href="{{ url_for('weights_page') }}">Emphasis</a> ·
-          <a href="{{ url_for('staff_page') }}">Staff</a> ·
-        {% endif %}
-        {% if is_superadmin %}
-          <a href="{{ url_for('overview') }}">Chain</a> ·
-          <a href="{{ url_for('admin_stores') }}">Stores</a> ·
-          <a href="{{ url_for('admin_users') }}">Managers</a> ·
-        {% endif %}
-        {% if staff_name %}
-          <a href="{{ url_for('pin') }}" title="switch user">👤 {{ staff_name }}</a> ·
-        {% endif %}
-        <a class="btn" href="{{ url_for('logout_confirm') }}"
-           style="padding:4px 10px;font-size:13px">{{ "End shift" if pin_only else "Log out" }}</a>
-      {% endif %}
-    </div>
+    {% if signed_in %}
+      <button class="menu-btn" onclick="openMenu()" aria-label="Menu">☰ Menu</button>
+    {% endif %}
   </header>
+  {% if signed_in %}
+  <nav id="menu" class="sheet" aria-hidden="true">
+    <div class="sheet-head">
+      <b>{{ site_title or 'Valley Lotto' }}</b>
+      <button onclick="closeMenu()" aria-label="Close"
+              style="padding:8px 16px;font-size:20px;line-height:1">✕</button>
+    </div>
+
+    {% if is_superadmin and all_stores %}
+      <div class="group">Store</div>
+      <form method="post" action="{{ url_for('admin_act_as') }}" style="padding:0 18px 14px">
+        <input type="hidden" name="next" value="{{ request.path }}">
+        <select name="store" onchange="this.form.submit()">
+          {% for st in all_stores %}
+            <option value="{{ st.slug }}" {% if store and store.slug == st.slug %}selected{% endif %}>
+              {{ st.name }}</option>
+          {% endfor %}
+        </select>
+      </form>
+    {% endif %}
+
+    <div class="group">Daily</div>
+    <a class="item" href="{{ url_for('count') }}">Scan a count</a>
+    <a class="item" href="{{ url_for('report') }}">Sales</a>
+    <a class="item" href="{{ url_for('dashboard') }}">Dashboard</a>
+    <a class="item" href="{{ url_for('inventory') }}">Boxes &amp; inventory</a>
+
+    <div class="group">Look up</div>
+    <a class="item" href="{{ url_for('catalog') }}">Full PA catalog</a>
+    <a class="item" href="{{ url_for('history') }}">History</a>
+
+    {% if is_manager %}
+      <div class="group">Manage</div>
+      <a class="item" href="{{ url_for('staff_page') }}">Staff &amp; PINs</a>
+      <a class="item" href="{{ url_for('weights_page') }}">Rating emphasis</a>
+      <a class="item" href="{{ url_for('access_log') }}">Access log</a>
+    {% endif %}
+
+    {% if is_superadmin %}
+      <div class="group">Chain</div>
+      <a class="item" href="{{ url_for('overview') }}">All stores</a>
+      <a class="item" href="{{ url_for('admin_stores') }}">Stores</a>
+      <a class="item" href="{{ url_for('admin_users') }}">Managers</a>
+    {% endif %}
+
+    <div class="group">{{ staff_name or username or '' }}</div>
+    {% if staff_name %}
+      <a class="item" href="{{ url_for('pin') }}">Switch user</a>
+    {% endif %}
+    <a class="item" href="{{ url_for('logout_confirm') }}" style="color:var(--err)">
+      {{ "End shift" if pin_only else "Log out" }}</a>
+    <div style="height:40px"></div>
+  </nav>
+  {% endif %}
+
   <div class="wrap">{% block body %}{% endblock %}</div>
+  <script>
+    // The sheet closes on choice because tapping an item navigates away; the ✕
+    // and the Android back button cover the "changed my mind" case.
+    function openMenu(){ const m=document.getElementById('menu');
+      m.classList.add('open'); m.setAttribute('aria-hidden','false');
+      history.pushState({menu:1}, ''); }
+    function closeMenu(){ const m=document.getElementById('menu');
+      m.classList.remove('open'); m.setAttribute('aria-hidden','true'); }
+    window.addEventListener('popstate', closeMenu);
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeMenu(); });
+  </script>
 </body>
 </html>
