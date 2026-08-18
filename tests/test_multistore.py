@@ -160,3 +160,92 @@ def test_actions_are_written_to_the_audit_trail(app, boss):
         rows = db.scalars(select(AuditRow).where(AuditRow.action == "inventory.add")).all()
     assert rows and rows[0].store == "valley-supermarket"
     assert rows[0].actor == "sup_mgr"
+
+
+# --- managing accounts: rename, disable, delete ------------------------------
+
+def _accounts(client):
+    return client.get("/admin/users").data.decode()
+
+
+def test_superadmin_can_rename_an_account(app, boss):
+    boss.post("/admin/users", data={"action": "rename", "user_id": "2",
+                                    "username": "wb_manager"})
+    assert "wb_manager" in _accounts(boss)
+
+
+def test_you_can_rename_yourself_and_still_log_in(app):
+    """The owner's account is created from an email; renaming it must not
+    lock them out."""
+    c = app.test_client()
+    c.post("/register", data={"username": "pritpnp", "password": "secret1"})
+    with app.config["SESSION_FACTORY"]() as db:
+        me = db.scalars(select(User)).first().id
+    c.post("/admin/users", data={"action": "rename", "user_id": str(me), "username": "Prit"})
+
+    fresh = app.test_client()
+    assert fresh.post("/login", data={"username": "Prit", "password": "secret1"},
+                      follow_redirects=False).status_code == 302
+    # ...and the capitalisation you chose doesn't have to be typed exactly
+    assert app.test_client().post("/login", data={"username": "prit", "password": "secret1"},
+                                  follow_redirects=False).status_code == 302
+
+
+def test_rename_rejects_a_taken_or_malformed_username(app, boss):
+    assert b"is taken" in boss.post("/admin/users", data={
+        "action": "rename", "user_id": "2", "username": "wb_mgr"}).data
+    assert b"Username:" in boss.post("/admin/users", data={
+        "action": "rename", "user_id": "2", "username": "a b!"}).data
+
+
+def test_superadmin_can_disable_and_re_enable_a_manager(app, boss):
+    boss.post("/admin/users", data={"action": "toggle", "user_id": "2"})
+    # a disabled account cannot sign in
+    assert b"Invalid username or password" in app.test_client().post(
+        "/login", data={"username": "sup_mgr", "password": "secret1"}).data
+    boss.post("/admin/users", data={"action": "toggle", "user_id": "2"})
+    assert app.test_client().post("/login", data={"username": "sup_mgr", "password": "secret1"},
+                                  follow_redirects=False).status_code == 302
+
+
+def test_superadmin_can_delete_a_manager_without_losing_store_data(app, boss):
+    mgr = _login(app, "sup_mgr")
+    mgr.post("/inventory/add", data={"game_number": "1750"})
+    boss.post("/admin/users", data={"action": "delete", "user_id": "2"})
+
+    assert "sup_mgr" not in _accounts(boss)
+    assert app.test_client().post("/login", data={"username": "sup_mgr",
+                                                  "password": "secret1"}).status_code == 200
+    # the store and everything in it survive — only the login went away
+    with app.config["SESSION_FACTORY"]() as db:
+        assert db.get(Store, "valley-supermarket") is not None
+        assert db.scalars(select(InventoryRow).where(
+            InventoryRow.store == "valley-supermarket")).all()
+
+
+def test_you_cannot_delete_or_disable_yourself(app, boss):
+    with app.config["SESSION_FACTORY"]() as db:
+        me = db.scalars(select(User).where(User.role == "superadmin")).first().id
+    assert b"signed in with" in boss.post("/admin/users",
+                                          data={"action": "delete", "user_id": str(me)}).data
+    assert b"signed in with" in boss.post("/admin/users",
+                                          data={"action": "toggle", "user_id": str(me)}).data
+    assert "boss" in _accounts(boss)
+
+
+def test_the_last_superadmin_cannot_be_deleted(app, boss):
+    """Two superadmins: deleting one is fine, deleting the second is not."""
+    boss.post("/admin/users", data={"action": "add", "username": "boss2",
+                                    "password": "secret1", "role": "superadmin"})
+    with app.config["SESSION_FACTORY"]() as db:
+        other = db.scalars(select(User).where(User.username == "boss2")).first().id
+    boss.post("/admin/users", data={"action": "delete", "user_id": str(other)})
+    assert "boss2" not in _accounts(boss)
+    # now only the signed-in owner remains, and that one is protected too
+    with app.config["SESSION_FACTORY"]() as db:
+        assert db.query(User).filter(User.role == "superadmin").count() == 1
+
+
+def test_a_manager_cannot_delete_accounts(app, boss):
+    mgr = _login(app, "sup_mgr")
+    assert mgr.post("/admin/users", data={"action": "delete", "user_id": "3"}).status_code == 403

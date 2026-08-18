@@ -38,7 +38,8 @@
 <div class="card">
   <b>Accounts ({{ users|length }})</b>
   <table>
-    <thead><tr><th>Username</th><th>Role</th><th>Store</th><th>Reset password</th><th></th></tr></thead>
+    <thead><tr><th>Username</th><th>Role</th><th>Store</th><th>Rename</th>
+               <th>Reset password</th><th></th></tr></thead>
     <tbody>
     {% for u in users %}
       <tr {% if not u.active %}class="muted"{% endif %}>
@@ -46,6 +47,15 @@
             {% if u.display_name %}<div class="muted" style="font-size:11px">{{ u.display_name }}</div>{% endif %}</td>
         <td>{{ u.role }}</td>
         <td class="muted">{{ u.store or 'all stores' }}</td>
+        <td>
+          <form method="post" class="row" style="gap:6px">
+            <input type="hidden" name="action" value="rename">
+            <input type="hidden" name="user_id" value="{{ u.id }}">
+            <input type="text" name="username" value="{{ u.username or '' }}"
+                   style="width:120px;padding:6px" required>
+            <button style="padding:6px 10px;font-size:12px">Save</button>
+          </form>
+        </td>
         <td>
           <form method="post" class="row" style="gap:6px">
             <input type="hidden" name="action" value="reset_pw">
@@ -57,13 +67,22 @@
         </td>
         <td>
           {% if u.id != me %}
-          <form method="post">
-            <input type="hidden" name="action" value="toggle">
-            <input type="hidden" name="user_id" value="{{ u.id }}">
-            <button style="padding:6px 10px;font-size:12px">
-              {{ 'Disable' if u.active else 'Enable' }}</button>
-          </form>
-          {% endif %}
+          <div class="row" style="gap:6px">
+            <form method="post">
+              <input type="hidden" name="action" value="toggle">
+              <input type="hidden" name="user_id" value="{{ u.id }}">
+              <button style="padding:6px 10px;font-size:12px">
+                {{ 'Disable' if u.active else 'Enable' }}</button>
+            </form>
+            <form method="post"
+                  onsubmit="return confirm('Delete {{ u.username or u.email }}? Their store\'s inventory, staff and sales are kept — only the login is removed.')">
+              <input type="hidden" name="action" value="delete">
+              <input type="hidden" name="user_id" value="{{ u.id }}">
+              <button style="padding:6px 10px;font-size:12px;background:var(--err-bg);color:var(--err)">
+                Delete</button>
+            </form>
+          </div>
+          {% else %}<span class="muted" style="font-size:12px">signed in</span>{% endif %}
         </td>
       </tr>
     {% endfor %}

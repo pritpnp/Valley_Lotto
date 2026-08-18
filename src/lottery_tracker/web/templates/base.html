@@ -97,16 +97,23 @@
 <body>
   <header class="bar">
     <div class="brand">
-      <svg width="28" height="28" viewBox="0 0 64 64" aria-hidden="true" focusable="false">
+      {% if logo_file %}
+        <img src="{{ url_for('static', filename=logo_file) }}" alt=""
+             width="32" height="32" style="display:block;border-radius:4px">
+      {% else %}
+      <svg width="30" height="30" viewBox="0 0 64 64" aria-hidden="true" focusable="false">
+        <!-- Sun rays fanning across the top, springing from the disc edge -->
         <g fill="var(--brand-amber)">
-          <path d="M32 1l4 9h-8zM14 7l7 7-6 3zM50 7l-1 10-6-3zM3 22l9 4-8 4zM61 22l-1 8-8-4z"/>
+          <path d="M2.5 23.3L17.5 28.4L18.3 23.7ZM6.0 13.5L18.4 23.4L20.8 19.3ZM12.7 5.5L21.0 19.1L24.6 16.0ZM21.7 0.3L24.9 15.9L29.4 14.2ZM32.0 -1.5L29.6 14.2L34.4 14.2ZM42.3 0.3L34.6 14.2L39.1 15.9ZM51.3 5.5L39.4 16.0L43.0 19.1ZM58.0 13.5L43.2 19.3L45.6 23.4ZM61.5 23.3L45.7 23.7L46.5 28.4Z"/>
         </g>
-        <circle cx="32" cy="26" r="16" fill="var(--brand-gold)"/>
-        <path d="M32 37c-7-5-11-8-11-13a5.5 5.5 0 0 1 11-2.6A5.5 5.5 0 0 1 43 24c0 5-4 8-11 13z"
+        <circle cx="32" cy="28.5" r="15.5" fill="var(--brand-gold)"/>
+        <path d="M32 40c-8-6-12.5-9.5-12.5-14.5a6.2 6.2 0 0 1 12.5-2.9A6.2 6.2 0 0 1 44.5 25.5c0 5-4.5 8.5-12.5 14.5z"
               fill="var(--brand-red)"/>
-        <path d="M31 62C31 51 23 44 12 44c0 11 8 18 19 18z" fill="var(--brand-green)"/>
-        <path d="M33 62c0-11 8-18 19-18 0 11-8 18-19 18z" fill="var(--brand-leaf)"/>
+        <!-- Two leaves cupping the sun, tips up and out -->
+        <path d="M32 63A27 27 0 0 1 6 33A27 27 0 0 1 32 63Z" fill="var(--brand-green)"/>
+        <path d="M32 63A27 27 0 0 0 58 33A27 27 0 0 0 32 63Z" fill="var(--brand-leaf)"/>
       </svg>
+      {% endif %}
       {{ site_title or 'Valley Lotto' }}
     </div>
     <div class="who">

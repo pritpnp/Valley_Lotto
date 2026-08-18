@@ -22,7 +22,7 @@ from pathlib import Path
 
 from flask import (Flask, current_app, g, redirect, render_template, request,
                    session, url_for, jsonify, abort)
-from sqlalchemy import create_engine, select
+from sqlalchemy import create_engine, func, select
 from sqlalchemy.orm import sessionmaker
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -127,6 +127,19 @@ def _parse_slots(spec: str | None) -> list:
     except (TypeError, ValueError):
         return standard_slots()
     return standard_slots(tuple(pairs)) if pairs else standard_slots()
+
+
+def _logo_file() -> str | None:
+    """The brand logo to display, if one has been supplied.
+
+    Kept as a file lookup rather than a hardcoded name so the logo can be
+    swapped by dropping an image in, with no code change.
+    """
+    static = Path(__file__).resolve().parent / "static"
+    for name in ("logo.svg", "logo.png", "logo.webp", "logo.jpg", "logo.jpeg"):
+        if (static / name).exists():
+            return name
+    return None
 
 
 def _load_prices() -> dict:
@@ -405,10 +418,12 @@ def _register_routes(app: Flask):
             "is_superadmin": session.get("role") == "superadmin",
             "is_manager": _is_at_least(role or "employee", "manager"),
             "store": store,
-            # A superadmin sees the chain brand; everyone else sees their own
-            # store, which is how a clerk knows the device is pointed correctly.
-            "site_title": ("Valley Lotto" if session.get("role") == "superadmin"
-                           else (store.title if store else "Valley Lotto")),
+            # Always the store being operated on — a clerk (and you, when acting
+            # as a store) can tell at a glance which location this screen is for.
+            "site_title": store.title if store else "Valley Lotto",
+            # Drop a real logo at web/static/logo.(png|svg|jpg) and it is used
+            # verbatim; until then the header falls back to the drawn mark.
+            "logo_file": _logo_file(),
             "all_stores": (_db().scalars(select(Store).where(Store.active.is_(True))
                                          .order_by(Store.name)).all()
                            if session.get("role") == "superadmin" else []),
@@ -489,11 +504,15 @@ def _register_routes(app: Flask):
         employees never do — they unlock a shift with a PIN on a device a manager
         already signed in."""
         if request.method == "POST":
-            uname = (request.form.get("username") or "").strip().lower()
+            uname = (request.form.get("username") or "").strip()
             pw = request.form.get("password") or ""
-            user = _db().scalar(select(User).where(User.username == uname))
+            # Case-insensitive on the way in, so "Prit" and "prit" both work,
+            # while the stored spelling stays exactly as it was typed.
+            user = _db().scalar(select(User).where(
+                func.lower(User.username) == uname.lower()))
             if user is None:      # legacy accounts created with an email
-                user = _db().scalar(select(User).where(User.email == uname))
+                user = _db().scalar(select(User).where(
+                    func.lower(User.email) == uname.lower()))
             if not user or not check_password_hash(user.password_hash, pw) \
                     or user.active is False:
                 log_access("login_fail", 200)
@@ -973,9 +992,51 @@ def _register_routes(app: Flask):
                     audit("user.reset_password", u.username or "")
                 else:
                     error = "Password must be at least 6 characters."
+            elif act == "rename":
+                u = _db().get(User, int(request.form.get("user_id") or 0))
+                new = (request.form.get("username") or "").strip()
+                if not u:
+                    error = "No such account."
+                elif not re.fullmatch(r"[A-Za-z0-9._-]{3,64}", new):
+                    error = "Username: 3-64 chars, letters/numbers/._- only."
+                elif _db().scalar(select(User).where(func.lower(User.username) == new.lower(),
+                                                     User.id != u.id)):
+                    error = f"'{new}' is taken."
+                else:
+                    old = u.username or u.email
+                    u.username = new
+                    _db().commit()
+                    if u.id == session.get("user_id"):
+                        session["username"] = new       # keep the header honest
+                    audit("user.rename", f"{old} -> {new}")
+
+            elif act == "delete":
+                u = _db().get(User, int(request.form.get("user_id") or 0))
+                if not u:
+                    error = "No such account."
+                elif u.id == session.get("user_id"):
+                    error = "You can't delete the account you're signed in with."
+                elif u.role == "superadmin" and _db().query(User).filter(
+                        User.role == "superadmin").count() <= 1:
+                    error = "That's the only superadmin — the chain would have no owner."
+                else:
+                    # A store's data is keyed by store slug, not by user, so
+                    # removing a manager never takes inventory, staff or sales
+                    # with it. The store simply has no manager until you add one.
+                    name = u.username or u.email
+                    _db().delete(u)
+                    _db().commit()
+                    audit("user.delete", name or "")
+
             elif act == "toggle":
                 u = _db().get(User, int(request.form.get("user_id") or 0))
-                if u and u.id != session.get("user_id"):   # never lock yourself out
+                if not u or u.id == session.get("user_id"):
+                    error = "You can't disable the account you're signed in with."
+                elif (u.active and u.role == "superadmin"
+                      and _db().query(User).filter(User.role == "superadmin",
+                                                   User.active.is_(True)).count() <= 1):
+                    error = "That's the only active superadmin."
+                else:
                     u.active = not bool(u.active)
                     _db().commit()
                     audit("user.toggle", f"{u.username} active={u.active}")
