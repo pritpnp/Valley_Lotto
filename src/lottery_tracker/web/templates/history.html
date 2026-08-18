@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% block title %}History — {{ site_title }}{% endblock %}
+{% block body %}
+<style>
+  .tabs { display:flex; gap:8px; margin-bottom:6px; flex-wrap:wrap; }
+  .tabs a { padding:8px 14px; border-radius:999px; border:1px solid var(--line);
+            background:var(--panel2); font-weight:600; font-size:14px; }
+  .tabs a.on { background:var(--accent); color:var(--accent-ink); border-color:transparent; }
+  .spark { display:inline-flex; align-items:flex-end; gap:1px; height:22px; }
+  .spark i { width:4px; background:var(--accent); border-radius:1px; display:block; }
+  .up { color:var(--ok); font-weight:700; } .down { color:var(--err); font-weight:700; }
+  td,th { font-size:13.5px; } .scroll { overflow-x:auto; }
+</style>
+
+<div class="tabs">
+  <a href="{{ url_for('history', tab='sales') }}" class="{{ 'on' if tab=='sales' }}">Sales history</a>
+  <a href="{{ url_for('history', tab='games') }}" class="{{ 'on' if tab=='games' }}">Game trends</a>
+  <a href="{{ url_for('history', tab='audit') }}" class="{{ 'on' if tab=='audit' }}">Audit trail</a>
+</div>
+
+{% if tab == 'sales' %}
+  <div class="card">
+    <h2 style="margin:0 0 4px">Sell-through by game</h2>
+    <p class="muted" style="font-size:13px">
+      Your own sales — the one signal PA can't give you. Sorted by tickets per counted day.
+    </p>
+    {% if trend %}
+    <div class="scroll"><table>
+      <thead><tr><th>Game</th><th>Per day</th><th>Tickets</th><th>Revenue</th><th>Days counted</th></tr></thead>
+      <tbody>
+      {% for t in trend %}
+        <tr><td>{{ t.game }}</td><td><b>{{ t.per_day }}</b></td><td>{{ t.tickets }}</td>
+            <td>${{ '%.2f'|format(t.revenue) }}</td><td class="muted">{{ t.days }}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table></div>
+    {% else %}<p class="muted">No counts recorded yet.</p>{% endif %}
+  </div>
+
+  <div class="card">
+    <b>Past days</b>
+    {% for rep in days %}
+      <div style="border-bottom:1px solid var(--line);padding:10px 0">
+        <div class="row" style="justify-content:space-between">
+          <b><a href="{{ url_for('report', date=rep.date) }}">{{ rep.date }}</a></b>
+          <span>{{ rep.total_tickets }} tickets
+            {% if rep.total_revenue is not none %}· <b>${{ '%.2f'|format(rep.total_revenue) }}</b>{% endif %}
+          </span>
+        </div>
+        <span class="muted" style="font-size:12px">{{ rep.rows|length }} boxes counted</span>
+      </div>
+    {% else %}<p class="muted">Nothing yet — run a count and it'll appear here.</p>{% endfor %}
+  </div>
+
+{% elif tab == 'games' %}
+  <div class="card">
+    <h2 style="margin:0 0 4px">How your games are trending</h2>
+    <p class="muted" style="font-size:13px">
+      Rating over the last snapshots (the scraper saves one twice a day). A steep
+      fall is the cue to swap a game <i>before</i> it goes dead.
+    </p>
+    <div class="scroll"><table>
+      <thead><tr><th>#</th><th>Game</th><th>Trend</th><th>Then → now</th><th>Change</th></tr></thead>
+      <tbody>
+      {% for g in games %}
+        <tr>
+          <td class="muted">{{ g.game_number }}</td>
+          <td>{{ g.name }}{% if g.price %} <span class="muted">${{ '%g'|format(g.price) }}</span>{% endif %}</td>
+          <td><span class="spark">
+            {% for p in g.points %}{% if p.rating is not none %}
+              <i style="height:{{ [3, (p.rating|round|int) * 22 // 100]|max }}px"></i>
+            {% endif %}{% endfor %}
+          </span></td>
+          <td class="muted">{{ g.first|round|int if g.first is not none else '—' }}
+              → <b>{{ g.last|round|int if g.last is not none else '—' }}</b></td>
+          <td class="{{ 'down' if g.change < 0 else 'up' if g.change > 0 }}">
+            {{ '%+d'|format(g.change) }}</td>
+        </tr>
+      {% else %}
+        <tr><td colspan="5" class="muted">No snapshots yet for the games you carry.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table></div>
+  </div>
+
+{% else %}
+  <div class="card">
+    <h2 style="margin:0 0 4px">Audit trail</h2>
+    <p class="muted" style="font-size:13px">Who changed what at this store.</p>
+    <div class="scroll"><table>
+      <thead><tr><th>When (UTC)</th><th>Who</th><th>Action</th><th>Detail</th></tr></thead>
+      <tbody>
+      {% for a in audit %}
+        <tr><td class="muted">{{ a.at.strftime('%m-%d %H:%M') }}</td>
+            <td>{{ a.actor }} <span class="muted">({{ a.actor_role }})</span></td>
+            <td><code>{{ a.action }}</code></td>
+            <td class="muted">{{ a.detail }}</td></tr>
+      {% else %}
+        <tr><td colspan="4" class="muted">Nothing recorded yet.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table></div>
+  </div>
+{% endif %}
+{% endblock %}

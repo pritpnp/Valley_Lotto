@@ -29,11 +29,13 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from ..barcode import try_parse_ticket
 from ..scans import Scan, ScanLog
 from ..session import CountSession, standard_slots
-from ..reporting import daily_report, render_daily_report_md, as_zone
+from ..reporting import (daily_report, render_daily_report_md, as_zone,
+                         business_date)
 from ..config import Config
 from ..rules import RATING_FACTORS
-from .models import (Base, User, ScanRow, ActiveCount, InventoryRow, EmphasisRow,
-                     StaffRow, AccessRow)
+from .models import (Base, User, Store, ScanRow, ActiveCount, InventoryRow,
+                     EmphasisRow, StaffRow, AccessRow, AuditRow)
+from .migrate import ensure_schema
 
 # The KEEP/SEND-BACK engine. pa_data is framework-neutral (it imports only from
 # lottery_tracker), so the dashboard math is shared with the FastAPI app and the
@@ -184,7 +186,17 @@ def create_app(config: dict | None = None) -> Flask:
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     engine = create_engine(_normalize_db_url(db_url), future=True,
                            connect_args={"check_same_thread": False} if db_url.startswith("sqlite") else {})
-    Base.metadata.create_all(engine)  # auto-create tables (incl. on Supabase)
+    # Additive migration + backfill; safe on every boot and on a live database
+    # that predates multi-store. See migrate.py.
+    ensure_schema(engine,
+                  default_slug=app.config["DEFAULT_STORE"],
+                  default_name=cfg.get("DEFAULT_STORE_NAME",
+                                       _env("DEFAULT_STORE_NAME", "Valley Lotto")),
+                  timezone=app.config["TIMEZONE"],
+                  # The store row must inherit the configured layout, not a
+                  # hardcoded default — otherwise a store created on first boot
+                  # silently gets 48 boxes regardless of SLOTS.
+                  slots=str(cfg.get("SLOTS") or _env("SLOTS") or "48"))
     app.config["SESSION_FACTORY"] = sessionmaker(bind=engine, expire_on_commit=False)
 
     _register_routes(app)
@@ -231,6 +243,57 @@ def log_access(event: str = "page", status: int = 0) -> None:
             pass
 
 
+def current_user():
+    uid = session.get("user_id")
+    return _db().get(User, uid) if uid else None
+
+
+def acting_store_slug() -> str | None:
+    """Which store this request is operating on.
+
+    A manager is pinned to their own store. A superadmin belongs to none, so they
+    pick one ("act as"), which is remembered in the session.
+    """
+    if session.get("role") == "superadmin":
+        return session.get("acting_store")
+    return session.get("user_store")
+
+
+def current_store():
+    slug = acting_store_slug()
+    return _db().get(Store, slug) if slug else None
+
+
+def effective_role() -> str:
+    """What the person in front of the screen may do.
+
+    Subtle but important: the counter device stays signed in as the MANAGER, so
+    the session's own role is too generous once an employee unlocks a shift with
+    their PIN. While someone is PIN'd in, their staff role wins — otherwise an
+    employee would inherit the manager's ability to add staff or change settings.
+    """
+    staff_role = session.get("staff_role")
+    if staff_role:
+        return "employee" if staff_role in ("clerk", "employee") else staff_role
+    role = session.get("role")
+    if role:
+        return role
+    # PIN-only single-store mode with nobody PIN'd in. If no PINs exist yet this
+    # is the bootstrap window (someone has to be able to create the first one),
+    # so grant manager — enough to set up a store, never chain administration.
+    if _pin_only():
+        try:
+            return "employee" if _store_has_staff() else "manager"
+        except Exception:  # noqa: BLE001
+            return "employee"
+    return "employee"
+
+
+def _is_at_least(role: str, needed: str) -> bool:
+    order = {"employee": 0, "manager": 1, "superadmin": 2}
+    return order.get(role, 0) >= order.get(needed, 0)
+
+
 def _pin_only() -> bool:
     return bool(current_app.config.get("PIN_ONLY"))
 
@@ -261,6 +324,25 @@ def login_required(view):
         dest = "pin" if _pin_only() else "login"
         return redirect(url_for(dest, next=request.path))
     return wrapped
+
+
+def role_required(minimum: str):
+    """Gate a page on the effective role (employee < manager < superadmin)."""
+    def deco(view):
+        @wraps(view)
+        def wrapped(*a, **kw):
+            if not _signed_in():
+                dest = "pin" if _pin_only() else "login"
+                return redirect(url_for(dest, next=request.path))
+            if not _is_at_least(effective_role(), minimum):
+                abort(403)
+            return view(*a, **kw)
+        return wrapped
+    return deco
+
+
+manager_required = role_required("manager")
+superadmin_required = role_required("superadmin")
 
 
 def staff_required(view):
@@ -307,10 +389,30 @@ def _register_routes(app: Flask):
             signed_in = _signed_in()
         except Exception:  # noqa: BLE001 — never let the chrome break a page
             signed_in = bool(session.get("user_id") or session.get("staff_id"))
-        return {"email": session.get("email"),
-                "staff_name": session.get("staff_name"),
-                "pin_only": bool(app.config.get("PIN_ONLY")),
-                "signed_in": signed_in}
+        store = None
+        try:
+            store = current_store()
+        except Exception:  # noqa: BLE001
+            pass
+        role = effective_role() if session.get("user_id") else None
+        return {
+            "email": session.get("username") or session.get("email"),
+            "username": session.get("username"),
+            "staff_name": session.get("staff_name"),
+            "pin_only": bool(app.config.get("PIN_ONLY")),
+            "signed_in": signed_in,
+            "role": role,
+            "is_superadmin": session.get("role") == "superadmin",
+            "is_manager": _is_at_least(role or "employee", "manager"),
+            "store": store,
+            # A superadmin sees the chain brand; everyone else sees their own
+            # store, which is how a clerk knows the device is pointed correctly.
+            "site_title": ("Valley Lotto" if session.get("role") == "superadmin"
+                           else (store.title if store else "Valley Lotto")),
+            "all_stores": (_db().scalars(select(Store).where(Store.active.is_(True))
+                                         .order_by(Store.name)).all()
+                           if session.get("role") == "superadmin" else []),
+        }
 
     # Skip the noise: Railway health checks and static assets would otherwise
     # dominate the log and hide the traffic you actually want to see.
@@ -343,42 +445,64 @@ def _register_routes(app: Flask):
     # --- registration & login --------------------------------------------
     @app.route("/register", methods=["GET", "POST"])
     def register():
+        """Bootstrap the very first account (the superadmin).
+
+        In a chain, accounts are handed out — a manager is created by the
+        superadmin, an employee by their manager. So this page is only open while
+        no account exists yet, unless a REGISTER_CODE is configured.
+        """
+        have_users = _db().scalar(select(User).limit(1)) is not None
         need_code = bool(app.config["REGISTER_CODE"])
+        if have_users and not need_code:
+            return redirect(url_for("login"))
+
         if request.method == "POST":
-            email = (request.form.get("email") or "").strip().lower()
+            uname = (request.form.get("username") or request.form.get("email") or "").strip().lower()
             pw = request.form.get("password") or ""
             code = request.form.get("code") or ""
             err = None
             if need_code and code != app.config["REGISTER_CODE"]:
                 err = "Wrong registration code."
-            elif not email or not pw:
-                err = "Email and password are required."
-            elif _db().scalar(select(User).where(User.email == email)):
-                err = "That email is already registered."
+            elif not uname or not pw:
+                err = "Username and password are required."
+            elif _db().scalar(select(User).where(User.username == uname)):
+                err = "That username is already taken."
             if err:
-                return render_template("register.html", error=err, need_code=need_code, email=email)
-            # First user becomes admin.
-            role = "admin" if _db().scalar(select(User).limit(1)) is None else "clerk"
-            user = User(email=email, password_hash=generate_password_hash(pw), role=role)
+                return render_template("register.html", error=err, need_code=need_code,
+                                       username=uname)
+            user = User(username=uname,
+                        password_hash=generate_password_hash(pw),
+                        # The first account runs the whole chain; later ones are
+                        # ordinary managers of the default store.
+                        role="superadmin" if not have_users else "manager",
+                        store=None if not have_users else app.config["DEFAULT_STORE"])
             _db().add(user)
             _db().commit()
-            session["user_id"] = user.id
-            session["email"] = user.email
-            return redirect(url_for("count"))
-        return render_template("register.html", error=None, need_code=need_code, email="")
+            _start_session(user)
+            audit("user.register", uname)
+            return redirect(url_for("dashboard"))
+        return render_template("register.html", error=None, need_code=need_code, username="")
 
     @app.route("/login", methods=["GET", "POST"])
     def login():
+        """Sign in with a username. Managers and the superadmin have accounts;
+        employees never do — they unlock a shift with a PIN on a device a manager
+        already signed in."""
         if request.method == "POST":
-            email = (request.form.get("email") or "").strip().lower()
+            uname = (request.form.get("username") or "").strip().lower()
             pw = request.form.get("password") or ""
-            user = _db().scalar(select(User).where(User.email == email))
-            if not user or not check_password_hash(user.password_hash, pw):
-                return render_template("login.html", error="Invalid email or password.", email=email)
-            session["user_id"] = user.id
-            session["email"] = user.email
-            return redirect(request.args.get("next") or url_for("count"))
-        return render_template("login.html", error=None, email="")
+            user = _db().scalar(select(User).where(User.username == uname))
+            if user is None:      # legacy accounts created with an email
+                user = _db().scalar(select(User).where(User.email == uname))
+            if not user or not check_password_hash(user.password_hash, pw) \
+                    or user.active is False:
+                log_access("login_fail", 200)
+                return render_template("login.html", error="Invalid username or password.",
+                                       username=uname)
+            _start_session(user)
+            log_access("login_ok", 302)
+            return redirect(request.args.get("next") or url_for("dashboard"))
+        return render_template("login.html", error=None, username="")
 
     @app.get("/logout")
     def logout_confirm():
@@ -398,13 +522,52 @@ def _register_routes(app: Flask):
             # Only end the shift; there's no store credential to give up.
             session.pop("staff_id", None)
             session.pop("staff_name", None)
+            session.pop("staff_role", None)
             return redirect(url_for("pin"))
         session.clear()
         return redirect(url_for("login"))
 
+    def _start_session(user: User) -> None:
+        """Put the signed-in account into the session, including which store it
+        operates on. A superadmin has no home store, so they start by acting on
+        the first one and can switch."""
+        session.clear()
+        session.permanent = True
+        session["user_id"] = user.id
+        session["username"] = user.username or user.email
+        session["role"] = user.role
+        session["user_store"] = user.store
+        if user.role == "superadmin":
+            first = _db().scalars(select(Store).where(Store.active.is_(True))
+                                  .order_by(Store.name)).first()
+            session["acting_store"] = first.slug if first else None
+
     # --- active count session helpers ------------------------------------
     def _store():
-        return app.config["DEFAULT_STORE"]
+        """The store this request reads and writes. Falls back to the configured
+        default so a single-store install keeps working unchanged."""
+        return acting_store_slug() or app.config["DEFAULT_STORE"]
+
+    def _store_row():
+        return _db().get(Store, _store())
+
+    def _store_tz():
+        row = _store_row()
+        return row.timezone if row else app.config["TIMEZONE"]
+
+    def _store_slots():
+        row = _store_row()
+        return _parse_slots(row.slots) if row else app.config["SLOTS"]
+
+    def audit(action: str, detail: str = "") -> None:
+        """Record a business action for the audit trail."""
+        try:
+            _db().add(AuditRow(store=_store(), action=action, detail=detail[:2000],
+                               actor=(session.get("staff_name") or session.get("username") or "?"),
+                               actor_role=effective_role(), ip=client_ip()))
+            _db().commit()
+        except Exception:  # noqa: BLE001 — auditing must not break the action
+            _db().rollback()
 
     def _counter_key() -> str:
         """Who owns the in-progress count.
@@ -477,7 +640,7 @@ def _register_routes(app: Flask):
     def count_start():
         body = request.get_json(silent=True) or {}
         label = request.form.get("session") or body.get("session") or "morning"
-        cs = CountSession(slots=app.config["SLOTS"], store=_store(),
+        cs = CountSession(slots=_store_slots(), store=_store(),
                           session=label, user=session.get("staff_name") or session.get("email"),
                           known_games=_known_games())
         _save_session(cs)
@@ -548,7 +711,7 @@ def _register_routes(app: Flask):
                               scanned_at=sc.scanned_at, user_email=sc.user, raw=sc.raw))
         _db().commit()
         _clear_session()
-        return jsonify({"committed": len(scans), "date": _today(app.config["TIMEZONE"])})
+        return jsonify({"committed": len(scans), "date": _today(_store_tz())})
 
     # --- who is working: PIN layer ----------------------------------------
     def _staff_list(active_only: bool = True):
@@ -579,6 +742,7 @@ def _register_routes(app: Flask):
                 if entered and check_password_hash(member.pin_hash, entered):
                     session["staff_id"] = member.id
                     session["staff_name"] = member.name
+                    session["staff_role"] = member.role or "employee"
                     log_access("pin_ok", 302)
                     return redirect(nxt)
             log_access("pin_fail", 200)   # the row that matters if someone probes
@@ -594,10 +758,11 @@ def _register_routes(app: Flask):
         """End this person's shift without signing the store out."""
         session.pop("staff_id", None)
         session.pop("staff_name", None)
+        session.pop("staff_role", None)
         return redirect(url_for("pin"))
 
     @app.route("/staff", methods=["GET", "POST"])
-    @login_required
+    @manager_required
     def staff_page():
         """Manage who can sign in with a PIN at this store."""
         error = None
@@ -616,8 +781,9 @@ def _register_routes(app: Flask):
                 else:
                     _db().add(StaffRow(store=_store(), name=name,
                                        pin_hash=generate_password_hash(pin_val),
-                                       role=request.form.get("role") or "clerk"))
+                                       role=request.form.get("role") or "employee"))
                     _db().commit()
+                    audit("staff.add", name)
             elif action == "remove":
                 row = _db().get(StaffRow, int(request.form.get("staff_id") or 0))
                 if row and row.store == _store():
@@ -640,8 +806,200 @@ def _register_routes(app: Flask):
                                error=error, email=session.get("email"),
                                staff_name=session.get("staff_name"))
 
-    @app.get("/access")
+    # --- history: sales over time, game data over time, audit trail --------
+    def _store_log(slug=None) -> ScanLog:
+        rows = _db().scalars(select(ScanRow).where(
+            ScanRow.store == (slug or _store()))).all()
+        return ScanLog(scans=[r.to_scan() for r in rows])
+
+    @app.get("/history")
     @login_required
+    def history():
+        """Three views of the past, which answer different questions:
+        what did we sell, how is a game decaying, and who changed what."""
+        tab = request.args.get("tab") or "sales"
+        tz = _store_tz()
+        ctx = {"tab": tab, "days": [], "games": [], "audit": [], "trend": []}
+
+        if tab == "sales":
+            log = _store_log()
+            prices = _load_prices()
+            dates = sorted({business_date(sc.scanned_at, tz) for sc in log.scans},
+                           reverse=True)[:60]
+            for d in dates:
+                rep = daily_report(log, d, prices=prices, store=_store(), tz=tz)
+                if rep.rows:
+                    ctx["days"].append(rep)
+            # Per-game totals across the whole window: the real sell-through.
+            totals: dict = {}
+            for rep in ctx["days"]:
+                for game, g in rep.per_game.items():
+                    t = totals.setdefault(game, {"game": game, "tickets": 0, "revenue": 0.0,
+                                                 "days": 0})
+                    t["tickets"] += g["tickets"]
+                    t["revenue"] += (g["revenue"] or 0)
+                    t["days"] += 1
+            for t in totals.values():
+                t["per_day"] = round(t["tickets"] / t["days"], 2) if t["days"] else 0
+                t["revenue"] = round(t["revenue"], 2)
+            ctx["trend"] = sorted(totals.values(), key=lambda t: -t["per_day"])
+
+        elif tab == "games":
+            ctx["games"] = pa_data.game_history(DATA_DIR / "snapshots",
+                                                inventory=_inventory(), limit=30)
+
+        elif tab == "audit":
+            ctx["audit"] = _db().scalars(
+                select(AuditRow).where(AuditRow.store == _store())
+                .order_by(AuditRow.at.desc()).limit(200)).all()
+
+        return render_template("history.html", **ctx)
+
+    # --- superadmin: stores, managers, chain overview ----------------------
+    @app.get("/overview")
+    @superadmin_required
+    def overview():
+        """Every store side by side — where the chain is leaking money."""
+        stores = _db().scalars(select(Store).order_by(Store.name)).all()
+        prices = _load_prices()
+        cfg_obj = _cfg()
+        rows = []
+        for st in stores:
+            inv = {r.game_number for r in _db().scalars(
+                select(InventoryRow).where(InventoryRow.store == st.slug)).all()}
+            emph = _db().get(EmphasisRow, st.slug)
+            weights = cfg_obj.rating_weights.scaled(emph.to_emphasis() if emph else {})
+            srows = pa_data.store_rows(_catalog(), inv, cfg_obj.thresholds, weights)
+            summary = pa_data.store_summary(srows)
+
+            log = _store_log(st.slug)
+            today = _today(st.timezone)
+            rep = daily_report(log, today, prices=prices, store=st.slug, tz=st.timezone)
+            dates = sorted({business_date(sc.scanned_at, st.timezone) for sc in log.scans},
+                           reverse=True)[:7]
+            week_tickets = week_rev = 0
+            for d in dates:
+                r = daily_report(log, d, prices=prices, store=st.slug, tz=st.timezone)
+                week_tickets += r.total_tickets
+                week_rev += (r.total_revenue or 0)
+            rows.append({
+                "store": st, "summary": summary,
+                "today_tickets": rep.total_tickets, "today_revenue": rep.total_revenue,
+                "week_tickets": week_tickets, "week_revenue": round(week_rev, 2),
+                "staff": _db().query(StaffRow).filter(StaffRow.store == st.slug).count(),
+                "last_count": max((sc.scanned_at for sc in log.scans), default=None),
+            })
+        return render_template("overview.html", rows=rows)
+
+
+    def _slugify(name: str) -> str:
+        out = re.sub(r"[^a-z0-9]+", "-", (name or "").lower()).strip("-")
+        return (out or "store")[:64]
+
+    @app.route("/admin/stores", methods=["GET", "POST"])
+    @superadmin_required
+    def admin_stores():
+        error = None
+        if request.method == "POST":
+            act = request.form.get("action") or "add"
+            if act == "add":
+                name = (request.form.get("name") or "").strip()
+                slug = _slugify(request.form.get("slug") or name)
+                if not name:
+                    error = "Store name is required."
+                elif _db().get(Store, slug) is not None:
+                    error = f"A store with the id '{slug}' already exists."
+                else:
+                    _db().add(Store(
+                        slug=slug, name=name,
+                        timezone=(request.form.get("timezone") or "America/New_York").strip(),
+                        slots=(request.form.get("slots") or "48").strip(),
+                        address=(request.form.get("address") or "").strip() or None,
+                        phone=(request.form.get("phone") or "").strip() or None,
+                        retailer_number=(request.form.get("retailer_number") or "").strip() or None))
+                    _db().commit()
+                    audit("store.create", f"{name} ({slug})")
+            elif act == "update":
+                st = _db().get(Store, request.form.get("slug") or "")
+                if st:
+                    st.name = (request.form.get("name") or st.name).strip()
+                    st.timezone = (request.form.get("timezone") or st.timezone).strip()
+                    st.slots = (request.form.get("slots") or st.slots).strip()
+                    st.address = (request.form.get("address") or "").strip() or None
+                    st.phone = (request.form.get("phone") or "").strip() or None
+                    st.retailer_number = (request.form.get("retailer_number") or "").strip() or None
+                    st.active = request.form.get("active") == "on"
+                    _db().commit()
+                    audit("store.update", st.slug)
+            if not error:
+                return redirect(url_for("admin_stores"))
+        stores = _db().scalars(select(Store).order_by(Store.name)).all()
+        counts = {st.slug: _db().query(User).filter(User.store == st.slug).count()
+                  for st in stores}
+        return render_template("admin_stores.html", stores=stores, error=error,
+                               manager_counts=counts)
+
+    @app.route("/admin/users", methods=["GET", "POST"])
+    @superadmin_required
+    def admin_users():
+        error = None
+        if request.method == "POST":
+            act = request.form.get("action") or "add"
+            if act == "add":
+                uname = (request.form.get("username") or "").strip().lower()
+                pw = request.form.get("password") or ""
+                store_slug = request.form.get("store") or None
+                role = request.form.get("role") or "manager"
+                if not re.fullmatch(r"[a-z0-9._-]{3,64}", uname):
+                    error = "Username: 3-64 chars, letters/numbers/._- only."
+                elif len(pw) < 6:
+                    error = "Password must be at least 6 characters."
+                elif _db().scalar(select(User).where(User.username == uname)):
+                    error = f"'{uname}' is taken."
+                elif role != "superadmin" and not store_slug:
+                    error = "Pick a store for this manager."
+                else:
+                    _db().add(User(username=uname, password_hash=generate_password_hash(pw),
+                                   role=role, store=None if role == "superadmin" else store_slug,
+                                   display_name=(request.form.get("display_name") or "").strip() or None))
+                    _db().commit()
+                    audit("user.create", f"{uname} ({role}) -> {store_slug or 'all stores'}")
+            elif act == "reset_pw":
+                u = _db().get(User, int(request.form.get("user_id") or 0))
+                pw = request.form.get("password") or ""
+                if u and len(pw) >= 6:
+                    u.password_hash = generate_password_hash(pw)
+                    _db().commit()
+                    audit("user.reset_password", u.username or "")
+                else:
+                    error = "Password must be at least 6 characters."
+            elif act == "toggle":
+                u = _db().get(User, int(request.form.get("user_id") or 0))
+                if u and u.id != session.get("user_id"):   # never lock yourself out
+                    u.active = not bool(u.active)
+                    _db().commit()
+                    audit("user.toggle", f"{u.username} active={u.active}")
+            if not error:
+                return redirect(url_for("admin_users"))
+        return render_template("admin_users.html",
+                               users=_db().scalars(select(User).order_by(User.username)).all(),
+                               stores=_db().scalars(select(Store).order_by(Store.name)).all(),
+                               error=error, me=session.get("user_id"))
+
+    @app.post("/admin/act-as")
+    @superadmin_required
+    def admin_act_as():
+        """Switch which store the superadmin is operating on."""
+        slug = request.form.get("store") or ""
+        if _db().get(Store, slug):
+            session["acting_store"] = slug
+            session.pop("staff_id", None)      # a new store means a new PIN context
+            session.pop("staff_name", None)
+            session.pop("staff_role", None)
+        return redirect(request.form.get("next") or url_for("dashboard"))
+
+    @app.get("/access")
+    @manager_required
     def access_log():
         """Who has been reaching this site. Worth a glance whenever the front
         door is PIN-only, especially the failed-PIN rows."""
@@ -790,6 +1148,7 @@ def _register_routes(app: Flask):
                 added += 1
         if added:
             _db().commit()
+            audit("inventory.add", raw[:200])
         return redirect(request.form.get("next") or url_for("inventory"))
 
     @app.post("/inventory/remove")
@@ -801,10 +1160,11 @@ def _register_routes(app: Flask):
         if row:
             _db().delete(row)
             _db().commit()
+            audit("inventory.remove", num)
         return redirect(request.form.get("next") or url_for("inventory"))
 
     @app.route("/weights", methods=["GET", "POST"])
-    @login_required
+    @manager_required
     def weights_page():
         row = _emphasis_row()
         if request.method == "POST":
@@ -833,7 +1193,7 @@ def _register_routes(app: Flask):
     @app.get("/report")
     @login_required
     def report():
-        date = request.args.get("date") or _today(app.config["TIMEZONE"])
+        date = request.args.get("date") or _today(_store_tz())
         rows = _db().scalars(select(ScanRow).where(ScanRow.store == _store())).all()
         log = ScanLog(scans=[r.to_scan() for r in rows])
         try:
@@ -841,7 +1201,7 @@ def _register_routes(app: Flask):
         except Exception:  # noqa: BLE001 — report must render even without config
             resolver = None
         rep = daily_report(log, date, prices=_load_prices(), resolver=resolver,
-                           store=_store(), tz=app.config["TIMEZONE"])
+                           store=_store(), tz=_store_tz())
         return render_template("report.html", date=date, report=rep,
                                md=render_daily_report_md(rep), email=session.get("email"))
 

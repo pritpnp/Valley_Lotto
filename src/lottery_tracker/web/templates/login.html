@@ -5,14 +5,18 @@
   <h2>Log in</h2>
   {% if error %}<div class="flash err">{{ error }}</div>{% endif %}
   <form method="post">
-    <label>Email</label>
-    <input type="email" name="email" value="{{ email }}" autocomplete="username" required>
+    <label>Username</label>
+    <input type="text" name="username" value="{{ username }}" autocomplete="username"
+           autocapitalize="off" spellcheck="false" required>
     <label>Password</label>
     <input type="password" name="password" autocomplete="current-password" required>
     <div class="row" style="margin-top:16px">
       <button class="primary" type="submit">Log in</button>
-      <a class="btn" href="{{ url_for('register') }}">Create account</a>
     </div>
   </form>
+  <p class="muted" style="font-size:13px;margin-top:14px">
+    Employees don't log in here — ask your manager to add you, then use the PIN pad
+    on the store's device.
+  </p>
 </div>
 {% endblock %}

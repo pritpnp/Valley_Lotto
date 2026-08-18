@@ -94,7 +94,10 @@ def pin_app(tmp_path):
 
 def test_two_people_can_count_at_once_without_clobbering(pin_app):
     setup = pin_app.test_client()
-    setup.post("/staff", data={"action": "add", "name": "Priya", "pin": "1111"})
+    # The first person must be a manager — once an employee PINs in they can no
+    # longer add staff, which is the point of the role split.
+    setup.post("/staff", data={"action": "add", "name": "Priya", "pin": "1111",
+                               "role": "manager"})
     setup.post("/pin", data={"pin": "1111"})
     setup.post("/staff", data={"action": "add", "name": "Sam", "pin": "2222"})
 

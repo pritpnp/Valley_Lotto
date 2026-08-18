@@ -20,13 +20,78 @@ def _utcnow() -> datetime:
 
 
 class User(Base):
+    """A login account: superadmin or a store manager.
+
+    Employees are NOT users — they're :class:`StaffRow` rows who unlock a shift
+    with a PIN on a device the manager already signed in. That keeps passwords
+    off the counter while still naming who ran each count.
+
+    ``store`` is a store slug (``stores.slug``) and is NULL for a superadmin,
+    who is not tied to any one location.
+    """
+
     __tablename__ = "users"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    email: Mapped[str] = mapped_column(String(255), unique=True, index=True)
+    username: Mapped[str | None] = mapped_column(String(64), unique=True, index=True,
+                                                 nullable=True)
+    email: Mapped[str | None] = mapped_column(String(255), unique=True, index=True,
+                                              nullable=True)   # legacy accounts
     password_hash: Mapped[str] = mapped_column(String(255))
-    role: Mapped[str] = mapped_column(String(32), default="clerk")   # "clerk" | "admin"
+    role: Mapped[str] = mapped_column(String(32), default="manager")  # superadmin|manager
+    store: Mapped[str | None] = mapped_column(String(64), index=True, nullable=True)
+    display_name: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+
+    @property
+    def is_superadmin(self) -> bool:
+        return self.role == "superadmin"
+
+    @property
+    def label(self) -> str:
+        return self.display_name or self.username or self.email or f"user{self.id}"
+
+
+class Store(Base):
+    """One physical location. Every other table already carries a ``store`` slug,
+    so this table adds the profile without touching existing rows."""
+
+    __tablename__ = "stores"
+
+    slug: Mapped[str] = mapped_column(String(64), primary_key=True)
+    name: Mapped[str] = mapped_column(String(128))            # "Valley Mart WB"
+    timezone: Mapped[str] = mapped_column(String(64), default="America/New_York")
+    slots: Mapped[str] = mapped_column(String(64), default="48")   # box layout spec
+    address: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    phone: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    retailer_number: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+
+    @property
+    def title(self) -> str:
+        """What the header shows for this store's people: 'Valley Mart WB Lottery'."""
+        return f"{self.name} Lottery"
+
+
+class AuditRow(Base):
+    """Who changed what, across every store — the accountability trail.
+
+    Deliberately separate from :class:`AccessRow` (which is raw traffic): this
+    records *actions* in business terms, so it stays readable months later.
+    """
+
+    __tablename__ = "audit_log"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, index=True)
+    store: Mapped[str | None] = mapped_column(String(64), index=True, nullable=True)
+    actor: Mapped[str] = mapped_column(String(128), default="")     # username or staff name
+    actor_role: Mapped[str] = mapped_column(String(32), default="")
+    action: Mapped[str] = mapped_column(String(64), index=True)     # "inventory.add", ...
+    detail: Mapped[str] = mapped_column(Text, default="")
+    ip: Mapped[str] = mapped_column(String(64), default="")
 
 
 class ScanRow(Base):

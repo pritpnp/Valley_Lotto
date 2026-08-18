@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <title>{% block title %}Valley Lotto{% endblock %}</title>
+  <title>{% block title %}{{ site_title or 'Valley Lotto' }}{% endblock %}</title>
   <style>
     /* Brand palette, taken from the logo: gold sun, red heart, deep + leaf green.
        Light is the default; dark redefines only the tokens, so every component
@@ -107,18 +107,38 @@
         <path d="M31 62C31 51 23 44 12 44c0 11 8 18 19 18z" fill="var(--brand-green)"/>
         <path d="M33 62c0-11 8-18 19-18 0 11-8 18-19 18z" fill="var(--brand-leaf)"/>
       </svg>
-      Valley Lotto
+      {{ site_title or 'Valley Lotto' }}
     </div>
     <div class="who">
       {% if signed_in %}
+        {% if is_superadmin and all_stores %}
+          <form method="post" action="{{ url_for('admin_act_as') }}" style="display:inline">
+            <input type="hidden" name="next" value="{{ request.path }}">
+            <select name="store" onchange="this.form.submit()"
+                    style="padding:4px 6px;border-radius:8px;background:var(--panel2);
+                           color:var(--ink);border:1px solid var(--line);font-size:13px">
+              {% for st in all_stores %}
+                <option value="{{ st.slug }}" {% if store and store.slug == st.slug %}selected{% endif %}>
+                  {{ st.name }}</option>
+              {% endfor %}
+            </select>
+          </form> ·
+        {% endif %}
         <a href="{{ url_for('dashboard') }}">Dashboard</a> ·
         <a href="{{ url_for('catalog') }}">Catalog</a> ·
         <a href="{{ url_for('inventory') }}">Inventory</a> ·
-        <a href="{{ url_for('weights_page') }}">Emphasis</a> ·
         <a href="{{ url_for('count') }}">Scan</a> ·
         <a href="{{ url_for('report') }}">Sales</a> ·
-        <a href="{{ url_for('staff_page') }}">Staff</a> ·
-        <a href="{{ url_for('access_log') }}">Access</a> ·
+        <a href="{{ url_for('history') }}">History</a> ·
+        {% if is_manager %}
+          <a href="{{ url_for('weights_page') }}">Emphasis</a> ·
+          <a href="{{ url_for('staff_page') }}">Staff</a> ·
+        {% endif %}
+        {% if is_superadmin %}
+          <a href="{{ url_for('overview') }}">Chain</a> ·
+          <a href="{{ url_for('admin_stores') }}">Stores</a> ·
+          <a href="{{ url_for('admin_users') }}">Managers</a> ·
+        {% endif %}
         {% if staff_name %}
           <a href="{{ url_for('pin') }}" title="switch user">👤 {{ staff_name }}</a> ·
         {% endif %}

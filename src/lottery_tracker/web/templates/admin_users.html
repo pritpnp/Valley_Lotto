@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}Managers — Valley Lotto{% endblock %}
+{% block body %}
+<div class="card">
+  <h2 style="margin:0 0 4px">Add a manager</h2>
+  <p class="muted" style="font-size:13px">
+    Managers sign in with a username and password and run one store. Employees
+    are added by the manager and use a PIN instead.
+  </p>
+  {% if error %}<div class="flash err">{{ error }}</div>{% endif %}
+  <form method="post">
+    <input type="hidden" name="action" value="add">
+    <div class="row">
+      <div style="flex:1;min-width:150px"><label>Username</label>
+        <input type="text" name="username" autocapitalize="off" required></div>
+      <div style="flex:1;min-width:150px"><label>Password</label>
+        <input type="text" name="password" required></div>
+    </div>
+    <div class="row">
+      <div style="flex:1;min-width:150px"><label>Display name</label>
+        <input type="text" name="display_name"></div>
+      <div style="flex:1;min-width:150px"><label>Store</label>
+        <select name="store" style="width:100%;padding:14px;border-radius:10px;
+                background:var(--panel2);color:var(--ink);border:1px solid var(--line)">
+          {% for st in stores %}<option value="{{ st.slug }}">{{ st.name }}</option>{% endfor %}
+        </select></div>
+      <div style="flex:1;min-width:140px"><label>Role</label>
+        <select name="role" style="width:100%;padding:14px;border-radius:10px;
+                background:var(--panel2);color:var(--ink);border:1px solid var(--line)">
+          <option value="manager">Manager</option>
+          <option value="superadmin">Superadmin</option>
+        </select></div>
+    </div>
+    <div class="row" style="margin-top:14px"><button class="primary" type="submit">Add</button></div>
+  </form>
+</div>
+
+<div class="card">
+  <b>Accounts ({{ users|length }})</b>
+  <table>
+    <thead><tr><th>Username</th><th>Role</th><th>Store</th><th>Reset password</th><th></th></tr></thead>
+    <tbody>
+    {% for u in users %}
+      <tr {% if not u.active %}class="muted"{% endif %}>
+        <td><b>{{ u.username or u.email }}</b>{% if u.id == me %} <span class="muted">(you)</span>{% endif %}
+            {% if u.display_name %}<div class="muted" style="font-size:11px">{{ u.display_name }}</div>{% endif %}</td>
+        <td>{{ u.role }}</td>
+        <td class="muted">{{ u.store or 'all stores' }}</td>
+        <td>
+          <form method="post" class="row" style="gap:6px">
+            <input type="hidden" name="action" value="reset_pw">
+            <input type="hidden" name="user_id" value="{{ u.id }}">
+            <input type="text" name="password" placeholder="new password"
+                   style="width:130px;padding:6px" required>
+            <button style="padding:6px 10px;font-size:12px">Set</button>
+          </form>
+        </td>
+        <td>
+          {% if u.id != me %}
+          <form method="post">
+            <input type="hidden" name="action" value="toggle">
+            <input type="hidden" name="user_id" value="{{ u.id }}">
+            <button style="padding:6px 10px;font-size:12px">
+              {{ 'Disable' if u.active else 'Enable' }}</button>
+          </form>
+          {% endif %}
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

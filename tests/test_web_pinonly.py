@@ -137,10 +137,24 @@ def test_successful_pin_is_recorded_with_the_person(pin_app):
 
 def test_access_page_surfaces_failures_and_devices(pin_app):
     c = pin_app.test_client()
-    c.post("/staff", data={"action": "add", "name": "Priya", "pin": "1234"})
+    # A manager-level person can review the log...
+    c.post("/staff", data={"action": "add", "name": "Boss", "pin": "1234", "role": "manager"})
     c.post("/pin", data={"pin": "9999"}, headers={"X-Forwarded-For": "198.51.100.7"})
     c.post("/pin", data={"pin": "1234"})
     page = c.get("/access").data.decode()
     assert "198.51.100.7" in page       # the unfamiliar device is visible
     assert "FAILED PIN" in page
     assert "failed PIN attempt" in page
+
+
+def test_employee_cannot_see_the_access_log(pin_app):
+    """Traffic and failed-PIN data is a manager's business, not a clerk's."""
+    c = pin_app.test_client()
+    c.post("/staff", data={"action": "add", "name": "Boss", "pin": "1234", "role": "manager"})
+    c.post("/pin", data={"pin": "1234"})
+    c.post("/staff", data={"action": "add", "name": "Priya", "pin": "5678"})
+    c.post("/pin", data={"pin": "5678"})          # now an employee
+    assert c.get("/access").status_code == 403
+    assert c.get("/staff").status_code == 403     # and can't manage people
+    assert c.get("/count").status_code == 200     # but can still scan
+    assert c.get("/inventory").status_code == 200 # and manage inventory

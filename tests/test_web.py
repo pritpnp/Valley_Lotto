@@ -18,8 +18,9 @@ def client(tmp_path):
     return app.test_client()
 
 
-def _register(client, email="owner@x.com", pw="pw"):
-    return client.post("/register", data={"email": email, "password": pw},
+def _register(client, username="owner", pw="pw"):
+    """Bootstrap the first account, which becomes the superadmin."""
+    return client.post("/register", data={"username": username, "password": pw},
                        follow_redirects=False)
 
 
@@ -32,8 +33,8 @@ def test_auth_required_and_register_login(client):
     assert client.get("/count").status_code == 200
     # logout then bad login
     client.post("/logout")
-    bad = client.post("/login", data={"email": "owner@x.com", "password": "nope"})
-    assert b"Invalid email" in bad.data
+    bad = client.post("/login", data={"username": "owner", "password": "nope"})
+    assert b"Invalid username or password" in bad.data
 
 
 def test_full_count_commit_and_report(client):

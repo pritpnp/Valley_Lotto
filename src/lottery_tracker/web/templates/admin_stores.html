@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}Stores — Valley Lotto{% endblock %}
+{% block body %}
+<div class="card">
+  <h2 style="margin:0 0 4px">Add a store</h2>
+  {% if error %}<div class="flash err">{{ error }}</div>{% endif %}
+  <form method="post">
+    <input type="hidden" name="action" value="add">
+    <div class="row">
+      <div style="flex:2;min-width:200px"><label>Store name</label>
+        <input type="text" name="name" placeholder="Valley Mart WB" required></div>
+      <div style="flex:1;min-width:120px"><label>Boxes</label>
+        <input type="text" name="slots" value="48"></div>
+    </div>
+    <div class="row">
+      <div style="flex:1;min-width:160px"><label>Timezone</label>
+        <input type="text" name="timezone" value="America/New_York"></div>
+      <div style="flex:1;min-width:140px"><label>PA retailer #</label>
+        <input type="text" name="retailer_number"></div>
+    </div>
+    <div class="row">
+      <div style="flex:2;min-width:200px"><label>Address</label>
+        <input type="text" name="address"></div>
+      <div style="flex:1;min-width:140px"><label>Phone</label>
+        <input type="text" name="phone"></div>
+    </div>
+    <div class="row" style="margin-top:14px"><button class="primary" type="submit">Add store</button></div>
+  </form>
+</div>
+
+{% for st in stores %}
+<div class="card">
+  <form method="post">
+    <input type="hidden" name="action" value="update">
+    <input type="hidden" name="slug" value="{{ st.slug }}">
+    <div class="row" style="justify-content:space-between;align-items:baseline">
+      <b>{{ st.name }}</b>
+      <span class="muted" style="font-size:12px">id: {{ st.slug }} ·
+        {{ manager_counts.get(st.slug, 0) }} manager(s)</span>
+    </div>
+    <div class="row">
+      <div style="flex:2;min-width:180px"><label>Name</label>
+        <input type="text" name="name" value="{{ st.name }}"></div>
+      <div style="flex:1;min-width:100px"><label>Boxes</label>
+        <input type="text" name="slots" value="{{ st.slots }}"></div>
+      <div style="flex:1;min-width:150px"><label>Timezone</label>
+        <input type="text" name="timezone" value="{{ st.timezone }}"></div>
+    </div>
+    <div class="row">
+      <div style="flex:2;min-width:180px"><label>Address</label>
+        <input type="text" name="address" value="{{ st.address or '' }}"></div>
+      <div style="flex:1;min-width:120px"><label>Phone</label>
+        <input type="text" name="phone" value="{{ st.phone or '' }}"></div>
+      <div style="flex:1;min-width:120px"><label>Retailer #</label>
+        <input type="text" name="retailer_number" value="{{ st.retailer_number or '' }}"></div>
+    </div>
+    <div class="row" style="margin-top:12px;align-items:center">
+      <label style="margin:0"><input type="checkbox" name="active" {% if st.active %}checked{% endif %}> Active</label>
+      <button type="submit">Save</button>
+      <button type="submit" formaction="{{ url_for('admin_act_as') }}" name="store" value="{{ st.slug }}">
+        Open this store →</button>
+    </div>
+  </form>
+</div>
+{% endfor %}
+{% endblock %}

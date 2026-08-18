@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Chain overview — Valley Lotto{% endblock %}
+{% block body %}
+<style>
+  td,th { font-size:13.5px; } .scroll { overflow-x:auto; }
+  .keep { color:var(--ok); font-weight:700; } .send { color:var(--err); font-weight:700; }
+  .storename { font-weight:700; }
+</style>
+<div class="card">
+  <h2 style="margin:0 0 4px">All stores</h2>
+  <p class="muted" style="font-size:13px">
+    Every location side by side. A high “send back” count means that store is
+    sitting on dead inventory; a stale “last count” means nobody is scanning.
+  </p>
+  <div class="scroll"><table>
+    <thead><tr>
+      <th>Store</th><th>Carried</th><th>Keep</th><th>Send back</th>
+      <th>Today</th><th>Last 7 days</th><th>Staff</th><th>Last count</th><th></th>
+    </tr></thead>
+    <tbody>
+    {% for r in rows %}
+      <tr>
+        <td>
+          <span class="storename">{{ r.store.name }}</span>
+          {% if not r.store.active %} <span class="muted">(inactive)</span>{% endif %}
+          <div class="muted" style="font-size:11px">
+            {{ r.store.slug }}{% if r.store.retailer_number %} · #{{ r.store.retailer_number }}{% endif %}</div>
+        </td>
+        <td>{{ r.summary.total }}</td>
+        <td class="keep">{{ r.summary.keep }}</td>
+        <td class="send">{{ r.summary.send_back }}</td>
+        <td>{{ r.today_tickets }}{% if r.today_revenue %} <span class="muted">${{ '%.0f'|format(r.today_revenue) }}</span>{% endif %}</td>
+        <td>{{ r.week_tickets }}{% if r.week_revenue %} <span class="muted">${{ '%.0f'|format(r.week_revenue) }}</span>{% endif %}</td>
+        <td>{{ r.staff }}</td>
+        <td class="muted">{{ r.last_count[:10] if r.last_count else '—' }}</td>
+        <td>
+          <form method="post" action="{{ url_for('admin_act_as') }}">
+            <input type="hidden" name="store" value="{{ r.store.slug }}">
+            <input type="hidden" name="next" value="{{ url_for('dashboard') }}">
+            <button style="padding:4px 10px;font-size:12px">Open →</button>
+          </form>
+        </td>
+      </tr>
+    {% else %}
+      <tr><td colspan="9" class="muted">No stores yet. <a href="{{ url_for('admin_stores') }}">Add one →</a></td></tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+</div>
+{% endblock %}

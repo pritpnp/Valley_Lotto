@@ -5,8 +5,9 @@
   <h2>Create account</h2>
   {% if error %}<div class="flash err">{{ error }}</div>{% endif %}
   <form method="post">
-    <label>Email</label>
-    <input type="email" name="email" value="{{ email }}" autocomplete="username" required>
+    <label>Username</label>
+    <input type="text" name="username" value="{{ username }}" autocomplete="username"
+           autocapitalize="off" spellcheck="false" required>
     <label>Password</label>
     <input type="password" name="password" autocomplete="new-password" required>
     {% if need_code %}
