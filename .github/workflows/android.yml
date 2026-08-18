@@ -1,0 +1,54 @@
+name: Build Android APK
+
+# The APK is built in CI because GitHub's runners already carry the Android SDK.
+# Every run publishes the APK as a downloadable artifact; pushing a tag also
+# attaches it to a Release so a store device can install it from a plain link.
+on:
+  push:
+    branches: ["**"]
+    paths: ["android/**", ".github/workflows/android.yml"]
+    tags: ["v*"]
+  workflow_dispatch:        # lets you build on demand from the Actions tab
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Build debug APK
+        working-directory: android
+        run: ./gradlew --no-daemon assembleDebug
+
+      - name: Name the APK by version and commit
+        id: name
+        working-directory: android
+        run: |
+          VER=$(grep versionName app/build.gradle.kts | head -1 | cut -d'"' -f2)
+          OUT="ValleyLotto-${VER}-${GITHUB_SHA::7}.apk"
+          cp app/build/outputs/apk/debug/app-debug.apk "$OUT"
+          echo "apk=android/$OUT" >> "$GITHUB_OUTPUT"
+          echo "name=$OUT" >> "$GITHUB_OUTPUT"
+          ls -la "$OUT"
+
+      - name: Upload the APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: valley-lotto-apk
+          path: ${{ steps.name.outputs.apk }}
+          retention-days: 90
+
+      - name: Attach to a release (tags only)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ steps.name.outputs.apk }}
