@@ -43,12 +43,15 @@ def test_dashboard_empty_inventory_renders(client):
 
 
 def _carried_numbers(client):
-    """Game numbers listed in the 'Carried' card (not the placeholder or the
-    'Available to add' list)."""
-    import re
-    html = client.get("/inventory").data.decode()
-    carried = html.split("Carried (")[1].split("Available to add")[0]
-    return set(re.findall(r'name="game_number" value="(\d+)"', carried))
+    """The games this store carries, read from the database.
+
+    Deliberately not scraped from the page: the inventory UI is box-based now,
+    and a test of *what is carried* shouldn't break when the layout changes.
+    """
+    from lottery_tracker.web.models import InventoryRow
+    from sqlalchemy import select
+    with client.application.config["SESSION_FACTORY"]() as db:
+        return {r.game_number for r in db.scalars(select(InventoryRow)).all()}
 
 
 def test_inventory_add_multiple_and_remove(client):
@@ -61,11 +64,13 @@ def test_inventory_add_multiple_and_remove(client):
 
 
 def test_inventory_add_is_idempotent(client):
+    from lottery_tracker.web.models import InventoryRow
+    from sqlalchemy import select
     client.post("/inventory/add", data={"game_number": "1750"})
     client.post("/inventory/add", data={"game_number": "1750"})
-    html = client.get("/inventory").data.decode()
-    carried = html.split("Carried (")[1].split("Available to add")[0]
-    assert carried.count('value="1750"') == 1   # no duplicate row
+    with client.application.config["SESSION_FACTORY"]() as db:
+        rows = [r for r in db.scalars(select(InventoryRow)).all() if r.game_number == "1750"]
+    assert len(rows) == 1                        # no duplicate row
 
 
 def test_dashboard_rating_matches_the_shared_engine(client):

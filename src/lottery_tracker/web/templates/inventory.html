@@ -1,67 +1,92 @@
 {% extends "base.html" %}
-{% block title %}Inventory — Valley Lotto{% endblock %}
+{% block title %}Boxes — {{ site_title }}{% endblock %}
 {% block body %}
+<style>
+  .boxgrid { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:10px; }
+  .bx { display:block; border:1px solid var(--line); border-radius:12px; padding:10px 12px;
+        background:var(--panel2); color:var(--ink); }
+  .bx:hover { text-decoration:none; border-color:var(--accent); }
+  .bx .n { font-size:12px; font-weight:700; color:var(--muted); letter-spacing:.04em; }
+  .bx .g { font-weight:700; font-size:14px; margin-top:2px;
+           overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .bx .meta { font-size:11px; color:var(--muted); margin-top:3px; }
+  .bx.empty { border-style:dashed; }
+  .bx.empty .g { color:var(--muted); font-weight:500; }
+  .bx.send { background:var(--err-bg); border-color:transparent; }
+  .bx.keep { background:var(--ok-bg); border-color:transparent; }
+  .pill { display:inline-block; font-size:10px; font-weight:700; padding:1px 6px;
+          border-radius:999px; background:var(--panel); color:var(--muted); }
+</style>
+
 <div class="card">
-  <h2 style="margin:0 0 8px">What you carry</h2>
-  <form method="post" action="{{ url_for('inventory_add') }}" class="row" style="align-items:flex-end;gap:8px">
-    <div style="flex:1">
-      <label>Add game number(s) — space or comma separated</label>
-      <input type="text" name="game_number" placeholder="1750 1744, 1780" required>
+  <div class="row" style="justify-content:space-between;align-items:baseline">
+    <h2 style="margin:0">Boxes</h2>
+    <span class="muted" style="font-size:13px">{{ filled }} of {{ total }} filled</span>
+  </div>
+  <p class="muted" style="font-size:13px">
+    What's in each dispenser box. Running a count fills this in automatically —
+    every scan tells us which game is in which box. Tap a box to set it by hand.
+  </p>
+
+  <div class="boxgrid">
+    {% for r in rows %}
+      <a class="bx {{ 'empty' if not r.game_number
+                     else ('send' if r.rated and r.rated.action == 'send_back'
+                           else ('keep' if r.rated and r.rated.rating and r.rated.rating >= 65 else '')) }}"
+         href="{{ url_for('inventory_box', slot=r.slot) }}">
+        <div class="n">BOX {{ r.slot }}</div>
+        {% if r.game_number %}
+          <div class="g">{{ r.game.name if r.game else r.game_number }}</div>
+          <div class="meta">
+            #{{ r.game_number }}{% if r.game and r.game.price %} · ${{ '%g'|format(r.game.price) }}{% endif %}
+            {% if r.rated and r.rated.rating is not none %} · {{ r.rated.rating_str }}{% endif %}
+          </div>
+          {% if r.source == 'scan' %}<span class="pill">from a scan</span>{% endif %}
+        {% else %}
+          <div class="g">empty — tap to set</div>
+        {% endif %}
+      </a>
+    {% endfor %}
+  </div>
+</div>
+
+{% if unplaced %}
+<div class="card">
+  <b>Carried but not in a box ({{ unplaced|length }})</b>
+  <p class="muted" style="font-size:13px">
+    Tracked on the dashboard but not assigned to a box yet.
+  </p>
+  <table>
+    <tbody>
+    {% for g in unplaced %}
+      <tr>
+        <td class="muted">{{ g.game_number }}</td>
+        <td>{{ g.name }}{% if g.price %} <span class="muted">${{ '%g'|format(g.price) }}</span>{% endif %}</td>
+        <td>
+          <form method="post" action="{{ url_for('inventory_remove') }}">
+            <input type="hidden" name="game_number" value="{{ g.game_number }}">
+            <button style="padding:4px 10px;font-size:12px">Remove</button>
+          </form>
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+<div class="card">
+  <b>Track a game without a box</b>
+  <p class="muted" style="font-size:13px">
+    Rare — normally you just put it in a box. Scanning a ticket here works too.
+  </p>
+  <form method="post" action="{{ url_for('inventory_add') }}" class="row"
+        style="align-items:flex-end;gap:8px">
+    <div style="flex:1;min-width:150px">
+      <label>Game number(s)</label>
+      <input type="text" name="game_number" inputmode="numeric" required>
     </div>
     <button class="primary" type="submit">Add</button>
   </form>
-</div>
-
-<div class="card">
-  <b>Carried ({{ carried|length + missing|length }})</b>
-  {% if carried or missing %}
-  <table>
-    <thead><tr><th>#</th><th>Game</th><th>Price</th><th></th></tr></thead>
-    <tbody>
-    {% for g in carried %}
-      <tr>
-        <td class="muted">{{ g.game_number }}</td>
-        <td>{{ g.name }}{% if g.status == 'ended' %} <span class="muted">(ended)</span>{% endif %}</td>
-        <td>{% if g.price %}${{ '%g'|format(g.price) }}{% else %}—{% endif %}</td>
-        <td><form method="post" action="{{ url_for('inventory_remove') }}">
-          <input type="hidden" name="game_number" value="{{ g.game_number }}">
-          <button style="padding:2px 8px;font-size:12px">Remove</button></form></td>
-      </tr>
-    {% endfor %}
-    {% for n in missing %}
-      <tr>
-        <td class="muted">{{ n }}</td>
-        <td class="muted">(not on PA active list — likely ended)</td>
-        <td>—</td>
-        <td><form method="post" action="{{ url_for('inventory_remove') }}">
-          <input type="hidden" name="game_number" value="{{ n }}">
-          <button style="padding:2px 8px;font-size:12px">Remove</button></form></td>
-      </tr>
-    {% endfor %}
-    </tbody>
-  </table>
-  {% else %}
-    <p class="muted">Nothing yet — add game numbers above, or pick from the list below.</p>
-  {% endif %}
-</div>
-
-<div class="card">
-  <b>Available to add</b>
-  <p class="muted" style="font-size:13px">Active PA games you don't carry.</p>
-  <table>
-    <thead><tr><th>#</th><th>Game</th><th>Price</th><th></th></tr></thead>
-    <tbody>
-    {% for g in available %}
-      <tr>
-        <td class="muted">{{ g.game_number }}</td>
-        <td>{{ g.name }}</td>
-        <td>{% if g.price %}${{ '%g'|format(g.price) }}{% else %}—{% endif %}</td>
-        <td><form method="post" action="{{ url_for('inventory_add') }}">
-          <input type="hidden" name="game_number" value="{{ g.game_number }}">
-          <button style="padding:2px 8px;font-size:12px">+ carry</button></form></td>
-      </tr>
-    {% endfor %}
-    </tbody>
-  </table>
 </div>
 {% endblock %}

@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Box {{ slot }} — {{ site_title }}{% endblock %}
+{% block body %}
+<style>
+  .pick { display:block; width:100%; text-align:left; padding:14px 16px;
+          border:1px solid var(--line); border-radius:12px; margin-bottom:8px;
+          background:var(--panel2); color:var(--ink); font-size:15px; }
+  .pick.on { border-color:var(--accent); background:var(--ok-bg); font-weight:700; }
+  .pick .sub { display:block; font-size:12px; color:var(--muted); font-weight:400; }
+</style>
+
+<div class="card">
+  <h2 style="margin:0 0 4px">Box {{ slot }}</h2>
+  <p class="muted" style="font-size:13px">
+    {% if current %}Currently holding <b>#{{ current }}</b>
+      {{ games[current].name if current in games else '' }}.{% else %}This box is empty.{% endif %}
+    Scan a ticket from the box, or pick the game below.
+  </p>
+
+  <form method="post" class="row" style="align-items:flex-end;gap:8px">
+    <div style="flex:1;min-width:160px">
+      <label>Scan a ticket or type a game number</label>
+      <input type="text" name="game_number" inputmode="numeric" autofocus>
+    </div>
+    <button class="primary" type="submit">Save</button>
+  </form>
+
+  {% if current %}
+  <form method="post" style="margin-top:10px">
+    <input type="hidden" name="game_number" value="__clear__">
+    <button type="submit" style="background:var(--err-bg);color:var(--err)">Empty this box</button>
+  </form>
+  {% endif %}
+</div>
+
+<div class="card">
+  <b>Or pick an active game</b>
+  <div style="margin-top:10px">
+    {% for g in active %}
+      <form method="post">
+        <input type="hidden" name="game_number" value="{{ g.game_number }}">
+        <button class="pick {{ 'on' if current == g.game_number }}" type="submit">
+          {{ g.name }}
+          <span class="sub">#{{ g.game_number }}{% if g.price %} · ${{ '%g'|format(g.price) }}{% endif %}
+            {% if g.odds %} · {{ g.odds }}{% endif %}</span>
+        </button>
+      </form>
+    {% endfor %}
+  </div>
+  <p style="margin-top:12px"><a href="{{ url_for('inventory') }}">← Back to boxes</a></p>
+</div>
+{% endblock %}

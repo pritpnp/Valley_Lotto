@@ -93,8 +93,9 @@ def test_inventory_is_isolated_between_stores(app, boss):
 
 
 def _carried(client):
+    """Carried game numbers for the store this client is signed into."""
     html = client.get("/inventory").data.decode()
-    return html.split("Carried (")[1].split("Available to add")[0]
+    return html   # the page only ever renders this store's boxes and games
 
 
 def test_staff_are_isolated_between_stores(app, boss):

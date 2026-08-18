@@ -34,7 +34,7 @@ from ..reporting import (daily_report, render_daily_report_md, as_zone,
 from ..config import Config
 from ..rules import RATING_FACTORS
 from .models import (Base, User, Store, ScanRow, ActiveCount, InventoryRow,
-                     EmphasisRow, StaffRow, AccessRow, AuditRow)
+                     EmphasisRow, StaffRow, AccessRow, AuditRow, BoxRow)
 from .migrate import ensure_schema
 
 # The KEEP/SEND-BACK engine. pa_data is framework-neutral (it imports only from
@@ -737,6 +737,20 @@ def _register_routes(app: Flask):
                               ticket=sc.ticket, slot=sc.slot, session=sc.session,
                               scanned_at=sc.scanned_at, user_email=sc.user, raw=sc.raw))
         _db().commit()
+
+        # A count IS an inventory check: each scan proves which game is in which
+        # box right now, so the box map maintains itself and never goes stale.
+        moved = 0
+        boxes = _box_map()
+        for sc in scans:
+            if not sc.slot:
+                continue
+            known = boxes.get(sc.slot)
+            if known is None or known.game_number != sc.game_number:
+                _set_box(sc.slot, sc.game_number, source="scan")
+                moved += 1
+        if moved:
+            audit("box.autofill", f"{moved} box(es) updated from the count")
         _clear_session()
         return jsonify({"committed": len(scans), "date": _today(_store_tz())})
 
@@ -1112,9 +1126,53 @@ def _register_routes(app: Flask):
         except Exception:  # noqa: BLE001 — scanning must work even if the catalog is missing
             return set()
 
+    def _box_map() -> dict:
+        """slot -> BoxRow for this store."""
+        rows = _db().scalars(select(BoxRow).where(BoxRow.store == _store())).all()
+        return {r.slot: r for r in rows}
+
     def _inventory() -> set:
-        rows = _db().scalars(select(InventoryRow).where(InventoryRow.store == _store())).all()
-        return {r.game_number for r in rows}
+        """The games this store carries.
+
+        Boxes are the source of truth for placement, but a game can also be
+        tracked before it has a home (just added, not yet loaded), so the carried
+        set is the union of both.
+        """
+        inv = {r.game_number for r in _db().scalars(
+            select(InventoryRow).where(InventoryRow.store == _store())).all()}
+        inv |= {r.game_number for r in _db().scalars(
+            select(BoxRow).where(BoxRow.store == _store())).all() if r.game_number}
+        return inv
+
+    def _set_box(slot: str, game: str | None, source: str = "manual") -> None:
+        """Put a game in a box (or empty it), keeping the carried set in step."""
+        row = _db().scalar(select(BoxRow).where(BoxRow.store == _store(),
+                                                BoxRow.slot == slot))
+        if row is None:
+            row = BoxRow(store=_store(), slot=slot)
+            _db().add(row)
+        previous = row.game_number
+        row.game_number = game or None
+        row.source = source
+        row.updated_at = datetime.now(timezone.utc)
+
+        if game:   # a game in a box is by definition carried
+            exists = _db().scalar(select(InventoryRow).where(
+                InventoryRow.store == _store(), InventoryRow.game_number == game))
+            if not exists:
+                _db().add(InventoryRow(store=_store(), game_number=game))
+        _db().commit()
+
+        # If nothing holds the old game any more, it is no longer carried.
+        if previous and previous != game:
+            still = _db().scalar(select(BoxRow).where(
+                BoxRow.store == _store(), BoxRow.game_number == previous))
+            if still is None:
+                stale = _db().scalar(select(InventoryRow).where(
+                    InventoryRow.store == _store(), InventoryRow.game_number == previous))
+                if stale is not None:
+                    _db().delete(stale)
+                    _db().commit()
 
     def _emphasis_row() -> EmphasisRow:
         row = _db().get(EmphasisRow, _store())
@@ -1170,18 +1228,65 @@ def _register_routes(app: Flask):
     @app.get("/inventory")
     @login_required
     def inventory():
+        """What is in each box — the store as it physically stands."""
         cat = _catalog()
-        inv = _inventory()
-        weights, cfg = _effective_weights()
         games = cat.games
-        carried = sorted((games[n] for n in inv if n in games),
-                         key=lambda g: (-(g.price or 0), g.game_number))
-        missing = sorted(n for n in inv if n not in games)
-        available = sorted((g for n, g in games.items()
-                            if g.status == "active" and n not in inv),
-                           key=lambda g: (-(g.price or 0), g.game_number))
-        return render_template("inventory.html", email=session.get("email"),
-                               carried=carried, missing=missing, available=available)
+        boxes = _box_map()
+        weights, cfg = _effective_weights()
+        rated = {r["game_number"]: r for r in
+                 pa_data.store_rows(cat, _inventory(), cfg.thresholds, weights)}
+
+        rows = []
+        for slot in _store_slots():
+            b = boxes.get(slot)
+            num = b.game_number if b else None
+            rows.append({
+                "slot": slot, "game_number": num,
+                "game": games.get(num) if num else None,
+                "rated": rated.get(num),
+                "source": b.source if b else None,
+                "updated_at": b.updated_at if b else None,
+            })
+
+        # Games we carry that aren't in a box yet — just added, or pulled out.
+        placed = {r["game_number"] for r in rows if r["game_number"]}
+        unplaced = []
+        for num in sorted(_inventory() - placed):
+            g = games.get(num)
+            unplaced.append({"game_number": num,
+                             "name": g.name if g else "(not on PA active list)",
+                             "price": g.price if g else None})
+        filled = sum(1 for r in rows if r["game_number"])
+        return render_template("inventory.html", rows=rows, unplaced=unplaced,
+                               filled=filled, total=len(rows))
+
+    @app.route("/inventory/box/<slot>", methods=["GET", "POST"])
+    @login_required
+    def inventory_box(slot):
+        """Set or clear one box. Kept as its own small page so a phone shows a
+        readable game list instead of 48 dropdowns on one screen."""
+        if slot not in _store_slots():
+            abort(404)
+        if request.method == "POST":
+            raw = (request.form.get("game_number") or "").strip()
+            if raw in ("", "__clear__"):
+                _set_box(slot, None)
+                audit("box.clear", slot)
+            else:
+                tc = try_parse_ticket(raw, _known_games())   # a scan works here too
+                num = tc.game_number if tc else raw
+                _set_box(slot, num)
+                audit("box.set", f"{slot} -> {num}")
+            return redirect(url_for("inventory"))
+
+        cat = _catalog()
+        boxes = _box_map()
+        current = boxes.get(slot)
+        active = sorted((g for g in cat.games.values() if g.status == "active"),
+                        key=lambda g: (-(g.price or 0), g.name or ""))
+        return render_template("inventory_box.html", slot=slot, active=active,
+                               current=current.game_number if current else None,
+                               games=cat.games)
 
     @app.post("/inventory/add")
     @login_required

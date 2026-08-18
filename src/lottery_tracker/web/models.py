@@ -226,3 +226,29 @@ class AccessRow(Base):
     event: Mapped[str] = mapped_column(String(24), default="page", index=True)
     staff_name: Mapped[str | None] = mapped_column(String(64), nullable=True)
     user_agent: Mapped[str] = mapped_column(String(255), default="")
+
+
+class BoxRow(Base):
+    """Which game sits in which dispenser box.
+
+    "We carry these 34 games" is only half the picture — a store has N physical
+    boxes and each holds one game. Modelling the boxes means the dashboard can
+    say *where* a dead game is sitting, and a count knows what it should be
+    seeing in each slot.
+
+    Kept deliberately self-maintaining: every scan already carries its slot and
+    (from the barcode) its game, so committing a count updates this map. Manual
+    editing is for corrections, not data entry.
+    """
+
+    __tablename__ = "store_boxes"
+    __table_args__ = (UniqueConstraint("store", "slot", name="uq_box_store_slot"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    store: Mapped[str] = mapped_column(String(64), index=True, default="default")
+    slot: Mapped[str] = mapped_column(String(16))          # "1".."48" or "A1"
+    game_number: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+    # "scan" when a count filled it in, "manual" when a person set it — so the
+    # UI can show which boxes are actually confirmed by a ticket.
+    source: Mapped[str] = mapped_column(String(16), default="manual")
