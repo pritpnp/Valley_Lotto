@@ -250,3 +250,97 @@ def test_the_last_superadmin_cannot_be_deleted(app, boss):
 def test_a_manager_cannot_delete_accounts(app, boss):
     mgr = _login(app, "sup_mgr")
     assert mgr.post("/admin/users", data={"action": "delete", "user_id": "3"}).status_code == 403
+
+
+# --- deleting a store --------------------------------------------------------
+
+def _mk_store(boss, name, slug):
+    boss.post("/admin/stores", data={"action": "add", "name": name, "slug": slug,
+                                     "slots": "4"}, follow_redirects=True)
+
+
+def test_a_store_is_only_deleted_when_its_name_is_typed_exactly(boss, app):
+    from sqlalchemy import select
+    from lottery_tracker.web.models import Store
+    _mk_store(boss, "Valley Mart Plains", "plains")
+    Session = app.config["SESSION_FACTORY"]
+
+    wrong = boss.post("/admin/stores", data={"action": "delete", "slug": "plains",
+                                             "confirm_name": "valley mart plans"},
+                      follow_redirects=True)
+    assert b"Nothing was deleted" in wrong.data
+    with Session() as db:
+        assert db.get(Store, "plains") is not None
+
+    boss.post("/admin/stores", data={"action": "delete", "slug": "plains",
+                                     "confirm_name": "  Valley Mart Plains "},
+              follow_redirects=True)          # trimmed + case-insensitive
+    with Session() as db:
+        assert db.get(Store, "plains") is None
+
+
+def test_deleting_a_store_takes_its_data_with_it(boss, app):
+    from sqlalchemy import select
+    from lottery_tracker.web.models import (Store, ScanRow, BoxRow, StaffRow,
+                                            InventoryRow, User)
+    _mk_store(boss, "Temp Store", "temp")
+    boss.post("/admin/act-as", data={"store": "temp"}, follow_redirects=True)
+    boss.post("/admin/users", data={"action": "add", "username": "tempmgr",
+                                    "password": "pw", "store": "temp"},
+              follow_redirects=True)
+    boss.post("/staff", data={"action": "add", "name": "Al", "pin": "9999"},
+              follow_redirects=True)
+    boss.post("/count/start", json={"session": "night"})
+    boss.post("/api/scan", json={"raw": "1750-0091798-010"})
+    for _ in range(3):
+        boss.post("/api/skip")
+    boss.post("/api/commit")
+
+    boss.post("/admin/stores", data={"action": "delete", "slug": "temp",
+                                     "confirm_name": "Temp Store"},
+              follow_redirects=True)
+
+    Session = app.config["SESSION_FACTORY"]
+    with Session() as db:
+        assert db.get(Store, "temp") is None
+        for model in (ScanRow, BoxRow, StaffRow, InventoryRow, User):
+            left = db.scalars(select(model).where(model.store == "temp")).all()
+            assert left == [], model.__name__
+
+
+def test_the_change_log_survives_the_store_it_describes(boss, app):
+    from sqlalchemy import select
+    from lottery_tracker.web.models import AuditRow
+    _mk_store(boss, "Gone Store", "gone")
+    boss.post("/admin/stores", data={"action": "delete", "slug": "gone",
+                                     "confirm_name": "Gone Store"},
+              follow_redirects=True)
+    Session = app.config["SESSION_FACTORY"]
+    with Session() as db:
+        actions = [a.action for a in db.scalars(select(AuditRow)).all()]
+    assert "store.create" in actions and "store.delete" in actions
+
+
+def test_a_manager_cannot_delete_a_store(app):
+    from werkzeug.security import generate_password_hash
+    from lottery_tracker.web.models import User, Store
+    Session = app.config["SESSION_FACTORY"]
+    with Session() as db:
+        db.add(Store(slug="mine", name="Mine", slots="4"))
+        db.add(User(username="mgr2", password_hash=generate_password_hash("pw"),
+                    role="manager", store="mine"))
+        db.commit()
+    c = app.test_client()
+    c.post("/login", data={"username": "mgr2", "password": "pw"})
+    r = c.post("/admin/stores", data={"action": "delete", "slug": "mine",
+                                      "confirm_name": "Mine"})
+    assert r.status_code == 403
+    with Session() as db:
+        assert db.get(Store, "mine") is not None
+
+
+def test_deactivating_is_offered_as_the_softer_option(boss):
+    _mk_store(boss, "Quiet Store", "quiet")
+    html = boss.get("/admin/stores").data.decode()
+    assert "Delete this store" in html
+    assert "hides a store without losing anything" in html

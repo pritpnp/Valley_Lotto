@@ -1456,13 +1456,67 @@ def _register_routes(app: Flask):
                     st.active = request.form.get("active") == "on"
                     _db().commit()
                     audit("store.update", st.slug)
+            elif act == "delete":
+                st = _db().get(Store, request.form.get("slug") or "")
+                typed = (request.form.get("confirm_name") or "").strip()
+                if st is None:
+                    error = "That store no longer exists."
+                elif typed.lower() != (st.name or "").strip().lower():
+                    error = (f"Type the store's name exactly ({st.name}) to delete it. "
+                             "Nothing was deleted.")
+                else:
+                    error = _delete_store(st)
             if not error:
                 return redirect(url_for("admin_stores"))
         stores = _db().scalars(select(Store).order_by(Store.name)).all()
         counts = {st.slug: _db().query(User).filter(User.store == st.slug).count()
                   for st in stores}
         return render_template("admin_stores.html", stores=stores, error=error,
-                               manager_counts=counts)
+                               manager_counts=counts,
+                               contents={st.slug: _store_contents(st.slug) for st in stores})
+
+    def _store_contents(slug: str) -> dict:
+        """What a store is actually holding — shown before anyone deletes it, so
+        the decision is made with the numbers in view rather than blind."""
+        def n(model, field="store"):
+            return _db().query(model).filter(getattr(model, field) == slug).count()
+        return {
+            "scans": n(ScanRow), "boxes": n(BoxRow), "games": n(InventoryRow),
+            "staff": n(StaffRow), "packs": n(PackRow), "shipments": n(ShipmentRow),
+            "managers": n(User),
+        }
+
+    def _delete_store(st: Store) -> str | None:
+        """Delete a store and everything operational belonging to it.
+
+        The audit and access logs are deliberately kept: they record what people
+        did, and deleting a store is not a reason to lose that. Everything else —
+        scans, boxes, carried games, staff PINs, packs, shipments, and the store's
+        own manager accounts — goes, because it is meaningless without the store.
+
+        Returns an error string, or None on success.
+        """
+        slug = st.slug
+        counts = _store_contents(slug)
+
+        # A superadmin deleting the store they're currently viewing would be left
+        # pointed at nothing; drop the selection first.
+        if session.get("acting_store") == slug:
+            session.pop("acting_store", None)
+
+        for model in (ScanRow, BoxRow, InventoryRow, StaffRow, PackRow, ShipmentRow,
+                      ActiveCount, User):
+            _db().query(model).filter(model.store == slug).delete(synchronize_session=False)
+        _db().query(EmphasisRow).filter(EmphasisRow.store == slug).delete(
+            synchronize_session=False)
+        _db().delete(st)
+        _db().commit()
+
+        audit("store.delete",
+              f"{st.name} ({slug}) deleted with "
+              + ", ".join(f"{v} {k}" for k, v in counts.items() if v)
+              if any(counts.values()) else f"{st.name} ({slug}) deleted (it was empty)")
+        return None
 
     @app.route("/admin/users", methods=["GET", "POST"])
     @superadmin_required

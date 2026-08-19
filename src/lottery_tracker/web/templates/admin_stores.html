@@ -61,6 +61,43 @@
         Open this store →</button>
     </div>
   </form>
+
+  {# Deliberately outside the form above: a delete must never ride along with a
+     save, and HTML forms cannot nest. #}
+  <details style="margin-top:14px">
+    <summary style="cursor:pointer;color:var(--err);font-size:13px">Delete this store</summary>
+    <p class="muted" style="font-size:13px;margin:10px 0 6px">
+      Unticking <b>Active</b> above hides a store without losing anything — that's
+      usually what you want for a location that's closed or not open yet.
+      Deleting is permanent.
+    </p>
+    {% set c = contents.get(st.slug, {}) %}
+    {% if c.values()|select|list %}
+      <p class="muted" style="font-size:13px;margin:0 0 8px">
+        This will also delete:
+        {% for label, n in [('counts', c.scans), ('boxes', c.boxes), ('carried games', c.games),
+                            ('staff PINs', c.staff), ('packs', c.packs),
+                            ('deliveries', c.shipments), ('manager accounts', c.managers)] %}
+          {%- if n %}<b>{{ n }}</b> {{ label }}{% if not loop.last %}, {% endif %}{% endif -%}
+        {% endfor %}.
+        The change log keeps its record of what was done here.
+      </p>
+    {% else %}
+      <p class="muted" style="font-size:13px;margin:0 0 8px">
+        Nothing has been recorded at this store yet.
+      </p>
+    {% endif %}
+    <form method="post" class="row" style="gap:8px;align-items:flex-end"
+          onsubmit="return confirm('Delete {{ st.name }} permanently? This cannot be undone.')">
+      <input type="hidden" name="action" value="delete">
+      <input type="hidden" name="slug" value="{{ st.slug }}">
+      <div style="flex:2;min-width:200px">
+        <label>Type <b>{{ st.name }}</b> to confirm</label>
+        <input type="text" name="confirm_name" autocomplete="off" required>
+      </div>
+      <button type="submit" style="background:var(--err-bg);color:var(--err)">Delete store</button>
+    </form>
+  </details>
 </div>
 {% endfor %}
 {% endblock %}
