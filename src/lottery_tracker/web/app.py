@@ -24,6 +24,7 @@ from flask import (Flask, current_app, g, redirect, render_template, request,
                    session, url_for, jsonify, abort)
 from sqlalchemy import create_engine, func, select
 from sqlalchemy.orm import sessionmaker
+from werkzeug.exceptions import HTTPException
 from werkzeug.security import generate_password_hash, check_password_hash
 
 from ..barcode import try_parse_ticket
@@ -606,13 +607,20 @@ def _register_routes(app: Flask):
         """
         return (session.get("staff_name") or session.get("email") or "default")[:255]
 
-    def _active_row():
-        return _db().scalar(select(ActiveCount).where(
+    def _active_row(lock: bool = False):
+        q = select(ActiveCount).where(
             ActiveCount.store == _store(),
-            ActiveCount.user_email == _counter_key()))
+            ActiveCount.user_email == _counter_key())
+        # Two scans arriving at once used to read the same half-finished count
+        # and write over each other. On Postgres the row lock makes the second
+        # request wait for the first, which holds even across gunicorn workers.
+        # (SQLite has no row locks and one writer at a time anyway.)
+        if lock and _db().bind is not None and _db().bind.dialect.name == "postgresql":
+            q = q.with_for_update()
+        return _db().scalar(q)
 
-    def _load_session() -> CountSession | None:
-        row = _active_row()
+    def _load_session(lock: bool = False) -> CountSession | None:
+        row = _active_row(lock)
         if not row:
             return None
         cs = CountSession.from_state(json.loads(row.state_json))
@@ -672,6 +680,22 @@ def _register_routes(app: Flask):
                                counts=status, today=today,
                                email=session.get("email"))
 
+    @app.post("/count/discard")
+    @staff_required
+    def count_discard():
+        """Throw away a half-finished walk so a different count can be started.
+
+        Nothing is lost that was ever saved — an in-progress count only becomes
+        real on commit — but it is worth an audit line, because it's how a count
+        started under the wrong session label gets corrected.
+        """
+        cs = _load_session()
+        if cs is not None:
+            done, total = cs.progress()
+            audit("count.discard", f"{cs.session} count abandoned at {done}/{total} boxes")
+        _clear_session()
+        return jsonify({"discarded": True})
+
     @app.post("/count/start")
     @staff_required
     def count_start():
@@ -687,10 +711,30 @@ def _register_routes(app: Flask):
         return jsonify(_state_payload(cs))
 
     def _require_session() -> CountSession:
-        cs = _load_session()
+        cs = _load_session(lock=True)
         if cs is None:
-            abort(409, "no active count — start one first")
+            abort(409, "this count has already been saved — start a new one")
         return cs
+
+    @app.errorhandler(Exception)
+    def _api_errors_stay_json(err):
+        """An /api/* failure must return JSON.
+
+        The scan page fetches these; when Flask answered with an HTML error page
+        the client's JSON parse threw and the screen went white. Now the page
+        gets a message it can show in place, and a stale count tells the client
+        to reload rather than leaving the clerk stuck."""
+        code = getattr(err, "code", 500)
+        if not request.path.startswith("/api/"):
+            if isinstance(err, HTTPException):
+                return err          # ordinary pages keep Flask's own error page
+            raise err
+        if code == 500:
+            app.logger.exception("api error on %s", request.path)
+        return jsonify({
+            "error": getattr(err, "description", None) or "something went wrong — scan again",
+            "restart": code == 409,
+        }), code
 
     @app.get("/api/state")
     @staff_required
@@ -743,7 +787,13 @@ def _register_routes(app: Flask):
     @app.post("/api/commit")
     @staff_required
     def api_commit():
-        cs = _require_session()
+        cs = _load_session()
+        if cs is None or cs.committed:
+            # Already saved — a second save request is a double-tap or a retry,
+            # not a failure. Answer as if this one did the work.
+            _clear_session()
+            return jsonify({"committed": 0, "already_saved": True,
+                            "date": _today(_store_tz())})
         scans = cs.finalize()
         for sc in scans:
             _db().add(ScanRow(store=sc.store, game_number=sc.game_number, pack=sc.pack,

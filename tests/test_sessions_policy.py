@@ -1,4 +1,4 @@
-"""The day's three counts: night is required, morning recommended, midday optional.
+"""The day's three counts: night is required, morning recommended, afternoon optional.
 
 Also covers the rename of the old "evening" label onto "night".
 """
@@ -22,15 +22,15 @@ def test_the_three_counts_carry_their_requirement():
     by_key = {s["key"]: s for s in SESSIONS}
     assert by_key["night"]["requirement"] == "required"
     assert by_key["morning"]["requirement"] == "recommended"
-    assert by_key["midday"]["requirement"] == "optional"
+    assert by_key["afternoon"]["requirement"] == "optional"
 
 
 def test_evening_is_just_the_old_name_for_night():
     assert normalize_session("evening") == "night"
     assert normalize_session("Evening ") == "night"
     assert session_meta("evening")["requirement"] == "required"
-    # afternoon likewise folds onto midday
-    assert normalize_session("afternoon") == "midday"
+    # midday was the old name for the afternoon count
+    assert normalize_session("midday") == "afternoon"
 
 
 def test_an_unknown_label_survives_as_an_optional_extra():
@@ -45,7 +45,7 @@ def test_a_day_with_only_a_morning_count_is_short_a_night_count():
     st = count_status(log, "2026-08-19", store="t")
     assert st["night_done"] is False
     assert [s["key"] for s in st["overdue"]] == ["night"]
-    assert {s["key"] for s in st["missing"]} == {"night"}   # midday never owed
+    assert {s["key"] for s in st["missing"]} == {"night"}   # afternoon never owed
 
 
 def test_a_night_count_clears_the_requirement_but_morning_is_still_nudged():
@@ -85,13 +85,13 @@ def test_status_is_per_store_and_per_day():
     assert count_status(log, "2026-08-18", store="a")["night_done"] is False
 
 
-def test_night_is_offered_first_and_midday_last():
+def test_night_is_offered_first_and_afternoon_last():
     st = count_status(ScanLog(scans=[]), "2026-08-19", store="t")
     ranked = sorted(st["sessions"], key=lambda s: s["rank"])
-    assert [s["key"] for s in ranked] == ["night", "morning", "midday"]
+    assert [s["key"] for s in ranked] == ["night", "morning", "afternoon"]
 
 
-# --- the report still orders morning -> midday -> night ----------------------
+# --- the report still orders morning -> afternoon -> night -------------------
 
 def test_an_evening_count_still_sorts_after_morning_in_the_report():
     log = ScanLog(scans=[
@@ -161,3 +161,54 @@ def test_the_chain_overview_shows_todays_counts_per_store(client):
     assert "Counts today" in html and "Missed nights" in html
     # a brand-new store has no earlier days to have missed
     assert "of 6" not in html
+
+
+# --- an unfinished count is offered, never resumed behind your back ----------
+
+def test_an_unfinished_count_is_offered_not_resumed(client):
+    client.post("/count/start", json={"session": "afternoon"})
+    client.post("/api/scan", json={"raw": "1750-0091798-010"})
+    html = client.get("/count").data.decode()
+    assert "count in progress" in html
+    assert "Resume it" in html and "Start a different count" in html
+
+
+def test_discarding_lets_a_different_count_be_started(client):
+    client.post("/count/start", json={"session": "afternoon"})
+    client.post("/api/scan", json={"raw": "1750-0091798-010"})
+    assert client.post("/count/discard").get_json()["discarded"] is True
+    s = client.post("/count/start", json={"session": "night"}).get_json()
+    assert s["session"] == "night" and s["done"] == 0
+
+
+def test_a_midday_labelled_count_reads_as_the_afternoon_one(client):
+    s = client.post("/count/start", json={"session": "midday"}).get_json()
+    assert s["session"] == "afternoon"
+
+
+# --- the double-scan crash ---------------------------------------------------
+
+def test_saving_a_count_twice_is_not_an_error(client):
+    """A double-tapped save used to raise, which reached the phone as a 500 and
+    a white screen."""
+    client.post("/count/start", json={"session": "night"})
+    client.post("/api/scan", json={"raw": "1750-0091798-010"})
+    client.post("/api/scan", json={"raw": "1744-0100200-005"})
+    assert client.post("/api/commit").get_json()["committed"] == 2
+    again = client.post("/api/commit")
+    assert again.status_code == 200
+    assert again.get_json()["already_saved"] is True
+
+
+def test_a_scan_after_the_count_was_saved_answers_in_json(client):
+    """Not an HTML error page — the page parses this and shows a message."""
+    client.post("/count/start", json={"session": "night"})
+    client.post("/api/scan", json={"raw": "1750-0091798-010"})
+    client.post("/api/scan", json={"raw": "1744-0100200-005"})
+    client.post("/api/commit")
+
+    r = client.post("/api/scan", json={"raw": "1780-0088010-002"})
+    assert r.status_code == 409
+    assert r.is_json
+    body = r.get_json()
+    assert body["restart"] is True and "already been saved" in body["error"]

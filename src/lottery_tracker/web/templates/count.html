@@ -5,14 +5,14 @@
   .big-prompt { font-size:15px; color:var(--muted); }
   .big-slot { font-size:44px; font-weight:800; letter-spacing:1px; margin:2px 0 8px; }
   .scanrow { display:flex; gap:10px; align-items:stretch; }
-  .scanbox { flex:1; min-width:0; padding:18px 14px; border-radius:10px;
+  .scanbox { flex:1; min-width:0; width:100%; padding:18px 14px; border-radius:10px;
              border:2px dashed var(--line); background:var(--panel2);
              font-size:22px; text-align:center; letter-spacing:1px;
-             color:var(--muted); overflow:hidden; text-overflow:ellipsis;
-             white-space:nowrap; }
+             color:var(--ink); }
+  .scanbox:focus { outline:none; border-style:solid; border-color:var(--accent); }
+  .scanbox::placeholder { color:var(--muted); letter-spacing:0; }
   .scanbox.live { border-style:solid; border-color:var(--accent); color:var(--ink); }
   .kb { flex:none; width:58px; font-size:22px; }
-  #scan { font-size:22px; text-align:center; letter-spacing:1px; }
   .progress { font-variant-numeric: tabular-nums; }
   .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(64px,1fr)); gap:8px; margin-top:8px; }
   .box { border:1px solid var(--line); border-radius:10px; padding:8px 6px; text-align:center;
@@ -42,6 +42,21 @@
   .sess.done .tag { background:var(--ok-bg); color:var(--ink); border-color:transparent; }
 </style>
 
+{% if has_active %}
+{# An unfinished walk is OFFERED, not resumed automatically — landing straight
+   in a half-done afternoon count is how a night count ends up mislabelled. #}
+<div id="resume" class="card">
+  <h2 style="margin-top:0">You have a count in progress</h2>
+  <p class="muted">
+    The <b>{{ state.session }}</b> count — {{ state.done }} of {{ state.total }} boxes done.
+  </p>
+  <div class="row">
+    <button class="primary" onclick="resumeCount()">Resume it</button>
+    <button onclick="discardCount()">Start a different count</button>
+  </div>
+</div>
+{% endif %}
+
 <div id="start" class="card" style="display:none">
   <h2>Start a count</h2>
   <p class="muted">Pick which count this is, then scan every box in order.</p>
@@ -49,7 +64,7 @@
   <div class="sessions">
     {# most-required first: night is the one that matters #}
     {% for s in counts.sessions|sort(attribute='rank') %}
-      {% if s.key in ('night', 'morning', 'midday') %}
+      {% if s.key in ('night', 'morning', 'afternoon') %}
       <button class="sess {{ s.requirement }}{% if s.done %} done{% endif %}"
               onclick="startCount('{{ s.key }}')">
         <span class="sess-top">
@@ -79,7 +94,7 @@
   <div class="row">
     <button class="primary" onclick="startCount('night')">Night</button>
     <button onclick="startCount('morning')">Morning</button>
-    <button onclick="startCount('midday')">Midday</button>
+    <button onclick="startCount('afternoon')">Afternoon</button>
   </div>
   {% endif %}
 </div>
@@ -94,16 +109,17 @@
     <div class="big-prompt" id="promptLine">Scan box</div>
     <div class="big-slot" id="slotName">—</div>
     <div class="scanrow">
-      <!-- Readonly + unfocused by default: an Android soft keyboard only appears
-           when a field is focused, and the gun doesn't need focus because we
-           listen for its keystrokes on the document. Tap ⌨ to type by hand. -->
-      <div id="scanBox" class="scanbox" aria-live="polite">scan here…</div>
+      <!-- The gun is a keyboard, so its keystrokes only reach the page if
+           something is FOCUSED. A plain div can't be, which is why scanning did
+           nothing until the soft keyboard was opened. This is a real input that
+           stays focused, with inputmode="none" so Android does NOT raise the
+           soft keyboard for it. Tap ⌨ to switch it to a normal field and type. -->
+      <input id="scanBox" class="scanbox" type="text" inputmode="none"
+             autocomplete="off" autocapitalize="off" autocorrect="off"
+             spellcheck="false" placeholder="scan here…" aria-label="Scan a ticket">
       <button type="button" id="kbBtn" class="kb" onclick="toggleKeyboard()"
               aria-label="Type by hand">⌨</button>
     </div>
-    <input id="scan" type="text" inputmode="numeric" autocomplete="off"
-           autocapitalize="off" spellcheck="false" placeholder="type the number"
-           style="display:none;margin-top:10px">
     <div id="result" class="flash" style="display:none"></div>
     <div class="row" style="margin-top:12px">
       <button onclick="back()">◀ Back</button>
@@ -128,7 +144,6 @@ let state = INITIAL;
 let fixSlot = null;
 
 const $ = id => document.getElementById(id);
-const scanEl = $("scan");
 
 async function postJSON(url, body) {
   const r = await fetch(url, {method:"POST", headers:{"Content-Type":"application/json"},
@@ -137,7 +152,21 @@ async function postJSON(url, body) {
   return r.json();
 }
 
-function startCount(label){ postJSON("{{ url_for('count_start') }}", {session:label}).then(applyState); }
+function hideResume(){ const r = $("resume"); if (r) r.style.display = "none"; }
+
+function startCount(label){
+  hideResume();
+  postJSON("{{ url_for('count_start') }}", {session:label}).then(applyState);
+}
+
+function resumeCount(){ hideResume(); applyState(INITIAL); }
+
+function discardCount(){
+  postJSON("{{ url_for('count_discard') }}").then(() => {
+    hideResume();
+    $("start").style.display = "block";
+  });
+}
 
 function applyState(s){
   state = s;
@@ -190,81 +219,115 @@ function applyState(s){
     d.onclick = () => setFix(b.slot);
     g.appendChild(d);
   });
+
+  // The field can only take focus once it's on screen, which is why this
+  // belongs at the END of a render rather than at page load.
+  keepFocus();
 }
 
 function setFix(slot){ fixSlot = slot; applyState(state); }
 function cancelFix(){ fixSlot = null; applyState(state); }
 
-// Guard against double submission: guns vary — some send Enter, and the
-// auto-submit debounce may also fire. Ignore an identical scan within 1s and
-// don't overlap in-flight requests.
-let busy = false, lastRaw = "", lastAt = 0, debounce;
+// Scans are handled ONE AT A TIME. Firing two overlapping requests at the
+// server let both read the same half-finished count and write over each other,
+// which surfaced as an "internal server error" and a white screen after an
+// accidental double scan. Everything queues behind the request in flight.
+let inFlight = null, lastRaw = "", lastAt = 0, debounce;
+
 async function submitScan(raw){
   raw = (raw||"").trim();
   clearTimeout(debounce);
-  if (!raw || busy) return;
+  if (!raw) return;
   const t = Date.now();
-  // Normally an identical scan within a second is the gun firing twice — but
+  // An identical scan within a second is normally the gun firing twice — but
   // when a duplicate game is waiting to be confirmed, scanning the same ticket
   // again IS the confirmation, so it has to be let through.
   const confirming = state && state.step && state.step.needs_confirm;
   if (!confirming && raw === lastRaw && (t - lastAt) < 1000) return;
-  busy = true; lastRaw = raw; lastAt = t;
+  lastRaw = raw; lastAt = t;
+  // Chain onto whatever is running so scans are applied in the order they were
+  // made, never concurrently.
+  inFlight = Promise.resolve(inFlight).catch(() => {}).then(() => sendScan(raw));
+  return inFlight;
+}
+
+async function sendScan(raw){
   try {
     let s;
     if (fixSlot) { s = await postJSON("{{ url_for('api_rescan') }}", {slot:fixSlot, raw}); fixSlot = null; }
     else { s = await postJSON("{{ url_for('api_scan') }}", {raw}); }
     applyState(s);
-  } catch(e){ alert("Scan failed: " + e.message); }
-  finally { busy = false; }
+  } catch(e){
+    // Never blow up the page — show it where the clerk is already looking.
+    const res = $("result");
+    res.style.display = "block";
+    res.className = "flash err";
+    res.textContent = e.message || "that scan didn't go through — scan again";
+    if (e.restart) { setTimeout(() => window.location.reload(), 1200); }
+  }
 }
 
 // --- the scan gun -----------------------------------------------------------
-// A retail gun is just a keyboard: it types the barcode fast, usually followed
-// by Enter. Listening on the DOCUMENT means no field has to be focused — and an
-// Android soft keyboard only appears for a focused field, which is what made
-// counting miserable. Tap ⌨ when you actually want to type.
+// A retail gun is a keyboard: it types the barcode fast, usually with an Enter
+// at the end. Keystrokes only reach a page through a FOCUSED element, so the
+// scan field is a real input that we keep focused — with inputmode="none" so
+// Android doesn't raise the soft keyboard for it. (The previous version listened
+// on the document with nothing focused, which worked on a desktop but meant the
+// app ignored the gun until you opened the keyboard by hand.)
 const box = $("scanBox");
-let buf = "", manualOpen = false;
+let manualOpen = false;
 
-function showBuf(){
-  box.textContent = buf || "scan here…";
-  box.classList.toggle("live", buf.length > 0);
+function keepFocus(){
+  if (manualOpen || document.activeElement === box) return;
+  try { box.focus({preventScroll: true}); } catch(e) { box.focus(); }
+}
+
+function maybeSubmit(){
+  const raw = box.value.replace(/[^0-9-]/g, "");
+  if (raw !== box.value) box.value = raw;
+  clearTimeout(debounce);
+  // Fire once we have at least the 14 printed digits. Real guns emit more (16
+  // observed: 14 + check digits), so wait a beat for the rest to land.
+  if (/^\d{14,}$/.test(raw.replace(/-/g, ""))) debounce = setTimeout(flush, 180);
 }
 
 function flush(){
   clearTimeout(debounce);
-  const raw = buf.trim(); buf = ""; showBuf();
+  const raw = box.value.trim();
+  box.value = "";
   if (raw) submitScan(raw);
 }
 
+box.addEventListener("input", maybeSubmit);
+box.addEventListener("keydown", e => {
+  if (e.key === "Enter") { e.preventDefault(); flush(); }
+});
+// A tap anywhere, or anything else stealing focus, hands it straight back.
+box.addEventListener("blur", () => setTimeout(keepFocus, 50));
+document.addEventListener("click", e => { if (!e.target.closest("button, a, input")) keepFocus(); });
+window.addEventListener("focus", keepFocus);
+document.addEventListener("visibilitychange", () => { if (!document.hidden) keepFocus(); });
+
+// Belt and braces: if some device still delivers keystrokes to the document
+// rather than the field, they are typed into the field instead of being lost.
 document.addEventListener("keydown", e => {
-  if (manualOpen) return;                        // the visible field owns input
+  if (manualOpen || document.activeElement === box) return;
   if (e.key === "Enter") { e.preventDefault(); flush(); return; }
-  if (e.key === "Backspace") { buf = buf.slice(0,-1); showBuf(); e.preventDefault(); return; }
   if (e.key.length !== 1 || !/[0-9-]/.test(e.key)) return;
-  buf += e.key; showBuf(); e.preventDefault();
-  clearTimeout(debounce);
-  // Fire once we have at least the 14 printed digits. Real guns emit more (16
-  // observed: 14 + check digits), so allow trailing digits and wait a beat for
-  // the rest of a longer code to arrive.
-  if (/^\d{14,}$/.test(buf.replace(/[-\s]/g, ""))) debounce = setTimeout(flush, 180);
+  box.value += e.key; maybeSubmit(); e.preventDefault();
 });
 
 // --- manual entry, only when asked for --------------------------------------
 function toggleKeyboard(){
   manualOpen = !manualOpen;
-  scanEl.style.display = manualOpen ? "block" : "none";
+  // Switching inputmode is what raises (or suppresses) the Android keyboard;
+  // the field itself is the same one the gun types into.
+  box.setAttribute("inputmode", manualOpen ? "numeric" : "none");
+  box.placeholder = manualOpen ? "type the number, then Enter" : "scan here…";
   $("kbBtn").classList.toggle("primary", manualOpen);
-  if (manualOpen) { scanEl.value = buf; scanEl.focus(); } else { scanEl.blur(); }
+  box.blur();
+  setTimeout(() => box.focus(), 0);
 }
-scanEl.addEventListener("keydown", e => {
-  if (e.key !== "Enter") return;
-  e.preventDefault();
-  const v = scanEl.value.trim();
-  scanEl.value = ""; buf = ""; showBuf();
-  if (v) submitScan(v);
-});
 
 async function back(){ applyState(await postJSON("{{ url_for('api_back') }}")); }
 async function skip(){ applyState(await postJSON("{{ url_for('api_skip') }}")); }
@@ -286,7 +349,13 @@ async function saveNow(){
   }
 }
 
-applyState(INITIAL);
-showBuf();
+// On load: offer the unfinished count if there is one, otherwise ask which
+// count this is. Never guess.
+if (document.getElementById("resume")) {
+  $("start").style.display = "none";
+  $("live").style.display = "none";
+} else {
+  applyState(INITIAL);
+}
 </script>
 {% endblock %}

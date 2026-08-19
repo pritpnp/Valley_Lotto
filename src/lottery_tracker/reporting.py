@@ -1,7 +1,7 @@
 """Daily (and per-count) sales reporting from the scan log.
 
 A "count" is a walk of the counter where a clerk scans the current top ticket of
-every box. Stores run 2-3 counts a day — a **morning**, optional **midday**, and
+every box. Stores run 2-3 counts a day — a **morning**, optional **afternoon**, and
 **night** count. Sold between two counts = the ticket movement in each box; sold
 for the day = first count to last, bridging any pack changeover in between.
 
@@ -32,12 +32,12 @@ from .scans import ScanLog, compute_sold, sold_over_sequence, learn_pack_size, _
 #   morning — HIGHLY RECOMMENDED. It splits the day into real intervals and
 #             catches an overnight problem early, but a busy open sometimes eats
 #             it, so a missing morning count is a nudge, not an alarm.
-#   midday  — OPTIONAL. Rarely possible; welcome when someone has the time.
+#   afternoon — OPTIONAL. Rarely possible; welcome when someone has the time.
 #
 SESSIONS = (
     {"key": "morning", "label": "Morning", "order": 0, "requirement": "recommended",
      "blurb": "Highly recommended — do it at open when there's time."},
-    {"key": "midday", "label": "Midday", "order": 1, "requirement": "optional",
+    {"key": "afternoon", "label": "Afternoon", "order": 1, "requirement": "optional",
      "blurb": "Optional — a bonus count if the day allows it."},
     {"key": "night", "label": "Night", "order": 2, "requirement": "required",
      "blurb": "Required — every day has to end with this count."},
@@ -47,7 +47,8 @@ SESSIONS = (
 # "evening" in particular is just what the night count used to be called.
 SESSION_ALIASES = {
     "evening": "night", "close": "night", "closing": "night", "pm": "night",
-    "afternoon": "midday", "noon": "midday", "lunch": "midday", "mid": "midday",
+    "midday": "afternoon", "noon": "afternoon", "lunch": "afternoon",
+    "mid": "afternoon",
     "open": "morning", "opening": "morning", "am": "morning",
 }
 
@@ -136,7 +137,7 @@ class Interval:
     """Sold between two consecutive counts within a box."""
 
     frm: str                       # e.g. "morning"
-    to: str                        # e.g. "midday"
+    to: str                        # e.g. "afternoon"
     sold: Optional[int]
     revenue: Optional[float]
     estimated: bool                # True if a pack changeover was bridged
