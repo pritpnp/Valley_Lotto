@@ -150,3 +150,14 @@ def test_the_report_warns_when_the_night_count_is_missing(client):
     client.post("/api/commit")
     html = client.get("/report").data.decode()
     assert "night count" in html
+
+
+def test_the_chain_overview_shows_todays_counts_per_store(client):
+    client.post("/count/start", json={"session": "night"})
+    client.post("/api/scan", json={"raw": "1750-0091798-010"})
+    client.post("/api/scan", json={"raw": "1744-0100200-005"})
+    client.post("/api/commit")
+    html = client.get("/overview").data.decode()
+    assert "Counts today" in html and "Missed nights" in html
+    # a brand-new store has no earlier days to have missed
+    assert "of 6" not in html
