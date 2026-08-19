@@ -59,11 +59,11 @@
     <div id="result" class="flash" style="display:none"></div>
     <div class="row" style="margin-top:12px">
       <button onclick="back()">◀ Back</button>
-      <button onclick="skip()">Skip</button>
-      <button class="primary" id="finishBtn" onclick="commit()">Finish &amp; Save</button>
+      <button onclick="skip()">Skip — box is empty</button>
     </div>
-    <p class="hint">Tip: the gun types the barcode and this jumps to the next box automatically.
-       Tap any box below to fix it without losing your place.</p>
+    <p class="hint">Scan a box and it moves to the next one. Mis-scanned? Tap
+       <b>Back</b>, or tap any box below to fix it without losing your place.
+       The count saves itself once you've been through every box.</p>
   </div>
 
   <div class="card">
@@ -100,10 +100,13 @@ function applyState(s){
   $("sessLabel").textContent = (s.session||"").toUpperCase() + " count";
   $("doneN").textContent = s.done; $("totalN").textContent = s.total;
 
+  // The end of the walk saves the count — there is no Finish button to forget.
+  if (s.walk_done && !fixSlot && !saving) { saveNow(); return; }
+
   // current prompt
-  if (s.complete && !fixSlot) {
-    $("promptLine").textContent = "All boxes scanned 🎉";
-    $("slotName").textContent = "Finish & Save";
+  if (s.walk_done && !fixSlot) {
+    $("promptLine").textContent = "Saving…";
+    $("slotName").textContent = "✓";
   } else {
     $("promptLine").textContent = fixSlot ? "Fixing box" : "Scan box";
     $("slotName").textContent = fixSlot || s.current_slot || "—";
@@ -120,8 +123,11 @@ function applyState(s){
   const res = $("result");
   if (s.step) {
     res.style.display = "block";
-    res.className = "flash " + (s.step.ok ? (s.step.warning ? "warn" : "ok") : "err");
+    const kind = s.step.needs_confirm ? "warn"
+               : s.step.ok ? (s.step.warning ? "warn" : "ok") : "err";
+    res.className = "flash " + kind;
     res.textContent = s.step.message + (s.step.warning ? "  ⚠ " + s.step.warning : "");
+    res.style.fontWeight = s.step.needs_confirm ? "700" : "400";
   } else { res.style.display = "none"; }
 
   // grid
@@ -150,7 +156,11 @@ async function submitScan(raw){
   clearTimeout(debounce);
   if (!raw || busy) return;
   const t = Date.now();
-  if (raw === lastRaw && (t - lastAt) < 1000) return;   // same barcode fired twice
+  // Normally an identical scan within a second is the gun firing twice — but
+  // when a duplicate game is waiting to be confirmed, scanning the same ticket
+  // again IS the confirmation, so it has to be let through.
+  const confirming = state && state.step && state.step.needs_confirm;
+  if (!confirming && raw === lastRaw && (t - lastAt) < 1000) return;
   busy = true; lastRaw = raw; lastAt = t;
   try {
     let s;
@@ -210,10 +220,22 @@ scanEl.addEventListener("keydown", e => {
 
 async function back(){ applyState(await postJSON("{{ url_for('api_back') }}")); }
 async function skip(){ applyState(await postJSON("{{ url_for('api_skip') }}")); }
-async function commit(){
-  if (!confirm("Save this count?")) return;
-  const r = await postJSON("{{ url_for('api_commit') }}");
-  window.location = "{{ url_for('report') }}";
+
+// Saving happens on its own once the last box is done. The guard matters
+// because applyState runs after every scan and must only save once.
+let saving = false;
+async function saveNow(){
+  if (saving) return;
+  saving = true;
+  $("promptLine").textContent = "Saving…";
+  $("slotName").textContent = "✓";
+  try {
+    await postJSON("{{ url_for('api_commit') }}");
+    window.location = "{{ url_for('report') }}";
+  } catch(e){
+    saving = false;
+    alert("Could not save the count: " + e.message);
+  }
 }
 
 applyState(INITIAL);

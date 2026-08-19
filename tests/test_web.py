@@ -90,3 +90,41 @@ def test_active_session_survives_reload(client):
     # A fresh state fetch (as a page reload would do) still knows we're on A2.
     s = client.get("/api/state").get_json()
     assert s["current_slot"] == "A2" and s["done"] == 1
+
+
+# --- the count ends by itself; duplicates are confirmed by re-scanning -------
+
+def test_the_walk_ending_is_what_saves_the_count(client):
+    """There is no Finish button — going through every box saves it."""
+    _register(client)
+    client.post("/count/start", json={"session": "morning"})
+    s = client.post("/api/scan", json={"raw": "1742011331200893"}).get_json()
+    assert s["walk_done"] is False
+    s = client.post("/api/scan", json={"raw": "1750-0091798-010"}).get_json()
+    assert s["walk_done"] is True          # the client commits on seeing this
+    assert client.post("/api/commit").get_json()["committed"] == 2
+
+
+def test_an_empty_box_is_skipped_and_still_ends_the_walk(client):
+    _register(client)
+    client.post("/count/start", json={"session": "morning"})
+    client.post("/api/scan", json={"raw": "1742011331200893"})
+    s = client.post("/api/skip").get_json()      # this box is empty
+    assert s["walk_done"] is True
+    assert s["complete"] is False                # not every box has a ticket
+    assert client.post("/api/commit").get_json()["committed"] == 1
+
+
+def test_a_repeated_game_is_held_then_accepted_on_the_second_scan(client):
+    _register(client)
+    client.post("/count/start", json={"session": "morning"})
+    client.post("/api/scan", json={"raw": "1750-0091798-010"})
+
+    held = client.post("/api/scan", json={"raw": "1750-0091798-044"}).get_json()
+    assert held["step"]["needs_confirm"] is True
+    assert "scanned in box" in held["step"]["message"]
+    assert held["current_slot"] == "A2"          # did not advance
+
+    ok = client.post("/api/scan", json={"raw": "1750-0091798-044"}).get_json()
+    assert ok["step"]["ok"] is True
+    assert ok["walk_done"] is True               # that was the last box

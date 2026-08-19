@@ -56,12 +56,52 @@ def test_rescan_fixes_a_box_without_losing_place():
     assert sess.current_slot == "A4"          # place preserved
 
 
-def test_duplicate_ticket_warns():
+def test_the_same_ticket_twice_is_rejected_not_recorded():
+    """One ticket cannot be in two boxes — that's a double-fire or a missed box."""
     sess = CountSession(slots=["A1", "A2"])
     sess.scan("1750-0091798-010", at="t1")
-    step = sess.scan("1750-0091798-010", at="t2")   # same exact ticket in A2
+    step = sess.scan("1750-0091798-010", at="t2")   # same exact ticket at A2
+    assert step.ok is False
+    assert "same ticket" in step.message
+    assert "A2" not in sess.entries              # nothing recorded
+    assert sess.current_slot == "A2"             # and we stay put
+
+
+def test_the_same_game_in_a_second_box_asks_for_confirmation():
+    """Doubling up a popular game is legitimate but unusual — confirm by
+    scanning the ticket a second time."""
+    sess = CountSession(slots=["A1", "A2"])
+    sess.scan("1750-0091798-010", at="t1")
+
+    held = sess.scan("1750-0091798-025", at="t2")   # same GAME, different ticket
+    assert held.ok is False and held.needs_confirm is True
+    assert "1750" in held.message and "A1" in held.message
+    assert "A2" not in sess.entries
+
+    confirmed = sess.scan("1750-0091798-025", at="t3")
+    assert confirmed.ok is True
+    assert sess.entries["A2"].game_number == "1750"
+    assert sess.current_slot is None                # advanced past the last box
+
+
+def test_a_different_game_clears_a_held_confirmation():
+    sess = CountSession(slots=["A1", "A2", "A3"])
+    sess.scan("1750-0091798-010", at="t1")
+    sess.scan("1750-0091798-025", at="t2")          # held for confirmation
+    step = sess.scan("1744-0100200-005", at="t3")   # changed their mind
     assert step.ok is True
-    assert step.warning and "wrong box" in step.warning
+    assert sess.entries["A2"].game_number == "1744"
+
+
+def test_the_walk_ends_even_with_skipped_boxes():
+    """Empty boxes get skipped, so "walk done" — not "all boxes filled" — is
+    what finishes a count."""
+    sess = CountSession(slots=["A1", "A2"])
+    sess.scan("1750-0091798-010", at="t1")
+    assert sess.walk_done is False
+    sess.skip()                                     # A2 is empty
+    assert sess.walk_done is True
+    assert sess.is_complete() is False              # not every box has a ticket
 
 
 def test_skip_and_goto_fill_later():
@@ -69,7 +109,7 @@ def test_skip_and_goto_fill_later():
     sess.scan("1750-0091798-010", at="t1")    # A1
     sess.skip()                                # skip A2
     sess.scan("1780-0088010-002", at="t3")    # A3
-    assert sess.pending() == ["A2"]
+    assert sess.pending_slots() == ["A2"]
     sess.goto("A2")
     assert sess.current_slot == "A2"
     sess.scan("1744-0100200-005", at="t4")

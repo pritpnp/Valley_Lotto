@@ -642,7 +642,10 @@ def _register_routes(app: Flask):
             "current_slot": cs.current_slot,
             "done": done, "total": total,
             "complete": cs.is_complete(),
-            "pending": cs.pending(),
+            # walk_done — not "every box filled" — is what ends a count, since
+            # empty boxes are skipped rather than scanned.
+            "walk_done": cs.walk_done,
+            "pending": cs.pending_slots(),
             "slots": [
                 {"slot": s,
                  "game": cs.entries[s].game_number if s in cs.entries else None,
