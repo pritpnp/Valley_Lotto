@@ -1,18 +1,1 @@
-[
-  {
-    "kind": "low_prizes",
-    "game_number": "1778",
-    "name": "Money Rush",
-    "severity": "warning",
-    "message": "A game you carry is running low \u2014 consider swapping it for a fresh game: #1778 Money Rush (only 38% of top prizes left (15/40)).",
-    "owned": true,
-    "details": {
-      "reasons": [
-        "only 38% of top prizes left (15/40)"
-      ],
-      "top_prizes_remaining": 15,
-      "top_prizes_total": 40,
-      "top_prize_value": "$5,000"
-    }
-  }
-]
+[]
