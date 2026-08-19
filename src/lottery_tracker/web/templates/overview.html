@@ -5,6 +5,13 @@
   td,th { font-size:13.5px; } .scroll { overflow-x:auto; }
   .keep { color:var(--ok); font-weight:700; } .send { color:var(--err); font-weight:700; }
   .storename { font-weight:700; }
+  /* one letter per daily count: filled = taken. The night count is required, so
+     an empty N is the one worth noticing. */
+  .cnt { display:inline-block; min-width:24px; padding:0 3px; height:20px; line-height:20px; margin-right:3px;
+         text-align:center; border-radius:10px; font-size:11px; font-weight:700;
+         border:1px dashed var(--line); color:var(--muted); }
+  .cnt.yes { background:var(--ok-bg); color:var(--ok); border:1px solid transparent; }
+  .cnt.required:not(.yes) { border:2px solid var(--warn); color:var(--warn); }
 </style>
 <div class="card">
   <h2 style="margin:0 0 4px">All stores</h2>
@@ -15,7 +22,8 @@
   <div class="scroll"><table>
     <thead><tr>
       <th>Store</th><th>Carried</th><th>Keep</th><th>Send back</th>
-      <th>Today</th><th>Last 7 days</th><th>Staff</th><th>Last count</th><th></th>
+      <th>Today</th><th>Last 7 days</th><th>Counts today</th><th>Missed nights</th>
+      <th>Staff</th><th>Last count</th><th></th>
     </tr></thead>
     <tbody>
     {% for r in rows %}
@@ -31,6 +39,16 @@
         <td class="send">{{ r.summary.send_back }}</td>
         <td>{{ r.today_tickets }}{% if r.today_revenue %} <span class="muted">${{ '%.0f'|format(r.today_revenue) }}</span>{% endif %}</td>
         <td>{{ r.week_tickets }}{% if r.week_revenue %} <span class="muted">${{ '%.0f'|format(r.week_revenue) }}</span>{% endif %}</td>
+        <td>
+          {%- for s in r.today_counts.sessions -%}
+            <span class="cnt {% if s.done %}yes{% endif %} {{ s.requirement }}"
+                  title="{{ s.label }}{% if s.done %} — {{ s.at_local }}, {{ s.boxes }} boxes{% else %} — not taken{% endif %}">
+              {{ s.label[:2] }}</span>
+          {%- endfor -%}
+        </td>
+        <td>{% if not r.judged_days %}<span class="muted">—</span>
+            {% elif r.missed_nights %}<span class="send">{{ r.missed_nights }} of {{ r.judged_days }}</span>
+            {% else %}<span class="keep">none</span>{% endif %}</td>
         <td>{{ r.staff }}</td>
         <td class="muted">{{ r.last_count[:10] if r.last_count else '—' }}</td>
         <td>
@@ -42,7 +60,7 @@
         </td>
       </tr>
     {% else %}
-      <tr><td colspan="9" class="muted">No stores yet. <a href="{{ url_for('admin_stores') }}">Add one →</a></td></tr>
+      <tr><td colspan="11" class="muted">No stores yet. <a href="{{ url_for('admin_stores') }}">Add one →</a></td></tr>
     {% endfor %}
     </tbody>
   </table></div>

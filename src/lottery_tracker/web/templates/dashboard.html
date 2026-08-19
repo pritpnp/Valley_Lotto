@@ -18,6 +18,14 @@
   .scroll { overflow-x:auto; }
 </style>
 
+{% if night_due %}
+<div class="card flash warn" style="display:block">
+  <b>Tonight's count hasn't been done.</b>
+  The night count is required — the day's sales are settled from it.
+  <a href="{{ url_for('count') }}">Start the night count →</a>
+</div>
+{% endif %}
+
 <div class="card">
   <div class="row" style="justify-content:space-between;align-items:baseline">
     <h2 style="margin:0">Your games</h2>

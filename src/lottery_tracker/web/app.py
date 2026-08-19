@@ -30,7 +30,8 @@ from ..barcode import try_parse_ticket
 from ..scans import Scan, ScanLog
 from ..session import CountSession, standard_slots
 from ..reporting import (daily_report, render_daily_report_md, as_zone,
-                         business_date)
+                         business_date, count_status, normalize_session,
+                         SESSIONS)
 from ..config import Config
 from ..rules import RATING_FACTORS
 from .models import (Base, User, Store, ScanRow, ActiveCount, InventoryRow,
@@ -661,15 +662,24 @@ def _register_routes(app: Flask):
     @staff_required
     def count():
         cs = _load_session()
+        tz = _store_tz()
+        today = _today(tz)
+        # Show which of today's counts are already in, so the clerk picking a
+        # session can see at a glance that the required night count is still owed.
+        status = count_status(_store_log(), today, store=_store(), tz=tz)
         return render_template("count.html", has_active=cs is not None,
                                state=(_state_payload(cs) if cs else None),
+                               counts=status, today=today,
                                email=session.get("email"))
 
     @app.post("/count/start")
     @staff_required
     def count_start():
         body = request.get_json(silent=True) or {}
-        label = request.form.get("session") or body.get("session") or "morning"
+        # "evening" is the old name for the night count; fold aliases onto the
+        # three real sessions so a day's counts always line up in the report.
+        label = normalize_session(
+            request.form.get("session") or body.get("session") or "night") or "night"
         cs = CountSession(slots=_store_slots(), store=_store(),
                           session=label, user=session.get("staff_name") or session.get("email"),
                           known_games=_known_games())
@@ -899,6 +909,14 @@ def _register_routes(app: Flask):
 
         return render_template("history.html", **ctx)
 
+    def _recent_dates(today: str, days: int) -> list:
+        """The `days` calendar dates ending the day BEFORE `today`."""
+        try:
+            d0 = datetime.strptime(today, "%Y-%m-%d").date()
+        except ValueError:
+            return []
+        return [(d0 - timedelta(days=i)).isoformat() for i in range(1, days + 1)]
+
     # --- superadmin: stores, managers, chain overview ----------------------
     @app.get("/overview")
     @superadmin_required
@@ -926,12 +944,26 @@ def _register_routes(app: Flask):
                 r = daily_report(log, d, prices=prices, store=st.slug, tz=st.timezone)
                 week_tickets += r.total_tickets
                 week_rev += (r.total_revenue or 0)
+
+            # Night-count compliance. Today is excluded — a store that hasn't
+            # closed yet hasn't missed anything — and so is anything before the
+            # store's first scan, since a store can't miss a count it wasn't
+            # open for yet. A day in between with no scans at all IS a miss.
+            first_day = min((business_date(sc.scanned_at, st.timezone)
+                             for sc in log.scans), default=None)
+            judged = [d for d in _recent_dates(today, 6)
+                      if first_day and d >= first_day]
+            missed = [d for d in judged
+                      if not count_status(log, d, store=st.slug,
+                                          tz=st.timezone)["night_done"]]
             rows.append({
                 "store": st, "summary": summary,
                 "today_tickets": rep.total_tickets, "today_revenue": rep.total_revenue,
                 "week_tickets": week_tickets, "week_revenue": round(week_rev, 2),
                 "staff": _db().query(StaffRow).filter(StaffRow.store == st.slug).count(),
                 "last_count": max((sc.scanned_at for sc in log.scans), default=None),
+                "today_counts": count_status(log, today, store=st.slug, tz=st.timezone),
+                "missed_nights": len(missed), "judged_days": len(judged),
             })
         return render_template("overview.html", rows=rows)
 
@@ -1196,6 +1228,17 @@ def _register_routes(app: Flask):
         cfg = _cfg()
         return cfg.rating_weights.scaled(_emphasis_row().to_emphasis()), cfg
 
+    def _night_reminder() -> dict | None:
+        """A nudge for the one count that can't be skipped — but only once the
+        day is far enough along that it's actually late. Nobody needs to be told
+        at 9am that tonight's count hasn't happened."""
+        tz = _store_tz()
+        now = datetime.now(as_zone(tz) or timezone.utc)
+        if now.hour < 17:
+            return None
+        st = count_status(_store_log(), _today(tz), store=_store(), tz=tz)
+        return None if st["night_done"] else st
+
     @app.get("/dashboard")
     @login_required
     def dashboard():
@@ -1205,6 +1248,7 @@ def _register_routes(app: Flask):
         rows = pa_data.store_rows(cat, inv, cfg.thresholds, weights)
         return render_template(
             "dashboard.html", email=session.get("email"),
+            night_due=_night_reminder(),
             rows=rows, summary=pa_data.store_summary(rows),
             captured_at=cat.captured_at, weights=weights,
             new_games=pa_data.new_games(cat, within_days=14, weights=weights),
@@ -1380,6 +1424,9 @@ def _register_routes(app: Flask):
         rep = daily_report(log, date, prices=_load_prices(), resolver=resolver,
                            store=_store(), tz=_store_tz())
         return render_template("report.html", date=date, report=rep,
+                               counts=count_status(log, date, store=_store(),
+                                                   tz=_store_tz()),
+                               today=_today(_store_tz()),
                                md=render_daily_report_md(rep), email=session.get("email"))
 
 

@@ -16,6 +16,34 @@
     {% if report.total_revenue is not none %} · <b>${{ '%.2f'|format(report.total_revenue) }}</b>{% endif %}
   </div>
 
+  {% if counts %}
+  {# Which of the day's counts were actually taken. The night count settles the
+     day, so its absence is called out; a missing morning is only a nudge. #}
+  <style>
+    .chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+    .chip { font-size:12px; padding:4px 10px; border-radius:999px;
+            border:1px solid var(--line); color:var(--muted); }
+    .chip.done { background:var(--ok-bg); color:var(--ok); border-color:transparent; font-weight:600; }
+    .chip.owed { background:var(--warn-bg); color:var(--warn); border-color:transparent; font-weight:600; }
+  </style>
+  <div class="chips">
+    {% for s in counts.sessions %}
+      <span class="chip {% if s.done %}done{% elif s.requirement == 'required' %}owed{% endif %}">
+        {%- if s.done %}✓ {{ s.label }} {{ s.at_local }} · {{ s.boxes }} box{{ '' if s.boxes == 1 else 'es' }}
+        {%- else %}○ no {{ s.label|lower }} count{% endif -%}
+      </span>
+    {% endfor %}
+  </div>
+  {% if counts.overdue %}
+    <p class="flash warn" style="margin-top:8px">
+      No <b>night count</b> was taken{% if date == today %} yet{% endif %} on {{ date }}.
+      {% if date == today %}It's required before the day closes.
+      {% else %}The day's totals end at the last count taken, so this day is short.{% endif %}
+      <a href="{{ url_for('count') }}">Count now →</a>
+    </p>
+  {% endif %}
+  {% endif %}
+
   {% if report.rows %}
   <table>
     <thead><tr><th>Box</th><th>Game</th><th>Sold</th><th>Revenue</th><th>Counts (ticket #)</th></tr></thead>

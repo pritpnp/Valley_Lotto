@@ -23,9 +23,62 @@ from zoneinfo import ZoneInfo
 
 from .scans import ScanLog, compute_sold, sold_over_sequence, learn_pack_size, _slot_sort_key
 
+# The three named counts of a day, in the order they happen, and how hard each
+# one is expected. This is store policy, not a technicality:
+#
+#   night   — REQUIRED. The day's numbers are settled from it; a day without one
+#             can only be reported as an open-ended stretch, so it is the one
+#             count nobody skips.
+#   morning — HIGHLY RECOMMENDED. It splits the day into real intervals and
+#             catches an overnight problem early, but a busy open sometimes eats
+#             it, so a missing morning count is a nudge, not an alarm.
+#   midday  — OPTIONAL. Rarely possible; welcome when someone has the time.
+#
+SESSIONS = (
+    {"key": "morning", "label": "Morning", "order": 0, "requirement": "recommended",
+     "blurb": "Highly recommended — do it at open when there's time."},
+    {"key": "midday", "label": "Midday", "order": 1, "requirement": "optional",
+     "blurb": "Optional — a bonus count if the day allows it."},
+    {"key": "night", "label": "Night", "order": 2, "requirement": "required",
+     "blurb": "Required — every day has to end with this count."},
+)
+
+# Older labels (and anything a clerk might type) folded onto the three real ones.
+# "evening" in particular is just what the night count used to be called.
+SESSION_ALIASES = {
+    "evening": "night", "close": "night", "closing": "night", "pm": "night",
+    "afternoon": "midday", "noon": "midday", "lunch": "midday", "mid": "midday",
+    "open": "morning", "opening": "morning", "am": "morning",
+}
+
+REQUIREMENT_RANK = {"required": 0, "recommended": 1, "optional": 2}
+
+
+def normalize_session(label) -> str:
+    """Fold a session label onto one of the three canonical counts.
+
+    Unrecognized labels pass through unchanged (lowercased) so a store can still
+    invent one without the reports falling over.
+    """
+    key = (label or "").strip().lower()
+    return SESSION_ALIASES.get(key, key)
+
+
+def session_meta(label) -> dict:
+    """Policy for a session label: its display name and how expected it is."""
+    key = normalize_session(label)
+    for s in SESSIONS:
+        if s["key"] == key:
+            return s
+    return {"key": key, "label": (label or "count").title(), "order": 9,
+            "requirement": "optional", "blurb": ""}
+
+
 # Canonical ordering of the named daily counts. Unknown labels sort last but keep
 # their real timestamp order, so custom labels still work.
-SESSION_ORDER = {"morning": 0, "midday": 1, "afternoon": 1, "evening": 2, "night": 2, "close": 3}
+SESSION_ORDER = {s["key"]: s["order"] for s in SESSIONS}
+SESSION_ORDER.update({alias: SESSION_ORDER[target]
+                      for alias, target in SESSION_ALIASES.items()})
 
 
 def as_zone(tz):
@@ -75,7 +128,7 @@ def local_time(iso: str, tz=None) -> str:
 
 
 def _session_sort_key(scan):
-    return (scan.scanned_at, SESSION_ORDER.get((scan.session or "").lower(), 99))
+    return (scan.scanned_at, SESSION_ORDER.get(normalize_session(scan.session), 99))
 
 
 @dataclass
@@ -211,6 +264,68 @@ def daily_report(log: ScanLog, date: str, *, prices: dict | None = None,
     return DailyReport(date=date, store=store_label, rows=rows,
                        total_tickets=total_tickets, total_revenue=total_revenue,
                        per_game=per_game)
+
+
+def count_status(log: ScanLog, date: str, *, store: Optional[str] = None,
+                 tz=None) -> dict:
+    """Which of the day's counts actually happened — and whether the required
+    one is missing.
+
+    A count leaves one scan per box, so "was there a night count" is really
+    "are there scans labelled night on this business date". Returns the three
+    canonical sessions in order, each with whether it was taken, when, by whom
+    and how many boxes it covered, plus a ``missing`` list of the counts that
+    are still owed. ``overdue`` is True only for a missing REQUIRED count, so
+    the UI can shout about the night count and merely nudge about the morning.
+    """
+    todays = [s for s in log.scans
+              if business_date(s.scanned_at, tz) == date
+              and (store is None or s.store == store)]
+
+    taken: dict = {}
+    for sc in todays:
+        key = normalize_session(sc.session)
+        t = taken.setdefault(key, {"boxes": 0, "first": None, "last": None, "by": set()})
+        t["boxes"] += 1
+        if t["first"] is None or sc.scanned_at < t["first"]:
+            t["first"] = sc.scanned_at
+        if t["last"] is None or sc.scanned_at > t["last"]:
+            t["last"] = sc.scanned_at
+        if sc.user:
+            t["by"].add(sc.user)
+
+    sessions = []
+    for meta in SESSIONS:
+        t = taken.get(meta["key"])
+        sessions.append({
+            **meta,
+            "rank": REQUIREMENT_RANK.get(meta["requirement"], 9),
+            "done": t is not None,
+            "boxes": t["boxes"] if t else 0,
+            "at": t["first"] if t else None,
+            "at_local": local_time(t["first"], tz) if t else "",
+            "by": ", ".join(sorted(t["by"])) if t and t["by"] else "",
+        })
+
+    # Anything the store labelled itself still counts as work done; show it, but
+    # it never satisfies one of the three.
+    for key, t in taken.items():
+        if any(s["key"] == key for s in SESSIONS):
+            continue
+        sessions.append({
+            **session_meta(key), "rank": 9, "done": True, "boxes": t["boxes"], "at": t["first"],
+            "at_local": local_time(t["first"], tz),
+            "by": ", ".join(sorted(t["by"])) if t["by"] else "",
+        })
+
+    missing = [s for s in sessions if not s["done"] and s["requirement"] != "optional"]
+    return {
+        "date": date,
+        "sessions": sessions,
+        "missing": missing,
+        "overdue": [s for s in missing if s["requirement"] == "required"],
+        "night_done": any(s["key"] == "night" and s["done"] for s in sessions),
+    }
 
 
 def render_daily_report_md(report: DailyReport) -> str:

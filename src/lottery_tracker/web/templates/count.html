@@ -24,16 +24,64 @@
   .box.fixing { outline:2px dashed var(--warn); }
   .hint { font-size:13px; color:var(--muted); }
   .done-banner { background:var(--ok-bg); }
+  .sessions { display:flex; flex-direction:column; gap:10px; }
+  .sess { display:block; width:100%; text-align:left; padding:14px;
+          border-radius:12px; border:1px solid var(--line); background:var(--panel2); }
+  .sess-top { display:flex; justify-content:space-between; align-items:center;
+              gap:8px; font-size:19px; }
+  .sess-sub { display:block; margin-top:4px; font-size:13px; color:var(--muted);
+              white-space:normal; }
+  .sess.required { border-color:var(--accent); border-width:2px; background:var(--panel2); }
+  .sess.required .sess-top { font-size:22px; }
+  .sess.optional { opacity:.85; }
+  .sess.done { border-style:dashed; }
+  .tag { font-size:11px; font-weight:700; letter-spacing:.5px; text-transform:uppercase;
+         padding:3px 8px; border-radius:999px; border:1px solid var(--line);
+         color:var(--muted); white-space:nowrap; }
+  .tag.required { background:var(--warn-bg, var(--pending)); color:var(--ink); border-color:transparent; }
+  .sess.done .tag { background:var(--ok-bg); color:var(--ink); border-color:transparent; }
 </style>
 
 <div id="start" class="card" style="display:none">
   <h2>Start a count</h2>
   <p class="muted">Pick which count this is, then scan every box in order.</p>
-  <div class="row">
-    <button class="primary" onclick="startCount('morning')">Morning</button>
-    <button onclick="startCount('midday')">Midday</button>
-    <button onclick="startCount('night')">Night</button>
+  {% if counts %}
+  <div class="sessions">
+    {# most-required first: night is the one that matters #}
+    {% for s in counts.sessions|sort(attribute='rank') %}
+      {% if s.key in ('night', 'morning', 'midday') %}
+      <button class="sess {{ s.requirement }}{% if s.done %} done{% endif %}"
+              onclick="startCount('{{ s.key }}')">
+        <span class="sess-top">
+          <b>{{ s.label }}</b>
+          <span class="tag {{ s.requirement }}">
+            {%- if s.done %}✓ done {{ s.at_local }}
+            {%- elif s.requirement == 'required' %}Required
+            {%- elif s.requirement == 'recommended' %}Recommended
+            {%- else %}Optional{% endif -%}
+          </span>
+        </span>
+        <span class="sess-sub">
+          {%- if s.done %}{{ s.boxes }} box{{ '' if s.boxes == 1 else 'es' }} counted
+            {%- if s.by %} by {{ s.by }}{% endif %} — tap to count again
+          {%- else %}{{ s.blurb }}{% endif -%}
+        </span>
+      </button>
+      {% endif %}
+    {% endfor %}
   </div>
+  {% if counts.overdue %}
+  <p class="flash warn" style="margin-top:12px">
+    The <b>night count</b> hasn't been done today. It's the one count that can't be skipped.
+  </p>
+  {% endif %}
+  {% else %}
+  <div class="row">
+    <button class="primary" onclick="startCount('night')">Night</button>
+    <button onclick="startCount('morning')">Morning</button>
+    <button onclick="startCount('midday')">Midday</button>
+  </div>
+  {% endif %}
 </div>
 
 <div id="live" style="display:none">
