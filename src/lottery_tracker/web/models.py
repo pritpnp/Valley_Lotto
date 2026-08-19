@@ -263,3 +263,74 @@ class BoxRow(Base):
     # "scan" when a count filled it in, "manual" when a person set it — so the
     # UI can show which boxes are actually confirmed by a ticket.
     source: Mapped[str] = mapped_column(String(16), default="manual")
+
+
+class ShipmentRow(Base):
+    """One delivery of unopened packs.
+
+    The shipping label is scanned and kept verbatim (whatever the courier's
+    barcode says) so a pack can always be traced back to the day it arrived —
+    which is the difference between "we're low on this game" and "we're low
+    because the last delivery never included it".
+    """
+
+    __tablename__ = "shipments"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    store: Mapped[str] = mapped_column(String(64), index=True, default="default")
+    label: Mapped[str] = mapped_column(Text, default="")        # scanned shipping label
+    received_on: Mapped[str] = mapped_column(String(16), index=True, default="")  # local date
+    received_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+    received_by: Mapped[str] = mapped_column(String(128), default="")
+    note: Mapped[str] = mapped_column(Text, default="")
+
+
+class PackRow(Base):
+    """One physical pack of tickets, followed from delivery to return.
+
+    A pack is the unit a store actually buys, stocks, opens and settles — the
+    thing the ticket barcode's middle field identifies. Tracking it is what makes
+    three questions answerable that box scans alone cannot answer:
+
+      * what is sitting unopened in the back room right now,
+      * whether a pack that left backstock ever showed up in a box (and if a box
+        burned through several packs between two counts, how many),
+      * which packs were settled and returned, when, by whom and why.
+
+    ``state`` moves backstock -> active -> settled, and a pack can be settled
+    straight out of backstock without ever being opened.
+    """
+
+    __tablename__ = "packs"
+    __table_args__ = (UniqueConstraint("store", "game_number", "pack", name="uq_pack_store_game"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    store: Mapped[str] = mapped_column(String(64), index=True, default="default")
+    game_number: Mapped[str] = mapped_column(String(16), index=True)
+    pack: Mapped[str] = mapped_column(String(32), index=True)
+    # backstock = unopened in the back room; active = in a box; sold_out = the
+    # box moved on to another pack; settled = taken out of play and returned.
+    state: Mapped[str] = mapped_column(String(16), index=True, default="backstock")
+
+    shipment_id: Mapped[int | None] = mapped_column(Integer, index=True, nullable=True)
+    received_on: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    # The last night the pack was seen unopened, so an absence can be dated.
+    last_seen_on: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    opened_on: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    slot: Mapped[str | None] = mapped_column(String(16), nullable=True)   # box it went into
+
+    settled_on: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    settled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    settled_by: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    settle_reason: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    settle_note: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    added_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+    # "scan" when a shipment or backstock count put it here, "inferred" when it
+    # was deduced (e.g. a box scan showed a pack nobody had recorded receiving).
+    source: Mapped[str] = mapped_column(String(16), default="scan")
+
+    @property
+    def is_held(self) -> bool:
+        """Unopened and still ours — the thing "backstock" means."""
+        return self.state == "backstock"

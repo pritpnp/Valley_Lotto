@@ -27,7 +27,7 @@ from sqlalchemy.orm import sessionmaker
 from werkzeug.exceptions import HTTPException
 from werkzeug.security import generate_password_hash, check_password_hash
 
-from ..barcode import try_parse_ticket
+from ..barcode import try_parse_ticket, parse_ticket, BarcodeError
 from ..scans import Scan, ScanLog
 from ..session import CountSession, standard_slots
 from ..reporting import (daily_report, render_daily_report_md, as_zone,
@@ -36,6 +36,7 @@ from ..reporting import (daily_report, render_daily_report_md, as_zone,
 from ..config import Config
 from ..rules import RATING_FACTORS
 from .models import (Base, User, Store, ScanRow, ActiveCount, InventoryRow,
+                     PackRow, ShipmentRow,
                      EmphasisRow, StaffRow, AccessRow, AuditRow, BoxRow)
 from .migrate import ensure_schema
 from . import permissions as perms
@@ -837,6 +838,18 @@ def _register_routes(app: Flask):
                               scanned_at=sc.scanned_at, user_email=sc.user, raw=sc.raw))
         _db().commit()
 
+        # A scan is also proof that a pack has been opened. Recording that here
+        # means back stock stays honest even when nobody scans the back room,
+        # and a pack going straight from delivery to box is never "missing".
+        today = _today(_store_tz())
+        for sc in scans:
+            row = _pack_row(sc.game_number, sc.pack, create=True, source="inferred")
+            if row.state != "settled":
+                row.state = "active"
+                row.opened_on = row.opened_on or today
+                row.slot = sc.slot or row.slot
+        _db().commit()
+
         # A count IS an inventory check: each scan proves which game is in which
         # box right now, so the box map maintains itself and never goes stale.
         moved = 0
@@ -964,6 +977,337 @@ def _register_routes(app: Flask):
                                capabilities=perms.GRANTABLE, perms=perms,
                                error=error, email=session.get("email"),
                                staff_name=session.get("staff_name"))
+
+    # Why a pack left the floor. Free text alone would make these unusable in
+    # aggregate, so the reason is a short list plus an optional note.
+    SETTLE_REASONS = [
+        ("send_back", "Rated send-back — poor odds or prizes gone"),
+        ("slow", "Too slow — not selling here"),
+        ("ended", "Game ended or PA recalled it"),
+        ("damaged", "Damaged or unsellable"),
+        ("space", "Making room for something better"),
+        ("other", "Other"),
+    ]
+
+    # --- backstock: the unopened packs in the back room --------------------
+    #
+    # Box scans answer "what is on the counter". They cannot answer "what do we
+    # still have", and they miss any pack that is opened and finished between two
+    # counts. Following the pack itself — received, held, opened, settled — is
+    # what makes both answerable.
+
+    def _packs(*, state=None, game=None):
+        q = select(PackRow).where(PackRow.store == _store())
+        if state:
+            q = q.where(PackRow.state == state)
+        if game:
+            q = q.where(PackRow.game_number == game)
+        return _db().scalars(q.order_by(PackRow.game_number, PackRow.pack)).all()
+
+    def _pack_row(game: str, pack: str, *, create: bool = False, source: str = "scan"):
+        row = _db().scalar(select(PackRow).where(
+            PackRow.store == _store(), PackRow.game_number == game,
+            PackRow.pack == pack))
+        if row is None and create:
+            row = PackRow(store=_store(), game_number=game, pack=pack, source=source)
+            _db().add(row)
+        return row
+
+    def _held_by_game() -> dict:
+        """game_number -> [PackRow] still unopened in the back room."""
+        out: dict = {}
+        for row in _packs(state="backstock"):
+            out.setdefault(row.game_number, []).append(row)
+        return out
+
+    def _packs_opened_on(date: str) -> dict:
+        """game_number -> how many packs were opened that day.
+
+        This is what rescues a day where a box burned through more packs than the
+        counts could see.
+        """
+        rows = _db().scalars(select(PackRow).where(
+            PackRow.store == _store(), PackRow.opened_on == date)).all()
+        out: dict = {}
+        for r in rows:
+            out[r.game_number] = out.get(r.game_number, 0) + 1
+        return out
+
+    def _backstock_view() -> dict:
+        """Everything the backstock page needs: what's held, what's short, what
+        should go back."""
+        held = _held_by_game()
+        boxes = _box_map()
+        on_floor: dict = {}
+        for b in boxes.values():
+            if b.game_number:
+                on_floor[b.game_number] = on_floor.get(b.game_number, 0) + 1
+
+        cat = _catalog()
+        weights, cfg = _effective_weights()
+        rated = {r["game_number"]: r for r in
+                 pa_data.store_rows(cat, _inventory(), cfg.thresholds, weights)}
+
+        rows = []
+        for game in sorted(set(held) | set(on_floor)):
+            packs = held.get(game, [])
+            info = rated.get(game) or {}
+            g = cat.games.get(game)
+            rows.append({
+                "game": game,
+                "name": (g.name if g else info.get("name") or "—"),
+                "price": (g.price if g else info.get("price")),
+                "held": len(packs),
+                "packs": packs,
+                "boxes": on_floor.get(game, 0),
+                "action": info.get("action"),
+                "rating_str": info.get("rating_str", "—"),
+                "reason": info.get("reason", ""),
+                # Short = it's out on the floor with nothing behind it. That's the
+                # moment to reorder, not when the box finally runs dry.
+                "short": on_floor.get(game, 0) > 0 and len(packs) == 0,
+                # Holding stock of a game that's rated send-back is money sitting
+                # in the back room; those packs can be returned unopened.
+                "return_unopened": bool(packs) and info.get("action") == "send_back",
+            })
+        rows.sort(key=lambda r: (not r["return_unopened"], not r["short"], r["game"]))
+        return {
+            "rows": rows,
+            "total_packs": sum(r["held"] for r in rows),
+            "short": [r for r in rows if r["short"]],
+            "send_back": [r for r in rows if r["return_unopened"]],
+        }
+
+    @app.get("/backstock")
+    @perm_required("backstock")
+    def backstock():
+        view = _backstock_view()
+        recent = _db().scalars(select(ShipmentRow).where(ShipmentRow.store == _store())
+                               .order_by(ShipmentRow.received_at.desc()).limit(5)).all()
+        settled = _db().scalars(select(PackRow).where(
+            PackRow.store == _store(), PackRow.state == "settled")
+            .order_by(PackRow.settled_at.desc()).limit(25)).all()
+        return render_template("backstock.html", view=view, shipments=recent,
+                               settled=settled, reasons=SETTLE_REASONS,
+                               reason_text=dict(SETTLE_REASONS),
+                               today=_today(_store_tz()))
+
+    # --- receiving a shipment ---------------------------------------------
+    @app.route("/backstock/receive", methods=["GET", "POST"])
+    @perm_required("receive")
+    def backstock_receive():
+        """Log a delivery, then scan the packs in it.
+
+        The shipping label is scanned as-is: couriers' formats differ and none of
+        them are ticket barcodes, so it is stored verbatim rather than parsed.
+        """
+        if request.method == "POST":
+            row = ShipmentRow(
+                store=_store(), label=(request.form.get("label") or "").strip(),
+                note=(request.form.get("note") or "").strip(),
+                received_on=_today(_store_tz()),
+                received_by=session.get("staff_name") or session.get("username") or "")
+            _db().add(row)
+            _db().commit()
+            session["shipment_id"] = row.id
+            audit("shipment.open", f"delivery {row.label or '(no label)'} opened")
+            return redirect(url_for("backstock_receive"))
+
+        ship = None
+        if session.get("shipment_id"):
+            ship = _db().get(ShipmentRow, session["shipment_id"])
+            if ship is not None and ship.store != _store():
+                ship = None
+        packs = (_db().scalars(select(PackRow).where(
+            PackRow.store == _store(), PackRow.shipment_id == ship.id)
+            .order_by(PackRow.added_at)).all() if ship else [])
+        return render_template("receive.html", shipment=ship, packs=packs)
+
+    @app.post("/backstock/receive/close")
+    @perm_required("receive")
+    def backstock_receive_close():
+        ship = _db().get(ShipmentRow, session.get("shipment_id") or 0)
+        if ship is not None and ship.store == _store():
+            n = _db().query(PackRow).filter(PackRow.shipment_id == ship.id).count()
+            audit("shipment.close", f"delivery {ship.label or '(no label)'}: {n} pack(s)")
+        session.pop("shipment_id", None)
+        return redirect(url_for("backstock"))
+
+    @app.post("/api/backstock/receive")
+    @perm_required("receive")
+    def api_backstock_receive():
+        """Scan one pack into the open delivery."""
+        ship = _db().get(ShipmentRow, session.get("shipment_id") or 0)
+        if ship is None or ship.store != _store():
+            abort(409, "no delivery open — start one first")
+        raw = (request.get_json(silent=True) or {}).get("raw", "")
+        try:
+            tc = parse_ticket(raw, _known_games())
+        except BarcodeError as e:
+            return jsonify({"ok": False, "message": f"not a ticket barcode ({e})"})
+
+        row = _pack_row(tc.game_number, tc.pack)
+        today = _today(_store_tz())
+        if row is not None and row.shipment_id == ship.id:
+            return jsonify({"ok": False, "message":
+                            f"pack {tc.pack} is already in this delivery"})
+        if row is not None and row.state == "settled":
+            return jsonify({"ok": False, "message":
+                            f"pack {tc.pack} was settled and returned on {row.settled_on}"})
+        if row is None:
+            row = _pack_row(tc.game_number, tc.pack, create=True)
+        row.state = "backstock"
+        row.shipment_id = ship.id
+        row.received_on = today
+        row.opened_on = None
+        # Deliberately NOT last_seen_on: that field means "a back-room count saw
+        # it on the shelf". A pack delivered this morning and already in a box by
+        # tonight must still come up missing in tonight's count.
+        _db().commit()
+
+        held = len(_held_by_game().get(tc.game_number, []))
+        name = (_catalog().games.get(tc.game_number).name
+                if _catalog().games.get(tc.game_number) else "")
+        return jsonify({"ok": True, "game": tc.game_number, "pack": tc.pack,
+                        "name": name, "held": held,
+                        "message": f"{tc.game_number} pack {tc.pack} received"
+                                   f" — {held} now in back stock",
+                        "count": _db().query(PackRow).filter(
+                            PackRow.shipment_id == ship.id).count()})
+
+    # --- the nightly backstock count --------------------------------------
+    @app.get("/backstock/count")
+    @perm_required("backstock")
+    def backstock_count():
+        """Scan every unopened pack in the back room, in any order.
+
+        Unlike the box walk there's no prescribed sequence — the back room isn't
+        ordered. Finishing is what matters: whatever wasn't scanned is no longer
+        unopened, which is how a pack that went into a box between two counts
+        gets noticed even if nobody scanned it on the way.
+        """
+        today = _today(_store_tz())
+        seen = [r for r in _packs(state="backstock") if r.last_seen_on == today]
+        expected = _packs(state="backstock")
+        return render_template("backstock_count.html", today=today,
+                               seen=seen, expected=expected)
+
+    @app.post("/api/backstock/count")
+    @perm_required("backstock")
+    def api_backstock_count():
+        """Mark one pack as still sitting unopened in the back room."""
+        raw = (request.get_json(silent=True) or {}).get("raw", "")
+        try:
+            tc = parse_ticket(raw, _known_games())
+        except BarcodeError as e:
+            return jsonify({"ok": False, "message": f"not a ticket barcode ({e})"})
+
+        today = _today(_store_tz())
+        row = _pack_row(tc.game_number, tc.pack)
+        if row is None:
+            # A pack nobody recorded receiving. Believe the shelf, not the record.
+            row = _pack_row(tc.game_number, tc.pack, create=True, source="inferred")
+            row.received_on = today
+        elif row.state == "settled":
+            return jsonify({"ok": False, "message":
+                            f"pack {tc.pack} is marked settled and returned — "
+                            "clear that first if it's really still here"})
+        was = row.state
+        row.state = "backstock"
+        row.opened_on = None
+        row.last_seen_on = today
+        _db().commit()
+        note = " (was recorded as in a box)" if was == "active" else ""
+        return jsonify({"ok": True, "game": tc.game_number, "pack": tc.pack,
+                        "message": f"{tc.game_number} pack {tc.pack} counted{note}",
+                        "count": len([r for r in _packs(state="backstock")
+                                      if r.last_seen_on == today])})
+
+    @app.post("/backstock/count/finish")
+    @perm_required("backstock")
+    def backstock_count_finish():
+        """Close the count: anything not scanned tonight has left the back room.
+
+        That is the inference the whole thing exists for — a pack that is no
+        longer unopened went into a box, and the day's sales have to account for
+        it even though no box scan ever saw it.
+        """
+        today = _today(_store_tz())
+        opened = []
+        for row in _packs(state="backstock"):
+            if row.last_seen_on == today:
+                continue
+            row.state = "active"
+            row.opened_on = today
+            opened.append(row)
+        _db().commit()
+        if opened:
+            audit("backstock.count",
+                  f"{len(opened)} pack(s) no longer in back stock: "
+                  + ", ".join(f"{r.game_number}/{r.pack}" for r in opened[:12])
+                  + ("…" if len(opened) > 12 else ""))
+        else:
+            audit("backstock.count", "back stock counted; nothing had moved")
+        return redirect(url_for("backstock"))
+
+    # --- settle & return ---------------------------------------------------
+    @app.post("/packs/settle")
+    @perm_required("settle")
+    def pack_settle():
+        """Record a pack as settled and returned, from a box or straight out of
+        back stock. This is what "we pulled it" means on paper, so it is stamped
+        with who, when and why — and only a superadmin can undo it.
+        """
+        game = (request.form.get("game") or "").strip()
+        pack = (request.form.get("pack") or "").strip()
+        slot = (request.form.get("slot") or "").strip() or None
+        reason = (request.form.get("reason") or "other").strip()
+        note = (request.form.get("note") or "").strip()
+        if not game:
+            abort(400, "which game?")
+
+        row = _pack_row(game, pack) if pack else None
+        if row is None:
+            # Settling a pack that was never in back stock (it predates this, or
+            # came straight from a box) still has to be recorded.
+            row = PackRow(store=_store(), game_number=game, pack=pack or "",
+                          source="inferred")
+            _db().add(row)
+
+        row.state = "settled"
+        row.slot = slot or row.slot
+        row.settled_on = _today(_store_tz())
+        row.settled_at = datetime.now(timezone.utc)
+        row.settled_by = session.get("staff_name") or session.get("username") or ""
+        row.settle_reason = reason
+        row.settle_note = note
+
+        # A settled pack is out of the box it was in.
+        if slot:
+            _set_box(slot, None, source="manual")
+        _db().commit()
+        audit("pack.settle",
+              f"{game}" + (f" pack {pack}" if pack else "")
+              + (f" from box {slot}" if slot else " from back stock")
+              + f" — {reason}" + (f": {note}" if note else ""))
+        return redirect(request.form.get("next") or url_for("backstock"))
+
+    @app.post("/packs/unsettle")
+    @superadmin_required
+    def pack_unsettle():
+        """Undo a settlement entered by mistake. Superadmin only, on purpose:
+        this is the record of money going back to the state, and a store should
+        not be able to quietly rewrite it."""
+        row = _db().get(PackRow, int(request.form.get("pack_id") or 0))
+        if row is None:
+            abort(404)
+        was = f"{row.game_number}/{row.pack} settled {row.settled_on} by {row.settled_by}"
+        row.state = "backstock" if not row.opened_on else "active"
+        row.settled_on = row.settled_at = row.settled_by = None
+        row.settle_reason = row.settle_note = None
+        _db().commit()
+        audit("pack.unsettle", f"cleared: {was}")
+        return redirect(request.form.get("next") or url_for("backstock"))
 
     # --- history: sales over time, game data over time, audit trail --------
     def _store_log(slug=None) -> ScanLog:
@@ -1436,8 +1780,17 @@ def _register_routes(app: Flask):
         current = boxes.get(slot)
         active = sorted((g for g in cat.games.values() if g.status == "active"),
                         key=lambda g: (-(g.price or 0), g.name or ""))
+        # Which pack is in this box, so pulling it can be settled properly rather
+        # than just blanked out of the map.
+        in_box = None
+        if current and current.game_number:
+            in_box = _db().scalar(select(PackRow).where(
+                PackRow.store == _store(), PackRow.slot == slot,
+                PackRow.game_number == current.game_number,
+                PackRow.state == "active").order_by(PackRow.id.desc()))
         return render_template("inventory_box.html", slot=slot, active=active,
                                current=current.game_number if current else None,
+                               in_box=in_box, reasons=SETTLE_REASONS,
                                games=cat.games)
 
     @app.post("/inventory/add")
@@ -1527,7 +1880,10 @@ def _register_routes(app: Flask):
         except Exception:  # noqa: BLE001 — report must render even without config
             resolver = None
         rep = daily_report(log, date, prices=_load_prices(), resolver=resolver,
-                           store=_store(), tz=_store_tz())
+                           store=_store(), tz=_store_tz(),
+                           # Packs that came out of back stock but never showed
+                           # up in a count still sold; this is what counts them.
+                           packs_opened=_packs_opened_on(date))
         return render_template("report.html", date=date, report=rep,
                                counts=count_status(log, date, store=_store(),
                                                    tz=_store_tz()),

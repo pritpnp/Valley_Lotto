@@ -28,10 +28,44 @@
   {% if current %}
   <form method="post" style="margin-top:10px">
     <input type="hidden" name="game_number" value="__clear__">
-    <button type="submit" style="background:var(--err-bg);color:var(--err)">Empty this box</button>
+    <button type="submit">Empty this box</button>
   </form>
+  <p class="hint" style="font-size:12px;color:var(--muted);margin-top:6px">
+    Emptying only updates the map. If the pack is actually leaving the store,
+    settle it below so it's on the record.
+  </p>
   {% endif %}
 </div>
+
+{% if current and can.settle %}
+<div class="card">
+  <b>Settle &amp; return this pack</b>
+  <p class="muted" style="font-size:13px">
+    Records the pack as settled and returned — who, when and why — and empties the
+    box. Use it even when the game was still rated keep; that's a decision worth
+    keeping a record of. Only a superadmin can clear this afterwards.
+  </p>
+  <form method="post" action="{{ url_for('pack_settle') }}"
+        onsubmit="return confirm('Settle and return this pack? Only a superadmin can undo it.')">
+    <input type="hidden" name="game" value="{{ current }}">
+    <input type="hidden" name="pack" value="{{ in_box.pack if in_box else '' }}">
+    <input type="hidden" name="slot" value="{{ slot }}">
+    <input type="hidden" name="next" value="{{ url_for('inventory') }}">
+    <p class="muted" style="font-size:13px;margin:0 0 8px">
+      Game <b>{{ current }}</b>{% if in_box %}, pack <b>{{ in_box.pack }}</b>{%
+      else %} <span class="muted">(no pack recorded for this box — scan a count and
+      it fills itself in)</span>{% endif %}
+    </p>
+    <label>Why is it going back?</label>
+    <select name="reason">
+      {% for key, text in reasons %}<option value="{{ key }}">{{ text }}</option>{% endfor %}
+    </select>
+    <label style="margin-top:10px">Note (optional)</label>
+    <input type="text" name="note" placeholder="anything worth remembering">
+    <button class="primary" type="submit" style="margin-top:12px">Settle &amp; return</button>
+  </form>
+</div>
+{% endif %}
 
 <div class="card">
   <b>Or pick an active game</b>

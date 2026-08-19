@@ -190,13 +190,19 @@ def _price_for(prices, game_number):
 
 
 def daily_report(log: ScanLog, date: str, *, prices: dict | None = None,
-                 resolver=None, store: Optional[str] = None, tz=None) -> DailyReport:
+                 resolver=None, store: Optional[str] = None, tz=None,
+                 packs_opened: dict | None = None) -> DailyReport:
     """Build a day's report for one store.
 
     ``date`` is a ``YYYY-MM-DD`` prefix matched against each scan's timestamp.
     ``prices`` maps game_number -> ticket price. ``resolver`` is a
     :class:`~lottery_tracker.packs.PackSizeResolver` (from ``config.pack_resolver()``);
     if omitted, pack size is learned from the log alone.
+
+    ``packs_opened`` maps game_number -> how many packs of it were opened that
+    day, taken from backstock. It rescues the case the scans cannot see: a box
+    that goes through more than one pack between two counts hides every pack in
+    the middle, and those tickets would otherwise never be counted as sold.
     """
     todays = [s for s in log.scans
               if business_date(s.scanned_at, tz) == date
@@ -233,8 +239,10 @@ def daily_report(log: ScanLog, date: str, *, prices: dict | None = None,
                 estimated=not r.same_pack, note=r.note,
             ))
 
-        # Day total (first count -> last), bridging rollovers.
-        seq = sold_over_sequence(scans, price=price, pack_size=size)
+        # Day total (first count -> last), bridging rollovers — including packs
+        # that came and went entirely between two counts.
+        seq = sold_over_sequence(scans, price=price, pack_size=size,
+                                 packs_opened=(packs_opened or {}).get(game))
 
         rows.append(SlotDay(
             slot=None if key.startswith("game:") else key,

@@ -177,6 +177,8 @@
     {% if can.reports %}<a class="item" href="{{ url_for('report') }}">Sales</a>{% endif %}
     <a class="item" href="{{ url_for('dashboard') }}">Dashboard</a>
     <a class="item" href="{{ url_for('inventory') }}">Boxes &amp; inventory</a>
+    {% if can.backstock %}<a class="item" href="{{ url_for('backstock') }}">Back stock</a>{% endif %}
+    {% if can.receive %}<a class="item" href="{{ url_for('backstock_receive') }}">New shipment</a>{% endif %}
 
     <div class="group">Look up</div>
     <a class="item" href="{{ url_for('catalog') }}">Full PA catalog</a>

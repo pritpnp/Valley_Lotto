@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}New shipment — Valley Lotto{% endblock %}
+{% block body %}
+<style>
+  .packs { display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:8px;
+           margin-top:10px; }
+  .pk { border:1px solid var(--line); border-radius:10px; padding:8px 10px;
+        background:var(--ok-bg); }
+  .pk b { display:block; font-size:15px; }
+  .pk span { font-size:12px; color:var(--muted); }
+  .big { font-size:34px; font-weight:800; }
+</style>
+
+{% if not shipment %}
+<div class="card">
+  <h2 style="margin:0 0 4px">New shipment</h2>
+  <p class="muted" style="font-size:13px">
+    Scan the shipping label first — it's kept exactly as it reads, so any pack
+    can be traced back to the day it arrived. Then scan the packs.
+  </p>
+  <form method="post">
+    <label>Shipping label</label>
+    <input type="text" name="label" autofocus autocomplete="off"
+           placeholder="scan the label, or type a reference">
+    <label style="margin-top:10px">Note (optional)</label>
+    <input type="text" name="note" placeholder="e.g. short one case, driver noted it">
+    <button class="primary" type="submit" style="margin-top:12px">Start scanning packs</button>
+  </form>
+  <p class="hint" style="font-size:12px;margin-top:10px">
+    No label to scan? Leave it blank — the delivery is still dated and recorded.
+  </p>
+</div>
+{% else %}
+<div class="card">
+  <div class="row" style="justify-content:space-between;align-items:baseline">
+    <h2 style="margin:0">Receiving</h2>
+    <span class="muted">{{ shipment.received_on }}</span>
+  </div>
+  <p class="muted" style="font-size:13px;margin:4px 0 0">
+    {{ shipment.label or 'no label scanned' }}{% if shipment.note %} · {{ shipment.note }}{% endif %}
+  </p>
+
+  <p class="muted" style="margin:14px 0 2px">Packs in this delivery</p>
+  <div class="big" id="packCount">{{ packs|length }}</div>
+
+  {% set scan_url = url_for('api_backstock_receive') %}
+  {% include "_scanner.html" %}
+
+  <p class="hint" style="font-size:13px;margin-top:10px">
+    Scan the ticket barcode on each pack. Order doesn't matter, and a pack scanned
+    twice is caught rather than counted twice.
+  </p>
+
+  <form method="post" action="{{ url_for('backstock_receive_close') }}" style="margin-top:12px">
+    <button class="primary">Done — put these in back stock</button>
+  </form>
+</div>
+
+<div class="card">
+  <b>Scanned so far</b>
+  <div class="packs" id="packGrid">
+    {% for p in packs %}
+      <div class="pk"><b>{{ p.game_number }}</b><span>pack {{ p.pack }}</span></div>
+    {% endfor %}
+  </div>
+</div>
+
+<script>
+window.onScanResult = function(data){
+  if (!data.ok) return;
+  document.getElementById("packCount").textContent = data.count;
+  const d = document.createElement("div");
+  d.className = "pk";
+  d.innerHTML = "<b>" + data.game + "</b><span>pack " + data.pack + "</span>";
+  document.getElementById("packGrid").prepend(d);
+};
+</script>
+{% endif %}
+{% endblock %}

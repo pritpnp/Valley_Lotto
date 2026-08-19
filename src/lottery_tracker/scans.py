@@ -104,7 +104,8 @@ class SoldResult:
 
 def compute_sold(open_scan: Scan, close_scan: Scan,
                  *, price: Optional[float] = None,
-                 pack_size: Optional[int] = None) -> SoldResult:
+                 pack_size: Optional[int] = None,
+                 packs_crossed: Optional[int] = None) -> SoldResult:
     """Tickets sold between an open scan and a close scan of one dispenser slot.
 
     ``price`` (the ticket's dollar price, from the game catalog) is optional; when
@@ -118,20 +119,32 @@ def compute_sold(open_scan: Scan, close_scan: Scan,
     That bridge assumes the old pack sold out — the usual case when a slot is
     reloaded — and is reported as an estimate. Without ``pack_size`` a changeover
     can't be quantified, so we flag it rather than guess.
+
+    ``packs_crossed`` says how many packs this box actually went through in the
+    period, which the two scans alone cannot reveal: if a box burns through three
+    packs between a morning and a night count, the barcodes only show the first
+    and the last, and the packs in between are invisible. Backstock records how
+    many packs left the back room, so that count can be supplied here and the
+    middle packs stop vanishing from the day's sales.
     """
     if open_scan.pack != close_scan.pack:
         if pack_size is not None:
             # Old pack: tickets open_ticket .. pack_size-1 sold out => (pack_size - open).
-            # New pack: 0 .. close_ticket-1 sold => close_ticket. Single-rollover model.
-            sold = (pack_size - open_scan.ticket) + close_scan.ticket
+            # New pack: 0 .. close_ticket-1 sold => close_ticket. Any pack opened
+            # and finished in between contributes a full pack each.
+            between = max(0, (packs_crossed or 1) - 1)
+            sold = (pack_size - open_scan.ticket) + (between * pack_size) + close_scan.ticket
             revenue = None if price is None or sold < 0 else round(sold * price, 2)
             return SoldResult(
                 game_number=close_scan.game_number, pack=close_scan.pack,
                 tickets_sold=sold, revenue=revenue, same_pack=False,
                 direction="up", open_ticket=open_scan.ticket, close_ticket=close_scan.ticket,
-                note=(f"estimate across a pack changeover ({open_scan.pack} -> {close_scan.pack}), "
-                      f"assuming the prior pack (size {pack_size}) sold out; "
-                      "true count needs the actual last ticket of the old pack"),
+                note=(f"estimate across "
+                      + (f"{between + 1} pack changeovers" if between
+                         else "a pack changeover")
+                      + f" ({open_scan.pack} -> {close_scan.pack}), "
+                      f"assuming each finished pack (size {pack_size}) sold out"
+                      + ("; middle packs counted from backstock" if between else "")),
             )
         return SoldResult(
             game_number=close_scan.game_number, pack=close_scan.pack,
@@ -334,7 +347,8 @@ class SequenceResult:
 
 
 def sold_over_sequence(scans: list, *, price: Optional[float] = None,
-                       pack_size: Optional[int] = None) -> SequenceResult:
+                       pack_size: Optional[int] = None,
+                       packs_opened: Optional[int] = None) -> SequenceResult:
     """Total tickets sold across a time-ordered run of scans for ONE game/slot.
 
     Walks consecutive scans. Within a pack, sold is the ticket delta (needs no
@@ -343,6 +357,13 @@ def sold_over_sequence(scans: list, *, price: Optional[float] = None,
     (:func:`learn_pack_size`). If no size is available yet (e.g. the first-ever
     rollover for a brand-new game), the old pack's unseen tail can't be counted —
     that's noted, and only the new pack's portion is added.
+
+    ``packs_opened`` is how many packs this game actually went through over the
+    period, from backstock. The scans can only reveal the changeovers they
+    happen to straddle: sell three packs between two counts and the two middle
+    packs are invisible. When backstock says more packs were opened than the
+    scans saw changeovers, the difference is added as whole packs — the only way
+    a day like that comes out right.
 
     Scans are sorted by ``scanned_at`` (ISO strings sort chronologically).
     """
@@ -385,6 +406,16 @@ def sold_over_sequence(scans: list, *, price: Optional[float] = None,
                 notes.append(f"pack {a.pack}->{b.pack}: no learned size yet, "
                              f"old pack's tail after ticket {a.ticket} not counted")
                 estimated = True
+
+    # Packs that came out of backstock but never appeared in a scan sold in
+    # full, unseen. Without this they are simply missing from the day.
+    if packs_opened and size:
+        unseen = packs_opened - pack_changes
+        if unseen > 0:
+            sold += unseen * size
+            estimated = True
+            notes.append(f"{unseen} pack(s) opened from backstock that no count "
+                         f"caught; counted as {size} tickets each")
 
     revenue = None if price is None else round(sold * price, 2)
     return SequenceResult(

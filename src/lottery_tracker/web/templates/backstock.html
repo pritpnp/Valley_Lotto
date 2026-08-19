@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+{% block title %}Back stock — Valley Lotto{% endblock %}
+{% block body %}
+<style>
+  .acts { display:flex; gap:8px; flex-wrap:wrap; margin:10px 0 4px; }
+  .stat { flex:1; min-width:110px; background:var(--panel2); border:1px solid var(--line);
+          border-radius:12px; padding:10px 14px; }
+  .stat .n { font-size:26px; font-weight:800; }
+  .stat .l { font-size:12px; color:var(--muted); }
+  .stat.warn .n { color:var(--warn); } .stat.send .n { color:var(--err); }
+  .g { border:1px solid var(--line); border-radius:12px; padding:12px; margin-top:10px; }
+  .g.short { border-color:var(--warn); }
+  .g.back  { border-color:var(--err); }
+  .ghead { display:flex; justify-content:space-between; gap:10px; align-items:baseline;
+           flex-wrap:wrap; }
+  .gname { font-weight:700; }
+  .pill { font-size:11px; font-weight:700; padding:3px 8px; border-radius:999px;
+          text-transform:uppercase; letter-spacing:.4px; }
+  .pill.short { background:var(--warn-bg); color:var(--warn); }
+  .pill.back  { background:var(--err-bg);  color:var(--err); }
+  .packline { font-size:13px; color:var(--muted); margin-top:6px; }
+  .scroll { overflow-x:auto; }
+  td, th { font-size:13px; }
+  details summary { cursor:pointer; font-size:13px; color:var(--muted); margin-top:8px; }
+  .settleform { display:grid; gap:8px; margin-top:10px; }
+</style>
+
+<div class="card">
+  <h2 style="margin:0 0 4px">Back stock</h2>
+  <p class="muted" style="font-size:13px">
+    The unopened packs in the back room. Counting them each night is also what
+    catches a pack that went into a box and sold out between two counts.
+  </p>
+
+  <div class="acts">
+    <div class="stat"><div class="n">{{ view.total_packs }}</div><div class="l">packs held</div></div>
+    <div class="stat warn"><div class="n">{{ view.short|length }}</div><div class="l">nothing behind them</div></div>
+    <div class="stat send"><div class="n">{{ view.send_back|length }}</div><div class="l">should go back</div></div>
+  </div>
+
+  <div class="acts">
+    {% if can.backstock %}
+      <a href="{{ url_for('backstock_count') }}"><button class="primary">Count the back room</button></a>
+    {% endif %}
+    {% if can.receive %}
+      <a href="{{ url_for('backstock_receive') }}"><button>New shipment</button></a>
+    {% endif %}
+  </div>
+</div>
+
+{% if view.short %}
+<div class="card">
+  <b>Running out</b>
+  <p class="muted" style="font-size:13px">
+    On the floor with no spare pack behind it. Order before the box runs dry, not after.
+  </p>
+  <ul style="margin:6px 0 0 18px">
+    {% for r in view.short %}
+      <li><b>{{ r.game }}</b> {{ r.name }}
+        {% if r.price %}(${{ '%.0f'|format(r.price) }}){% endif %}
+        — in {{ r.boxes }} box{{ '' if r.boxes == 1 else 'es' }}, none in back</li>
+    {% endfor %}
+  </ul>
+</div>
+{% endif %}
+
+<div class="card">
+  <b>Held by game ({{ view.rows|length }})</b>
+  {% for r in view.rows %}
+    <div class="g {% if r.return_unopened %}back{% elif r.short %}short{% endif %}">
+      <div class="ghead">
+        <span class="gname">{{ r.game }} · {{ r.name }}
+          {% if r.price %}<span class="muted">${{ '%.0f'|format(r.price) }}</span>{% endif %}</span>
+        <span>
+          {% if r.return_unopened %}<span class="pill back">send back</span>{% endif %}
+          {% if r.short %}<span class="pill short">no spare</span>{% endif %}
+        </span>
+      </div>
+      <div class="packline">
+        <b>{{ r.held }}</b> unopened · in {{ r.boxes }} box{{ '' if r.boxes == 1 else 'es' }}
+        · rating {{ r.rating_str }}
+      </div>
+      {% if r.return_unopened %}
+        <div class="packline">{{ r.reason }}</div>
+      {% endif %}
+
+      {% if r.packs and can.settle %}
+      <details>
+        <summary>Settle &amp; return a pack of this game</summary>
+        {% for pk in r.packs %}
+        <form method="post" action="{{ url_for('pack_settle') }}" class="settleform"
+              onsubmit="return confirm('Settle and return pack {{ pk.pack }}? Only a superadmin can undo this.')">
+          <input type="hidden" name="game" value="{{ r.game }}">
+          <input type="hidden" name="pack" value="{{ pk.pack }}">
+          <input type="hidden" name="next" value="{{ url_for('backstock') }}">
+          <div class="row" style="gap:8px;align-items:flex-end">
+            <div style="flex:1;min-width:130px">
+              <label>Pack {{ pk.pack }} — why?</label>
+              <select name="reason">
+                {% for key, text in reasons %}<option value="{{ key }}">{{ text }}</option>{% endfor %}
+              </select>
+            </div>
+            <div style="flex:1;min-width:130px">
+              <label>Note (optional)</label>
+              <input type="text" name="note" placeholder="anything worth remembering">
+            </div>
+            <button style="padding:8px 12px">Settle &amp; return</button>
+          </div>
+        </form>
+        {% endfor %}
+      </details>
+      {% endif %}
+    </div>
+  {% else %}
+    <p class="muted">Nothing recorded yet. Log a shipment, or count the back room.</p>
+  {% endfor %}
+</div>
+
+{% if shipments %}
+<div class="card">
+  <b>Recent deliveries</b>
+  <div class="scroll"><table>
+    <thead><tr><th>Received</th><th>Label</th><th>By</th><th>Note</th></tr></thead>
+    <tbody>
+      {% for sh in shipments %}
+      <tr>
+        <td>{{ sh.received_on }}</td>
+        <td class="muted">{{ sh.label or '—' }}</td>
+        <td class="muted">{{ sh.received_by or '—' }}</td>
+        <td class="muted">{{ sh.note or '' }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table></div>
+</div>
+{% endif %}
+
+{% if settled %}
+<div class="card">
+  <b>Settled &amp; returned</b>
+  <p class="muted" style="font-size:13px">
+    The record of what left the store. {% if is_superadmin %}You can clear a line
+    entered by mistake.{% else %}Only a superadmin can clear a line entered by mistake.{% endif %}
+  </p>
+  <div class="scroll"><table>
+    <thead><tr><th>Date</th><th>Game</th><th>Pack</th><th>From</th><th>Why</th><th>By</th>
+      {% if is_superadmin %}<th></th>{% endif %}</tr></thead>
+    <tbody>
+      {% for pk in settled %}
+      <tr>
+        <td>{{ pk.settled_on }}</td>
+        <td><b>{{ pk.game_number }}</b></td>
+        <td class="muted">{{ pk.pack or '—' }}</td>
+        <td class="muted">{{ 'box ' ~ pk.slot if pk.slot else 'back stock' }}</td>
+        <td class="muted">{{ reason_text.get(pk.settle_reason, pk.settle_reason) }}{% if pk.settle_note %} — {{ pk.settle_note }}{% endif %}</td>
+        <td class="muted">{{ pk.settled_by or '—' }}</td>
+        {% if is_superadmin %}
+        <td>
+          <form method="post" action="{{ url_for('pack_unsettle') }}"
+                onsubmit="return confirm('Clear this settlement? It goes back to being ours.')">
+            <input type="hidden" name="pack_id" value="{{ pk.id }}">
+            <input type="hidden" name="next" value="{{ url_for('backstock') }}">
+            <button style="padding:4px 9px;font-size:12px">Clear</button>
+          </form>
+        </td>
+        {% endif %}
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table></div>
+</div>
+{% endif %}
+{% endblock %}

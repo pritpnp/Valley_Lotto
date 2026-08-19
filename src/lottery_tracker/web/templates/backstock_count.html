@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}Count the back room — Valley Lotto{% endblock %}
+{% block body %}
+<style>
+  .big { font-size:40px; font-weight:800; line-height:1.1; }
+  .of { font-size:15px; color:var(--muted); }
+  .list { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:8px;
+          margin-top:10px; }
+  .pk { border:1px solid var(--line); border-radius:10px; padding:8px 10px; }
+  .pk.seen { background:var(--ok-bg); border-color:transparent; }
+  .pk b { display:block; font-size:15px; }
+  .pk span { font-size:12px; color:var(--muted); }
+</style>
+
+<div class="card">
+  <h2 style="margin:0 0 4px">Count the back room</h2>
+  <p class="muted" style="font-size:13px">
+    Scan every unopened pack, in any order. Whatever you don't scan is taken to
+    have gone into a box — which is how a pack that opened and sold out between
+    two counts still shows up in the day's sales.
+  </p>
+
+  <div style="margin:14px 0 4px">
+    <span class="big" id="seenCount">{{ seen|length }}</span>
+    <span class="of">counted · {{ expected|length }} were on the shelf last time</span>
+  </div>
+
+  {% set scan_url = url_for('api_backstock_count') %}
+  {% include "_scanner.html" %}
+
+  <form method="post" action="{{ url_for('backstock_count_finish') }}" style="margin-top:14px"
+        onsubmit="return confirm('Finish? Any pack you did not scan will be recorded as no longer in back stock.')">
+    <button class="primary">Finish the count</button>
+  </form>
+</div>
+
+<div class="card">
+  <b>Expected on the shelf</b>
+  <p class="muted" style="font-size:13px">Green means you've scanned it tonight.</p>
+  <div class="list">
+    {% set seen_ids = seen|map(attribute='id')|list %}
+    {% for p in expected %}
+      <div class="pk {% if p.id in seen_ids %}seen{% endif %}"
+           data-key="{{ p.game_number }}/{{ p.pack }}">
+        <b>{{ p.game_number }}</b><span>pack {{ p.pack }}</span>
+      </div>
+    {% else %}
+      <p class="muted">Nothing recorded yet — scanning here is what builds the list.</p>
+    {% endfor %}
+  </div>
+</div>
+
+<script>
+window.onScanResult = function(data){
+  if (!data.ok) return;
+  document.getElementById("seenCount").textContent = data.count;
+  const key = data.game + "/" + data.pack;
+  const tile = document.querySelector('[data-key="' + key + '"]');
+  if (tile) { tile.classList.add("seen"); return; }
+  // A pack nobody recorded receiving — show it rather than hide the surprise.
+  const d = document.createElement("div");
+  d.className = "pk seen";
+  d.dataset.key = key;
+  d.innerHTML = "<b>" + data.game + "</b><span>pack " + data.pack + "</span>";
+  document.querySelector(".list").prepend(d);
+};
+</script>
+{% endblock %}
