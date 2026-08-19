@@ -196,8 +196,19 @@ class StaffRow(Base):
     name: Mapped[str] = mapped_column(String(64))
     pin_hash: Mapped[str] = mapped_column(String(255))
     role: Mapped[str] = mapped_column(String(32), default="clerk")   # "clerk" | "manager"
+    # Comma-separated capability keys (see web/permissions.py). Empty means this
+    # person only runs counts. A staff "manager" holds everything regardless, so
+    # this column is what gives an ordinary employee a slice of manager work —
+    # receiving shipments, say — without the rest of it.
+    permissions: Mapped[str] = mapped_column(Text, default="")
     active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+
+    def granted(self) -> set:
+        from .permissions import parse, ALL_KEYS
+        if (self.role or "") in ("manager", "supervisor"):
+            return set(ALL_KEYS)
+        return parse(self.permissions)
 
 
 class AccessRow(Base):

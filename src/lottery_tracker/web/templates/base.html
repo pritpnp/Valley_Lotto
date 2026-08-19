@@ -170,21 +170,23 @@
       </form>
     {% endif %}
 
+    {# Every item is gated on the capability behind it, so a part-manager sees
+       exactly what they can use and nothing that would just 403. #}
     <div class="group">Daily</div>
     <a class="item" href="{{ url_for('count') }}">Scan a count</a>
-    <a class="item" href="{{ url_for('report') }}">Sales</a>
+    {% if can.reports %}<a class="item" href="{{ url_for('report') }}">Sales</a>{% endif %}
     <a class="item" href="{{ url_for('dashboard') }}">Dashboard</a>
     <a class="item" href="{{ url_for('inventory') }}">Boxes &amp; inventory</a>
 
     <div class="group">Look up</div>
     <a class="item" href="{{ url_for('catalog') }}">Full PA catalog</a>
-    <a class="item" href="{{ url_for('history') }}">History</a>
+    {% if can.history %}<a class="item" href="{{ url_for('history') }}">History</a>{% endif %}
 
-    {% if is_manager %}
+    {% if can.staff or can.pricing or can.access %}
       <div class="group">Manage</div>
-      <a class="item" href="{{ url_for('staff_page') }}">Staff &amp; PINs</a>
-      <a class="item" href="{{ url_for('weights_page') }}">Rating emphasis</a>
-      <a class="item" href="{{ url_for('access_log') }}">Access log</a>
+      {% if can.staff %}<a class="item" href="{{ url_for('staff_page') }}">Staff &amp; PINs</a>{% endif %}
+      {% if can.pricing %}<a class="item" href="{{ url_for('weights_page') }}">Rating emphasis</a>{% endif %}
+      {% if can.access %}<a class="item" href="{{ url_for('access_log') }}">Access log</a>{% endif %}
     {% endif %}
 
     {% if is_superadmin %}

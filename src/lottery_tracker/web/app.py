@@ -38,6 +38,7 @@ from ..rules import RATING_FACTORS
 from .models import (Base, User, Store, ScanRow, ActiveCount, InventoryRow,
                      EmphasisRow, StaffRow, AccessRow, AuditRow, BoxRow)
 from .migrate import ensure_schema
+from . import permissions as perms
 
 # The KEEP/SEND-BACK engine. pa_data is framework-neutral (it imports only from
 # lottery_tracker), so the dashboard math is shared with the FastAPI app and the
@@ -317,6 +318,37 @@ def _is_at_least(role: str, needed: str) -> bool:
     return order.get(role, 0) >= order.get(needed, 0)
 
 
+def granted_keys() -> set:
+    """Every capability the person at the screen holds.
+
+    A manager or superadmin holds all of them by virtue of the role. An employee
+    holds exactly what was ticked next to their name, which is the whole point:
+    the person who receives deliveries can be given that job and nothing else.
+    """
+    if _is_at_least(effective_role(), "manager"):
+        return set(perms.ALL_KEYS)
+    return perms.parse(session.get("staff_perms"))
+
+
+def can(key: str) -> bool:
+    return key in granted_keys()
+
+
+def perm_required(key: str):
+    """Gate a page on one capability rather than on rank."""
+    def deco(view):
+        @wraps(view)
+        def wrapped(*a, **kw):
+            if not _signed_in():
+                dest = "pin" if _pin_only() else "login"
+                return redirect(url_for(dest, next=request.path))
+            if not can(key):
+                abort(403)
+            return view(*a, **kw)
+        return wrapped
+    return deco
+
+
 def _pin_only() -> bool:
     return bool(current_app.config.get("PIN_ONLY"))
 
@@ -427,6 +459,9 @@ def _register_routes(app: Flask):
             "role": role,
             "is_superadmin": session.get("role") == "superadmin",
             "is_manager": _is_at_least(role or "employee", "manager"),
+            # Menus and buttons ask `can.reports` etc. rather than guessing from
+            # the role, so a part-manager sees exactly what they can actually do.
+            "can": {k: (k in granted_keys()) for k in perms.ALL_KEYS},
             "store": store,
             # Always the store being operated on — a clerk (and you, when acting
             # as a store) can tell at a glance which location this screen is for.
@@ -552,6 +587,7 @@ def _register_routes(app: Flask):
             session.pop("staff_id", None)
             session.pop("staff_name", None)
             session.pop("staff_role", None)
+            session.pop("staff_perms", None)
             return redirect(url_for("pin"))
         session.clear()
         return redirect(url_for("login"))
@@ -847,6 +883,7 @@ def _register_routes(app: Flask):
                     session["staff_id"] = member.id
                     session["staff_name"] = member.name
                     session["staff_role"] = member.role or "employee"
+                    session["staff_perms"] = perms.dump(member.granted())
                     log_access("pin_ok", 302)
                     return redirect(nxt)
             log_access("pin_fail", 200)   # the row that matters if someone probes
@@ -863,10 +900,11 @@ def _register_routes(app: Flask):
         session.pop("staff_id", None)
         session.pop("staff_name", None)
         session.pop("staff_role", None)
+        session.pop("staff_perms", None)
         return redirect(url_for("pin"))
 
     @app.route("/staff", methods=["GET", "POST"])
-    @manager_required
+    @perm_required("staff")
     def staff_page():
         """Manage who can sign in with a PIN at this store."""
         error = None
@@ -883,11 +921,14 @@ def _register_routes(app: Flask):
                         StaffRow.store == _store(), StaffRow.name == name)):
                     error = f"{name} already exists."
                 else:
+                    role = request.form.get("role") or "employee"
+                    granted = perms.dump(request.form.getlist("perm"))
                     _db().add(StaffRow(store=_store(), name=name,
                                        pin_hash=generate_password_hash(pin_val),
-                                       role=request.form.get("role") or "employee"))
+                                       role=role, permissions=granted))
                     _db().commit()
-                    audit("staff.add", name)
+                    audit("staff.add", f"{name} ({role})"
+                          + (f" — {perms.describe(granted)}" if role != "manager" else ""))
             elif action == "remove":
                 row = _db().get(StaffRow, int(request.form.get("staff_id") or 0))
                 if row and row.store == _store():
@@ -896,6 +937,19 @@ def _register_routes(app: Flask):
                     if session.get("staff_id") == row.id:
                         session.pop("staff_id", None)
                         session.pop("staff_name", None)
+            elif action == "permissions":
+                row = _db().get(StaffRow, int(request.form.get("staff_id") or 0))
+                if row and row.store == _store():
+                    row.role = request.form.get("role") or "employee"
+                    row.permissions = perms.dump(request.form.getlist("perm"))
+                    _db().commit()
+                    audit("staff.permissions",
+                          f"{row.name}: {'manager — everything' if row.role == 'manager' else perms.describe(row.permissions)}")
+                    # Someone changing their OWN grants mid-shift must not keep
+                    # the old ones until they next sign in.
+                    if session.get("staff_id") == row.id:
+                        session["staff_role"] = row.role
+                        session["staff_perms"] = perms.dump(row.granted())
             elif action == "reset_pin":
                 row = _db().get(StaffRow, int(request.form.get("staff_id") or 0))
                 pin_val = (request.form.get("pin") or "").strip()
@@ -907,6 +961,7 @@ def _register_routes(app: Flask):
             if not error:
                 return redirect(url_for("staff_page"))
         return render_template("staff.html", staff=_staff_list(active_only=False),
+                               capabilities=perms.GRANTABLE, perms=perms,
                                error=error, email=session.get("email"),
                                staff_name=session.get("staff_name"))
 
@@ -917,7 +972,7 @@ def _register_routes(app: Flask):
         return ScanLog(scans=[r.to_scan() for r in rows])
 
     @app.get("/history")
-    @login_required
+    @perm_required("history")
     def history():
         """Three views of the past, which answer different questions:
         what did we sell, how is a game decaying, and who changed what."""
@@ -1167,7 +1222,7 @@ def _register_routes(app: Flask):
         return redirect(request.form.get("next") or url_for("dashboard"))
 
     @app.get("/access")
-    @manager_required
+    @perm_required("access")
     def access_log():
         """Who has been reaching this site. Worth a glance whenever the front
         door is PIN-only, especially the failed-PIN rows."""
@@ -1358,7 +1413,7 @@ def _register_routes(app: Flask):
                                filled=filled, total=len(rows))
 
     @app.route("/inventory/box/<slot>", methods=["GET", "POST"])
-    @login_required
+    @perm_required("boxes")
     def inventory_box(slot):
         """Set or clear one box. Kept as its own small page so a phone shows a
         readable game list instead of 48 dropdowns on one screen."""
@@ -1386,7 +1441,7 @@ def _register_routes(app: Flask):
                                games=cat.games)
 
     @app.post("/inventory/add")
-    @login_required
+    @perm_required("boxes")
     def inventory_add():
         """Add games by number — or by scanning a ticket.
 
@@ -1423,7 +1478,7 @@ def _register_routes(app: Flask):
         return redirect(request.form.get("next") or url_for("inventory"))
 
     @app.post("/inventory/remove")
-    @login_required
+    @perm_required("boxes")
     def inventory_remove():
         num = (request.form.get("game_number") or "").strip()
         row = _db().scalar(select(InventoryRow).where(
@@ -1435,7 +1490,7 @@ def _register_routes(app: Flask):
         return redirect(request.form.get("next") or url_for("inventory"))
 
     @app.route("/weights", methods=["GET", "POST"])
-    @manager_required
+    @perm_required("pricing")
     def weights_page():
         row = _emphasis_row()
         if request.method == "POST":
@@ -1462,7 +1517,7 @@ def _register_routes(app: Flask):
 
     # --- report -----------------------------------------------------------
     @app.get("/report")
-    @login_required
+    @perm_required("reports")
     def report():
         date = request.args.get("date") or _today(_store_tz())
         rows = _db().scalars(select(ScanRow).where(ScanRow.store == _store())).all()

@@ -26,6 +26,7 @@ _ADDED_COLUMNS = [
     ("users", "store", "VARCHAR(64)"),
     ("users", "display_name", "VARCHAR(128)"),
     ("users", "active", "BOOLEAN"),
+    ("staff", "permissions", "TEXT"),
 ]
 
 

@@ -1,6 +1,22 @@
 {% extends "base.html" %}
 {% block title %}Staff — Valley Lotto{% endblock %}
 {% block body %}
+<style>
+  .perms { display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:8px; }
+  .perm { display:flex; gap:9px; align-items:flex-start; padding:10px 12px;
+          border:1px solid var(--line); border-radius:10px; background:var(--panel2); }
+  .perm input { width:20px; height:20px; margin:2px 0 0; flex:none; }
+  .perm .t { font-weight:600; font-size:14px; }
+  .perm .b { font-size:12px; color:var(--muted); }
+  .person { border:1px solid var(--line); border-radius:12px; padding:12px; margin-top:10px; }
+  .person-head { display:flex; justify-content:space-between; align-items:baseline; gap:8px;
+                 flex-wrap:wrap; }
+  .who { font-size:17px; font-weight:700; }
+  .grants { font-size:12px; color:var(--muted); }
+  details > summary { cursor:pointer; font-size:13px; color:var(--muted); margin-top:8px; }
+  .rolepick { display:flex; gap:14px; align-items:center; font-size:14px; margin:10px 0; }
+</style>
+
 <div class="card">
   <h2 style="margin:0 0 4px">Staff &amp; PINs</h2>
   <p class="muted" style="font-size:13px">
@@ -9,52 +25,98 @@
   </p>
   {% if error %}<div class="flash err">{{ error }}</div>{% endif %}
 
-  <form method="post" class="row" style="align-items:flex-end;gap:8px">
+  <form method="post">
     <input type="hidden" name="action" value="add">
-    <div style="flex:2;min-width:140px">
-      <label>Name</label>
-      <input type="text" name="name" required>
+    <div class="row" style="align-items:flex-end;gap:8px">
+      <div style="flex:2;min-width:140px">
+        <label>Name</label>
+        <input type="text" name="name" required>
+      </div>
+      <div style="flex:1;min-width:110px">
+        <label>PIN (4–8 digits)</label>
+        <input type="text" name="pin" inputmode="numeric" pattern="\d{4,8}" required>
+      </div>
     </div>
-    <div style="flex:1;min-width:110px">
-      <label>PIN (4–8 digits)</label>
-      <input type="text" name="pin" inputmode="numeric" pattern="\d{4,8}" required>
+
+    <div class="rolepick">
+      <label><input type="radio" name="role" value="employee" checked> Employee</label>
+      <label><input type="radio" name="role" value="manager"> Manager (everything)</label>
     </div>
-    <button class="primary" type="submit">Add person</button>
+
+    <p class="muted" style="font-size:13px;margin:4px 0 8px">
+      An employee runs counts. Tick anything extra they should be able to do —
+      that's how someone gets part of a manager's job without the rest of it.
+    </p>
+    <div class="perms">
+      {% for c in capabilities %}
+      <label class="perm">
+        <input type="checkbox" name="perm" value="{{ c.key }}">
+        <span><span class="t">{{ c.label }}</span><br><span class="b">{{ c.blurb }}</span></span>
+      </label>
+      {% endfor %}
+    </div>
+
+    <button class="primary" type="submit" style="margin-top:12px">Add person</button>
   </form>
 </div>
 
 <div class="card">
   <b>People ({{ staff|length }})</b>
-  {% if staff %}
-  <table>
-    <thead><tr><th>Name</th><th>Role</th><th>Reset PIN</th><th></th></tr></thead>
-    <tbody>
-    {% for s in staff %}
-      <tr>
-        <td><b>{{ s.name }}</b>{% if staff_name == s.name %} <span class="muted">(you)</span>{% endif %}</td>
-        <td class="muted">{{ s.role }}</td>
-        <td>
+  {% for s in staff %}
+    <div class="person">
+      <div class="person-head">
+        <span class="who">{{ s.name }}{% if staff_name == s.name %} <span class="muted" style="font-size:13px">(you)</span>{% endif %}</span>
+        <span class="grants">
+          {%- if s.role == 'manager' %}Manager — everything
+          {%- else %}{{ perms.describe(s.permissions) }}{% endif -%}
+        </span>
+      </div>
+
+      <details>
+        <summary>Change what {{ s.name }} can do</summary>
+        <form method="post" style="margin-top:10px">
+          <input type="hidden" name="action" value="permissions">
+          <input type="hidden" name="staff_id" value="{{ s.id }}">
+          <div class="rolepick">
+            <label><input type="radio" name="role" value="employee"
+                          {% if s.role != 'manager' %}checked{% endif %}> Employee</label>
+            <label><input type="radio" name="role" value="manager"
+                          {% if s.role == 'manager' %}checked{% endif %}> Manager (everything)</label>
+          </div>
+          <div class="perms">
+            {% set held = perms.parse(s.permissions) %}
+            {% for c in capabilities %}
+            <label class="perm">
+              <input type="checkbox" name="perm" value="{{ c.key }}"
+                     {% if c.key in held %}checked{% endif %}>
+              <span><span class="t">{{ c.label }}</span><br><span class="b">{{ c.blurb }}</span></span>
+            </label>
+            {% endfor %}
+          </div>
+          <button class="primary" type="submit" style="margin-top:10px">Save</button>
+        </form>
+      </details>
+
+      <details>
+        <summary>Reset PIN or remove</summary>
+        <div class="row" style="margin-top:10px;gap:10px;align-items:flex-end">
           <form method="post" class="row" style="gap:6px">
             <input type="hidden" name="action" value="reset_pin">
             <input type="hidden" name="staff_id" value="{{ s.id }}">
             <input type="text" name="pin" inputmode="numeric" pattern="\d{4,8}"
-                   placeholder="new PIN" style="width:110px;padding:6px" required>
-            <button style="padding:6px 10px;font-size:12px">Set</button>
+                   placeholder="new PIN" style="width:120px;padding:8px" required>
+            <button style="padding:8px 12px;font-size:13px">Set PIN</button>
           </form>
-        </td>
-        <td>
           <form method="post" onsubmit="return confirm('Remove {{ s.name }}?')">
             <input type="hidden" name="action" value="remove">
             <input type="hidden" name="staff_id" value="{{ s.id }}">
-            <button style="padding:6px 10px;font-size:12px">Remove</button>
+            <button style="padding:8px 12px;font-size:13px">Remove</button>
           </form>
-        </td>
-      </tr>
-    {% endfor %}
-    </tbody>
-  </table>
+        </div>
+      </details>
+    </div>
   {% else %}
     <p class="muted">No one yet. Until you add someone, scanning works without a PIN.</p>
-  {% endif %}
+  {% endfor %}
 </div>
 {% endblock %}
