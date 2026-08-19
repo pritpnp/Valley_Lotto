@@ -29,9 +29,47 @@ which gives you a plain download link to open on the device itself.
 3. On first launch it asks for the **store's website address** (the Railway URL).
    Enter it once. Long-press the screen later to change it.
 
-The build is signed with the standard Android debug key, so it installs without
-a Play Store account. It is not for public distribution — it's an internal tool
-for your own stores.
+The app is not for public distribution — it's an internal tool for your own
+stores, so it installs from the file rather than from the Play Store.
+
+### "App not installed as package conflicts with an existing package"
+
+Android only replaces an app when the new APK carries the **same signing key**
+as the installed one. Builds before this was set up were signed with the CI
+runner's automatic debug key, which is regenerated on every run — so each APK
+had a different key and the phone refused the next one.
+
+If you see this message, uninstall the app once (Settings → Apps → Valley Lotto
+→ Uninstall) and install again. You only lose the saved server address and the
+sign-in cookie; nothing counted is on the phone. From then on updates install
+over the top.
+
+## Signing (one-time setup)
+
+The key lives in repository secrets, never in the repo:
+
+| Secret | What it is |
+|--------|------------|
+| `ANDROID_KEYSTORE_BASE64` | the `.jks` keystore, base64-encoded |
+| `ANDROID_KEYSTORE_PASSWORD` | its password |
+
+Add them under **Settings → Secrets and variables → Actions → New repository
+secret**. With both present, every build is signed with the same key and its
+version code comes from the workflow run number, so each APK outranks the last.
+
+Without them the build still succeeds, but the run logs a warning and the APK
+won't install over an existing copy.
+
+Keep a backup of the keystore file somewhere safe. Losing it means every device
+has to uninstall and reinstall once more.
+
+To create a replacement:
+
+```bash
+keytool -genkeypair -v -keystore valley-lotto.jks -alias valleylotto \
+  -keyalg RSA -keysize 4096 -validity 10950
+base64 -w0 valley-lotto.jks      # paste into ANDROID_KEYSTORE_BASE64
+```
 
 ## Building locally (optional)
 
@@ -42,6 +80,9 @@ cd android
 ./gradlew assembleDebug
 # app/build/outputs/apk/debug/app-debug.apk
 ```
+
+A local build uses your own debug key, so it won't install over a CI-signed
+copy (and vice versa) — that's for trying changes out, not for a store device.
 
 ## Layout
 

@@ -25,17 +25,38 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Build debug APK
+      # The signing key lives in repository secrets, never in the repo. Without
+      # it a runner signs with a throwaway debug key that differs every run, and
+      # the phone rejects the next APK as a conflicting package.
+      - name: Decode the signing key
+        id: signing
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "$KEYSTORE_B64" ]; then
+            printf '%s' "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/valley-lotto.jks"
+            echo "keystore=$RUNNER_TEMP/valley-lotto.jks" >> "$GITHUB_OUTPUT"
+            echo "Signed with the Valley Lotto key — installs as an update." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "::warning::No ANDROID_KEYSTORE_BASE64 secret set. This APK is signed with a throwaway debug key, so it will NOT install over an existing copy."
+          fi
+
+      - name: Build the APK
         working-directory: android
-        run: ./gradlew --no-daemon assembleDebug
+        env:
+          VL_KEYSTORE: ${{ steps.signing.outputs.keystore }}
+          VL_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          VL_KEY_ALIAS: valleylotto
+          VL_VERSION_CODE: ${{ github.run_number }}
+        run: ./gradlew --no-daemon assembleRelease
 
       - name: Name the APK by version and commit
         id: name
         working-directory: android
         run: |
           VER=$(grep versionName app/build.gradle.kts | head -1 | cut -d'"' -f2)
-          OUT="ValleyLotto-${VER}-${GITHUB_SHA::7}.apk"
-          cp app/build/outputs/apk/debug/app-debug.apk "$OUT"
+          OUT="ValleyLotto-${VER}.${GITHUB_RUN_NUMBER}-${GITHUB_SHA::7}.apk"
+          cp app/build/outputs/apk/release/app-release.apk "$OUT"
           echo "apk=android/$OUT" >> "$GITHUB_OUTPUT"
           echo "name=$OUT" >> "$GITHUB_OUTPUT"
           ls -la "$OUT"
