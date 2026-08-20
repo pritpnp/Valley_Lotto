@@ -32,13 +32,39 @@ const SCAN_MODES = [
          + "once and keep scanning. Use this only if neither of the others works."},
 ];
 
+/* The Android shell exposes exactly two things, and only to this site. When it's
+   there, it settles the keyboard question outright; in a plain browser these are
+   no-ops and the field's own attributes do the work. */
+function appBridge() {
+  return (typeof window !== "undefined" && window.ValleyLotto
+          && window.ValleyLotto.hasKeyboardControl) ? window.ValleyLotto : null;
+}
+
+function inApp() {
+  const b = appBridge();
+  try { return !!(b && b.hasKeyboardControl()); } catch (e) { return false; }
+}
+
+function appKeyboard(wanted) {
+  const b = appBridge();
+  if (!b) return;
+  try { wanted ? b.showKeyboard() : b.hideKeyboard(); } catch (e) { /* older shell */ }
+}
+
 function scanModeKey() {
   return localStorage.getItem("scanMode") || "quiet";
 }
 
 function scanModeInfo(key) {
+  if (inApp()) return APP_MODE;
   return SCAN_MODES.find(m => m.key === (key || scanModeKey())) || SCAN_MODES[0];
 }
+
+const APP_MODE = {
+  key: "app", label: "Handled by the app",
+  hint: "This device is running the Valley Lotto app, which holds the keyboard "
+        + "down itself. Nothing here to change.",
+};
 
 class ScanField {
   /* el: the input. onScan(raw): called once per complete scan. */
@@ -85,6 +111,9 @@ class ScanField {
       // compat: an ordinary field, nothing to set
     }
     el.placeholder = this.manual ? "type the number, then Enter" : "scan here…";
+    // In the app, the keyboard is the app's to control — a web page can only
+    // ask, and Android is free to ignore it. This is the one that always works.
+    appKeyboard(this.manual);
     this.focus();
   }
 
@@ -181,6 +210,13 @@ function cycleScanMode() {
    `onPick` re-applies the mode to the live field. */
 function renderScanModes(host, onPick) {
   host.innerHTML = "";
+  if (inApp()) {
+    const p = document.createElement("p");
+    p.style.margin = "0";
+    p.textContent = APP_MODE.hint;
+    host.appendChild(p);
+    return;
+  }
   const current = scanModeKey();
   SCAN_MODES.forEach(m => {
     const b = document.createElement("button");

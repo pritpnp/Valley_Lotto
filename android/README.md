@@ -8,7 +8,25 @@ that survives for weeks.
 
 **Scanning needs no native code.** A retail scan gun types the barcode like a
 keyboard, so the page's own scan field receives it exactly as it does on a
-desktop — the app doesn't intercept anything.
+desktop — the app doesn't intercept the scan itself.
+
+**The keyboard is the app's job, though.** A web page can *ask* Android not to
+raise the on-screen keyboard; it cannot insist, and on many phones it is
+overruled — which is why the keyboard kept appearing on the scan screen in a
+browser. The app holds it down from the outside: the window opens with the
+keyboard suppressed, and any attempt to raise it is pushed straight back down.
+Tapping the ⌨ button on the scan screen is the one thing that lifts that, and
+leaving the field puts it back.
+
+If you are using the site in a plain browser rather than the app, the scan
+screen has three fallbacks under "Scanner not picking up?" — see that menu. It
+is also worth turning off Android's own setting, which exists exactly for this:
+
+> Settings → System → Languages & input → **Physical keyboard** →
+> *Show on-screen keyboard* → **off**
+
+With a scan gun paired, that stops the on-screen keyboard appearing for any app
+on the device.
 
 ## Getting the APK
 

@@ -6,7 +6,9 @@ import android.content.Context
 import android.os.Bundle
 import android.text.InputType
 import android.view.WindowManager
+import android.view.inputmethod.InputMethodManager
 import android.webkit.CookieManager
+import android.webkit.JavascriptInterface
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
@@ -16,6 +18,9 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 
 /**
  * A thin, purpose-built shell around the Valley Lotto web app.
@@ -25,11 +30,19 @@ import androidx.appcompat.app.AppCompatActivity
  * mid-count, and a session that survives for weeks. The scanning itself needs no
  * native code — a retail scan gun types the barcode like a keyboard, so the
  * page's own input receives it exactly as it does on a desktop.
+ *
+ * The one thing the web page genuinely cannot win on its own is the on-screen
+ * keyboard. A page can ask Android not to show one; it cannot insist. Here we
+ * can: the keyboard is held down from the app side and only allowed up when the
+ * page says someone actually wants to type.
  */
 class MainActivity : AppCompatActivity() {
 
     private lateinit var web: WebView
     private lateinit var prefs: android.content.SharedPreferences
+
+    /** False only while the page has asked for a real keyboard. */
+    private var suppressKeyboard = true
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -41,6 +54,13 @@ class MainActivity : AppCompatActivity() {
 
         // A count is a minute of scanning with no touches — don't sleep partway.
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+
+        // Hold the keyboard down. A scan gun is a keyboard already; the on-screen
+        // one covers half the screen a clerk is trying to read and has no reason
+        // to be there. The page lifts this deliberately when someone taps the ⌨
+        // button, and puts it back afterwards.
+        window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN)
+        keepKeyboardDown()
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
@@ -73,6 +93,8 @@ class MainActivity : AppCompatActivity() {
         // but it beats uninstalling the app to fix a typo'd address.
         web.setOnLongClickListener { promptForServer(); true }
 
+        web.addJavascriptInterface(KeyboardBridge(), "ValleyLotto")
+
         web.webViewClient = object : WebViewClient() {
             override fun shouldOverrideUrlLoading(v: WebView, req: WebResourceRequest): Boolean {
                 // Keep navigation inside the configured site; anything else is a
@@ -86,6 +108,66 @@ class MainActivity : AppCompatActivity() {
                 if (req.isForMainFrame) showOfflineNotice()
             }
         }
+    }
+
+    /**
+     * Re-hide the keyboard every time something manages to raise it.
+     *
+     * Setting the soft-input mode covers the window opening; this covers a
+     * WebView field grabbing focus later, which is exactly what happens on the
+     * scan screen. Without it the keyboard reappears on every scan.
+     */
+    private fun keepKeyboardDown() {
+        ViewCompat.setOnApplyWindowInsetsListener(web) { _, insets ->
+            if (suppressKeyboard && insets.isVisible(WindowInsetsCompat.Type.ime())) {
+                hideKeyboardNow()
+            }
+            insets
+        }
+    }
+
+    private fun hideKeyboardNow() {
+        runOnUiThread {
+            WindowInsetsControllerCompat(window, web).hide(WindowInsetsCompat.Type.ime())
+            // Older devices don't always honour the insets controller.
+            val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+            imm.hideSoftInputFromWindow(web.windowToken, 0)
+        }
+    }
+
+    private fun showKeyboardNow() {
+        runOnUiThread {
+            web.requestFocus()
+            WindowInsetsControllerCompat(window, web).show(WindowInsetsCompat.Type.ime())
+            val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+            imm.showSoftInput(web, InputMethodManager.SHOW_IMPLICIT)
+        }
+    }
+
+    /**
+     * What the page is allowed to ask of the app.
+     *
+     * Deliberately tiny, and reachable only from the store's own site — the
+     * WebView refuses to navigate anywhere else, so no other page can call this.
+     */
+    private inner class KeyboardBridge {
+        /** The page is scanning: keep the keyboard down. */
+        @JavascriptInterface
+        fun hideKeyboard() {
+            suppressKeyboard = true
+            hideKeyboardNow()
+        }
+
+        /** Someone tapped the ⌨ button and wants to type. */
+        @JavascriptInterface
+        fun showKeyboard() {
+            suppressKeyboard = false
+            showKeyboardNow()
+        }
+
+        /** Lets the page say "the app is handling this" instead of guessing. */
+        @JavascriptInterface
+        fun hasKeyboardControl(): Boolean = true
     }
 
     /** First launch: ask where the store's site lives. */
