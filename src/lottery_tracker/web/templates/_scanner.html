@@ -24,10 +24,13 @@
           aria-label="Type by hand">⌨</button>
 </div>
 <div id="scanResult" class="flash" style="display:none;margin-top:10px"></div>
-<p class="scanhelp">
-  Scanning doing nothing? <a href="#" onclick="nextScanMode();return false">Try another way</a>
-  <span id="scanModeName"></span>
-</p>
+<details class="scanhelp">
+  <summary style="cursor:pointer">Scanner not picking up? <span id="scanModeName"></span></summary>
+  <p style="margin:8px 0 0">Pick how this device listens to the gun. The setting is
+    remembered on this device only.</p>
+  <div class="modes" id="scanModes"></div>
+  <p id="modeHint" style="margin:8px 0 0"></p>
+</details>
 
 <script src="{{ url_for('static', filename='scan-field.js') }}"></script>
 <script>
@@ -67,13 +70,13 @@ function toggleKeyboard(){
 }
 
 function showMode(){
-  document.getElementById("scanModeName").textContent = "(now: " + scanModeInfo().label + ")";
+  document.getElementById("scanModeName").textContent = "— now: " + scanModeInfo().label;
+  document.getElementById("modeHint").textContent = scanModeInfo().hint;
 }
-function nextScanMode(){
-  const m = cycleScanMode();
+renderScanModes(document.getElementById("scanModes"), m => {
   field.applyMode();
   showMode();
   showResult(true, m.label + " — " + m.hint);
-}
+});
 showMode();
 </script>

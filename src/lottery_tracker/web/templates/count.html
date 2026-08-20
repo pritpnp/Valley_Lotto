@@ -138,18 +138,22 @@
       <button type="button" id="kbBtn" class="kb" onclick="toggleKeyboard()"
               aria-label="Type by hand">⌨</button>
     </div>
-    <p class="scanhelp">
-      Scanning doing nothing? <a href="#" onclick="nextScanMode();return false">Try another way</a>
-      <span id="scanModeName"></span>
-    </p>
+    <details class="scanhelp">
+      <summary style="cursor:pointer">Scanner not picking up? <span id="scanModeName"></span></summary>
+      <p style="margin:8px 0 0">Pick how this device listens to the gun. Remembered
+        on this device only.</p>
+      <div class="modes" id="scanModes"></div>
+      <p id="modeHint" style="margin:8px 0 0"></p>
+    </details>
     <div id="result" class="flash" style="display:none"></div>
     <div class="row" style="margin-top:12px">
       <button onclick="back()">◀ Back</button>
       <button onclick="skip()">Skip — box is empty</button>
     </div>
     <p class="hint">Scan a box and it moves to the next one. Mis-scanned? Tap
-       <b>Back</b>, or tap any box below to fix it without losing your place.
-       The count saves itself once you've been through every box.</p>
+       <b>Back</b> and scan again — or tap <b>Skip</b> there, which clears what was
+       recorded and counts the box as empty. Tap any box below to fix it without
+       losing your place. The count saves itself once you've been through every box.</p>
   </div>
 
   <div class="card">
@@ -233,8 +237,11 @@ function applyState(s){
 
   // fix banner
   if (fixSlot) {
+    const scanned = (s.slots || []).some(b => b.slot === fixSlot && b.scanned);
     $("fixBanner").style.display = "block";
-    $("fixBanner").innerHTML = "Fixing <b>"+fixSlot+"</b> — scan its ticket, or " +
+    $("fixBanner").innerHTML = "Fixing <b>" + fixSlot + "</b> — scan its ticket, " +
+      "<a href='#' onclick='clearSlot(\"" + fixSlot + "\");return false'>" +
+      (scanned ? "clear it (the box is empty)" : "mark it empty") + "</a>, or " +
       "<a href='#' onclick='cancelFix();return false'>cancel</a>.";
   } else { $("fixBanner").style.display = "none"; }
 
@@ -292,6 +299,12 @@ function saveAnyway(){
 }
 
 function setFix(slot){ fixSlot = slot; applyState(state); }
+
+async function clearSlot(slot){
+  const s = await postJSON("{{ url_for('api_clear') }}", {slot});
+  fixSlot = null;
+  applyState(s);
+}
 function cancelFix(){ fixSlot = null; applyState(state); }
 
 // Scans are handled ONE AT A TIME. Firing two overlapping requests at the
@@ -340,11 +353,11 @@ function toggleKeyboard(){
 }
 
 function showMode(){
-  $("scanModeName").textContent = "(now: " + scanModeInfo().label + ")";
+  $("scanModeName").textContent = "— now: " + scanModeInfo().label;
+  $("modeHint").textContent = scanModeInfo().hint;
 }
 
-function nextScanMode(){
-  const m = cycleScanMode();
+function pickScanMode(m){
   field.applyMode();
   showMode();
   const res = $("result");
@@ -375,6 +388,7 @@ async function saveNow(){
 
 // On load: offer the unfinished count if there is one, otherwise ask which
 // count this is. Never guess.
+renderScanModes($("scanModes"), pickScanMode);
 showMode();
 if (document.getElementById("resume")) {
   $("start").style.display = "none";

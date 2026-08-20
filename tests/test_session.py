@@ -138,3 +138,47 @@ def test_commit_persists_in_box_order(tmp_path):
     assert [s.session for s in log.scans] == ["morning", "morning"]
     with pytest.raises(RuntimeError):
         sess.commit(path)                      # no double-commit
+
+
+# --- a box scanned by mistake has to be able to become empty again -----------
+
+def test_skipping_clears_a_box_that_was_scanned_by_mistake():
+    """Back then Skip used to leave the wrong ticket recorded — the exact thing
+    the clerk went back to undo."""
+    sess = CountSession(slots=["A1", "A2"])
+    sess.scan("1750-0091798-010", at="t1")     # meant for A2, scanned at A1
+    assert "A1" in sess.entries
+    sess.back()
+    step = sess.skip()
+    assert "A1" not in sess.entries
+    assert "cleared" in step.message
+    assert sess.current_slot == "A2"
+
+
+def test_any_box_can_be_marked_empty_without_losing_your_place():
+    sess = CountSession(slots=["A1", "A2", "A3"])
+    sess.scan("1750-0091798-010", at="t1")
+    sess.scan("1744-0100200-005", at="t2")     # now standing on A3
+    step = sess.clear("A1")
+    assert step.ok and "A1" not in sess.entries
+    assert sess.current_slot == "A3"           # place kept
+    assert sess.pending_slots() == ["A1", "A3"]
+
+
+def test_clearing_a_box_that_was_already_empty_is_harmless():
+    sess = CountSession(slots=["A1", "A2"])
+    step = sess.clear("A2")
+    assert step.ok and "already was" in step.message
+
+
+def test_clearing_an_unknown_box_is_refused():
+    sess = CountSession(slots=["A1"])
+    assert sess.clear("Z9").ok is False
+
+
+def test_a_cleared_box_can_be_scanned_again():
+    sess = CountSession(slots=["A1", "A2"])
+    sess.scan("1750-0091798-010", at="t1")
+    sess.clear("A1")
+    step = sess.rescan("A1", "1744-0100200-005", at="t2")
+    assert step.ok and sess.entries["A1"].game_number == "1744"

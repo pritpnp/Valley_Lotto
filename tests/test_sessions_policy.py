@@ -212,3 +212,28 @@ def test_a_scan_after_the_count_was_saved_answers_in_json(client):
     assert r.is_json
     body = r.get_json()
     assert body["restart"] is True and "already been saved" in body["error"]
+
+
+def test_a_box_scanned_by_mistake_can_be_emptied_through_the_api(client):
+    client.post("/count/start", json={"session": "night"})
+    client.post("/api/scan", json={"raw": "1750-0091798-010"})     # wrong: box 1 is empty
+    s = client.post("/api/clear", json={"slot": "A1"}).get_json()
+    assert s["step"]["ok"] is True
+    assert [b for b in s["slots"] if b["slot"] == "A1"][0]["scanned"] is False
+    assert s["done"] == 0
+
+
+def test_clearing_does_not_move_you_along(client):
+    client.post("/count/start", json={"session": "night"})
+    client.post("/api/scan", json={"raw": "1750-0091798-010"})
+    s = client.post("/api/clear", json={"slot": "A1"}).get_json()
+    assert s["current_slot"] == "A2"          # still where the walk had reached
+
+
+def test_a_cleared_box_is_listed_as_still_needing_a_scan(client):
+    client.post("/count/start", json={"session": "night"})
+    client.post("/api/scan", json={"raw": "1750-0091798-010"})
+    client.post("/api/clear", json={"slot": "A1"})
+    s = client.post("/api/scan", json={"raw": "1744-0100200-005"}).get_json()
+    assert s["walk_done"] is True
+    assert s["pending"] == ["A1"]             # the guard will ask about it

@@ -23,11 +23,13 @@
 
 const SCAN_MODES = [
   {key: "quiet",  label: "No keyboard",
-   hint: "Best for a scan gun. If scanning does nothing, try the next one."},
-  {key: "compat", label: "Always works",
-   hint: "The keyboard may appear — minimise it once and keep scanning."},
-  {key: "nokb",   label: "No keyboard (alternate)",
-   hint: "Another way of hiding the keyboard. Try it if the first didn't work."},
+   hint: "The keyboard stays down and the gun still works. Start here."},
+  {key: "nokb",   label: "No keyboard, other way",
+   hint: "A second way of keeping the keyboard down. Try this if the first "
+         + "one doesn't pick up your scans."},
+  {key: "compat", label: "Keyboard may show",
+   hint: "Always receives the gun, but the keyboard can appear. Minimise it "
+         + "once and keep scanning. Use this only if neither of the others works."},
 ];
 
 function scanModeKey() {
@@ -162,11 +164,31 @@ class ScanField {
   }
 }
 
+function setScanMode(key) {
+  localStorage.setItem("scanMode", key);
+  return scanModeInfo(key);
+}
+
 /* The "scanning isn't working" escape hatch: one tap moves to the next way of
    doing it and says which one is now in use. */
 function cycleScanMode() {
   const i = SCAN_MODES.findIndex(m => m.key === scanModeKey());
-  const next = SCAN_MODES[(i + 1) % SCAN_MODES.length];
-  localStorage.setItem("scanMode", next.key);
-  return next;
+  return setScanMode(SCAN_MODES[(i + 1) % SCAN_MODES.length].key);
+}
+
+/* Draw the choice as three chips, so the setting is something you pick on
+   purpose rather than something you stumble onto by tapping repeatedly.
+   `onPick` re-applies the mode to the live field. */
+function renderScanModes(host, onPick) {
+  host.innerHTML = "";
+  const current = scanModeKey();
+  SCAN_MODES.forEach(m => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "modechip" + (m.key === current ? " on" : "");
+    b.textContent = m.label;
+    b.title = m.hint;
+    b.onclick = () => { setScanMode(m.key); renderScanModes(host, onPick); onPick(m); };
+    host.appendChild(b);
+  });
 }

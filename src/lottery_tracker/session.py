@@ -204,11 +204,35 @@ class CountSession:
         return ScanStep(True, slot, f"at {slot}; scan it", next_slot=slot)
 
     def skip(self) -> ScanStep:
-        """Advance without recording the current box (fill it later via goto)."""
+        """Move past the current box, recording nothing for it.
+
+        Anything already recorded for that box is dropped. Skipping means "this
+        box is empty", and it has to be able to correct a scan as well as stand
+        in for one — otherwise going back to a mis-scanned box and skipping it
+        would leave the wrong ticket sitting there, which is the one outcome the
+        clerk was trying to avoid.
+        """
         slot = self.current_slot
         self.pending = None
+        had = self.entries.pop(slot, None)
         self._advance()
-        return ScanStep(True, slot, f"skipped {slot}", next_slot=self.current_slot)
+        msg = (f"{slot} cleared — counted as empty" if had
+               else f"skipped {slot} — counted as empty")
+        return ScanStep(True, slot, msg, next_slot=self.current_slot)
+
+    def clear(self, slot: str) -> ScanStep:
+        """Mark any box empty by name, without moving your place in the walk.
+
+        The counterpart to :meth:`rescan`: that fixes a box which holds the wrong
+        ticket, this fixes a box which should hold nothing at all.
+        """
+        if slot not in self.slots:
+            return ScanStep(False, slot, f"unknown box {slot}", next_slot=self.current_slot)
+        self.pending = None
+        had = self.entries.pop(slot, None)
+        return ScanStep(True, slot,
+                        f"{slot} is now empty" + ("" if had else " (it already was)"),
+                        next_slot=self.current_slot)
 
     def rescan(self, slot: str, raw: str, *, at: Optional[str] = None) -> ScanStep:
         """Fix ANY box by name without moving your place in the walk — this is the

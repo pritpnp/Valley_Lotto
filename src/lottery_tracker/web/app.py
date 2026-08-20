@@ -813,6 +813,16 @@ def _register_routes(app: Flask):
         _save_session(cs)
         return jsonify(_state_payload(cs, step))
 
+    @app.post("/api/clear")
+    @staff_required
+    def api_clear():
+        """Mark a box empty — including one that was scanned by mistake."""
+        cs = _require_session()
+        body = request.get_json(silent=True) or {}
+        step = cs.clear(body.get("slot") or cs.current_slot or "")
+        _save_session(cs)
+        return jsonify(_state_payload(cs, step))
+
     @app.post("/api/goto")
     @staff_required
     def api_goto():
