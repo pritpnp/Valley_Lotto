@@ -28,7 +28,7 @@ from werkzeug.exceptions import HTTPException
 from werkzeug.security import generate_password_hash, check_password_hash
 
 from ..barcode import try_parse_ticket, parse_ticket, BarcodeError
-from ..scans import Scan, ScanLog
+from ..scans import Scan, ScanLog, _slot_sort_key
 from ..session import CountSession, standard_slots
 from ..reporting import (daily_report, render_daily_report_md, as_zone,
                          business_date, count_status, normalize_session,
@@ -1818,6 +1818,23 @@ def _register_routes(app: Flask):
         return render_template("catalog.html", email=session.get("email"),
                                by_price=by_price, cutoff=weights.cutoff,
                                captured_at=cat.captured_at)
+
+    @app.get("/catalog/<game_number>")
+    @login_required
+    def game_page(game_number):
+        """One game, in full — the same breakdown a box shows.
+
+        The catalog list only carries what you need to compare at a glance; this
+        is where the reasoning lives, so neither screen has to be a wide table.
+        """
+        detail = _game_detail(game_number)
+        if detail is None:
+            abort(404)
+        boxes = [slot for slot, b in _box_map().items() if b.game_number == game_number]
+        held = len([p for p in _packs(state="backstock", game=game_number)])
+        return render_template("game.html", detail=detail, game_number=game_number,
+                               boxes=sorted(boxes, key=_slot_sort_key),
+                               held=held, carried=game_number in _inventory())
 
     @app.get("/inventory")
     @login_required

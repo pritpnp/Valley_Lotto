@@ -266,3 +266,49 @@ def test_the_page_lists_what_was_actually_saved(client):
     assert "Last 1 saved scans" in html
     assert "1750-0091798-010" in html      # the raw characters, for comparison
     assert "010" in html
+
+
+# --- the catalog: a list you read down, not a table you drag sideways --------
+
+def test_the_catalog_has_no_table_to_scroll_sideways(client):
+    html = client.get("/catalog").data.decode()
+    assert "<table" not in html
+
+
+def test_the_catalog_shows_what_you_need_to_compare_at_a_glance(client, a_real_game):
+    html = client.get("/catalog").data.decode()
+    assert "wins 1 in" in html
+    assert "of prizes left" in html and "small prizes" in html
+    assert "worth\n    carrying" in html or "worth carrying" in html
+
+
+def test_every_game_opens_its_own_page(client, a_real_game):
+    html = client.get("/catalog").data.decode()
+    assert f"/catalog/{a_real_game}" in html
+    assert client.get(f"/catalog/{a_real_game}").status_code == 200
+
+
+def test_a_game_page_carries_the_same_breakdown_as_a_box(client, a_real_game):
+    html = client.get(f"/catalog/{a_real_game}").data.decode()
+    assert "Why this game is" in html
+    assert "Win odds" in html
+    assert "of this game's score" in html
+    assert "What do these five things mean?" in html
+
+
+def test_a_game_page_says_where_the_store_has_it(client, a_real_game):
+    _fill(client, "3", a_real_game)
+    html = client.get(f"/catalog/{a_real_game}").data.decode()
+    assert "boxes on the floor" in html or "box on the floor" in html
+    assert "/inventory/box/3" in html
+
+
+def test_a_game_you_do_not_carry_offers_to_start(client, a_real_game):
+    html = client.get(f"/catalog/{a_real_game}").data.decode()
+    assert "Start carrying this game" in html
+
+
+def test_a_game_that_left_the_catalog_still_opens(client):
+    r = client.get("/catalog/9999")
+    assert r.status_code == 200
+    assert b"not on PA" in r.data

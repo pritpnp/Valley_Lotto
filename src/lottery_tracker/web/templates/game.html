@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}{{ detail.name }} — {{ site_title }}{% endblock %}
+{% block body %}
+<style>
+  .facts { display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; }
+  .fact { flex:1; min-width:104px; background:var(--panel2); border:1px solid var(--line);
+          border-radius:12px; padding:10px 12px; }
+  .fact .n { font-size:20px; font-weight:800; }
+  .fact .l { font-size:11.5px; color:var(--muted); }
+</style>
+
+<div class="card">
+  <div class="row" style="justify-content:space-between;align-items:baseline">
+    <h2 style="margin:0">{{ detail.name }}</h2>
+    <a href="{{ url_for('catalog') }}" style="font-size:13px">← catalog</a>
+  </div>
+  <p class="muted" style="font-size:13.5px;margin:6px 0 0">
+    Game #{{ game_number }}{% if detail.price %} · ${{ '%g'|format(detail.price) }} a ticket{% endif %}
+    {%- if detail.sales_end_date %} · PA stopped selling this on {{ detail.sales_end_date }}{% endif %}
+  </p>
+
+  <div class="facts">
+    <div class="fact"><div class="n">{{ boxes|length }}</div>
+      <div class="l">{{ 'box' if boxes|length == 1 else 'boxes' }} on the floor</div></div>
+    <div class="fact"><div class="n">{{ held }}</div><div class="l">packs in back</div></div>
+    <div class="fact"><div class="n">{{ '—' if detail.rating is none else '%.0f'|format(detail.rating) }}</div>
+      <div class="l">rating out of 100</div></div>
+  </div>
+
+  {% if boxes %}
+    <p class="muted" style="font-size:13px;margin-top:10px">
+      In {% for b in boxes %}<a href="{{ url_for('inventory_box', slot=b) }}">box {{ b }}</a>{% if not loop.last %}, {% endif %}{% endfor %}.
+    </p>
+  {% elif not carried %}
+    {% if can.boxes %}
+    <form method="post" action="{{ url_for('inventory_add') }}" style="margin-top:12px">
+      <input type="hidden" name="game_number" value="{{ game_number }}">
+      <input type="hidden" name="next" value="{{ url_for('game_page', game_number=game_number) }}">
+      <button class="primary" style="width:100%">Start carrying this game</button>
+    </form>
+    {% endif %}
+  {% endif %}
+</div>
+
+{% with why_subject = "this game" %}{% include "_game_why.html" %}{% endwith %}
+{% endblock %}

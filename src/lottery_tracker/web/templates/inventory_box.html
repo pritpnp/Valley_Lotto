@@ -16,28 +16,6 @@
   .pick.on { border-color:var(--accent); background:var(--ok-bg); font-weight:700; }
   .pick .sub { display:block; font-size:12px; color:var(--muted); font-weight:400; }
 
-  /* The "why" panel: stacked rows, no horizontal scrolling. */
-  .verdict { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
-  .score { font-size:40px; font-weight:800; line-height:1; }
-  .call { font-size:12px; font-weight:800; letter-spacing:.6px; text-transform:uppercase;
-          padding:5px 12px; border-radius:999px; }
-  .call.keep { background:var(--ok-bg); color:var(--ok); }
-  .call.send { background:var(--err-bg); color:var(--err); }
-  .factor { padding:11px 0; border-top:1px solid var(--line); }
-  .factor:first-of-type { border-top:none; }
-  .frow { display:flex; justify-content:space-between; gap:10px; align-items:baseline; }
-  .fname { font-weight:600; font-size:14.5px; }
-  .fval { font-size:14px; color:var(--muted); text-align:right; white-space:nowrap; }
-  .bar { height:7px; border-radius:99px; background:var(--pending); margin-top:7px;
-         overflow:hidden; }
-  .bar i { display:block; height:100%; background:var(--ok); }
-  .bar.low i { background:var(--err); }
-  .bar.mid i { background:var(--warn); }
-  .fnote { font-size:13px; color:var(--ink); margin-top:7px; line-height:1.5; }
-  .fmeta { font-size:11.5px; color:var(--muted); margin-top:5px; }
-  .quiet { opacity:.6; }
-  .tier { display:flex; justify-content:space-between; font-size:13.5px; padding:6px 0;
-          border-top:1px dashed var(--line); }
 
   .swap { border:1px solid var(--line); border-radius:12px; padding:12px; margin-top:10px; }
   .swaphead { display:flex; justify-content:space-between; align-items:baseline; gap:10px; }
@@ -209,109 +187,6 @@
 {% endif %}
 
 {% if detail and not do %}
-<div class="card">
-  <b>Why this box is {{ 'red' if detail.action == 'send_back' else 'green' }}</b>
-
-  <div class="verdict" style="margin-top:12px">
-    <span class="score">{{ '—' if detail.rating is none else '%.0f'|format(detail.rating) }}</span>
-    <span class="muted" style="font-size:13px">out of 100<br>
-      {% if detail.cutoff %}<span style="font-size:12px">keep at {{ '%.0f'|format(detail.cutoff) }}+</span>{% endif %}</span>
-    <span class="call {{ 'send' if detail.action == 'send_back' else 'keep' }}">
-      {{ 'send back' if detail.action == 'send_back' else 'keep' }}</span>
-  </div>
-
-  <p class="muted" style="font-size:13.5px;margin:10px 0 0">{{ detail.reason }}</p>
-
-  <div style="margin-top:14px">
-    {% for f in detail.factors %}
-      <div class="factor {{ '' if f.voted else 'quiet' }}">
-        <div class="frow">
-          <span class="fname">{{ f.label }}</span>
-          <span class="fval">{{ f.detail }}</span>
-        </div>
-        {% if f.voted %}
-          <div class="bar {{ 'low' if f.score < 40 else 'mid' if f.score < 65 else '' }}">
-            <i style="width:{{ '%.0f'|format(f.score) }}%"></i>
-          </div>
-        {% endif %}
-        {% if f.note %}<div class="fnote">{{ f.note[0]|upper }}{{ f.note[1:] }}</div>{% endif %}
-        <div class="fmeta">
-          {%- if f.voted %}Counted as {{ '%.0f'|format(f.score) }} out of 100, and made up
-            {{ f.share }}% of this game's score.
-          {%- else %}This was left out of the score.{% endif -%}
-        </div>
-      </div>
-    {% endfor %}
-  </div>
-
-  {% if detail.tiers %}
-  <div style="margin-top:16px">
-    <b style="font-size:14px">Prizes left</b>
-    {% for t in detail.tiers %}
-      <div class="tier">
-        <span>{{ t.value }}</span>
-        <span class="muted">
-          {{ t.remaining }}{% if t.original %} of {{ t.original }}{% endif %}
-          {% if t.pct is not none %} · {{ '%.0f'|format(100 * t.pct) }}% left{% endif %}
-        </span>
-      </div>
-    {% endfor %}
-  </div>
-  {% endif %}
-
-  <details style="margin-top:14px">
-    <summary style="cursor:pointer;font-size:13.5px;color:var(--accent);font-weight:600">
-      What do these five things mean?</summary>
-    <div class="muted" style="font-size:13.5px;line-height:1.65;margin-top:10px">
-      <p>The score out of 100 is a weighted average of the five things below.
-        Anything at or above the keep line is worth carrying; below it, the game
-        is doing worse for you than the space it takes up.</p>
-
-      <p><b>Win odds.</b> How often a ticket wins anything at all. "1 in 3.17"
-        means roughly one ticket in every three is a winner, though most of those
-        wins are small. Pennsylvania sets this when the game is printed and it
-        never changes for the life of the game.</p>
-
-      <p><b>Prizes left.</b> Out of every prize this game was printed with, how
-        many have not been claimed yet. A brand new game is near 100%. As people
-        buy and win, it falls. A game down at 20% has had most of its good tickets
-        taken already, so a customer buying one now has less to win.</p>
-
-      <p><b>Low-prize stock.</b> The same idea, but counting only the small,
-        common prizes — the five and ten dollar wins. These matter more than the
-        jackpot for a store like yours, because they are what a regular customer
-        actually wins, and winning a little is what brings them back tomorrow. A
-        game can still have its million-dollar prize sitting there while every
-        small prize is gone, and that game will feel dead at the counter.</p>
-
-      <p><b>Low-prize trend.</b> Whether those small prizes are disappearing
-        faster than the game as a whole. If a game is 50% sold but only 20% of its
-        small prizes are left, the cheap wins went first and what remains is worse
-        than the headline number suggests. We only report this when the gap is far
-        too large to be a coincidence.</p>
-
-      <p><b>Jackpot density.</b> This compares two things: how many of the top
-        prizes are still unclaimed, against how much of the whole game is still
-        unsold. If a game is half sold and half its top prizes are gone, that is
-        normal, and it shows as <b>1.00 times</b>. Above 1.00 means the big prizes
-        have lasted longer than usual, so more of them are still out there than you
-        would expect. Below 1.00 means they went early and the game is picked over
-        at the top.</p>
-
-      <p>You will notice this one is nearly always left out of the score, and
-        there is a good reason. Pennsylvania usually prints only five top prizes in
-        a game, sometimes as few as three. With numbers that small, one person
-        winning changes the figure enormously, and that tells you nothing about the
-        game — only about one person's luck. So the number is shown to you, but it
-        is not allowed to affect the score unless the game printed enough top
-        prizes for the figure to mean something. In the current Pennsylvania list,
-        only 3 games out of 67 have enough.</p>
-
-      <p>Where a factor says <b>left out of the score</b>, the remaining factors
-        are simply reweighted between them. A missing piece of information never
-        counts against a game.</p>
-    </div>
-  </details>
-</div>
+  {% with why_subject = "this box" %}{% include "_game_why.html" %}{% endwith %}
 {% endif %}
 {% endblock %}

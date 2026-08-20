@@ -126,7 +126,8 @@ def test_catalog_renders_and_marks_carried(client):
     client.post("/inventory/add", data={"game_number": active[0].game_number})
     r = client.get("/catalog")
     assert r.status_code == 200
-    assert "★".encode() in r.data
+    # the catalog marks what you already carry (a pill now, not a star)
+    assert b"you carry it" in r.data
 
 
 def test_unknown_game_shows_as_pull_it(client):
