@@ -2,6 +2,14 @@
 {% block title %}Active inventory — {{ site_title }}{% endblock %}
 {% block body %}
 <style>
+  .line { display:flex; gap:12px; align-items:center; padding:11px 4px;
+          border-top:1px solid var(--line); }
+  .line:first-of-type { border-top:none; }
+  .lmid { flex:1; min-width:0; }
+  .lname { font-weight:650; font-size:14.5px; display:block; }
+  .lsub { display:block; font-size:12.5px; color:var(--muted); margin-top:2px; }
+</style>
+<style>
   .boxgrid { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:10px; }
   .bx { display:block; border:1px solid var(--line); border-radius:12px; padding:10px 12px;
         background:var(--panel2); color:var(--ink); }
@@ -56,22 +64,18 @@
   <p class="muted" style="font-size:13px">
     Tracked on the dashboard but not assigned to a box yet.
   </p>
-  <table>
-    <tbody>
-    {% for g in unplaced %}
-      <tr>
-        <td class="muted">{{ g.game_number }}</td>
-        <td>{{ g.name }}{% if g.price %} <span class="muted">${{ '%g'|format(g.price) }}</span>{% endif %}</td>
-        <td>
-          <form method="post" action="{{ url_for('inventory_remove') }}">
-            <input type="hidden" name="game_number" value="{{ g.game_number }}">
-            <button style="padding:4px 10px;font-size:12px">Remove</button>
-          </form>
-        </td>
-      </tr>
-    {% endfor %}
-    </tbody>
-  </table>
+  {% for g in unplaced %}
+    <div class="line">
+      <span class="lmid">
+        <a class="lname" href="{{ url_for('game_page', game_number=g.game_number) }}">{{ g.name }}</a>
+        <span class="lsub">#{{ g.game_number }}{% if g.price %} · ${{ '%g'|format(g.price) }}{% endif %}</span>
+      </span>
+      <form method="post" action="{{ url_for('inventory_remove') }}">
+        <input type="hidden" name="game_number" value="{{ g.game_number }}">
+        <button style="padding:5px 11px;font-size:12px;width:auto">Remove</button>
+      </form>
+    </div>
+  {% endfor %}
 </div>
 {% endif %}
 

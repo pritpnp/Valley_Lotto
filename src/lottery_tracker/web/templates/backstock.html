@@ -19,8 +19,13 @@
   .pill.short { background:var(--warn-bg); color:var(--warn); }
   .pill.back  { background:var(--err-bg);  color:var(--err); }
   .packline { font-size:13px; color:var(--muted); margin-top:6px; }
-  .scroll { overflow-x:auto; }
-  td, th { font-size:13px; }
+  .line { display:flex; gap:12px; align-items:flex-start; padding:11px 4px;
+          border-top:1px solid var(--line); }
+  .line:first-of-type { border-top:none; }
+  .lmid { flex:1; min-width:0; }
+  .lname { font-weight:650; font-size:14.5px; display:block; }
+  .lsub { display:block; font-size:12.5px; color:var(--muted); margin-top:3px;
+          word-break:break-word; line-height:1.5; }
   details summary { cursor:pointer; font-size:13px; color:var(--muted); margin-top:8px; }
   .settleform { display:grid; gap:8px; margin-top:10px; }
 </style>
@@ -119,19 +124,16 @@
 {% if shipments %}
 <div class="card">
   <b>Recent deliveries</b>
-  <div class="scroll"><table>
-    <thead><tr><th>Received</th><th>Label</th><th>By</th><th>Note</th></tr></thead>
-    <tbody>
-      {% for sh in shipments %}
-      <tr>
-        <td>{{ sh.received_on }}</td>
-        <td class="muted">{{ sh.label or '—' }}</td>
-        <td class="muted">{{ sh.received_by or '—' }}</td>
-        <td class="muted">{{ sh.note or '' }}</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table></div>
+  {% for sh in shipments %}
+    <div class="line">
+      <span class="lmid">
+        <span class="lname">{{ sh.received_on }}
+          {%- if sh.received_by %} <span class="muted" style="font-weight:400">by {{ sh.received_by }}</span>{% endif %}</span>
+        <span class="lsub">{{ sh.label or 'no label scanned' }}
+          {%- if sh.note %}<br>{{ sh.note }}{% endif %}</span>
+      </span>
+    </div>
+  {% endfor %}
 </div>
 {% endif %}
 
@@ -142,32 +144,28 @@
     The record of what left the store. {% if is_superadmin %}You can clear a line
     entered by mistake.{% else %}Only a superadmin can clear a line entered by mistake.{% endif %}
   </p>
-  <div class="scroll"><table>
-    <thead><tr><th>Date</th><th>Game</th><th>Pack</th><th>From</th><th>Why</th><th>By</th>
-      {% if is_superadmin %}<th></th>{% endif %}</tr></thead>
-    <tbody>
-      {% for pk in settled %}
-      <tr>
-        <td>{{ pk.settled_on }}</td>
-        <td><b>{{ pk.game_number }}</b></td>
-        <td class="muted">{{ pk.pack or '—' }}</td>
-        <td class="muted">{{ 'box ' ~ pk.slot if pk.slot else 'unopened packs' }}</td>
-        <td class="muted">{{ reason_text.get(pk.settle_reason, pk.settle_reason) }}{% if pk.settle_note %} — {{ pk.settle_note }}{% endif %}</td>
-        <td class="muted">{{ pk.settled_by or '—' }}</td>
-        {% if is_superadmin %}
-        <td>
-          <form method="post" action="{{ url_for('pack_unsettle') }}"
-                onsubmit="return confirm('Clear this settlement? It goes back to being ours.')">
-            <input type="hidden" name="pack_id" value="{{ pk.id }}">
-            <input type="hidden" name="next" value="{{ url_for('backstock') }}">
-            <button style="padding:4px 9px;font-size:12px">Clear</button>
-          </form>
-        </td>
-        {% endif %}
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table></div>
+  {% for pk in settled %}
+    <div class="line">
+      <span class="lmid">
+        <span class="lname">Game {{ pk.game_number }}
+          {%- if pk.pack %} <span class="muted" style="font-weight:400">pack {{ pk.pack }}</span>{% endif %}</span>
+        <span class="lsub">
+          {{ pk.settled_on }} · from {{ 'box ' ~ pk.slot if pk.slot else 'unopened packs' }}
+          {%- if pk.settled_by %} · by {{ pk.settled_by }}{% endif %}
+          <br>{{ reason_text.get(pk.settle_reason, pk.settle_reason) }}
+          {%- if pk.settle_note %} — {{ pk.settle_note }}{% endif %}
+        </span>
+      </span>
+      {% if is_superadmin %}
+      <form method="post" action="{{ url_for('pack_unsettle') }}"
+            onsubmit="return confirm('Clear this settlement? It goes back to being ours.')">
+        <input type="hidden" name="pack_id" value="{{ pk.id }}">
+        <input type="hidden" name="next" value="{{ url_for('backstock') }}">
+        <button style="padding:5px 11px;font-size:12px;width:auto">Clear</button>
+      </form>
+      {% endif %}
+    </div>
+  {% endfor %}
 </div>
 {% endif %}
 {% endblock %}

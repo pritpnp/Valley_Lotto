@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Dashboard — Valley Lotto{% endblock %}
+{% block title %}Dashboard — {{ site_title }}{% endblock %}
 {% block body %}
 <style>
   .stats { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:6px; }
@@ -8,14 +8,39 @@
   .stat .n { font-size:26px; font-weight:800; }
   .stat .l { font-size:12px; color:var(--muted); }
   .stat.keep .n { color:var(--ok); } .stat.send .n { color:var(--err); }
-  .badge { display:inline-block; padding:2px 8px; border-radius:999px; font-size:12px; font-weight:700; }
+
+  /* One game per row, read down the page. Same shape as the catalog, so the
+     two screens feel like the same app. */
+  .g { display:flex; gap:12px; align-items:flex-start; padding:13px 8px;
+       border-top:1px solid var(--line); text-decoration:none; color:var(--ink); }
+  .g:first-of-type { border-top:none; }
+  .g:hover { background:var(--panel2); text-decoration:none; }
+  .score { font-size:26px; font-weight:800; min-width:46px; text-align:center;
+           font-variant-numeric:tabular-nums; line-height:1.1; }
+  .score.keep { color:var(--ok); }
+  .score.send { color:var(--err); }
+  .score .u { display:block; font-size:10px; font-weight:600; color:var(--muted); }
+  .gmid { flex:1; min-width:0; }
+  .gname { font-weight:650; font-size:15px; display:block; }
+  .gsub { display:block; font-size:12.5px; color:var(--muted); margin-top:4px;
+          line-height:1.5; }
+  .why { display:block; font-size:12.5px; color:var(--muted); margin-top:6px;
+         line-height:1.5; }
+  .chev { color:var(--muted); font-size:18px; flex:none; align-self:center; }
+  .badge { display:inline-block; padding:2px 8px; border-radius:999px; font-size:11px;
+           font-weight:700; letter-spacing:.3px; }
   .b-keep { background:var(--ok-bg); color:var(--ok); }
   .b-send { background:var(--err-bg); color:var(--err); }
-  .rating { font-variant-numeric:tabular-nums; font-weight:700; }
-  .why { font-size:12px; color:var(--muted); }
-  .swap { font-size:12px; color:var(--muted); background:var(--panel2); }
-  td, th { font-size:13.5px; }
-  .scroll { overflow-x:auto; }
+  .swapline { font-size:12.5px; color:var(--muted); margin-top:7px; padding-left:58px;
+              line-height:1.7; }
+  .swapline form { display:inline; }
+
+  .pick { display:flex; gap:10px; align-items:center; padding:11px 8px;
+          border-top:1px solid var(--line); }
+  .pick:first-of-type { border-top:none; }
+  .pick .pmid { flex:1; min-width:0; }
+  .pick .pname { display:block; font-weight:600; font-size:14.5px; }
+  .pick .psub { display:block; font-size:12px; color:var(--muted); margin-top:2px; }
 </style>
 
 {% if night_due %}
@@ -33,85 +58,81 @@
   </div>
   <div class="stats" style="margin-top:12px">
     <div class="stat"><div class="n">{{ summary.total }}</div><div class="l">tracked</div></div>
-    <div class="stat keep"><div class="n">{{ summary.keep }}</div><div class="l">🟢 keep</div></div>
-    <div class="stat send"><div class="n">{{ summary.send_back }}</div><div class="l">🔴 send back</div></div>
+    <div class="stat keep"><div class="n">{{ summary.keep }}</div><div class="l">keep</div></div>
+    <div class="stat send"><div class="n">{{ summary.send_back }}</div><div class="l">send back</div></div>
   </div>
+</div>
 
-  {% if rows %}
-  <div class="scroll">
-  <table>
-    <thead><tr>
-      <th>Action</th><th>Rating</th><th>#</th><th>Game</th><th>Price</th><th>Odds</th>
-      <th>% left</th><th>Low-prize</th><th>Density</th>
-    </tr></thead>
-    <tbody>
-    {% for r in rows %}
-      <tr>
-        <td><span class="badge {{ 'b-send' if r.action == 'send_back' else 'b-keep' }}">
-            {{ 'SEND BACK' if r.action == 'send_back' else 'KEEP' }}</span></td>
-        <td class="rating">{{ r.rating_str }}{% if r.rating is not none %}<span class="muted" style="font-weight:400">/100</span>{% endif %}</td>
-        <td class="muted">{{ r.game_number }}</td>
-        <td>{{ r.name }}<div class="why">{{ r.reason }}</div></td>
-        <td>{% if r.price %}${{ '%g'|format(r.price) }}{% else %}—{% endif %}</td>
-        <td>{% if r.odds_value %}1:{{ '%g'|format(r.odds_value) }}{% else %}—{% endif %}</td>
-        <td>{{ r.pct_all_str }}</td>
-        <td>{{ r.low_prize_str }}</td>
-        <td>
-          {%- if r.jackpot_density is none -%}—
-          {%- elif r.jackpot_significant -%}{{ '%.2f'|format(r.jackpot_density) }}
-          {%- else -%}<span class="muted" title="small-sample noise — ignored in rating">{{ '%.2f'|format(r.jackpot_density) }} n/s</span>
-          {%- endif -%}
-        </td>
-      </tr>
-      {% if r.action == 'send_back' %}
-      <tr class="swap"><td></td><td colspan="8">
+{% if rows %}
+<div class="card">
+  <p class="muted" style="font-size:12.5px;margin:0 0 8px">
+    Send-backs first. Tap a game for the full reasoning.
+  </p>
+
+  {% for r in rows %}
+    <a class="g" href="{{ url_for('game_page', game_number=r.game_number) }}">
+      <span class="score {{ 'send' if r.action == 'send_back' else 'keep' }}">
+        {{ r.rating_str }}<span class="u">of 100</span>
+      </span>
+      <span class="gmid">
+        <span class="gname">{{ r.name }}</span>
+        <span class="gsub">
+          <span class="badge {{ 'b-send' if r.action == 'send_back' else 'b-keep' }}">
+            {{ 'SEND BACK' if r.action == 'send_back' else 'KEEP' }}</span>
+          #{{ r.game_number }}{% if r.price %} · ${{ '%g'|format(r.price) }}{% endif %}
+          {%- if r.odds_value %} · wins 1 in {{ '%g'|format(r.odds_value) }}{% endif %}
+          {%- if r.pct_all is not none %} · {{ r.pct_all_str }} of prizes left{% endif %}
+        </span>
+        <span class="why">{{ r.reason }}</span>
+      </span>
+      <span class="chev">›</span>
+    </a>
+
+    {% if r.action == 'send_back' %}
+      <div class="swapline">
         {% if r.swap_to %}
-          ↳ swap to:
+          Put in instead:
           {% for s in r.swap_to %}
-            <b>#{{ s.game_number }}</b> {{ s.name }} ({{ s.rating_str }})
-            <form method="post" action="{{ url_for('inventory_add') }}" style="display:inline">
+            <b>{{ s.name }}</b> ({{ s.rating_str }})
+            <form method="post" action="{{ url_for('inventory_add') }}">
               <input type="hidden" name="game_number" value="{{ s.game_number }}">
               <input type="hidden" name="next" value="{{ url_for('dashboard') }}">
-              <button style="padding:1px 7px;font-size:11px">+ carry</button>
+              <button style="padding:2px 9px;font-size:11px;width:auto">carry</button>
             </form>{% if not loop.last %} · {% endif %}
           {% endfor %}
         {% else %}
-          ↳ no strong same-price replacement available — consider dropping this price point.
+          Nothing better at this price right now — consider dropping the price point.
         {% endif %}
-      </td></tr>
-      {% endif %}
-    {% endfor %}
-    </tbody>
-  </table>
-  </div>
-  {% else %}
-    <p class="muted">No games in your inventory yet. <a href="{{ url_for('inventory') }}">Add some →</a></p>
-  {% endif %}
-  <p class="muted" style="font-size:12px;margin-top:12px">
-    Rating weights — odds {{ '%g'|format(weights.odds) }}, prizes-left {{ '%g'|format(weights.prizes_left) }},
-    low-prize {{ '%g'|format(weights.low_prize) }}, low-prize trend {{ '%g'|format(weights.low_prize_skew) }},
-    jackpot density {{ '%g'|format(weights.jackpot_density) }}; under {{ '%g'|format(weights.cutoff) }} → SEND BACK.
-    <a href="{{ url_for('weights_page') }}">Adjust →</a>
-  </p>
+      </div>
+    {% endif %}
+  {% endfor %}
 </div>
+{% else %}
+<div class="card">
+  <p class="muted">No games yet.
+    <a href="{{ url_for('inventory') }}">Set up your boxes →</a></p>
+</div>
+{% endif %}
 
 {% if new_games %}
 <div class="card">
-  <b>🆕 New games just on sale</b>
-  <div class="scroll"><table>
-    <thead><tr><th>#</th><th>Game</th><th>Price</th><th>Odds</th><th></th></tr></thead>
-    <tbody>
-    {% for g in new_games %}
-      <tr><td class="muted">{{ g.game_number }}</td><td>{{ g.name }}</td>
-        <td>{% if g.price %}${{ '%g'|format(g.price) }}{% else %}—{% endif %}</td>
-        <td>{% if g.odds_value %}1:{{ '%g'|format(g.odds_value) }}{% else %}—{% endif %}</td>
-        <td><form method="post" action="{{ url_for('inventory_add') }}">
-          <input type="hidden" name="game_number" value="{{ g.game_number }}">
-          <input type="hidden" name="next" value="{{ url_for('dashboard') }}">
-          <button style="padding:2px 8px;font-size:12px">+ carry</button></form></td></tr>
-    {% endfor %}
-    </tbody>
-  </table></div>
+  <b>New games just on sale</b>
+  <div style="margin-top:6px">
+  {% for g in new_games %}
+    <div class="pick">
+      <span class="pmid">
+        <a href="{{ url_for('game_page', game_number=g.game_number) }}" class="pname">{{ g.name }}</a>
+        <span class="psub">#{{ g.game_number }}{% if g.price %} · ${{ '%g'|format(g.price) }}{% endif %}
+          {%- if g.odds_value %} · wins 1 in {{ '%g'|format(g.odds_value) }}{% endif %}</span>
+      </span>
+      <form method="post" action="{{ url_for('inventory_add') }}">
+        <input type="hidden" name="game_number" value="{{ g.game_number }}">
+        <input type="hidden" name="next" value="{{ url_for('dashboard') }}">
+        <button style="padding:5px 12px;font-size:12px;width:auto">carry</button>
+      </form>
+    </div>
+  {% endfor %}
+  </div>
 </div>
 {% endif %}
 
@@ -119,19 +140,33 @@
 <div class="card">
   <b>Best games to bring in</b>
   {% for price, picks in bring_in.items() %}
-    <div style="margin-top:10px"><b class="muted">${{ '%g'|format(price) }}</b>
-    <table><tbody>
-    {% for r in picks %}
-      <tr><td class="muted">{{ r.game_number }}</td><td>{{ r.name }}</td>
-        <td>{% if r.odds_value %}1:{{ '%g'|format(r.odds_value) }}{% else %}—{% endif %}</td>
-        <td>{{ r.pct_all_str }} left</td>
-        <td><form method="post" action="{{ url_for('inventory_add') }}">
-          <input type="hidden" name="game_number" value="{{ r.game_number }}">
-          <input type="hidden" name="next" value="{{ url_for('dashboard') }}">
-          <button style="padding:2px 8px;font-size:12px">+ carry</button></form></td></tr>
-    {% endfor %}
-    </tbody></table></div>
+    <div style="margin-top:14px">
+      <b class="muted" style="font-size:13px">${{ '%g'|format(price) }} tickets</b>
+      {% for r in picks %}
+        <div class="pick">
+          <span class="pmid">
+            <a href="{{ url_for('game_page', game_number=r.game_number) }}" class="pname">{{ r.name }}</a>
+            <span class="psub">#{{ r.game_number }}
+              {%- if r.odds_value %} · wins 1 in {{ '%g'|format(r.odds_value) }}{% endif %}
+              {%- if r.pct_all_str %} · {{ r.pct_all_str }} of prizes left{% endif %}</span>
+          </span>
+          <form method="post" action="{{ url_for('inventory_add') }}">
+            <input type="hidden" name="game_number" value="{{ r.game_number }}">
+            <input type="hidden" name="next" value="{{ url_for('dashboard') }}">
+            <button style="padding:5px 12px;font-size:12px;width:auto">carry</button>
+          </form>
+        </div>
+      {% endfor %}
+    </div>
   {% endfor %}
 </div>
 {% endif %}
+
+<div class="card">
+  <p class="muted" style="font-size:12.5px;margin:0">
+    Scores weigh win odds, prizes left, small prizes, the small-prize trend and
+    jackpot density. Below {{ '%g'|format(weights.cutoff) }} means send back.
+    <a href="{{ url_for('weights_page') }}">Change what matters →</a>
+  </p>
+</div>
 {% endblock %}

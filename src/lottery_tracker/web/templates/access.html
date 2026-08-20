@@ -2,9 +2,19 @@
 {% block title %}Access log — Valley Lotto{% endblock %}
 {% block body %}
 <style>
+  .line { display:flex; gap:12px; align-items:flex-start; padding:11px 4px;
+          border-top:1px solid var(--line); }
+  .line:first-of-type { border-top:none; }
+  .lmid { flex:1; min-width:0; }
+  .lname { font-weight:650; font-size:14.5px; display:block; }
+  .lsub { display:block; font-size:12.5px; color:var(--muted); margin-top:3px;
+          word-break:break-all; line-height:1.45; }
+  .when { flex:none; font-size:11.5px; color:var(--muted); text-align:right;
+          white-space:nowrap; line-height:1.5; }
+</style>
+<style>
   td,th { font-size:13px; }
   .fail { color:var(--err); font-weight:700; }
-  .scroll { overflow-x:auto; }
   .mono { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; }
 </style>
 
@@ -22,38 +32,36 @@
   {% endif %}
 
   <b>By device (IP)</b>
-  <div class="scroll"><table>
-    <thead><tr><th>IP</th><th>Hits</th><th>Failed PINs</th><th>People</th><th>Last seen</th></tr></thead>
-    <tbody>
-    {% for e in summary %}
-      <tr>
-        <td class="mono">{{ e.ip }}</td>
-        <td>{{ e.hits }}</td>
-        <td {% if e.fails %}class="fail"{% endif %}>{{ e.fails }}</td>
-        <td>{{ e.people }}</td>
-        <td class="muted">{{ e.last.strftime('%Y-%m-%d %H:%M') }} UTC</td>
-      </tr>
-    {% endfor %}
-    </tbody>
-  </table></div>
+  {% for e in summary %}
+    <div class="line">
+      <span class="lmid">
+        <span class="lname mono">{{ e.ip }}</span>
+        <span class="lsub">{{ e.hits }} request{{ '' if e.hits == 1 else 's' }}
+          {%- if e.people %} · {{ e.people }}{% endif %}
+          {%- if e.fails %} · <span class="fail">{{ e.fails }} failed PIN{{ '' if e.fails == 1 else 's' }}</span>{% endif %}
+          <br>last seen {{ e.last.strftime('%Y-%m-%d %H:%M') }} UTC</span>
+      </span>
+    </div>
+  {% else %}
+    <p class="muted">Nothing logged yet.</p>
+  {% endfor %}
 </div>
 
 <div class="card">
   <b>Recent requests</b>
-  <div class="scroll"><table>
-    <thead><tr><th>When (UTC)</th><th>IP</th><th>Who</th><th>Request</th><th></th></tr></thead>
-    <tbody>
-    {% for r in rows %}
-      <tr>
-        <td class="muted">{{ r.at.strftime('%m-%d %H:%M:%S') }}</td>
-        <td class="mono">{{ r.ip }}</td>
-        <td>{{ r.staff_name or '—' }}</td>
-        <td class="muted">{{ r.method }} {{ r.path }}</td>
-        <td>{% if r.event == 'pin_fail' %}<span class="fail">FAILED PIN</span>
-            {% elif r.event == 'pin_ok' %}signed in{% endif %}</td>
-      </tr>
-    {% endfor %}
-    </tbody>
-  </table></div>
+  {% for r in rows %}
+    <div class="line">
+      <span class="lmid">
+        <span class="lname">{{ r.staff_name or 'not signed in' }}
+          {%- if r.event == 'pin_fail' %} <span class="fail">FAILED PIN</span>
+          {%- elif r.event == 'pin_ok' %} <span class="muted" style="font-weight:400">signed in</span>{% endif %}</span>
+        <span class="lsub mono">{{ r.ip }}</span>
+        <span class="lsub">{{ r.method }} {{ r.path }}</span>
+      </span>
+      <span class="when">{{ r.at.strftime('%m-%d') }}<br>{{ r.at.strftime('%H:%M:%S') }}</span>
+    </div>
+  {% else %}
+    <p class="muted">Nothing logged yet.</p>
+  {% endfor %}
 </div>
 {% endblock %}

@@ -39,7 +39,7 @@ def test_dashboard_requires_login(app):
 def test_dashboard_empty_inventory_renders(client):
     r = client.get("/dashboard")
     assert r.status_code == 200
-    assert b"No games in your inventory" in r.data
+    assert b"No games yet" in r.data
 
 
 def _carried_numbers(client):

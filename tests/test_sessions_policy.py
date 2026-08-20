@@ -158,7 +158,7 @@ def test_the_chain_overview_shows_todays_counts_per_store(client):
     client.post("/api/scan", json={"raw": "1744-0100200-005"})
     client.post("/api/commit")
     html = client.get("/overview").data.decode()
-    assert "Counts today" in html and "Missed nights" in html
+    assert "counts today" in html and "missed nights" in html
     # a brand-new store has no earlier days to have missed
     assert "of 6" not in html
 
