@@ -344,3 +344,70 @@ def test_deactivating_is_offered_as_the_softer_option(boss):
     html = boss.get("/admin/stores").data.decode()
     assert "Delete this store" in html
     assert "hides a store without losing anything" in html
+
+
+# --- starting a store's counting over ----------------------------------------
+
+def test_clearing_a_store_keeps_the_store_its_people_and_the_record(boss, app):
+    from sqlalchemy import select
+    from lottery_tracker.web.models import (Store, ScanRow, BoxRow, InventoryRow,
+                                            StaffRow, PackRow, AuditRow, User)
+    _mk_store(boss, "Fresh Start", "fresh")
+    boss.post("/admin/act-as", data={"store": "fresh"}, follow_redirects=True)
+    boss.post("/staff", data={"action": "add", "name": "Ann", "pin": "1212"},
+              follow_redirects=True)
+    boss.post("/backstock/receive", data={"label": "L1"}, follow_redirects=True)
+    boss.post("/api/backstock/receive", json={"raw": "1744-0100200-001"})
+    boss.post("/count/start", json={"session": "night"})
+    boss.post("/api/scan", json={"raw": "1750-0091798-010"})
+    for _ in range(3):
+        boss.post("/api/skip")
+    boss.post("/api/commit")
+
+    boss.post("/admin/stores", data={"action": "wipe", "slug": "fresh",
+                                     "confirm_name": "Fresh Start"},
+              follow_redirects=True)
+
+    Session = app.config["SESSION_FACTORY"]
+    with Session() as db:
+        for model in (ScanRow, BoxRow, InventoryRow, PackRow):
+            assert db.scalars(select(model).where(model.store == "fresh")).all() == [], model.__name__
+        assert db.get(Store, "fresh") is not None                      # the store stays
+        assert db.scalars(select(StaffRow).where(StaffRow.store == "fresh")).all()   # people stay
+        assert "store.wipe" in [a.action for a in db.scalars(select(AuditRow)).all()]
+
+
+def test_clearing_needs_the_name_typed_exactly(boss, app):
+    from sqlalchemy import select
+    from lottery_tracker.web.models import ScanRow
+    _mk_store(boss, "Careful Store", "careful")
+    boss.post("/admin/act-as", data={"store": "careful"}, follow_redirects=True)
+    boss.post("/count/start", json={"session": "night"})
+    boss.post("/api/scan", json={"raw": "1750-0091798-010"})
+    for _ in range(3):
+        boss.post("/api/skip")
+    boss.post("/api/commit")
+
+    r = boss.post("/admin/stores", data={"action": "wipe", "slug": "careful",
+                                         "confirm_name": "careful store!"},
+                  follow_redirects=True)
+    assert b"Nothing was cleared" in r.data
+    Session = app.config["SESSION_FACTORY"]
+    with Session() as db:
+        assert db.scalars(select(ScanRow).where(ScanRow.store == "careful")).all()
+
+
+def test_a_manager_cannot_clear_a_store(app):
+    from werkzeug.security import generate_password_hash
+    from lottery_tracker.web.models import User, Store
+    Session = app.config["SESSION_FACTORY"]
+    with Session() as db:
+        db.add(Store(slug="theirs", name="Theirs", slots="4"))
+        db.add(User(username="mgr3", password_hash=generate_password_hash("pw"),
+                    role="manager", store="theirs"))
+        db.commit()
+    c = app.test_client()
+    c.post("/login", data={"username": "mgr3", "password": "pw"})
+    r = c.post("/admin/stores", data={"action": "wipe", "slug": "theirs",
+                                      "confirm_name": "Theirs"})
+    assert r.status_code == 403

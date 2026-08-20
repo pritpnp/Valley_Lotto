@@ -62,8 +62,30 @@
     </div>
   </form>
 
-  {# Deliberately outside the form above: a delete must never ride along with a
+  {# Deliberately outside the form above: these must never ride along with a
      save, and HTML forms cannot nest. #}
+  {% set c = contents.get(st.slug, {}) %}
+
+  <details style="margin-top:14px">
+    <summary style="cursor:pointer;color:var(--warn);font-size:13px">Clear this store's counts and inventory</summary>
+    <p class="muted" style="font-size:13px;margin:10px 0 6px">
+      Start the counting over without losing the store. Clears
+      <b>{{ c.scans or 0 }}</b> scans, the box map, carried games, packs and
+      deliveries. <b>Keeps</b> the store, its managers, its staff PINs and the
+      change log — so who did what is still on the record.
+    </p>
+    <form method="post" class="row" style="gap:8px;align-items:flex-end"
+          onsubmit="return confirm('Clear all counts and inventory for {{ st.name }}? This cannot be undone.')">
+      <input type="hidden" name="action" value="wipe">
+      <input type="hidden" name="slug" value="{{ st.slug }}">
+      <div style="flex:2;min-width:200px">
+        <label>Type <b>{{ st.name }}</b> to confirm</label>
+        <input type="text" name="confirm_name" autocomplete="off" required>
+      </div>
+      <button type="submit" style="background:var(--warn-bg);color:var(--warn)">Clear data</button>
+    </form>
+  </details>
+
   <details style="margin-top:14px">
     <summary style="cursor:pointer;color:var(--err);font-size:13px">Delete this store</summary>
     <p class="muted" style="font-size:13px;margin:10px 0 6px">
@@ -71,7 +93,6 @@
       usually what you want for a location that's closed or not open yet.
       Deleting is permanent.
     </p>
-    {% set c = contents.get(st.slug, {}) %}
     {% if c.values()|select|list %}
       <p class="muted" style="font-size:13px;margin:0 0 8px">
         This will also delete:

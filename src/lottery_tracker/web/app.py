@@ -1523,6 +1523,16 @@ def _register_routes(app: Flask):
                     st.active = request.form.get("active") == "on"
                     _db().commit()
                     audit("store.update", st.slug)
+            elif act == "wipe":
+                st = _db().get(Store, request.form.get("slug") or "")
+                typed = (request.form.get("confirm_name") or "").strip()
+                if st is None:
+                    error = "That store no longer exists."
+                elif typed.lower() != (st.name or "").strip().lower():
+                    error = (f"Type the store's name exactly ({st.name}) to clear it. "
+                             "Nothing was cleared.")
+                else:
+                    error = _wipe_store_data(st)
             elif act == "delete":
                 st = _db().get(Store, request.form.get("slug") or "")
                 typed = (request.form.get("confirm_name") or "").strip()
@@ -1552,6 +1562,31 @@ def _register_routes(app: Flask):
             "staff": n(StaffRow), "packs": n(PackRow), "shipments": n(ShipmentRow),
             "managers": n(User),
         }
+
+    def _wipe_store_data(st: Store) -> str | None:
+        """Start a store's counting over, keeping the store itself.
+
+        The first weeks of a new store are tests, half-counts and mistakes, and
+        there has to be a way to draw a line under that without deleting the
+        store, its people or its history of who did what. So this clears the
+        operational data — counts, the box map, carried games, packs and
+        deliveries — and keeps the store profile, its managers, its staff PINs
+        and the audit trail, which records the clearing too.
+        """
+        slug = st.slug
+        counts = _store_contents(slug)
+
+        for model in (ScanRow, BoxRow, InventoryRow, PackRow, ShipmentRow, ActiveCount):
+            _db().query(model).filter(model.store == slug).delete(synchronize_session=False)
+        _db().commit()
+
+        audit("store.wipe",
+              f"{st.name}: cleared "
+              + ", ".join(f"{v} {k}" for k, v in counts.items()
+                          if v and k not in ("managers", "staff"))
+              if any(v for k, v in counts.items() if k not in ("managers", "staff"))
+              else f"{st.name}: nothing to clear")
+        return None
 
     def _delete_store(st: Store) -> str | None:
         """Delete a store and everything operational belonging to it.
