@@ -21,7 +21,9 @@ def test_recommendation_send_back_when_rating_low():
     # Weak odds AND mostly sold through -> low weighted rating -> send back.
     g = _g("1", status="active", top_prizes_total=10, top_prizes_remaining=1, odds="1:4.8")
     act, reason = recommendation(g, Thresholds())
-    assert act == "send_back" and "rating" in reason
+    assert act == "send_back"
+    # the reason is written for whoever reads it, not in shorthand
+    assert "out of 100" in reason and "keep it" in reason
 
 
 def test_recommendation_keep_when_healthy():
@@ -134,7 +136,7 @@ def test_the_low_prize_trend_is_stated_without_sigma():
     for z in (-2.7, -4.0, -7.0):
         phrase = _skew_phrase(z)
         assert "σ" not in phrase            # "prizes" has a z in it; sigma is the tell
-        assert "cheap prizes" in phrase and "faster" in phrase
+        assert "small prizes" in phrase and "faster" in phrase
     assert _skew_phrase(-7.0) != _skew_phrase(-2.7)      # the size still shows
 
 
@@ -148,7 +150,8 @@ def test_an_untrustworthy_density_says_why_not_just_noise():
                     {"value_num": 100, "original": 5000, "remaining": 2000,
                      "z": 0.1, "crit": 2.64, "significant": False}]
 
-    assert "only 5 top prizes" in _density_doubt(_Tiny())
+    assert "5 top prizes" in _density_doubt(_Tiny())
+    assert "too few to tell" in _density_doubt(_Tiny())
 
 
 def test_an_explanation_never_breaks_a_rating():
@@ -158,4 +161,4 @@ def test_an_explanation_never_breaks_a_rating():
         def tier_z_scores(self):
             raise RuntimeError("no data")
 
-    assert "ignored" in _density_doubt(_Broken())
+    assert "left out of the score" in _density_doubt(_Broken())

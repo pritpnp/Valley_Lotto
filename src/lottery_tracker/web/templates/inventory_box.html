@@ -27,16 +27,31 @@
   .factor:first-of-type { border-top:none; }
   .frow { display:flex; justify-content:space-between; gap:10px; align-items:baseline; }
   .fname { font-weight:600; font-size:14.5px; }
-  .fval { font-size:14px; color:var(--muted); text-align:right; }
+  .fval { font-size:14px; color:var(--muted); text-align:right; white-space:nowrap; }
   .bar { height:7px; border-radius:99px; background:var(--pending); margin-top:7px;
          overflow:hidden; }
   .bar i { display:block; height:100%; background:var(--ok); }
   .bar.low i { background:var(--err); }
   .bar.mid i { background:var(--warn); }
+  .fnote { font-size:13px; color:var(--ink); margin-top:7px; line-height:1.5; }
   .fmeta { font-size:11.5px; color:var(--muted); margin-top:5px; }
   .quiet { opacity:.6; }
   .tier { display:flex; justify-content:space-between; font-size:13.5px; padding:6px 0;
           border-top:1px dashed var(--line); }
+
+  .swap { border:1px solid var(--line); border-radius:12px; padding:12px; margin-top:10px; }
+  .swaphead { display:flex; justify-content:space-between; align-items:baseline; gap:10px; }
+  .swapname { font-weight:700; font-size:15.5px; }
+  .swapscore { font-size:24px; font-weight:800; color:var(--ok); }
+  .cmp { display:grid; grid-template-columns:1fr auto auto; gap:10px; align-items:baseline;
+         padding:7px 0; border-top:1px solid var(--line); font-size:14px; }
+  .cmp.head { border-top:none; font-size:11px; text-transform:uppercase;
+              letter-spacing:.5px; color:var(--muted); padding-bottom:2px; }
+  .cmp span:nth-child(2), .cmp span:nth-child(3) { min-width:74px; text-align:right; }
+  .clabel { color:var(--muted); }
+  .cmine { color:var(--muted); }
+  .cthem { font-weight:700; }
+  .cthem.up { color:var(--ok); }
 </style>
 
 <div class="card">
@@ -135,6 +150,64 @@
 </div>
 {% endif %}
 
+{% if detail and not do and detail.action == 'send_back' and detail.price %}
+<div class="card">
+  <b>Put this in instead</b>
+  <p class="muted" style="font-size:13px">
+    {% if detail.swaps.options %}
+      The best games you don't already carry
+      {%- if detail.swaps.price_note %}. {{ detail.swaps.price_note }}
+      {%- else %} at the same ${{ '%g'|format(detail.price) }} price{% endif %}.
+    {% else %}
+      Nothing at ${{ '%g'|format(detail.price) }} or either side of it is rated
+      well enough to be worth bringing in right now. Keep this one running until
+      something better appears, or move the box to a different price point.
+    {% endif %}
+  </p>
+
+  {% for o in detail.swaps.options %}
+  <div class="swap">
+    <div class="swaphead">
+      <span class="swapname">{{ o.name }}</span>
+      <span class="swapscore">{{ o.rating_str }}</span>
+    </div>
+    <div class="muted" style="font-size:12px;margin-bottom:8px">
+      #{{ o.game_number }} · ${{ '%g'|format(o.price) }}
+      {%- if o.price != detail.price %} <b>(${{ '%g'|format(o.price) }} box, not
+        ${{ '%g'|format(detail.price) }})</b>{% endif %}
+    </div>
+
+    {# Side by side, stacked — the comparison has to read on a phone. #}
+    <div class="cmp head"><span></span><span>now</span><span>swap</span></div>
+    {% for label, mine, theirs, better in [
+         ('Rating',      detail.mine.rating_str,   o.rating_str,
+          (o.rating or 0) > (detail.mine.rating or 0)),
+         ('Win odds',    (detail.mine.odds or '—')|replace(':', ' in '),
+                         (o.odds or '—')|replace(':', ' in '),
+          (o.odds_value or 99) < (detail.mine.odds_value or 99)),
+         ('Prizes left', detail.mine.pct_all_str,  o.pct_all_str,
+          (o.pct_all or 0) > (detail.mine.pct_all or 0)),
+         ('Low prizes',  detail.mine.low_prize_str, o.low_prize_str,
+          (o.low_prize_pct or 0) > (detail.mine.low_prize_pct or 0)) ] %}
+      <div class="cmp">
+        <span class="clabel">{{ label }}</span>
+        <span class="cmine">{{ mine }}</span>
+        <span class="cthem {{ 'up' if better else '' }}">{{ theirs }}{% if better %} ↑{% endif %}</span>
+      </div>
+    {% endfor %}
+
+    {% if can.boxes %}
+    <form method="post" style="margin-top:10px"
+          onsubmit="return confirm('Put {{ o.name }} in box {{ slot }}? This only changes the map — settle the old pack separately.')">
+      <input type="hidden" name="game_number" value="{{ o.game_number }}">
+      <button class="primary" type="submit" style="width:100%">Put this in box {{ slot }}</button>
+    </form>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
 {% if detail and not do %}
 <div class="card">
   <b>Why this box is {{ 'red' if detail.action == 'send_back' else 'green' }}</b>
@@ -160,10 +233,13 @@
           <div class="bar {{ 'low' if f.score < 40 else 'mid' if f.score < 65 else '' }}">
             <i style="width:{{ '%.0f'|format(f.score) }}%"></i>
           </div>
-          <div class="fmeta">scored {{ '%.0f'|format(f.score) }}/100 · {{ f.share }}% of the decision</div>
-        {% else %}
-          <div class="fmeta">no usable data — this one didn't vote</div>
         {% endif %}
+        {% if f.note %}<div class="fnote">{{ f.note[0]|upper }}{{ f.note[1:] }}</div>{% endif %}
+        <div class="fmeta">
+          {%- if f.voted %}Counted as {{ '%.0f'|format(f.score) }} out of 100, and made up
+            {{ f.share }}% of this game's score.
+          {%- else %}This was left out of the score.{% endif -%}
+        </div>
       </div>
     {% endfor %}
   </div>
@@ -184,30 +260,56 @@
   {% endif %}
 
   <details style="margin-top:14px">
-    <summary style="cursor:pointer;font-size:13px;color:var(--muted)">What do these mean?</summary>
-    <div class="muted" style="font-size:13px;line-height:1.6;margin-top:8px">
-      <p><b>Win odds</b> — PA's published chance of winning anything. Fixed for the
-        life of the game; it never moves.</p>
-      <p><b>Prizes left</b> — how much of the game is still unclaimed. Falls as the
-        game sells through.</p>
-      <p><b>Low prizes</b> — the small, common wins. These are what keep a regular
-        customer coming back, so they're weighted heavily.</p>
-      <p><b>Low-prize trend</b> — whether those small prizes are running out faster
-        than the game as a whole. A game can look healthy on "prizes left" while
-        the cheap wins have quietly gone first, which is what customers notice.
-        Only counted when the gap is too large to be luck.</p>
-      <p><b>Jackpot density</b> — a <b>ratio</b>, not a count: the share of top
-        prizes still out there divided by how much of the game is still unsold.
-        Above 1.00× means the big prizes are lasting longer than the game's
-        sell-through would predict — good for a jackpot hunter. Below 1.00× means
-        they were claimed early and the game is picked over.
-        Most games say <b>ignored</b> here, and that's the statistic being honest,
-        not a setting being fussy: PA usually prints only 5 (sometimes 3) top
-        prizes, and with numbers that small the ratio swings on pure chance. At 4
-        or fewer it couldn't be meaningful even if every single one were still
-        unclaimed. So the figure is shown with the reason it can't be trusted,
-        rather than being allowed to move the score. In the current catalog just
-        3 of 67 active games clear that bar.</p>
+    <summary style="cursor:pointer;font-size:13.5px;color:var(--accent);font-weight:600">
+      What do these five things mean?</summary>
+    <div class="muted" style="font-size:13.5px;line-height:1.65;margin-top:10px">
+      <p>The score out of 100 is a weighted average of the five things below.
+        Anything at or above the keep line is worth carrying; below it, the game
+        is doing worse for you than the space it takes up.</p>
+
+      <p><b>Win odds.</b> How often a ticket wins anything at all. "1 in 3.17"
+        means roughly one ticket in every three is a winner, though most of those
+        wins are small. Pennsylvania sets this when the game is printed and it
+        never changes for the life of the game.</p>
+
+      <p><b>Prizes left.</b> Out of every prize this game was printed with, how
+        many have not been claimed yet. A brand new game is near 100%. As people
+        buy and win, it falls. A game down at 20% has had most of its good tickets
+        taken already, so a customer buying one now has less to win.</p>
+
+      <p><b>Low-prize stock.</b> The same idea, but counting only the small,
+        common prizes — the five and ten dollar wins. These matter more than the
+        jackpot for a store like yours, because they are what a regular customer
+        actually wins, and winning a little is what brings them back tomorrow. A
+        game can still have its million-dollar prize sitting there while every
+        small prize is gone, and that game will feel dead at the counter.</p>
+
+      <p><b>Low-prize trend.</b> Whether those small prizes are disappearing
+        faster than the game as a whole. If a game is 50% sold but only 20% of its
+        small prizes are left, the cheap wins went first and what remains is worse
+        than the headline number suggests. We only report this when the gap is far
+        too large to be a coincidence.</p>
+
+      <p><b>Jackpot density.</b> This compares two things: how many of the top
+        prizes are still unclaimed, against how much of the whole game is still
+        unsold. If a game is half sold and half its top prizes are gone, that is
+        normal, and it shows as <b>1.00 times</b>. Above 1.00 means the big prizes
+        have lasted longer than usual, so more of them are still out there than you
+        would expect. Below 1.00 means they went early and the game is picked over
+        at the top.</p>
+
+      <p>You will notice this one is nearly always left out of the score, and
+        there is a good reason. Pennsylvania usually prints only five top prizes in
+        a game, sometimes as few as three. With numbers that small, one person
+        winning changes the figure enormously, and that tells you nothing about the
+        game — only about one person's luck. So the number is shown to you, but it
+        is not allowed to affect the score unless the game printed enough top
+        prizes for the figure to mean something. In the current Pennsylvania list,
+        only 3 games out of 67 have enough.</p>
+
+      <p>Where a factor says <b>left out of the score</b>, the remaining factors
+        are simply reweighted between them. A missing piece of information never
+        counts against a game.</p>
     </div>
   </details>
 </div>

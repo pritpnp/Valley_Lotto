@@ -69,7 +69,7 @@ def test_the_rating_breakdown_is_on_the_box_page(client, a_real_game):
     _fill(client, "1", a_real_game)
     html = client.get("/inventory/box/1").data.decode()
     assert "Why this box is" in html
-    assert "of the decision" in html               # each factor's share
+    assert "of this game&#39;s score" in html or "of this game's score" in html
     assert "Win odds" in html and "Low-prize stock" in html
     assert "Prizes left" in html
 
@@ -81,13 +81,13 @@ def test_the_breakdown_explains_density_rather_than_just_printing_it(client, a_r
     assert "ratio" in html
     # says WHY it's usually ignored, rather than just labelling it noise
     assert "top\n        prizes" in html or "top prizes" in html
-    assert "swings on pure chance" in html
+    assert "too few to tell" in html or "swings on pure chance" in html
 
 
 def test_a_factor_with_no_data_says_so_instead_of_scoring_zero(client, a_real_game):
     _fill(client, "1", a_real_game)
     html = client.get("/inventory/box/1").data.decode()
-    assert "didn&#39;t vote" in html or "didn't vote" in html
+    assert "left out of the score" in html
 
 
 def test_a_game_that_left_the_catalog_is_explained_not_crashed(client):
@@ -129,3 +129,103 @@ def test_the_server_reports_which_boxes_are_still_empty(client):
     s = client.post("/api/scan", json={"raw": "1744-0100200-005"}).get_json()
     assert s["walk_done"] is True
     assert s["pending"] == ["2", "3"]        # what the guard lists
+
+
+# --- what to put in instead, when a box is red -------------------------------
+
+def _prices():
+    raw = json.loads(pathlib.Path("data/state.json").read_text())
+    games = raw.get("games") or raw
+    return sorted({g["price"] for g in games.values()
+                   if g.get("status") == "active" and g.get("price")})
+
+
+def _a_send_back_game():
+    """A game the rating engine actually wants pulled."""
+    from lottery_app.pa_data import load_catalog, store_rows
+    from lottery_tracker.config import Config
+    cat = load_catalog("data/state.json")
+    cfg = Config.load("config.yaml")
+    for num, g in cat.games.items():
+        if g.status != "active":
+            continue
+        row = store_rows(cat, {num}, cfg.thresholds, cfg.rating_weights)[0]
+        if row["action"] == "send_back" and g.price:
+            return num, g.price
+    pytest.skip("no send-back game in the bundled catalog")
+
+
+def test_a_red_box_suggests_replacements_at_the_same_price(client):
+    num, price = _a_send_back_game()
+    _fill(client, "1", num)
+    html = client.get("/inventory/box/1").data.decode()
+    assert "Put this in instead" in html
+    assert f"the same ${price:g} price" in html
+    assert "Put this in box 1" in html
+
+
+def test_a_green_box_is_not_told_to_swap(client, a_real_game):
+    from lottery_app.pa_data import load_catalog, store_rows
+    from lottery_tracker.config import Config
+    cat = load_catalog("data/state.json")
+    cfg = Config.load("config.yaml")
+    keep = next((n for n, g in cat.games.items()
+                 if g.status == "active"
+                 and store_rows(cat, {n}, cfg.thresholds, cfg.rating_weights)[0]["action"] == "keep"),
+                None)
+    if keep is None:
+        pytest.skip("no keep-rated game in the bundled catalog")
+    _fill(client, "2", keep)
+    assert "Put this in instead" not in client.get("/inventory/box/2").data.decode()
+
+
+def test_the_comparison_shows_both_games_side_by_side(client):
+    num, _ = _a_send_back_game()
+    _fill(client, "1", num)
+    html = client.get("/inventory/box/1").data.decode()
+    for label in ("Rating", "Win odds", "Prizes left", "Low prizes"):
+        assert label in html, label
+    assert ">now<" in html and ">swap<" in html
+
+
+def test_at_most_two_suggestions_so_it_stays_a_choice(client):
+    num, _ = _a_send_back_game()
+    _fill(client, "1", num)
+    html = client.get("/inventory/box/1").data.decode()
+    assert html.count('class="swap"') <= 2
+
+
+def test_it_steps_one_price_up_or_down_when_that_price_is_exhausted(app, client):
+    """Carrying every good game at a price leaves nothing to swap to, so the
+    suggestion moves one rung along the ladder rather than giving up."""
+    from lottery_app.pa_data import load_catalog
+    cat = load_catalog("data/state.json")
+    prices = _prices()
+    num, price = _a_send_back_game()
+    if price == prices[0] and len(prices) < 2:
+        pytest.skip("only one price point")
+
+    _fill(client, "1", num)
+    # carry every other game at this price, so no same-price swap is left
+    others = " ".join(n for n, g in cat.games.items()
+                      if g.status == "active" and g.price == price and n != num)
+    client.post("/inventory/add", data={"game_number": others}, follow_redirects=True)
+
+    html = client.get("/inventory/box/1").data.decode()
+    assert f"nothing worth carrying at ${price:g}" in html
+    assert "Put this in instead" in html
+
+
+def test_a_swap_can_be_applied_straight_from_the_comparison(client):
+    num, _ = _a_send_back_game()
+    _fill(client, "1", num)
+    html = client.get("/inventory/box/1").data.decode()
+    swap = html.split('class="swap"')[1]
+    other = swap.split('name="game_number" value="')[1].split('"')[0]
+    client.post("/inventory/box/1", data={"game_number": other}, follow_redirects=True)
+
+    from lottery_tracker.web.models import BoxRow
+    from sqlalchemy import select
+    with client.application.config["SESSION_FACTORY"]() as db:
+        row = db.scalar(select(BoxRow).where(BoxRow.slot == "1"))
+    assert row.game_number == other

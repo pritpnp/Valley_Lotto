@@ -1853,6 +1853,56 @@ def _register_routes(app: Flask):
                                detail=detail, do=request.args.get("do") or "",
                                games=cat.games)
 
+    def _price_ladder() -> list:
+        """The price points PA actually sells at right now, cheapest first."""
+        return sorted({g.price for g in _catalog().games.values()
+                       if g.status == "active" and g.price})
+
+    def _row_for(game_number: str) -> dict | None:
+        """One game flattened the same way the dashboard flattens it."""
+        weights, cfg = _effective_weights()
+        rows = pa_data.store_rows(_catalog(), {game_number}, cfg.thresholds, weights)
+        return rows[0] if rows else None
+
+    def _swap_options(price, n: int = 2) -> dict:
+        """The best games to put in this box instead.
+
+        Same price first, because a $10 slot earns $10 a ticket and swapping it
+        for a $2 game quietly cuts what that box takes. When nothing at that price
+        is worth carrying — which is itself worth knowing, it means the whole
+        price point is picked over — step one rung down or up the ladder and take
+        the best from there.
+        """
+        weights, cfg = _effective_weights()
+        cat, inv = _catalog(), _inventory()
+        if not price:
+            return {"options": [], "price_note": ""}
+
+        same = pa_data.swap_targets(cat, inv, price, cfg.thresholds, weights, n=n)
+        if same:
+            return {"options": same[:n], "price_note": ""}
+
+        ladder = _price_ladder()
+        near = []
+        if price in ladder:
+            i = ladder.index(price)
+            near = [p for p in (ladder[i - 1] if i > 0 else None,
+                                ladder[i + 1] if i + 1 < len(ladder) else None) if p]
+        else:   # an unusual price: fall back to the closest points either side
+            near = sorted(ladder, key=lambda p: abs(p - price))[:2]
+
+        pooled = []
+        for p2 in near:
+            for row in pa_data.swap_targets(cat, inv, p2, cfg.thresholds, weights, n=n):
+                pooled.append(row)
+        pooled.sort(key=lambda r: r["rating"], reverse=True)
+        note = ""
+        if pooled:
+            shown = sorted({r["price"] for r in pooled[:n]})
+            note = ("nothing worth carrying at ${:g} — these are ${}"
+                    .format(price, " and $".join(f"{p:g}" for p in shown)))
+        return {"options": pooled[:n], "price_note": note}
+
     def _game_detail(game_number: str | None) -> dict | None:
         """Everything behind one game's colour: the call, the rating, and each
         factor that voted — with the ones carrying no weight said so plainly."""
@@ -1869,6 +1919,7 @@ def _register_routes(app: Flask):
                     "reason": "not in the PA catalog any more — most likely ended; "
                               "check it and pull it",
                     "cutoff": weights.cutoff, "tiers": [], "price": None, "odds": None,
+                    "mine": {}, "swaps": {"options": [], "price_note": ""},
                     "status": "unknown", "sell_through": None,
                     "top_prize_value": None, "top_prizes_remaining": None,
                     "jackpot_density": None, "jackpot_significant": False,
@@ -1881,16 +1932,24 @@ def _register_routes(app: Flask):
         for f in factors:
             rows.append({
                 "key": f.key, "label": f.label, "score": f.score, "detail": f.detail,
+                "note": f.note,
                 # Share of the decision this factor actually carried. A factor with
                 # no data doesn't drag the game down — it simply doesn't vote.
                 "share": (round(100 * f.weight / total) if f.score is not None
                           and f.weight > 0 and total else 0),
                 "voted": f.score is not None and f.weight > 0,
             })
+        # Only for a game on its way out: "what should go in here instead" is the
+        # question a red box actually raises.
+        swaps = _swap_options(g.price) if action == "send_back" else {"options": [],
+                                                                      "price_note": ""}
+        mine = _row_for(game_number) or {}
+
         return {
             "game_number": game_number, "name": g.name, "price": g.price,
             "odds": g.odds, "status": g.status, "action": action, "reason": reason,
             "rating": rating, "cutoff": weights.cutoff, "factors": rows,
+            "mine": mine, "swaps": swaps,
             "tiers": g.tier_health(), "sell_through": g.sell_through_pct,
             "top_prize_value": g.top_prize_value,
             "top_prizes_remaining": g.top_prizes_remaining,
