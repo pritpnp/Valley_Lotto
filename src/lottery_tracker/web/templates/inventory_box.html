@@ -35,7 +35,7 @@
 <div class="card">
   <div class="row" style="justify-content:space-between;align-items:baseline">
     <h2 style="margin:0">Box {{ slot }}</h2>
-    <a href="{{ url_for('inventory') }}" style="font-size:13px">← all boxes</a>
+    <a href="{{ url_for('inventory') }}" style="font-size:13px">← active inventory</a>
   </div>
   <p class="muted" style="font-size:13.5px;margin:6px 0 0">
     {% if current %}Holding <b>#{{ current }}</b>

@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Back stock — Valley Lotto{% endblock %}
+{% block title %}Unopened packs — {{ site_title }}{% endblock %}
 {% block body %}
 <style>
   .acts { display:flex; gap:8px; flex-wrap:wrap; margin:10px 0 4px; }
@@ -26,21 +26,21 @@
 </style>
 
 <div class="card">
-  <h2 style="margin:0 0 4px">Back stock</h2>
+  <h2 style="margin:0 0 4px">Unopened packs</h2>
   <p class="muted" style="font-size:13px">
-    The unopened packs in the back room. Counting them each night is also what
+    Packs you own that aren't in a box yet. Counting them each night is also what
     catches a pack that went into a box and sold out between two counts.
   </p>
 
   <div class="acts">
-    <div class="stat"><div class="n">{{ view.total_packs }}</div><div class="l">packs held</div></div>
+    <div class="stat"><div class="n">{{ view.total_packs }}</div><div class="l">unopened packs</div></div>
     <div class="stat warn"><div class="n">{{ view.short|length }}</div><div class="l">nothing behind them</div></div>
     <div class="stat send"><div class="n">{{ view.send_back|length }}</div><div class="l">should go back</div></div>
   </div>
 
   <div class="acts">
     {% if can.backstock %}
-      <a href="{{ url_for('backstock_count') }}"><button class="primary">Count the back room</button></a>
+      <a href="{{ url_for('backstock_count') }}"><button class="primary">Count unopened packs</button></a>
     {% endif %}
     {% if can.receive %}
       <a href="{{ url_for('backstock_receive') }}"><button>New shipment</button></a>
@@ -112,7 +112,7 @@
       {% endif %}
     </div>
   {% else %}
-    <p class="muted">Nothing recorded yet. Log a shipment, or count the back room.</p>
+    <p class="muted">Nothing recorded yet. Log a shipment, or count your unopened packs.</p>
   {% endfor %}
 </div>
 
@@ -151,7 +151,7 @@
         <td>{{ pk.settled_on }}</td>
         <td><b>{{ pk.game_number }}</b></td>
         <td class="muted">{{ pk.pack or '—' }}</td>
-        <td class="muted">{{ 'box ' ~ pk.slot if pk.slot else 'back stock' }}</td>
+        <td class="muted">{{ 'box ' ~ pk.slot if pk.slot else 'unopened packs' }}</td>
         <td class="muted">{{ reason_text.get(pk.settle_reason, pk.settle_reason) }}{% if pk.settle_note %} — {{ pk.settle_note }}{% endif %}</td>
         <td class="muted">{{ pk.settled_by or '—' }}</td>
         {% if is_superadmin %}

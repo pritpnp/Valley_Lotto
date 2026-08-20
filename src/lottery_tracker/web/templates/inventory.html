@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Boxes — {{ site_title }}{% endblock %}
+{% block title %}Active inventory — {{ site_title }}{% endblock %}
 {% block body %}
 <style>
   .boxgrid { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:10px; }
@@ -20,7 +20,7 @@
 
 <div class="card">
   <div class="row" style="justify-content:space-between;align-items:baseline">
-    <h2 style="margin:0">Boxes</h2>
+    <h2 style="margin:0">Active inventory</h2>
     <span class="muted" style="font-size:13px">{{ filled }} of {{ total }} filled</span>
   </div>
   <p class="muted" style="font-size:13px">

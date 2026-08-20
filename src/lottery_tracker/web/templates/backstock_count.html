@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Count the back room — Valley Lotto{% endblock %}
+{% block title %}Count unopened packs — {{ site_title }}{% endblock %}
 {% block body %}
 <style>
   .big { font-size:40px; font-weight:800; line-height:1.1; }
@@ -13,7 +13,7 @@
 </style>
 
 <div class="card">
-  <h2 style="margin:0 0 4px">Count the back room</h2>
+  <h2 style="margin:0 0 4px">Count unopened packs</h2>
   <p class="muted" style="font-size:13px">
     Scan every unopened pack, in any order. Whatever you don't scan is taken to
     have gone into a box — which is how a pack that opened and sold out between
@@ -29,7 +29,7 @@
   {% include "_scanner.html" %}
 
   <form method="post" action="{{ url_for('backstock_count_finish') }}" style="margin-top:14px"
-        onsubmit="return confirm('Finish? Any pack you did not scan will be recorded as no longer in back stock.')">
+        onsubmit="return confirm('Finish? Any pack you did not scan will be recorded as no longer unopened.')">
     <button class="primary">Finish the count</button>
   </form>
 </div>
