@@ -23,6 +23,8 @@
   .box.current { outline:2px solid var(--accent); }
   .box.fixing { outline:2px dashed var(--warn); }
   .hint { font-size:13px; color:var(--muted); }
+  .scanhelp { font-size:12px; color:var(--muted); margin-top:8px; }
+  .scanhelp a { color:var(--accent); }
   .done-banner { background:var(--ok-bg); }
   .sessions { display:flex; flex-direction:column; gap:10px; }
   .sess { display:block; width:100%; text-align:left; padding:14px;
@@ -130,12 +132,16 @@
            nothing until the soft keyboard was opened. This is a real input that
            stays focused, with inputmode="none" so Android does NOT raise the
            soft keyboard for it. Tap ⌨ to switch it to a normal field and type. -->
-      <input id="scanBox" class="scanbox" type="text" inputmode="none"
+      <input id="scanBox" class="scanbox" type="text"
              autocomplete="off" autocapitalize="off" autocorrect="off"
              spellcheck="false" placeholder="scan here…" aria-label="Scan a ticket">
       <button type="button" id="kbBtn" class="kb" onclick="toggleKeyboard()"
               aria-label="Type by hand">⌨</button>
     </div>
+    <p class="scanhelp">
+      Scanning doing nothing? <a href="#" onclick="nextScanMode();return false">Try another way</a>
+      <span id="scanModeName"></span>
+    </p>
     <div id="result" class="flash" style="display:none"></div>
     <div class="row" style="margin-top:12px">
       <button onclick="back()">◀ Back</button>
@@ -154,6 +160,7 @@
   </div>
 </div>
 
+<script src="{{ url_for('static', filename='scan-field.js') }}"></script>
 <script>
 const INITIAL = {{ state|tojson }};
 let state = INITIAL;
@@ -291,21 +298,11 @@ function cancelFix(){ fixSlot = null; applyState(state); }
 // server let both read the same half-finished count and write over each other,
 // which surfaced as an "internal server error" and a white screen after an
 // accidental double scan. Everything queues behind the request in flight.
-let inFlight = null, lastRaw = "", lastAt = 0, debounce;
+let inFlight = null;
 
-async function submitScan(raw){
-  raw = (raw||"").trim();
-  clearTimeout(debounce);
-  if (!raw) return;
-  const t = Date.now();
-  // An identical scan within a second is normally the gun firing twice — but
-  // when a duplicate game is waiting to be confirmed, scanning the same ticket
-  // again IS the confirmation, so it has to be let through.
-  const confirming = state && state.step && state.step.needs_confirm;
-  if (!confirming && raw === lastRaw && (t - lastAt) < 1000) return;
-  lastRaw = raw; lastAt = t;
+function submitScan(raw){
   // Chain onto whatever is running so scans are applied in the order they were
-  // made, never concurrently.
+  // made, never concurrently — two at once used to corrupt the count.
   inFlight = Promise.resolve(inFlight).catch(() => {}).then(() => sendScan(raw));
   return inFlight;
 }
@@ -327,65 +324,33 @@ async function sendScan(raw){
 }
 
 // --- the scan gun -----------------------------------------------------------
-// A retail gun is a keyboard: it types the barcode fast, usually with an Enter
-// at the end. Keystrokes only reach a page through a FOCUSED element, so the
-// scan field is a real input that we keep focused — with inputmode="none" so
-// Android doesn't raise the soft keyboard for it. (The previous version listened
-// on the document with nothing focused, which worked on a desktop but meant the
-// app ignored the gun until you opened the keyboard by hand.)
-const box = $("scanBox");
-let manualOpen = false;
-
-function keepFocus(){
-  if (manualOpen || document.activeElement === box) return;
-  try { box.focus({preventScroll: true}); } catch(e) { box.focus(); }
-}
-
-function maybeSubmit(){
-  const raw = box.value.replace(/[^0-9-]/g, "");
-  if (raw !== box.value) box.value = raw;
-  clearTimeout(debounce);
-  // Fire once we have at least the 14 printed digits. Real guns emit more (16
-  // observed: 14 + check digits), so wait a beat for the rest to land.
-  if (/^\d{14,}$/.test(raw.replace(/-/g, ""))) debounce = setTimeout(flush, 180);
-}
-
-function flush(){
-  clearTimeout(debounce);
-  const raw = box.value.trim();
-  box.value = "";
-  if (raw) submitScan(raw);
-}
-
-box.addEventListener("input", maybeSubmit);
-box.addEventListener("keydown", e => {
-  if (e.key === "Enter") { e.preventDefault(); flush(); }
-});
-// A tap anywhere, or anything else stealing focus, hands it straight back.
-box.addEventListener("blur", () => setTimeout(keepFocus, 50));
-document.addEventListener("click", e => { if (!e.target.closest("button, a, input")) keepFocus(); });
-window.addEventListener("focus", keepFocus);
-document.addEventListener("visibilitychange", () => { if (!document.hidden) keepFocus(); });
-
-// Belt and braces: if some device still delivers keystrokes to the document
-// rather than the field, they are typed into the field instead of being lost.
-document.addEventListener("keydown", e => {
-  if (manualOpen || document.activeElement === box) return;
-  if (e.key === "Enter") { e.preventDefault(); flush(); return; }
-  if (e.key.length !== 1 || !/[0-9-]/.test(e.key)) return;
-  box.value += e.key; maybeSubmit(); e.preventDefault();
+// How a phone can have a focused field without its keyboard is device-specific,
+// so that lives in static/scan-field.js along with the per-device setting.
+const field = new ScanField(document.getElementById("scanBox"), submitScan, {
+  // A duplicate game is confirmed by scanning the very same ticket again, which
+  // is otherwise exactly what the double-fire guard throws away.
+  allowRepeat: () => !!(state && state.step && state.step.needs_confirm),
 });
 
-// --- manual entry, only when asked for --------------------------------------
+function keepFocus(){ if (field) field.focus(); }
+
 function toggleKeyboard(){
-  manualOpen = !manualOpen;
-  // Switching inputmode is what raises (or suppresses) the Android keyboard;
-  // the field itself is the same one the gun types into.
-  box.setAttribute("inputmode", manualOpen ? "numeric" : "none");
-  box.placeholder = manualOpen ? "type the number, then Enter" : "scan here…";
-  $("kbBtn").classList.toggle("primary", manualOpen);
-  box.blur();
-  setTimeout(() => box.focus(), 0);
+  field.setManual(!field.manual);
+  $("kbBtn").classList.toggle("primary", field.manual);
+}
+
+function showMode(){
+  $("scanModeName").textContent = "(now: " + scanModeInfo().label + ")";
+}
+
+function nextScanMode(){
+  const m = cycleScanMode();
+  field.applyMode();
+  showMode();
+  const res = $("result");
+  res.style.display = "block";
+  res.className = "flash ok";
+  res.textContent = m.label + " — " + m.hint;
 }
 
 async function back(){ applyState(await postJSON("{{ url_for('api_back') }}")); }
@@ -410,6 +375,7 @@ async function saveNow(){
 
 // On load: offer the unfinished count if there is one, otherwise ask which
 // count this is. Never guess.
+showMode();
 if (document.getElementById("resume")) {
   $("start").style.display = "none";
   $("live").style.display = "none";

@@ -229,3 +229,40 @@ def test_a_swap_can_be_applied_straight_from_the_comparison(client):
     with client.application.config["SESSION_FACTORY"]() as db:
         row = db.scalar(select(BoxRow).where(BoxRow.slot == "1"))
     assert row.game_number == other
+
+
+# --- the scanner check -------------------------------------------------------
+
+def test_the_scanner_check_reads_a_code_without_saving_it(client):
+    r = client.post("/api/scan-check", json={"raw": "1750-0091798-010"}).get_json()
+    assert r["read"] is True
+    assert (r["game"], r["pack"], r["ticket"]) == ("1750", "0091798", 10)
+    assert r["digits"] == "17500091798010" and r["length"] == 14
+
+    from lottery_tracker.web.models import ScanRow
+    from sqlalchemy import select
+    with client.application.config["SESSION_FACTORY"]() as db:
+        assert db.scalars(select(ScanRow)).all() == []
+
+
+def test_it_shows_the_extra_digits_a_gun_adds(client):
+    r = client.post("/api/scan-check", json={"raw": "1750009179801007"}).get_json()
+    assert r["ticket"] == 10          # not 107 — the tail is check digits
+    assert r["extra"] == "07"
+    assert r["length"] == 16
+
+
+def test_it_explains_a_code_it_cannot_read(client):
+    r = client.post("/api/scan-check", json={"raw": "hello"}).get_json()
+    assert r["read"] is False and "not read as a ticket" in r["message"]
+
+
+def test_the_page_lists_what_was_actually_saved(client):
+    client.post("/count/start", json={"session": "night"})
+    client.post("/api/scan", json={"raw": "1750-0091798-010"})
+    client.post("/api/skip"); client.post("/api/skip"); client.post("/api/skip")
+    client.post("/api/commit")
+    html = client.get("/scan-check").data.decode()
+    assert "Last 1 saved scans" in html
+    assert "1750-0091798-010" in html      # the raw characters, for comparison
+    assert "010" in html

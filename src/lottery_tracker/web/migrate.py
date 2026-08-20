@@ -132,6 +132,35 @@ def enable_rls(engine) -> list:
     return done
 
 
+def clear_invented_open_dates(engine) -> int:
+    """Undo open-dates that a count invented rather than observed.
+
+    A first release of the pack tracking dated every pack a count met as "opened
+    today", including packs that had been sitting in their boxes for weeks. The
+    daily report reads that date as evidence a pack was consumed, so a store's
+    very first count credited itself with a full pack of sales in every box at
+    once — around 1,800 tickets for a 48-box store.
+
+    The rows to undo are exactly identifiable: created by inference, never part of
+    a delivery, never seen in a back-room count. A pack we genuinely watched leave
+    back stock has a shipment or a received date and is left alone.
+    """
+    from .models import PackRow
+    with Session(engine) as db:
+        rows = db.scalars(select(PackRow).where(
+            PackRow.source == "inferred",
+            PackRow.opened_on.is_not(None),
+            PackRow.shipment_id.is_(None),
+            PackRow.received_on.is_(None),
+            PackRow.last_seen_on.is_(None))).all()
+        for row in rows:
+            row.opened_on = None
+        if rows:
+            db.commit()
+            log.info("cleared %d invented pack open-dates", len(rows))
+        return len(rows)
+
+
 def ensure_schema(engine, *, default_slug: str, default_name: str,
                   timezone: str = "America/New_York", slots: str = "48") -> dict:
     """Create tables, add new columns, then backfill. Safe on every boot."""
@@ -142,5 +171,6 @@ def ensure_schema(engine, *, default_slug: str, default_name: str,
     relax_legacy_not_null(engine)
     result = backfill(engine, default_slug, default_name, timezone, slots)
     result["added_columns"] = added
+    result["open_dates_cleared"] = clear_invented_open_dates(engine)
     result["rls_enabled"] = enable_rls(engine)
     return result

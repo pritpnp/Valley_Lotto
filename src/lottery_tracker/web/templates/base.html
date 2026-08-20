@@ -182,6 +182,7 @@
 
     <div class="group">Look up</div>
     <a class="item" href="{{ url_for('catalog') }}">Full PA catalog</a>
+    <a class="item" href="{{ url_for('scan_check') }}">Scanner check</a>
     {% if can.history %}<a class="item" href="{{ url_for('history') }}">History</a>{% endif %}
 
     {% if can.staff or can.pricing or can.access %}

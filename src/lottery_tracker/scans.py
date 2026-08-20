@@ -409,7 +409,12 @@ def sold_over_sequence(scans: list, *, price: Optional[float] = None,
 
     # Packs that came out of backstock but never appeared in a scan sold in
     # full, unseen. Without this they are simply missing from the day.
-    if packs_opened and size:
+    #
+    # Only when the box was actually seen to change pack, though. A box sitting on
+    # one pack all day sold what its ticket numbers say it sold, whatever back
+    # stock did — a pack moving to a shelf is not a pack being consumed, and
+    # counting it as one would manufacture sales that never happened.
+    if packs_opened and size and pack_changes >= 1:
         unseen = packs_opened - pack_changes
         if unseen > 0:
             sold += unseen * size

@@ -838,16 +838,25 @@ def _register_routes(app: Flask):
                               scanned_at=sc.scanned_at, user_email=sc.user, raw=sc.raw))
         _db().commit()
 
-        # A scan is also proof that a pack has been opened. Recording that here
-        # means back stock stays honest even when nobody scans the back room,
-        # and a pack going straight from delivery to box is never "missing".
+        # A scan is also proof that a pack is open. Recording that keeps back stock
+        # honest even when nobody counts the back room.
+        #
+        # But "open" and "opened TODAY" are different claims, and only the second
+        # one implies anything sold. A pack we watched leave back stock was opened
+        # today. A pack a count simply met for the first time has been sitting in
+        # that box for who knows how long — dating it today would make the report
+        # believe a fresh pack was consumed, which on a store's very first count
+        # invents a full pack of sales for every box at once.
         today = _today(_store_tz())
         for sc in scans:
             row = _pack_row(sc.game_number, sc.pack, create=True, source="inferred")
-            if row.state != "settled":
-                row.state = "active"
-                row.opened_on = row.opened_on or today
-                row.slot = sc.slot or row.slot
+            if row.state == "settled":
+                continue
+            was_held = row.state == "backstock"
+            row.state = "active"
+            row.slot = sc.slot or row.slot
+            if was_held and not row.opened_on:
+                row.opened_on = today       # we saw it leave the back room
         _db().commit()
 
         # A count IS an inventory check: each scan proves which game is in which
@@ -865,6 +874,41 @@ def _register_routes(app: Flask):
             audit("box.autofill", f"{moved} box(es) updated from the count")
         _clear_session()
         return jsonify({"committed": len(scans), "date": _today(_store_tz())})
+
+    # --- scanner check ----------------------------------------------------
+    @app.get("/scan-check")
+    @staff_required
+    def scan_check():
+        """Scan anything and see exactly what the app read, without recording it.
+
+        Guns differ between makes and between stores, and a number that looks
+        wrong on a screen is impossible to argue with unless you can see the
+        characters the gun actually sent. This shows the raw string alongside the
+        reading, and lists the last scans this store saved, for the same reason.
+        """
+        recent = _db().scalars(select(ScanRow).where(ScanRow.store == _store())
+                               .order_by(ScanRow.id.desc()).limit(20)).all()
+        return render_template("scan_check.html", recent=recent)
+
+    @app.post("/api/scan-check")
+    @staff_required
+    def api_scan_check():
+        """Parse a scan and report it. Deliberately saves nothing."""
+        raw = (request.get_json(silent=True) or {}).get("raw", "")
+        digits = re.sub(r"\D", "", raw)
+        out = {"ok": True, "raw": raw, "digits": digits, "length": len(digits)}
+        try:
+            tc = parse_ticket(raw, _known_games())
+        except BarcodeError as e:
+            out.update(read=False, message=f"not read as a ticket: {e}")
+            return jsonify(out)
+        cat = _catalog()
+        g = cat.games.get(tc.game_number)
+        out.update(read=True, game=tc.game_number, pack=tc.pack, ticket=tc.ticket,
+                   extra=tc.extra, known=bool(g), name=(g.name if g else ""),
+                   message=(f"game {tc.game_number}, pack {tc.pack}, ticket "
+                            f"{tc.ticket:03d}"))
+        return jsonify(out)
 
     # --- who is working: PIN layer ----------------------------------------
     def _staff_list(active_only: bool = True):

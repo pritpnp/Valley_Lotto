@@ -1,12 +1,9 @@
 {# A scan field that behaves the way a retail gun needs it to.
 
-   Shared by the back-room screens. Set `scan_url` before including, and define
-   `window.onScanResult(data)` in the page to react to each scan.
-
-   Two things it gets right, both learned the hard way on a phone:
-   the field stays FOCUSED (a gun's keystrokes only reach a focused element, so
-   an unfocused div silently swallowed every scan), and it carries
-   inputmode="none" so Android doesn't raise the soft keyboard for it. #}
+   Set `scan_url` before including, and define `window.onScanResult(data)` in the
+   page to react to each scan. The awkward part — getting a phone to accept a
+   scanner without opening its keyboard — lives in static/scan-field.js, which
+   also carries the per-device setting for when one approach doesn't work. #}
 <style>
   .scanrow { display:flex; gap:10px; align-items:stretch; }
   .scanbox { flex:1; min-width:0; width:100%; padding:18px 14px; border-radius:10px;
@@ -15,25 +12,26 @@
   .scanbox:focus { outline:none; border-style:solid; border-color:var(--accent); }
   .scanbox::placeholder { color:var(--muted); letter-spacing:0; }
   .kb { flex:none; width:58px; font-size:22px; }
+  .scanhelp { font-size:12px; color:var(--muted); margin-top:8px; }
+  .scanhelp a { color:var(--accent); }
 </style>
 
 <div class="scanrow">
-  <input id="scanBox" class="scanbox" type="text" inputmode="none"
+  <input id="scanBox" class="scanbox" type="text"
          autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"
          placeholder="scan here…" aria-label="Scan a pack">
   <button type="button" id="kbBtn" class="kb" onclick="toggleKeyboard()"
           aria-label="Type by hand">⌨</button>
 </div>
 <div id="scanResult" class="flash" style="display:none;margin-top:10px"></div>
+<p class="scanhelp">
+  Scanning doing nothing? <a href="#" onclick="nextScanMode();return false">Try another way</a>
+  <span id="scanModeName"></span>
+</p>
 
+<script src="{{ url_for('static', filename='scan-field.js') }}"></script>
 <script>
-const box = document.getElementById("scanBox");
-let manualOpen = false, debounce, inFlight = null, lastRaw = "", lastAt = 0;
-
-function keepFocus(){
-  if (manualOpen || document.activeElement === box) return;
-  try { box.focus({preventScroll:true}); } catch(e) { box.focus(); }
-}
+let inFlight = null;
 
 function showResult(ok, msg){
   const r = document.getElementById("scanResult");
@@ -57,50 +55,25 @@ async function send(raw){
 }
 
 // One at a time: overlapping requests race each other on the server.
-function submitScan(raw){
-  raw = (raw || "").trim();
-  if (!raw) return;
-  const t = Date.now();
-  if (raw === lastRaw && (t - lastAt) < 1000) return;   // the gun firing twice
-  lastRaw = raw; lastAt = t;
+function queueScan(raw){
   inFlight = Promise.resolve(inFlight).catch(() => {}).then(() => send(raw));
 }
 
-function maybeSubmit(){
-  const cleaned = box.value.replace(/[^0-9-]/g, "");
-  if (cleaned !== box.value) box.value = cleaned;
-  clearTimeout(debounce);
-  if (/^\d{14,}$/.test(cleaned.replace(/-/g, ""))) debounce = setTimeout(flush, 180);
-}
-
-function flush(){
-  clearTimeout(debounce);
-  const raw = box.value.trim();
-  box.value = "";
-  if (raw) submitScan(raw);
-}
-
-box.addEventListener("input", maybeSubmit);
-box.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); flush(); } });
-box.addEventListener("blur", () => setTimeout(keepFocus, 50));
-document.addEventListener("click", e => { if (!e.target.closest("button, a, input, select")) keepFocus(); });
-window.addEventListener("focus", keepFocus);
-document.addEventListener("visibilitychange", () => { if (!document.hidden) keepFocus(); });
-document.addEventListener("keydown", e => {
-  if (manualOpen || document.activeElement === box) return;
-  if (e.key === "Enter") { e.preventDefault(); flush(); return; }
-  if (e.key.length !== 1 || !/[0-9-]/.test(e.key)) return;
-  box.value += e.key; maybeSubmit(); e.preventDefault();
-});
+const field = new ScanField(document.getElementById("scanBox"), queueScan);
 
 function toggleKeyboard(){
-  manualOpen = !manualOpen;
-  box.setAttribute("inputmode", manualOpen ? "numeric" : "none");
-  box.placeholder = manualOpen ? "type the number, then Enter" : "scan here…";
-  document.getElementById("kbBtn").classList.toggle("primary", manualOpen);
-  box.blur();
-  setTimeout(() => box.focus(), 0);
+  field.setManual(!field.manual);
+  document.getElementById("kbBtn").classList.toggle("primary", field.manual);
 }
 
-keepFocus();
+function showMode(){
+  document.getElementById("scanModeName").textContent = "(now: " + scanModeInfo().label + ")";
+}
+function nextScanMode(){
+  const m = cycleScanMode();
+  field.applyMode();
+  showMode();
+  showResult(true, m.label + " — " + m.hint);
+}
+showMode();
 </script>

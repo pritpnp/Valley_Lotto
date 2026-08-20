@@ -259,3 +259,75 @@ def test_backstock_needs_the_capability(client, app):
     client.post("/pin", data={"pin": "1111"})
     assert client.get("/backstock").status_code == 403
     assert client.get("/backstock/receive").status_code == 403
+
+
+# --- a count must never invent sales ----------------------------------------
+
+def test_the_very_first_count_reports_nothing_sold(client, app):
+    """One count is a starting point, not a day's trading. This reported ~1800
+    tickets sold once, because every pack it met was dated as opened that day and
+    the report then counted each one as consumed."""
+    client.post("/count/start", json={"session": "afternoon"})
+    client.post("/api/scan", json={"raw": "1750-0091798-010"})
+    client.post("/api/scan", json={"raw": "1744-0100200-005"})
+    client.post("/api/scan", json={"raw": "1780-0088010-002"})
+    client.post("/api/commit")
+
+    rep = client.get("/report").data.decode()
+    assert "<b>0</b> tickets sold" in rep
+
+
+def test_a_pack_a_count_merely_met_is_not_dated_as_opened_today(client, app):
+    client.post("/count/start", json={"session": "night"})
+    client.post("/api/scan", json={"raw": "1750-0091798-010"})
+    client.post("/api/skip"); client.post("/api/skip")
+    client.post("/api/commit")
+
+    row = _packs(app, game_number="1750")[0]
+    assert row.state == "active"           # it is open, we can see that
+    assert row.opened_on is None           # but we have no idea when
+
+
+def test_a_pack_we_watched_leave_backstock_is_dated(client, app):
+    _receive(client, "1750-0091798-001")
+    client.post("/backstock/receive/close", follow_redirects=True)
+
+    client.post("/count/start", json={"session": "night"})
+    client.post("/api/scan", json={"raw": "1750-0091798-010"})
+    client.post("/api/skip"); client.post("/api/skip")
+    client.post("/api/commit")
+
+    row = _packs(app, game_number="1750")[0]
+    assert row.state == "active" and row.opened_on is not None
+
+
+def test_a_box_that_never_changed_pack_is_not_credited_with_one():
+    """Back stock moving a pack to the shelf is not the same as a box consuming
+    one, and only the box's own ticket numbers can say what it sold."""
+    scans = [_s("A", 10, "morning", "2026-08-19T12:00:00Z"),
+             _s("A", 25, "night", "2026-08-19T22:00:00Z")]
+    r = sold_over_sequence(scans, pack_size=60, packs_opened=2)
+    assert r.tickets_sold == 15            # exactly what the tickets say
+    assert r.estimated is False
+
+
+def test_the_bad_open_dates_already_in_the_database_are_cleaned_up(app):
+    """The wrong dates are already written at the store, so the fix has to reach
+    back and undo them on the next deploy."""
+    from lottery_tracker.web.migrate import clear_invented_open_dates
+    Session = app.config["SESSION_FACTORY"]
+    with Session() as db:
+        db.add(PackRow(store="t", game_number="1750", pack="000111",
+                       state="active", source="inferred", opened_on="2026-08-19"))
+        db.add(PackRow(store="t", game_number="1744", pack="000222",   # really observed
+                       state="active", source="scan", opened_on="2026-08-19",
+                       received_on="2026-08-18", shipment_id=1))
+        db.commit()
+
+    cleared = clear_invented_open_dates(app.config["SESSION_FACTORY"].kw["bind"])
+    assert cleared == 1
+    with Session() as db:
+        invented = db.scalar(select(PackRow).where(PackRow.game_number == "1750"))
+        observed = db.scalar(select(PackRow).where(PackRow.game_number == "1744"))
+    assert invented.opened_on is None
+    assert observed.opened_on == "2026-08-19"      # a real one is left alone
