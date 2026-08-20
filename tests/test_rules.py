@@ -123,3 +123,39 @@ def test_estimate_uses_highest_count_ever_seen():
     estimate_top_prize_totals(cur2, prev)
     assert cur2["5432"].top_prizes_total == 8
     assert abs(cur2["5432"].top_prize_pct_remaining - 0.25) < 1e-9
+
+
+# --- the wording a clerk actually reads --------------------------------------
+
+def test_the_low_prize_trend_is_stated_without_sigma():
+    """"cheap prizes -4.0s vs game" is the right unit for the maths and the wrong
+    one for a phone."""
+    from lottery_tracker.rules import _skew_phrase
+    for z in (-2.7, -4.0, -7.0):
+        phrase = _skew_phrase(z)
+        assert "σ" not in phrase            # "prizes" has a z in it; sigma is the tell
+        assert "cheap prizes" in phrase and "faster" in phrase
+    assert _skew_phrase(-7.0) != _skew_phrase(-2.7)      # the size still shows
+
+
+def test_an_untrustworthy_density_says_why_not_just_noise():
+    from lottery_tracker.rules import _density_doubt
+
+    class _Tiny:
+        def tier_z_scores(self):
+            return [{"value_num": 1_000_000, "original": 5, "remaining": 2,
+                     "z": 0.3, "crit": 2.64, "significant": False},
+                    {"value_num": 100, "original": 5000, "remaining": 2000,
+                     "z": 0.1, "crit": 2.64, "significant": False}]
+
+    assert "only 5 top prizes" in _density_doubt(_Tiny())
+
+
+def test_an_explanation_never_breaks_a_rating():
+    from lottery_tracker.rules import _density_doubt
+
+    class _Broken:
+        def tier_z_scores(self):
+            raise RuntimeError("no data")
+
+    assert "ignored" in _density_doubt(_Broken())

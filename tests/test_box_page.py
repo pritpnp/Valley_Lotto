@@ -78,7 +78,10 @@ def test_the_breakdown_explains_density_rather_than_just_printing_it(client, a_r
     _fill(client, "1", a_real_game)
     html = client.get("/inventory/box/1").data.decode()
     assert "Jackpot density" in html
-    assert "ratio" in html and "not significant" in html
+    assert "ratio" in html
+    # says WHY it's usually ignored, rather than just labelling it noise
+    assert "top\n        prizes" in html or "top prizes" in html
+    assert "swings on pure chance" in html
 
 
 def test_a_factor_with_no_data_says_so_instead_of_scoring_zero(client, a_real_game):

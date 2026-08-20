@@ -115,6 +115,41 @@ def _clamp(x: float, lo: float = 0.0, hi: float = 100.0) -> float:
     return max(lo, min(hi, x))
 
 
+def _skew_phrase(z: float) -> str:
+    """The low-prize trend in words a clerk can act on.
+
+    This used to read "cheap prizes -4.0σ vs game — drying up". Sigma is the
+    right unit for the maths and the wrong one for a phone: nobody should have to
+    know what a standard deviation is to be told the small prizes are going first.
+    The size of the gap still shows, just as plain speech.
+    """
+    gap = -z
+    if gap >= 5:
+        return "cheap prizes going far faster than the rest of the game"
+    if gap >= 3.5:
+        return "cheap prizes going much faster than the rest of the game"
+    return "cheap prizes going faster than the rest of the game"
+
+
+def _density_doubt(game) -> str:
+    """Why a density figure isn't trusted, in the store's own terms.
+
+    "noise" on its own reads like a shrug. Naming the number of top prizes shows
+    what the problem actually is: you cannot learn anything from five tickets.
+    """
+    try:
+        zs = game.tier_z_scores()
+        top = max(zs, key=lambda r: r["value_num"]) if zs else None
+    except Exception:  # noqa: BLE001 — an explanation must never break a rating
+        top = None
+    if not top or not top.get("original"):
+        return "too little data — ignored"
+    n = top["original"]
+    if n <= 12:
+        return f"only {n} top prizes ever printed — too few to tell; ignored"
+    return "within normal luck — ignored"
+
+
 def rate(game: Game, weights: "RatingWeights | None" = None) -> tuple[float | None, list[Factor]]:
     """Score a game 0–100 from several weighted, outlier-aware factors.
 
@@ -164,7 +199,7 @@ def rate(game: Game, weights: "RatingWeights | None" = None) -> tuple[float | No
             worst = min(sig_neg)
             s = _clamp(100 * (1 - (-worst) / w.skew_z_full))
             factors.append(Factor("low_prize_skew", "Low-prize trend", s, w.low_prize_skew,
-                                  f"cheap prizes {worst:+.1f}σ vs game — drying up"))
+                                  _skew_phrase(worst)))
         else:
             factors.append(Factor("low_prize_skew", "Low-prize trend", 100.0, w.low_prize_skew,
                                   "in line with the game"))
@@ -172,12 +207,19 @@ def rate(game: Game, weights: "RatingWeights | None" = None) -> tuple[float | No
         factors.append(Factor("low_prize_skew", "Low-prize trend", None, w.low_prize_skew, "—"))
 
     # 5) Jackpot density — only votes when it's a real signal, not noise.
+    #
+    # It is silent for most games, and that is the statistic being honest rather
+    # than a setting being too strict: PA prints so few top prizes (commonly 5,
+    # sometimes 3) that even the most extreme outcome barely clears the bar. With
+    # 4 or fewer top prizes it is arithmetically impossible to clear — every one
+    # of them surviving still isn't evidence. So the number is shown with the
+    # reason it can't be trusted, instead of being allowed to move the score.
     jd = game.jackpot_density
     if jd is not None and game.jackpot_density_significant:
         factors.append(Factor("jackpot_density", "Jackpot density", _clamp(100 * min(1.0, jd)),
                               w.jackpot_density, f"{jd:.2f}× (significant)"))
     else:
-        note = f"{jd:.2f}× (noise — ignored)" if jd is not None else "—"
+        note = f"{jd:.2f}× ({_density_doubt(game)})" if jd is not None else "—"
         factors.append(Factor("jackpot_density", "Jackpot density", None, w.jackpot_density, note))
 
     avail = [f for f in factors if f.score is not None and f.weight > 0]
