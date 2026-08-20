@@ -331,3 +331,26 @@ def test_the_bad_open_dates_already_in_the_database_are_cleaned_up(app):
         observed = db.scalar(select(PackRow).where(PackRow.game_number == "1744"))
     assert invented.opened_on is None
     assert observed.opened_on == "2026-08-19"      # a real one is left alone
+
+
+def test_a_day_adds_up_the_same_on_every_screen(client, app):
+    """The report, history and the chain overview must not disagree about a day.
+
+    They did: only the report page was told how many packs came out of unopened
+    stock, so the same day could read differently depending on where you looked.
+    """
+    client.post("/count/start", json={"session": "morning"})
+    client.post("/api/scan", json={"raw": "1750-0091798-010"})
+    client.post("/api/skip"); client.post("/api/skip")
+    client.post("/api/commit")
+    client.post("/count/start", json={"session": "night"})
+    client.post("/api/scan", json={"raw": "1750-0091798-040"})
+    client.post("/api/skip"); client.post("/api/skip")
+    client.post("/api/commit")
+
+    report = client.get("/report").data.decode()
+    history = client.get("/history?tab=sales").data.decode()
+    overview = client.get("/overview").data.decode()
+    assert "<b>30</b>" in report
+    assert "30 tickets" in history
+    assert "30" in overview

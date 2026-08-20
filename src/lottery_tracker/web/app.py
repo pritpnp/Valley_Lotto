@@ -1074,18 +1074,26 @@ def _register_routes(app: Flask):
             out.setdefault(row.game_number, []).append(row)
         return out
 
-    def _packs_opened_on(date: str) -> dict:
-        """game_number -> how many packs were opened that day.
+    def _packs_opened_by_date(slug=None) -> dict:
+        """date -> {game_number: packs opened that day}.
 
         This is what rescues a day where a box burned through more packs than the
-        counts could see.
+        counts could see. Fetched in one query and handed to every report for the
+        store, because asking per date turned a month of history into a month of
+        round trips — and because a day has to add up the same on the report, in
+        history and on the chain overview.
         """
         rows = _db().scalars(select(PackRow).where(
-            PackRow.store == _store(), PackRow.opened_on == date)).all()
+            PackRow.store == (slug or _store()),
+            PackRow.opened_on.is_not(None))).all()
         out: dict = {}
         for r in rows:
-            out[r.game_number] = out.get(r.game_number, 0) + 1
+            out.setdefault(r.opened_on, {})
+            out[r.opened_on][r.game_number] = out[r.opened_on].get(r.game_number, 0) + 1
         return out
+
+    def _packs_opened_on(date: str, slug=None) -> dict:
+        return _packs_opened_by_date(slug).get(date, {})
 
     def _backstock_view() -> dict:
         """Everything the backstock page needs: what's held, what's short, what
@@ -1381,10 +1389,12 @@ def _register_routes(app: Flask):
         if tab == "sales":
             log = _store_log()
             prices = _load_prices()
+            opened = _packs_opened_by_date()
             dates = sorted({business_date(sc.scanned_at, tz) for sc in log.scans},
                            reverse=True)[:60]
             for d in dates:
-                rep = daily_report(log, d, prices=prices, store=_store(), tz=tz)
+                rep = daily_report(log, d, prices=prices, store=_store(), tz=tz,
+                                   packs_opened=opened.get(d))
                 if rep.rows:
                     ctx["days"].append(rep)
             # Per-game totals across the whole window: the real sell-through.
@@ -1438,13 +1448,16 @@ def _register_routes(app: Flask):
             summary = pa_data.store_summary(srows)
 
             log = _store_log(st.slug)
+            opened = _packs_opened_by_date(st.slug)
             today = _today(st.timezone)
-            rep = daily_report(log, today, prices=prices, store=st.slug, tz=st.timezone)
+            rep = daily_report(log, today, prices=prices, store=st.slug, tz=st.timezone,
+                               packs_opened=opened.get(today))
             dates = sorted({business_date(sc.scanned_at, st.timezone) for sc in log.scans},
                            reverse=True)[:7]
             week_tickets = week_rev = 0
             for d in dates:
-                r = daily_report(log, d, prices=prices, store=st.slug, tz=st.timezone)
+                r = daily_report(log, d, prices=prices, store=st.slug, tz=st.timezone,
+                                 packs_opened=opened.get(d))
                 week_tickets += r.total_tickets
                 week_rev += (r.total_revenue or 0)
 
