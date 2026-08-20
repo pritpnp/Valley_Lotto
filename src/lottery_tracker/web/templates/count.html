@@ -158,9 +158,46 @@
 
   <div class="card">
     <div class="row" style="justify-content:space-between">
-      <b>Boxes</b><span class="hint">green = scanned · blue = current · tap to fix</span>
+      <b>Boxes</b><span class="hint">green = scanned · blue = current · tap one to change it</span>
     </div>
     <div id="grid" class="grid"></div>
+  </div>
+
+  {# One box's menu. Scanning while it's open closes it and carries on, so
+     opening it by mistake costs nothing. #}
+  <div id="boxSheet" class="card" style="display:none">
+    <div class="row" style="justify-content:space-between;align-items:baseline">
+      <b style="font-size:19px">Box <span id="bxSlot"></span></b>
+      <a href="#" onclick="closeBox();return false" style="font-size:13px">close ✕</a>
+    </div>
+    <p class="muted" style="font-size:13px;margin:4px 0 12px">
+      Currently <span id="bxNow"></span>. Scanning anything closes this and carries
+      on with the count.
+    </p>
+
+    <div class="row" style="gap:8px">
+      <div style="flex:1;min-width:88px">
+        <label>Game</label>
+        <input id="bxGame" type="text" inputmode="numeric" autocomplete="off">
+      </div>
+      <div style="flex:1;min-width:88px">
+        <label>Pack</label>
+        <input id="bxPack" type="text" inputmode="numeric" autocomplete="off">
+      </div>
+      <div style="flex:1;min-width:78px">
+        <label>Ticket</label>
+        <input id="bxTicket" type="text" inputmode="numeric" autocomplete="off">
+      </div>
+    </div>
+
+    <div class="row" style="margin-top:12px">
+      <button class="primary" onclick="saveBox()">Save this box</button>
+      <button onclick="goToBox()">Scan it instead</button>
+    </div>
+    <div class="row" style="margin-top:8px">
+      <button id="bxClear" onclick="clearSlot()"
+              style="background:var(--err-bg);color:var(--err)">Empty this box</button>
+    </div>
   </div>
 </div>
 
@@ -168,7 +205,6 @@
 <script>
 const INITIAL = {{ state|tojson }};
 let state = INITIAL;
-let fixSlot = null;
 let fillingGaps = false;
 
 const $ = id => document.getElementById(id);
@@ -219,31 +255,21 @@ function applyState(s){
   // The end of the walk saves the count — there is no Finish button to forget.
   // But it must never save SHORT: if boxes have nothing recorded, say which ones
   // and make someone decide, rather than quietly filing an incomplete count.
-  if (s.walk_done && !fixSlot && !saving && !fillingGaps) {
+  if (s.walk_done && !saving && !fillingGaps) {
     if (s.pending && s.pending.length) { showMissing(s); return; }
     saveNow(); return;
   }
 
   // current prompt
-  if (s.walk_done && !fixSlot) {
+  if (s.walk_done) {
     $("promptLine").textContent = "Saving…";
     $("slotName").textContent = "✓";
   } else {
-    $("promptLine").textContent = fixSlot ? "Fixing box"
-                                : fillingGaps ? "Missed box — scan box"
-                                : "Scan box";
-    $("slotName").textContent = fixSlot || s.current_slot || "—";
+    $("promptLine").textContent = fillingGaps ? "Missed box — scan box" : "Scan box";
+    $("slotName").textContent = s.current_slot || "—";
   }
 
-  // fix banner
-  if (fixSlot) {
-    const scanned = (s.slots || []).some(b => b.slot === fixSlot && b.scanned);
-    $("fixBanner").style.display = "block";
-    $("fixBanner").innerHTML = "Fixing <b>" + fixSlot + "</b> — scan its ticket, " +
-      "<a href='#' onclick='clearSlot(\"" + fixSlot + "\");return false'>" +
-      (scanned ? "clear it (the box is empty)" : "mark it empty") + "</a>, or " +
-      "<a href='#' onclick='cancelFix();return false'>cancel</a>.";
-  } else { $("fixBanner").style.display = "none"; }
+  $("fixBanner").style.display = "none";
 
   // step result / warning
   const res = $("result");
@@ -261,11 +287,10 @@ function applyState(s){
   (s.slots||[]).forEach(b => {
     const d = document.createElement("div");
     d.className = "box" + (b.scanned ? " scanned" : "") +
-      (b.slot===s.current_slot && !fixSlot ? " current" : "") +
-      (b.slot===fixSlot ? " fixing" : "");
+      (b.slot===s.current_slot ? " current" : "");
     d.innerHTML = "<div class='lbl'>"+b.slot+"</div><div class='sub'>" +
       (b.scanned ? ("#"+String(b.ticket).padStart(3,"0")) : "") + "</div>";
-    d.onclick = () => setFix(b.slot);
+    d.onclick = () => openBox(b.slot);
     g.appendChild(d);
   });
 
@@ -298,14 +323,56 @@ function saveAnyway(){
   saveNow();
 }
 
-function setFix(slot){ fixSlot = slot; applyState(state); }
+// --- one box's menu ---------------------------------------------------------
+// Tapping a box opens this rather than putting the whole screen into a "fixing"
+// mode: the mode was invisible once you'd scrolled, and there was no way to
+// change a ticket number by hand. Scanning while it's open just closes it and
+// carries on with the walk, so opening it by mistake costs nothing.
+let sheetSlot = null;
 
-async function clearSlot(slot){
-  const s = await postJSON("{{ url_for('api_clear') }}", {slot});
-  fixSlot = null;
+function openBox(slot){
+  sheetSlot = slot;
+  const b = (state.slots || []).find(x => x.slot === slot) || {};
+  $("bxSlot").textContent = slot;
+  $("bxNow").textContent = b.scanned
+    ? ("game " + b.game + " · ticket " + String(b.ticket).padStart(3, "0"))
+    : "nothing recorded yet";
+  $("bxGame").value = b.game || "";
+  $("bxPack").value = b.pack || "";
+  $("bxTicket").value = b.scanned ? b.ticket : "";
+  $("bxClear").style.display = b.scanned ? "" : "none";
+  $("boxSheet").style.display = "block";
+}
+
+function closeBox(){
+  sheetSlot = null;
+  $("boxSheet").style.display = "none";
+  field.focus();
+}
+
+async function saveBox(){
+  const slot = sheetSlot;
+  if (!slot) return;
+  const s = await postJSON("{{ url_for('api_edit') }}", {
+    slot, game: $("bxGame").value.trim(), pack: $("bxPack").value.trim(),
+    ticket: $("bxTicket").value.trim(),
+  });
+  closeBox();
   applyState(s);
 }
-function cancelFix(){ fixSlot = null; applyState(state); }
+
+async function clearSlot(slot){
+  const s = await postJSON("{{ url_for('api_clear') }}", {slot: slot || sheetSlot});
+  closeBox();
+  applyState(s);
+}
+
+async function goToBox(){
+  const slot = sheetSlot;
+  closeBox();
+  applyState(await postJSON("{{ url_for('api_goto') }}", {slot}));
+}
+
 
 // Scans are handled ONE AT A TIME. Firing two overlapping requests at the
 // server let both read the same half-finished count and write over each other,
@@ -314,6 +381,9 @@ function cancelFix(){ fixSlot = null; applyState(state); }
 let inFlight = null;
 
 function submitScan(raw){
+  // A scan while a box's menu is open means it was opened by mistake: shut it
+  // and let the scan land on the box the walk is actually on.
+  if (sheetSlot) closeBox();
   // Chain onto whatever is running so scans are applied in the order they were
   // made, never concurrently — two at once used to corrupt the count.
   inFlight = Promise.resolve(inFlight).catch(() => {}).then(() => sendScan(raw));
@@ -323,8 +393,7 @@ function submitScan(raw){
 async function sendScan(raw){
   try {
     let s;
-    if (fixSlot) { s = await postJSON("{{ url_for('api_rescan') }}", {slot:fixSlot, raw}); fixSlot = null; }
-    else { s = await postJSON("{{ url_for('api_scan') }}", {raw}); }
+    s = await postJSON("{{ url_for('api_scan') }}", {raw});
     applyState(s);
   } catch(e){
     // Never blow up the page — show it where the clerk is already looking.

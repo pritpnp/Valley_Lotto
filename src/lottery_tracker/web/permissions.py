@@ -28,6 +28,9 @@ CAPABILITIES = (
      "blurb": "Log a delivery and scan the packs in it."},
     {"key": "settle", "label": "Settle & return packs",
      "blurb": "Take a pack out of play and record it as settled and returned."},
+    {"key": "counts_edit", "label": "Correct past counts",
+     "blurb": "Fix a ticket number after the fact, or type in a count done on "
+              "paper. Every change is recorded."},
     {"key": "boxes", "label": "Edit active inventory",
      "blurb": "Change which game is assigned to a box by hand."},
     {"key": "history", "label": "See history",

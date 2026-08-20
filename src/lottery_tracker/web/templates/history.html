@@ -15,6 +15,23 @@
   .lnum.down { color:var(--err); } .lnum.up { color:var(--ok); }
   .when { flex:none; font-size:11.5px; color:var(--muted); text-align:right;
           white-space:nowrap; line-height:1.5; }
+
+  .day { border-top:1px solid var(--line); }
+  .day:first-of-type { border-top:none; }
+  .day > summary { display:flex; justify-content:space-between; align-items:center;
+                   gap:12px; padding:12px 4px; cursor:pointer; list-style:none; }
+  .day > summary::-webkit-details-marker { display:none; }
+  .day > summary::before { content:"▸"; color:var(--muted); font-size:13px; }
+  .day[open] > summary::before { content:"▾"; }
+  .dsum { flex:1; min-width:0; }
+  .dsum b { display:block; font-size:14.5px; }
+  .dnum { flex:none; text-align:right; font-size:19px; font-weight:800;
+          font-variant-numeric:tabular-nums; line-height:1.15; }
+  .dnum .u { display:block; font-size:10.5px; font-weight:600; color:var(--muted); }
+  .dnum .rev { display:block; font-size:12.5px; font-weight:700; color:var(--ok); }
+  .dbody { padding:4px 4px 14px 16px; }
+  .sess { display:flex; gap:12px; align-items:center; padding:9px 0;
+          border-top:1px solid var(--line); }
 </style>
 <style>
   .tabs { display:flex; gap:8px; margin-bottom:6px; flex-wrap:wrap; }
@@ -53,17 +70,59 @@
   </div>
 
   <div class="card">
-    <b>Past days</b>
-    {% for rep in days %}
-      <div style="border-bottom:1px solid var(--line);padding:10px 0">
-        <div class="row" style="justify-content:space-between">
-          <b><a href="{{ url_for('report', date=rep.date) }}">{{ rep.date }}</a></b>
-          <span>{{ rep.total_tickets }} tickets
-            {% if rep.total_revenue is not none %}· <b>${{ '%.2f'|format(rep.total_revenue) }}</b>{% endif %}
+    <b>Day by day</b>
+    <p class="muted" style="font-size:12.5px;margin:4px 0 0">
+      Tap a day to see its counts.
+      {% if can.counts_edit %}You can correct one, or type up a count done on paper.{% endif %}
+    </p>
+
+    {% for day in days %}
+      <details class="day">
+        <summary>
+          <span class="dsum">
+            <b>{{ day.date }}{% if day.date == today %} · today{% endif %}</b>
+            <span class="muted" style="font-size:12px">
+              {%- set taken = day.counts|selectattr('taken')|list -%}
+              {% if taken %}{{ taken|map(attribute='label')|join(', ')|lower }}
+              {%- else %}no counts yet{% endif %}
+            </span>
           </span>
+          <span class="dnum">
+            {{ day.report.total_tickets }}<span class="u">sold</span>
+            {% if day.report.total_revenue %}<span class="rev">${{ '%.2f'|format(day.report.total_revenue) }}</span>{% endif %}
+          </span>
+        </summary>
+
+        <div class="dbody">
+          {% for c in day.counts %}
+            <div class="sess">
+              <span class="lmid">
+                <span class="lname">{{ c.label }}
+                  {%- if not c.taken %} <span class="muted" style="font-weight:400">— not taken</span>{% endif %}</span>
+                {% if c.taken %}
+                  <span class="lsub">{{ c.boxes|length }} box{{ '' if c.boxes|length == 1 else 'es' }}
+                    at {{ c.at_local }}{% if c.by %} · {{ c.by }}{% endif %}</span>
+                {% endif %}
+              </span>
+              {% if can.counts_edit %}
+                {% if c.taken %}
+                  <a href="{{ url_for('count_edit', date=day.date, sess=c.key) }}">
+                    <button style="padding:6px 12px;font-size:12px;width:auto">Edit count</button></a>
+                {% else %}
+                  <form method="post" action="{{ url_for('count_create', date=day.date, sess=c.key) }}"
+                        onsubmit="return confirm('Start a {{ c.label|lower }} count for {{ day.date }} from the previous count? You then check each box against the paper sheet.')">
+                    <button style="padding:6px 12px;font-size:12px;width:auto">Type it in</button>
+                  </form>
+                {% endif %}
+              {% endif %}
+            </div>
+          {% endfor %}
+
+          <p style="margin:12px 0 2px">
+            <a href="{{ url_for('report', date=day.date) }}">See this day's sales →</a>
+          </p>
         </div>
-        <span class="muted" style="font-size:12px">{{ rep.rows|length }} boxes counted</span>
-      </div>
+      </details>
     {% else %}<p class="muted">Nothing yet — run a count and it'll appear here.</p>{% endfor %}
   </div>
 

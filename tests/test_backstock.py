@@ -352,5 +352,6 @@ def test_a_day_adds_up_the_same_on_every_screen(client, app):
     history = client.get("/history?tab=sales").data.decode()
     overview = client.get("/overview").data.decode()
     assert "<b>30</b>" in report
-    assert "30 tickets" in history
+    # history shows the day as an expandable row: the number, then "sold"
+    assert "30<span" in history
     assert "30" in overview

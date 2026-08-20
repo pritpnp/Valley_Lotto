@@ -234,6 +234,39 @@ class CountSession:
                         f"{slot} is now empty" + ("" if had else " (it already was)"),
                         next_slot=self.current_slot)
 
+    def set_entry(self, slot: str, *, game_number: str, pack: str, ticket: int,
+                  at: Optional[str] = None) -> ScanStep:
+        """Put values into a box by hand, without a barcode.
+
+        The counterpart to scanning, for the times there is nothing to scan: a
+        ticket number read off a paper sheet, or a digit mistyped and noticed
+        later. Deliberately not validated against the barcode layouts — a person
+        typing a correction knows more than the parser does.
+        """
+        if slot not in self.slots:
+            return ScanStep(False, slot, f"unknown box {slot}", next_slot=self.current_slot)
+        if not str(game_number).strip():
+            return ScanStep(False, slot, "a box needs a game number",
+                            next_slot=self.current_slot)
+        try:
+            ticket = int(ticket)
+        except (TypeError, ValueError):
+            return ScanStep(False, slot, "the ticket number has to be a number",
+                            next_slot=self.current_slot)
+        if ticket < 0:
+            return ScanStep(False, slot, "the ticket number can't be negative",
+                            next_slot=self.current_slot)
+
+        self.pending = None
+        self.entries[slot] = Scan(
+            game_number=str(game_number).strip(), pack=str(pack or "").strip(),
+            ticket=ticket, scanned_at=at or _now_iso(), kind="manual",
+            store=self.store, slot=slot, session=self.session, user=self.user,
+            raw="")
+        return ScanStep(True, slot, f"{slot} set by hand to game {game_number}, "
+                                    f"ticket {ticket:03d}",
+                        next_slot=self.current_slot)
+
     def rescan(self, slot: str, raw: str, *, at: Optional[str] = None) -> ScanStep:
         """Fix ANY box by name without moving your place in the walk — this is the
         'go back and re-do one in the middle' operation."""

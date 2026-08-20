@@ -59,8 +59,10 @@ class MainActivity : AppCompatActivity() {
         setContentView(web)
         configureWebView()
 
-        // A count is a minute of scanning with no touches — don't sleep partway.
-        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        // The screen is kept awake only while a scan screen is open (see the
+        // bridge below). Holding it awake for as long as the app is running
+        // drains the battery of a device that spends all day on a counter, and
+        // burns the same image into the screen — a count takes a minute.
 
         // Don't open with the keyboard up; beyond that, each page decides.
         window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN)
@@ -109,10 +111,11 @@ class MainActivity : AppCompatActivity() {
             }
 
             override fun onPageStarted(v: WebView, url: String, favicon: android.graphics.Bitmap?) {
-                // Every page starts with a normal keyboard. A scan screen asks
-                // for it to be held down as it loads; nothing else has to
-                // remember to ask for it back.
+                // Every page starts with a normal keyboard and a screen that may
+                // sleep. A scan screen asks for both as it loads; nothing else
+                // has to remember to hand them back.
                 suppressKeyboard = false
+                window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
             }
 
             override fun onReceivedError(v: WebView, req: WebResourceRequest, err: WebResourceError) {
@@ -179,6 +182,21 @@ class MainActivity : AppCompatActivity() {
         /** Lets the page say "the app is handling this" instead of guessing. */
         @JavascriptInterface
         fun hasKeyboardControl(): Boolean = true
+
+        /**
+         * Hold the screen awake, or let it sleep again.
+         *
+         * A count is a minute of scanning with no touches, and a screen that
+         * dims halfway through is its own kind of infuriating. Everywhere else
+         * the device should sleep like any other — it sits on a counter all day.
+         */
+        @JavascriptInterface
+        fun keepAwake(on: Boolean) {
+            runOnUiThread {
+                if (on) window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                else window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+            }
+        }
     }
 
     /** First launch: ask where the store's site lives. */

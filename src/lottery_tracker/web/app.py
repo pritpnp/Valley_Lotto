@@ -32,7 +32,7 @@ from ..scans import Scan, ScanLog, _slot_sort_key
 from ..session import CountSession, standard_slots
 from ..reporting import (daily_report, render_daily_report_md, as_zone,
                          business_date, count_status, normalize_session,
-                         SESSIONS)
+                         session_meta, local_time, SESSIONS)
 from ..config import Config
 from ..rules import RATING_FACTORS, rate, recommendation
 from .models import (Base, User, Store, ScanRow, ActiveCount, InventoryRow,
@@ -695,6 +695,9 @@ def _register_routes(app: Flask):
             "slots": [
                 {"slot": s,
                  "game": cs.entries[s].game_number if s in cs.entries else None,
+                 # The pack travels with the rest: the box menu prefills from
+                 # this, and without it editing a ticket by hand wiped the pack.
+                 "pack": cs.entries[s].pack if s in cs.entries else None,
                  "ticket": cs.entries[s].ticket if s in cs.entries else None,
                  "scanned": s in cs.entries}
                 for s in cs.slots
@@ -820,6 +823,18 @@ def _register_routes(app: Flask):
         cs = _require_session()
         body = request.get_json(silent=True) or {}
         step = cs.clear(body.get("slot") or cs.current_slot or "")
+        _save_session(cs)
+        return jsonify(_state_payload(cs, step))
+
+    @app.post("/api/edit")
+    @staff_required
+    def api_edit():
+        """Set a box's values by hand mid-count — no barcode involved."""
+        cs = _require_session()
+        b = request.get_json(silent=True) or {}
+        step = cs.set_entry(b.get("slot") or "", game_number=b.get("game") or "",
+                            pack=b.get("pack") or "", ticket=b.get("ticket"),
+                            at=_now_iso())
         _save_session(cs)
         return jsonify(_state_payload(cs, step))
 
@@ -1371,6 +1386,203 @@ def _register_routes(app: Flask):
         audit("pack.unsettle", f"cleared: {was}")
         return redirect(request.form.get("next") or url_for("backstock"))
 
+    # --- correcting a count after the fact ---------------------------------
+    #
+    # Counting on paper still happens, and a mistyped digit is only ever noticed
+    # later. Both need the same thing: a way to change what a count says, with
+    # every change on the record.
+
+    # When a corrected or hand-entered count is treated as having happened. Real
+    # times are kept when a count already exists; these only fill in for one
+    # typed up afterwards, and they preserve the order of the day.
+    SESSION_HOURS = {"morning": 9, "afternoon": 14, "night": 21}
+
+    def _session_stamp(date: str, session: str) -> str:
+        """A UTC timestamp that lands on `date` at that session's usual hour, in
+        the store's own timezone."""
+        hour = SESSION_HOURS.get(normalize_session(session), 12)
+        zone = as_zone(_store_tz()) or timezone.utc
+        try:
+            local = datetime.strptime(date, "%Y-%m-%d").replace(hour=hour, tzinfo=zone)
+        except ValueError:
+            local = datetime.now(zone)
+        return local.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    def _count_rows(date: str, session: str):
+        """The saved scans that make up one count, in box order."""
+        tz = _store_tz()
+        want = normalize_session(session)
+        rows = [r for r in _db().scalars(select(ScanRow).where(ScanRow.store == _store())).all()
+                if business_date(r.scanned_at, tz) == date
+                and normalize_session(r.session) == want]
+        return sorted(rows, key=lambda r: _slot_sort_key(r.slot or ""))
+
+    def _counts_on(date: str) -> list:
+        """Every count taken on a date: session, when, who, and its boxes."""
+        tz = _store_tz()
+        rows = [r for r in _db().scalars(select(ScanRow).where(ScanRow.store == _store())).all()
+                if business_date(r.scanned_at, tz) == date]
+        by_session: dict = {}
+        for r in rows:
+            by_session.setdefault(normalize_session(r.session), []).append(r)
+        out = []
+        for meta in SESSIONS:
+            got = by_session.pop(meta["key"], None)
+            out.append({
+                **meta, "date": date, "taken": bool(got),
+                "boxes": sorted(got or [], key=lambda r: _slot_sort_key(r.slot or "")),
+                "at_local": local_time(min(r.scanned_at for r in got), tz) if got else "",
+                "by": ", ".join(sorted({r.user_email for r in got if r.user_email})) if got else "",
+            })
+        for key, got in by_session.items():     # a label the store invented
+            out.append({
+                **session_meta(key), "date": date, "taken": True,
+                "boxes": sorted(got, key=lambda r: _slot_sort_key(r.slot or "")),
+                "at_local": local_time(min(r.scanned_at for r in got), tz),
+                "by": ", ".join(sorted({r.user_email for r in got if r.user_email})),
+            })
+        return out
+
+    def _previous_count(before_stamp: str) -> list:
+        """The most recent count before a moment — what a paper count starts from.
+
+        Copying the last known state means a paper sheet only needs the boxes
+        that actually moved, which is most of the typing gone.
+        """
+        rows = [r for r in _db().scalars(select(ScanRow).where(ScanRow.store == _store())).all()
+                if r.scanned_at < before_stamp]
+        if not rows:
+            return []
+        tz = _store_tz()
+        newest = max(rows, key=lambda r: r.scanned_at)
+        key = (business_date(newest.scanned_at, tz), normalize_session(newest.session))
+        return [r for r in rows
+                if (business_date(r.scanned_at, tz), normalize_session(r.session)) == key]
+
+    def _is_newest_for_slot(row) -> bool:
+        """Is this scan the latest word on what's in that box?
+
+        Only then may an edit move the box map. Correcting a count from last week
+        must not overwrite a box that has been changed since.
+
+        Timestamps are only stored to the second, so two counts taken in the same
+        second would otherwise be indistinguishable; the row id breaks the tie,
+        since a later row was written later.
+        """
+        others = _db().scalars(select(ScanRow).where(
+            ScanRow.store == _store(), ScanRow.slot == row.slot)).all()
+        if not others:
+            return True
+        newest = max(others, key=lambda r: (r.scanned_at, r.id or 0))
+        return (row.scanned_at, row.id or 0) >= (newest.scanned_at, newest.id or 0)
+
+    @app.get("/counts/<date>/<sess>/edit")
+    @perm_required("counts_edit")
+    def count_edit(date, sess):
+        sess = normalize_session(sess)
+        rows = _count_rows(date, sess)
+        by_slot = {r.slot: r for r in rows if r.slot}
+        cat = _catalog()
+        return render_template(
+            "count_edit.html", date=date, sess=sess,
+            label=session_meta(sess)["label"], slots=_store_slots(),
+            by_slot=by_slot, games=cat.games, exists=bool(rows),
+            today=_today(_store_tz()))
+
+    @app.post("/counts/<date>/<sess>/create")
+    @perm_required("counts_edit")
+    def count_create(date, sess):
+        """Type up a count that was done on paper.
+
+        Starts from the last count before it, so only the boxes that moved need
+        touching — and an untouched box carrying a stale ticket number would be
+        wrong, so each one still has to be confirmed or corrected by hand.
+        """
+        sess = normalize_session(sess)
+        if _count_rows(date, sess):
+            return redirect(url_for("count_edit", date=date, sess=sess))
+        stamp = _session_stamp(date, sess)
+        who = session.get("staff_name") or session.get("username") or ""
+        made = 0
+        for prev in _previous_count(stamp):
+            if not prev.slot:
+                continue
+            _db().add(ScanRow(store=_store(), game_number=prev.game_number,
+                              pack=prev.pack, ticket=prev.ticket, slot=prev.slot,
+                              session=sess, scanned_at=stamp, user_email=who,
+                              raw=""))
+            made += 1
+        _db().commit()
+        audit("count.create",
+              f"{sess} count for {date} started from the previous count "
+              f"({made} box(es)) — needs checking against the paper sheet")
+        return redirect(url_for("count_edit", date=date, sess=sess))
+
+    @app.route("/counts/<date>/<sess>/box/<slot>", methods=["GET", "POST"])
+    @perm_required("counts_edit")
+    def count_edit_box(date, sess, slot):
+        sess = normalize_session(sess)
+        if slot not in _store_slots():
+            abort(404)
+        rows = _count_rows(date, sess)
+        row = next((r for r in rows if r.slot == slot), None)
+
+        if request.method == "POST":
+            action = request.form.get("action") or "save"
+            stamp = row.scanned_at if row else _session_stamp(date, sess)
+
+            if action == "delete":
+                if row is not None:
+                    audit("count.box.delete",
+                          f"{date} {sess} box {slot}: removed game {row.game_number} "
+                          f"pack {row.pack} ticket {row.ticket:03d}")
+                    _db().delete(row)
+                    _db().commit()
+                return redirect(url_for("count_edit", date=date, sess=sess))
+
+            raw = (request.form.get("scan") or "").strip()
+            game = (request.form.get("game_number") or "").strip()
+            pack = (request.form.get("pack") or "").strip()
+            ticket = (request.form.get("ticket") or "").strip()
+            if raw:                       # a scan fills all three at once
+                tc = try_parse_ticket(raw, _known_games())
+                if tc is None:
+                    return render_template("count_edit_box.html", date=date,
+                                           sess=sess, slot=slot, row=row,
+                                           games=_catalog().games,
+                                           label=session_meta(sess)["label"],
+                                           error="That isn't a ticket barcode.")
+                game, pack, ticket = tc.game_number, tc.pack, str(tc.ticket)
+
+            if not game or not ticket.isdigit():
+                return render_template("count_edit_box.html", date=date, sess=sess,
+                                       slot=slot, row=row, games=_catalog().games,
+                                       label=session_meta(sess)["label"],
+                                       error="A box needs a game number and a ticket number.")
+
+            was = (f"game {row.game_number} pack {row.pack} ticket {row.ticket:03d}"
+                   if row else "empty")
+            if row is None:
+                row = ScanRow(store=_store(), slot=slot, session=sess,
+                              scanned_at=stamp,
+                              user_email=session.get("staff_name") or session.get("username") or "",
+                              raw="")
+                _db().add(row)
+            row.game_number, row.pack, row.ticket = game, pack, int(ticket)
+            _db().commit()
+
+            # Today's box map only follows the latest word on a box.
+            if _is_newest_for_slot(row):
+                _set_box(slot, game, source="manual")
+            audit("count.box.edit",
+                  f"{date} {sess} box {slot}: {was} -> game {game} pack {pack} "
+                  f"ticket {int(ticket):03d}")
+            return redirect(url_for("count_edit", date=date, sess=sess))
+
+        return render_template("count_edit_box.html", date=date, sess=sess,
+                               slot=slot, row=row, games=_catalog().games,
+                               label=session_meta(sess)["label"], error=None)
+
     # --- history: sales over time, game data over time, audit trail --------
     def _store_log(slug=None) -> ScanLog:
         rows = _db().scalars(select(ScanRow).where(
@@ -1392,15 +1604,19 @@ def _register_routes(app: Flask):
             opened = _packs_opened_by_date()
             dates = sorted({business_date(sc.scanned_at, tz) for sc in log.scans},
                            reverse=True)[:60]
+            # Today belongs in the list even before anyone has counted, because
+            # it is the day someone is most likely to be typing up from paper.
+            today = _today(tz)
+            if today not in dates:
+                dates = [today] + dates
             for d in dates:
                 rep = daily_report(log, d, prices=prices, store=_store(), tz=tz,
                                    packs_opened=opened.get(d))
-                if rep.rows:
-                    ctx["days"].append(rep)
+                ctx["days"].append({"report": rep, "date": d, "counts": _counts_on(d)})
             # Per-game totals across the whole window: the real sell-through.
             totals: dict = {}
-            for rep in ctx["days"]:
-                for game, g in rep.per_game.items():
+            for day in ctx["days"]:
+                for game, g in day["report"].per_game.items():
                     t = totals.setdefault(game, {"game": game, "tickets": 0, "revenue": 0.0,
                                                  "days": 0})
                     t["tickets"] += g["tickets"]
@@ -1420,6 +1636,7 @@ def _register_routes(app: Flask):
                 select(AuditRow).where(AuditRow.store == _store())
                 .order_by(AuditRow.at.desc()).limit(200)).all()
 
+        ctx["today"] = _today(tz)
         return render_template("history.html", **ctx)
 
     def _recent_dates(today: str, days: int) -> list:

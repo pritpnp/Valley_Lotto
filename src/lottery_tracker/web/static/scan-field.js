@@ -51,6 +51,24 @@ function appKeyboard(wanted) {
   try { wanted ? b.showKeyboard() : b.hideKeyboard(); } catch (e) { /* older shell */ }
 }
 
+/* Keep the screen awake for the length of a count, and only for that. In the
+   app this is a real window flag; in a browser it's the wake-lock API where the
+   browser offers one. Either way it lapses when the page is left, so a device
+   sitting on a counter all day still sleeps like any other. */
+let _wakeLock = null;
+
+function keepScreenAwake() {
+  const b = appBridge();
+  if (b && b.keepAwake) {
+    try { b.keepAwake(true); return; } catch (e) { /* older shell */ }
+  }
+  if (navigator.wakeLock && !_wakeLock) {
+    navigator.wakeLock.request("screen")
+      .then(l => { _wakeLock = l; l.addEventListener("release", () => { _wakeLock = null; }); })
+      .catch(() => {});                    // refused (battery saver, no permission)
+  }
+}
+
 function scanModeKey() {
   return localStorage.getItem("scanMode") || "quiet";
 }
@@ -93,6 +111,12 @@ class ScanField {
     document.addEventListener("keydown", e => {
       if (this.manual || document.activeElement === el) return;
       this.onKey(e, false);
+    });
+
+    // A scan field on screen means a count is happening.
+    keepScreenAwake();
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) keepScreenAwake();   // the browser drops it on hide
     });
 
     this.applyMode();
