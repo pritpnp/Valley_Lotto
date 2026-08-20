@@ -41,8 +41,15 @@ class MainActivity : AppCompatActivity() {
     private lateinit var web: WebView
     private lateinit var prefs: android.content.SharedPreferences
 
-    /** False only while the page has asked for a real keyboard. */
-    private var suppressKeyboard = true
+    /**
+     * Whether to push the keyboard back down when something raises it.
+     *
+     * Off by default, and deliberately so: signing in, entering a PIN, naming a
+     * member of staff and typing a note all need a keyboard like any other app.
+     * Only the scan screens ask for it to be held down, and that request lasts
+     * until the next page loads.
+     */
+    private var suppressKeyboard = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -55,10 +62,7 @@ class MainActivity : AppCompatActivity() {
         // A count is a minute of scanning with no touches — don't sleep partway.
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
-        // Hold the keyboard down. A scan gun is a keyboard already; the on-screen
-        // one covers half the screen a clerk is trying to read and has no reason
-        // to be there. The page lifts this deliberately when someone taps the ⌨
-        // button, and puts it back afterwards.
+        // Don't open with the keyboard up; beyond that, each page decides.
         window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN)
         keepKeyboardDown()
 
@@ -102,6 +106,13 @@ class MainActivity : AppCompatActivity() {
                 val host = req.url.host ?: return true
                 val ours = android.net.Uri.parse(prefs.getString(KEY_URL, "") ?: "").host
                 return if (host == ours) false else true
+            }
+
+            override fun onPageStarted(v: WebView, url: String, favicon: android.graphics.Bitmap?) {
+                // Every page starts with a normal keyboard. A scan screen asks
+                // for it to be held down as it loads; nothing else has to
+                // remember to ask for it back.
+                suppressKeyboard = false
             }
 
             override fun onReceivedError(v: WebView, req: WebResourceRequest, err: WebResourceError) {
@@ -151,7 +162,7 @@ class MainActivity : AppCompatActivity() {
      * WebView refuses to navigate anywhere else, so no other page can call this.
      */
     private inner class KeyboardBridge {
-        /** The page is scanning: keep the keyboard down. */
+        /** This screen is for scanning: keep the keyboard down while it lasts. */
         @JavascriptInterface
         fun hideKeyboard() {
             suppressKeyboard = true

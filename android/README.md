@@ -13,10 +13,16 @@ desktop — the app doesn't intercept the scan itself.
 **The keyboard is the app's job, though.** A web page can *ask* Android not to
 raise the on-screen keyboard; it cannot insist, and on many phones it is
 overruled — which is why the keyboard kept appearing on the scan screen in a
-browser. The app holds it down from the outside: the window opens with the
-keyboard suppressed, and any attempt to raise it is pushed straight back down.
-Tapping the ⌨ button on the scan screen is the one thing that lifts that, and
-leaving the field puts it back.
+browser. The app holds it down from the outside, on the screens where it gets in
+the way and nowhere else:
+
+* **Scan screens** ask for it to be held down as they load, and anything that
+  raises it is pushed straight back.
+* **The ⌨ button** on those screens lifts that on demand — the keyboard comes
+  up, you type the number, and tapping ⌨ again puts it back down.
+* **Everywhere else it is a normal keyboard.** Signing in, entering a PIN,
+  naming a member of staff, typing a note. The request only lasts until the next
+  page loads, so no screen has to remember to ask for its keyboard back.
 
 If you are using the site in a plain browser rather than the app, the scan
 screen has three fallbacks under "Scanner not picking up?" — see that menu. It
