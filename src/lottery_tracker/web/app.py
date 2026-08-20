@@ -34,7 +34,7 @@ from ..reporting import (daily_report, render_daily_report_md, as_zone,
                          business_date, count_status, normalize_session,
                          SESSIONS)
 from ..config import Config
-from ..rules import RATING_FACTORS
+from ..rules import RATING_FACTORS, rate, recommendation
 from .models import (Base, User, Store, ScanRow, ActiveCount, InventoryRow,
                      PackRow, ShipmentRow,
                      EmphasisRow, StaffRow, AccessRow, AuditRow, BoxRow)
@@ -1842,10 +1842,62 @@ def _register_routes(app: Flask):
                 PackRow.store == _store(), PackRow.slot == slot,
                 PackRow.game_number == current.game_number,
                 PackRow.state == "active").order_by(PackRow.id.desc()))
+
+        # Why this box is green or red, right here. Chasing the same game through
+        # the full catalog to find that out was the wrong shape for a phone.
+        detail = _game_detail(current.game_number if current else None)
+
         return render_template("inventory_box.html", slot=slot, active=active,
                                current=current.game_number if current else None,
                                in_box=in_box, reasons=SETTLE_REASONS,
+                               detail=detail, do=request.args.get("do") or "",
                                games=cat.games)
+
+    def _game_detail(game_number: str | None) -> dict | None:
+        """Everything behind one game's colour: the call, the rating, and each
+        factor that voted — with the ones carrying no weight said so plainly."""
+        if not game_number:
+            return None
+        cat = _catalog()
+        g = cat.games.get(game_number)
+        weights, cfg = _effective_weights()
+        if g is None:
+            # Same shape as a rated game: a missing catalog entry is a verdict
+            # ("pull it"), not a reason for the page to fall over.
+            return {"game_number": game_number, "name": "(not on PA's active list)",
+                    "action": "send_back", "rating": None, "factors": [],
+                    "reason": "not in the PA catalog any more — most likely ended; "
+                              "check it and pull it",
+                    "cutoff": weights.cutoff, "tiers": [], "price": None, "odds": None,
+                    "status": "unknown", "sell_through": None,
+                    "top_prize_value": None, "top_prizes_remaining": None,
+                    "jackpot_density": None, "jackpot_significant": False,
+                    "sales_end_date": None}
+
+        action, reason = recommendation(g, cfg.thresholds, weights)
+        rating, factors = rate(g, weights)
+        total = sum(f.weight for f in factors if f.score is not None and f.weight > 0)
+        rows = []
+        for f in factors:
+            rows.append({
+                "key": f.key, "label": f.label, "score": f.score, "detail": f.detail,
+                # Share of the decision this factor actually carried. A factor with
+                # no data doesn't drag the game down — it simply doesn't vote.
+                "share": (round(100 * f.weight / total) if f.score is not None
+                          and f.weight > 0 and total else 0),
+                "voted": f.score is not None and f.weight > 0,
+            })
+        return {
+            "game_number": game_number, "name": g.name, "price": g.price,
+            "odds": g.odds, "status": g.status, "action": action, "reason": reason,
+            "rating": rating, "cutoff": weights.cutoff, "factors": rows,
+            "tiers": g.tier_health(), "sell_through": g.sell_through_pct,
+            "top_prize_value": g.top_prize_value,
+            "top_prizes_remaining": g.top_prizes_remaining,
+            "jackpot_density": g.jackpot_density,
+            "jackpot_significant": g.jackpot_density_significant,
+            "sales_end_date": g.sales_end_date,
+        }
 
     @app.post("/inventory/add")
     @perm_required("boxes")

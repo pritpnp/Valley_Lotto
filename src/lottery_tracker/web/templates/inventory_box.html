@@ -2,59 +2,107 @@
 {% block title %}Box {{ slot }} — {{ site_title }}{% endblock %}
 {% block body %}
 <style>
+  .menu { display:grid; gap:10px; margin-top:12px; }
+  .menu a { text-decoration:none; }
+  .menu button { width:100%; text-align:left; padding:16px; font-size:17px;
+                 border-radius:12px; }
+  .menu .sub { display:block; font-size:12.5px; color:var(--muted); font-weight:400;
+               margin-top:3px; white-space:normal; }
+  .danger { background:var(--err-bg); color:var(--err); }
+
   .pick { display:block; width:100%; text-align:left; padding:14px 16px;
           border:1px solid var(--line); border-radius:12px; margin-bottom:8px;
           background:var(--panel2); color:var(--ink); font-size:15px; }
   .pick.on { border-color:var(--accent); background:var(--ok-bg); font-weight:700; }
   .pick .sub { display:block; font-size:12px; color:var(--muted); font-weight:400; }
+
+  /* The "why" panel: stacked rows, no horizontal scrolling. */
+  .verdict { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  .score { font-size:40px; font-weight:800; line-height:1; }
+  .call { font-size:12px; font-weight:800; letter-spacing:.6px; text-transform:uppercase;
+          padding:5px 12px; border-radius:999px; }
+  .call.keep { background:var(--ok-bg); color:var(--ok); }
+  .call.send { background:var(--err-bg); color:var(--err); }
+  .factor { padding:11px 0; border-top:1px solid var(--line); }
+  .factor:first-of-type { border-top:none; }
+  .frow { display:flex; justify-content:space-between; gap:10px; align-items:baseline; }
+  .fname { font-weight:600; font-size:14.5px; }
+  .fval { font-size:14px; color:var(--muted); text-align:right; }
+  .bar { height:7px; border-radius:99px; background:var(--pending); margin-top:7px;
+         overflow:hidden; }
+  .bar i { display:block; height:100%; background:var(--ok); }
+  .bar.low i { background:var(--err); }
+  .bar.mid i { background:var(--warn); }
+  .fmeta { font-size:11.5px; color:var(--muted); margin-top:5px; }
+  .quiet { opacity:.6; }
+  .tier { display:flex; justify-content:space-between; font-size:13.5px; padding:6px 0;
+          border-top:1px dashed var(--line); }
 </style>
 
 <div class="card">
-  <h2 style="margin:0 0 4px">Box {{ slot }}</h2>
-  <p class="muted" style="font-size:13px">
-    {% if current %}Currently holding <b>#{{ current }}</b>
-      {{ games[current].name if current in games else '' }}.{% else %}This box is empty.{% endif %}
-    Scan a ticket from the box, or pick the game below.
+  <div class="row" style="justify-content:space-between;align-items:baseline">
+    <h2 style="margin:0">Box {{ slot }}</h2>
+    <a href="{{ url_for('inventory') }}" style="font-size:13px">← all boxes</a>
+  </div>
+  <p class="muted" style="font-size:13.5px;margin:6px 0 0">
+    {% if current %}Holding <b>#{{ current }}</b>
+      {{ games[current].name if current in games else '' }}{% if in_box %},
+      pack {{ in_box.pack }}{% endif %}.
+    {% else %}This box is empty.{% endif %}
   </p>
 
-  <form method="post" class="row" style="align-items:flex-end;gap:8px">
+  {% if not do %}
+  <div class="menu">
+    <a href="{{ url_for('inventory_box', slot=slot, do='override') }}">
+      <button>Override
+        <span class="sub">Scan a ticket or type a game number to correct what's in here.</span>
+      </button></a>
+
+    <a href="{{ url_for('inventory_box', slot=slot, do='pick') }}">
+      <button>Pick another game
+        <span class="sub">Choose from PA's active games instead of scanning.</span>
+      </button></a>
+
+    {% if current %}
+      <form method="post" onsubmit="return confirm('Empty box {{ slot }}? This only changes the map.')">
+        <input type="hidden" name="game_number" value="__clear__">
+        <button type="submit">Empty
+          <span class="sub">Mark the box as empty. Nothing is settled or returned.</span>
+        </button>
+      </form>
+
+      {% if can.settle %}
+      <a href="{{ url_for('inventory_box', slot=slot, do='settle') }}">
+        <button class="danger">Settle &amp; return
+          <span class="sub">The pack is leaving the store. Recorded with who, when and why.</span>
+        </button></a>
+      {% endif %}
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {% if do == 'override' %}
+  <form method="post" class="row" style="align-items:flex-end;gap:8px;margin-top:14px">
     <div style="flex:1;min-width:160px">
-      <label>Scan a ticket or type a game number</label>
-      <input type="text" name="game_number" inputmode="numeric" autofocus>
+      <label>Scan a ticket from this box, or type a game number</label>
+      <input type="text" name="game_number" inputmode="numeric" autofocus autocomplete="off">
     </div>
     <button class="primary" type="submit">Save</button>
   </form>
-
-  {% if current %}
-  <form method="post" style="margin-top:10px">
-    <input type="hidden" name="game_number" value="__clear__">
-    <button type="submit">Empty this box</button>
-  </form>
-  <p class="hint" style="font-size:12px;color:var(--muted);margin-top:6px">
-    Emptying only updates the map. If the pack is actually leaving the store,
-    settle it below so it's on the record.
-  </p>
+  <p style="margin-top:12px"><a href="{{ url_for('inventory_box', slot=slot) }}">← back</a></p>
   {% endif %}
-</div>
 
-{% if current and can.settle %}
-<div class="card">
-  <b>Settle &amp; return this pack</b>
-  <p class="muted" style="font-size:13px">
-    Records the pack as settled and returned — who, when and why — and empties the
-    box. Use it even when the game was still rated keep; that's a decision worth
-    keeping a record of. Only a superadmin can clear this afterwards.
-  </p>
-  <form method="post" action="{{ url_for('pack_settle') }}"
+  {% if do == 'settle' and current and can.settle %}
+  <form method="post" action="{{ url_for('pack_settle') }}" style="margin-top:14px"
         onsubmit="return confirm('Settle and return this pack? Only a superadmin can undo it.')">
     <input type="hidden" name="game" value="{{ current }}">
     <input type="hidden" name="pack" value="{{ in_box.pack if in_box else '' }}">
     <input type="hidden" name="slot" value="{{ slot }}">
     <input type="hidden" name="next" value="{{ url_for('inventory') }}">
-    <p class="muted" style="font-size:13px;margin:0 0 8px">
-      Game <b>{{ current }}</b>{% if in_box %}, pack <b>{{ in_box.pack }}</b>{%
-      else %} <span class="muted">(no pack recorded for this box — scan a count and
-      it fills itself in)</span>{% endif %}
+    <p class="muted" style="font-size:13px;margin:0 0 10px">
+      Game <b>{{ current }}</b>{% if in_box %}, pack <b>{{ in_box.pack }}</b>{% else %}
+      <span class="muted">(no pack recorded for this box yet — a count fills that in)</span>{% endif %}.
+      This empties the box and puts the pack on the settled-and-returned record.
     </p>
     <label>Why is it going back?</label>
     <select name="reason">
@@ -64,11 +112,13 @@
     <input type="text" name="note" placeholder="anything worth remembering">
     <button class="primary" type="submit" style="margin-top:12px">Settle &amp; return</button>
   </form>
+  <p style="margin-top:12px"><a href="{{ url_for('inventory_box', slot=slot) }}">← back</a></p>
+  {% endif %}
 </div>
-{% endif %}
 
+{% if do == 'pick' %}
 <div class="card">
-  <b>Or pick an active game</b>
+  <b>Pick an active game</b>
   <div style="margin-top:10px">
     {% for g in active %}
       <form method="post">
@@ -81,6 +131,79 @@
       </form>
     {% endfor %}
   </div>
-  <p style="margin-top:12px"><a href="{{ url_for('inventory') }}">← Back to boxes</a></p>
+  <p style="margin-top:12px"><a href="{{ url_for('inventory_box', slot=slot) }}">← back</a></p>
 </div>
+{% endif %}
+
+{% if detail and not do %}
+<div class="card">
+  <b>Why this box is {{ 'red' if detail.action == 'send_back' else 'green' }}</b>
+
+  <div class="verdict" style="margin-top:12px">
+    <span class="score">{{ '—' if detail.rating is none else '%.0f'|format(detail.rating) }}</span>
+    <span class="muted" style="font-size:13px">out of 100<br>
+      {% if detail.cutoff %}<span style="font-size:12px">keep at {{ '%.0f'|format(detail.cutoff) }}+</span>{% endif %}</span>
+    <span class="call {{ 'send' if detail.action == 'send_back' else 'keep' }}">
+      {{ 'send back' if detail.action == 'send_back' else 'keep' }}</span>
+  </div>
+
+  <p class="muted" style="font-size:13.5px;margin:10px 0 0">{{ detail.reason }}</p>
+
+  <div style="margin-top:14px">
+    {% for f in detail.factors %}
+      <div class="factor {{ '' if f.voted else 'quiet' }}">
+        <div class="frow">
+          <span class="fname">{{ f.label }}</span>
+          <span class="fval">{{ f.detail }}</span>
+        </div>
+        {% if f.voted %}
+          <div class="bar {{ 'low' if f.score < 40 else 'mid' if f.score < 65 else '' }}">
+            <i style="width:{{ '%.0f'|format(f.score) }}%"></i>
+          </div>
+          <div class="fmeta">scored {{ '%.0f'|format(f.score) }}/100 · {{ f.share }}% of the decision</div>
+        {% else %}
+          <div class="fmeta">no usable data — this one didn't vote</div>
+        {% endif %}
+      </div>
+    {% endfor %}
+  </div>
+
+  {% if detail.tiers %}
+  <div style="margin-top:16px">
+    <b style="font-size:14px">Prizes left</b>
+    {% for t in detail.tiers %}
+      <div class="tier">
+        <span>{{ t.value }}</span>
+        <span class="muted">
+          {{ t.remaining }}{% if t.original %} of {{ t.original }}{% endif %}
+          {% if t.pct is not none %} · {{ '%.0f'|format(100 * t.pct) }}% left{% endif %}
+        </span>
+      </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <details style="margin-top:14px">
+    <summary style="cursor:pointer;font-size:13px;color:var(--muted)">What do these mean?</summary>
+    <div class="muted" style="font-size:13px;line-height:1.6;margin-top:8px">
+      <p><b>Win odds</b> — PA's published chance of winning anything. Fixed for the
+        life of the game; it never moves.</p>
+      <p><b>Prizes left</b> — how much of the game is still unclaimed. Falls as the
+        game sells through.</p>
+      <p><b>Low prizes</b> — the small, common wins. These are what keep a regular
+        customer coming back, so they're weighted heavily.</p>
+      <p><b>Low-prize trend</b> — whether those small prizes are running out faster
+        than the game as a whole.</p>
+      <p><b>Jackpot density</b> — a <b>ratio</b>, not a count: the share of top
+        prizes still out there divided by how much of the game is still unsold.
+        Above 1.00× means the big prizes are lasting longer than the game's
+        sell-through would predict — good for a jackpot hunter. Below 1.00× means
+        they were claimed early and the game is picked over.
+        <b>n/s</b> means "not significant": with only a handful of top prizes the
+        number bounces around on chance alone, so it's shown but ignored in the
+        score rather than allowed to swing the decision.</p>
+    </div>
+  </details>
+</div>
+{% endif %}
 {% endblock %}

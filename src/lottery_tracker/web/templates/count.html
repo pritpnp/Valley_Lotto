@@ -99,6 +99,22 @@
   {% endif %}
 </div>
 
+<div id="missing" class="card" style="display:none">
+  <h2 style="margin:0 0 4px">Hold on — <span id="missCount">0</span> boxes have nothing recorded</h2>
+  <p class="muted">
+    You've been through all <span id="missTotal">48</span> boxes and
+    <b id="missDone">0</b> were scanned. These have nothing against them:
+  </p>
+  <p style="font-size:20px;font-weight:700;line-height:1.5" id="missList"></p>
+  <div class="row" style="margin-top:12px">
+    <button class="primary" onclick="fillMissing()">Go scan them</button>
+    <button onclick="saveAnyway()">They're empty — save the count</button>
+  </div>
+  <p class="hint">Saving with boxes missing is fine when those boxes really are
+     empty. It's a problem when a scan didn't take, which is what this is here to
+     catch.</p>
+</div>
+
 <div id="live" style="display:none">
   <div class="card">
     <div class="row" style="justify-content:space-between;align-items:center">
@@ -142,6 +158,7 @@
 const INITIAL = {{ state|tojson }};
 let state = INITIAL;
 let fixSlot = null;
+let fillingGaps = false;
 
 const $ = id => document.getElementById(id);
 
@@ -177,15 +194,33 @@ function applyState(s){
   $("sessLabel").textContent = (s.session||"").toUpperCase() + " count";
   $("doneN").textContent = s.done; $("totalN").textContent = s.total;
 
+  // Filling gaps: hop straight to the next box that has nothing against it
+  // rather than walking forward over boxes that are already done.
+  if (fillingGaps && !saving) {
+    const gaps = s.pending || [];
+    if (!gaps.length) { fillingGaps = false; saveNow(); return; }
+    if (s.step && s.step.ok && gaps[0] !== s.current_slot) {
+      postJSON("{{ url_for('api_goto') }}", {slot: gaps[0]}).then(applyState);
+      return;
+    }
+  }
+
   // The end of the walk saves the count — there is no Finish button to forget.
-  if (s.walk_done && !fixSlot && !saving) { saveNow(); return; }
+  // But it must never save SHORT: if boxes have nothing recorded, say which ones
+  // and make someone decide, rather than quietly filing an incomplete count.
+  if (s.walk_done && !fixSlot && !saving && !fillingGaps) {
+    if (s.pending && s.pending.length) { showMissing(s); return; }
+    saveNow(); return;
+  }
 
   // current prompt
   if (s.walk_done && !fixSlot) {
     $("promptLine").textContent = "Saving…";
     $("slotName").textContent = "✓";
   } else {
-    $("promptLine").textContent = fixSlot ? "Fixing box" : "Scan box";
+    $("promptLine").textContent = fixSlot ? "Fixing box"
+                                : fillingGaps ? "Missed box — scan box"
+                                : "Scan box";
     $("slotName").textContent = fixSlot || s.current_slot || "—";
   }
 
@@ -223,6 +258,30 @@ function applyState(s){
   // The field can only take focus once it's on screen, which is why this
   // belongs at the END of a render rather than at page load.
   keepFocus();
+}
+
+function showMissing(s){
+  $("live").style.display = "none";
+  $("missing").style.display = "block";
+  $("missCount").textContent = s.pending.length;
+  $("missTotal").textContent = s.total;
+  $("missDone").textContent = s.done;
+  $("missList").textContent = s.pending.join(", ");
+}
+
+function fillMissing(){
+  const first = (state.pending || [])[0];
+  if (!first) { saveNow(); return; }
+  fillingGaps = true;
+  $("missing").style.display = "none";
+  postJSON("{{ url_for('api_goto') }}", {slot: first}).then(applyState);
+}
+
+function saveAnyway(){
+  fillingGaps = false;
+  $("missing").style.display = "none";
+  $("live").style.display = "block";
+  saveNow();
 }
 
 function setFix(slot){ fixSlot = slot; applyState(state); }
