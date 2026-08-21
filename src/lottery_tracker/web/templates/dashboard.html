@@ -51,10 +51,18 @@
 </div>
 {% endif %}
 
+{% if data_age and data_age.stale %}
+<div class="card flash warn" style="display:block">
+  <b>Pennsylvania's numbers haven't refreshed{% if data_age.days %} for {{ data_age.days }} days{% endif %}.</b>
+  Everything below is from the last successful update, so a game may have changed
+  since. Counting and sales are unaffected — those are your own numbers.
+</div>
+{% endif %}
+
 <div class="card">
   <div class="row" style="justify-content:space-between;align-items:baseline">
     <h2 style="margin:0">Your games</h2>
-    <span class="muted" style="font-size:12px">PA data: {{ captured_at or '—' }}</span>
+    <span class="muted" style="font-size:12px">PA data: {{ data_age.text }}</span>
   </div>
   <div class="stats" style="margin-top:12px">
     <div class="stat"><div class="n">{{ summary.total }}</div><div class="l">tracked</div></div>

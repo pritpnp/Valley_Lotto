@@ -21,9 +21,9 @@ jobs:
   track:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.11"
 
@@ -32,8 +32,13 @@ jobs:
 
       - name: Run tracker
         id: run
-        # Don't fail the job on a "critical" exit code (2) — that's an expected
-        # signal, not an error. Real errors (network/parse) are non-2 and DO fail.
+        # Exit codes are how the tracker distinguishes three different outcomes:
+        #   0  — ran, nothing urgent
+        #   2  — ran, and something needs attention (an expected signal)
+        #  75  — PA's website didn't answer. Their outage, not our bug, and the
+        #        next run is twelve hours away; a red X here would be crying
+        #        wolf. Logged as a warning so a run of them is still visible.
+        # Anything else is a real failure and fails the job.
         env:
           # Email is optional. Set these as repo secrets to turn it on.
           SMTP_HOST: ${{ secrets.SMTP_HOST }}
@@ -47,9 +52,15 @@ jobs:
           PYTHONPATH=src python -m lottery_tracker
           code=$?
           echo "exit_code=$code" >> "$GITHUB_OUTPUT"
-          if [ "$code" -eq 2 ] || [ "$code" -eq 0 ]; then exit 0; else exit $code; fi
+          case "$code" in
+            0|2) exit 0 ;;
+            75)  echo "::warning::PA's website did not answer. Nothing was" \
+                      "updated; the next scheduled run will try again." ; exit 0 ;;
+            *)   exit "$code" ;;
+          esac
 
       - name: Commit snapshot and report
+        if: steps.run.outputs.exit_code != '75'
         run: |
           git config user.name "valley-lotto-bot"
           git config user.email "actions@github.com"
@@ -62,6 +73,7 @@ jobs:
           fi
 
       - name: Open an issue if there are new alerts
+        if: steps.run.outputs.exit_code != '75'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |

@@ -1975,6 +1975,27 @@ def _register_routes(app: Flask):
     def _catalog():
         return pa_data.load_catalog(DATA_DIR / "state.json")
 
+    def _catalog_age(captured_at) -> dict:
+        """How old PA's data is, in days.
+
+        The scraper no longer fails loudly when PA's site is down — a twelve-hour
+        job crying wolf over someone else's outage is noise. This is what replaces
+        that: if the numbers stop being refreshed, the screens that rely on them
+        say so, rather than quietly showing last week's ratings as if they were
+        today's.
+        """
+        if not captured_at:
+            return {"days": None, "stale": True, "text": "never fetched"}
+        try:
+            when = datetime.fromisoformat(str(captured_at).replace("Z", "+00:00"))
+        except ValueError:
+            return {"days": None, "stale": False, "text": str(captured_at)[:10]}
+        days = (datetime.now(timezone.utc) - when).days
+        text = ("today" if days <= 0 else "yesterday" if days == 1
+                else f"{days} days ago")
+        # It runs twice a day, so two days without a refresh is a real gap.
+        return {"days": days, "stale": days >= 2, "text": text}
+
     def _known_games() -> set:
         """Real PA game numbers, handed to the barcode parser so a scan is
         validated against games that exist instead of trusted by digit offset."""
@@ -2072,7 +2093,8 @@ def _register_routes(app: Flask):
             "dashboard.html", email=session.get("email"),
             night_due=_night_reminder(),
             rows=rows, summary=pa_data.store_summary(rows),
-            captured_at=cat.captured_at, weights=weights,
+            captured_at=cat.captured_at, data_age=_catalog_age(cat.captured_at),
+            weights=weights,
             new_games=pa_data.new_games(cat, within_days=14, weights=weights),
             bring_in=pa_data.bring_in_candidates(
                 cat, inv, cfg.thresholds, weights=weights,
@@ -2092,6 +2114,7 @@ def _register_routes(app: Flask):
         by_price = dict(sorted(by_price.items(), key=lambda kv: -kv[0]))
         return render_template("catalog.html", email=session.get("email"),
                                by_price=by_price, cutoff=weights.cutoff,
+                               data_age=_catalog_age(cat.captured_at),
                                captured_at=cat.captured_at)
 
     @app.get("/catalog/<game_number>")
