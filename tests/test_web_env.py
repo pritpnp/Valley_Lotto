@@ -54,8 +54,31 @@ def test_app_boots_with_quoted_env(tmp_path, monkeypatch):
     assert app.config["DEFAULT_STORE"] == "valley"
 
     c = app.test_client()
-    assert c.get("/healthz").get_json() == {"ok": True}
+    health = c.get("/healthz").get_json()
+    assert health["ok"] is True
+    # the check touches the database, which is also what keeps a free Supabase
+    # project from being paused for inactivity
+    assert health["database"] is True
     # Registration works with the code as typed by a human (no quotes).
     r = c.post("/register", data={"email": "a@b.com", "password": "pw",
                                   "code": "VALLEY-J0RTG8"}, follow_redirects=False)
     assert r.status_code == 302, "quoted REGISTER_CODE must still accept the plain code"
+
+
+def test_the_health_check_stays_up_when_the_database_is_not(tmp_path, monkeypatch):
+    """A database blip must not make the platform tear the app down."""
+    app = create_app({"DATABASE_URL": f"sqlite:///{tmp_path/'x.db'}",
+                      "SECRET_KEY": "k", "DEFAULT_STORE": "t", "SLOTS": "2",
+                      "REGISTER_CODE": None})
+    app.config.update(TESTING=True)
+
+    import lottery_tracker.web.app as appmod
+
+    def explode(*a, **k):
+        raise RuntimeError("connection refused")
+    monkeypatch.setattr(appmod, "text", explode)
+
+    r = app.test_client().get("/healthz")
+    assert r.status_code == 200                 # still "up"
+    body = r.get_json()
+    assert body["ok"] is True and body["database"] is False

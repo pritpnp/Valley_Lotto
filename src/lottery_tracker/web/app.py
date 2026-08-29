@@ -22,7 +22,7 @@ from pathlib import Path
 
 from flask import (Flask, current_app, g, redirect, render_template, request,
                    session, url_for, jsonify, abort)
-from sqlalchemy import create_engine, func, select
+from sqlalchemy import create_engine, func, select, text
 from sqlalchemy.orm import sessionmaker
 from werkzeug.exceptions import HTTPException
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -495,7 +495,25 @@ def _register_routes(app: Flask):
 
     @app.get("/healthz")
     def healthz():
-        return {"ok": True}
+        """Is the app up, and can it reach its database?
+
+        The database check is not just thoroughness. Supabase pauses a free
+        project after a week without activity, and an app nobody has opened yet
+        generates none — so the store's data would be taken offline before the
+        store ever went live. A health check that touches the database is
+        activity, and whatever pings this (Railway, or the daily workflow) keeps
+        the project awake as a side effect of doing its actual job.
+
+        Answers 200 either way: a database that is briefly unreachable should not
+        make the platform tear the app down and restart it.
+        """
+        db_ok, detail = True, "ok"
+        try:
+            _db().execute(text("SELECT 1"))
+        except Exception as e:  # noqa: BLE001 — a health check never raises
+            db_ok, detail = False, type(e).__name__
+            app.logger.warning("health check: database unreachable (%s)", e)
+        return {"ok": True, "database": db_ok, "detail": detail}
 
     @app.get("/")
     def index():

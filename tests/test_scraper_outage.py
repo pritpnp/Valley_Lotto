@@ -91,3 +91,22 @@ def test_fresh_data_says_nothing(client, monkeypatch):
     html = client.get("/dashboard").data.decode()
     assert "haven't refreshed" not in html and "haven&#39;t refreshed" not in html
     assert "PA data: today" in html
+
+
+# --- keeping a free Supabase project from being paused -----------------------
+
+def test_the_health_check_touches_the_database():
+    """Supabase pauses a free project after a week of no activity. A health
+    check that only says "the web server is alive" is not activity."""
+    src = pathlib.Path("src/lottery_tracker/web/app.py").read_text()
+    start = src.index('def healthz()')
+    body = src[start:start + 1400]
+    assert "SELECT 1" in body
+    assert "Supabase" in body          # and the reason is written down
+
+
+def test_there_is_a_daily_ping():
+    wf = pathlib.Path(".github/workflows/keepalive.yml").read_text()
+    assert "schedule" in wf and "healthz" in wf
+    # it must do nothing rather than fail when the address isn't configured
+    assert 'if [ -z "$APP_URL" ]' in wf and "exit 0" in wf
