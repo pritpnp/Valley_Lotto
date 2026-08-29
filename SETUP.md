@@ -90,24 +90,3 @@ owner too and cut the app off from its own data.
 If Supabase's Table Editor shows "RLS disabled" on a table, redeploy — the next
 boot turns it on. Do **not** add permissive policies to silence the warning;
 "RLS on, zero policies" is the intended state here.
-
-## Backups
-
-The database is dumped every night, encrypted, and committed to `backups/` in
-this repo — 30 nights are kept. See `backups/README.md` for how to read or
-restore one.
-
-Two repository secrets make it work (Settings → Secrets and variables → Actions):
-
-| Secret | Value |
-|--------|-------|
-| `DATABASE_URL` | the Supabase connection string, the same one Railway uses |
-| `BACKUP_PASSPHRASE` | a long random phrase you choose |
-
-The backups are encrypted because this repository is public, and **the
-passphrase is the only way to read them**. Store it wherever you keep the
-database password — not only in GitHub, since a passphrase kept solely in the
-repo whose backups it protects is no protection at all.
-
-To check it works, run **Back up the database** from the Actions tab rather than
-waiting for tonight.
