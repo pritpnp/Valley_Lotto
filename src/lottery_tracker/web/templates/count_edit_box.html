@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}Box {{ slot }} — {{ label }} {{ date }}{% endblock %}
+{% block body %}
+<div class="card">
+  <div class="row" style="justify-content:space-between;align-items:baseline">
+    <h2 style="margin:0">Box {{ slot }}</h2>
+    <a href="{{ url_for('count_edit', date=date, sess=sess) }}" style="font-size:13px">← all boxes</a>
+  </div>
+  <p class="muted" style="font-size:13.5px;margin:6px 0 0">
+    {{ label }} count, {{ date }}.
+    {% if row %}Recorded as game <b>{{ row.game_number }}</b>, pack
+      <b>{{ row.pack or '—' }}</b>, ticket <b>{{ '%03d'|format(row.ticket) }}</b>
+      {%- if row.game_number in games %} — {{ games[row.game_number].name }}{% endif %}.
+    {% else %}Nothing recorded for this box.{% endif %}
+  </p>
+
+  {% if error %}<div class="flash err">{{ error }}</div>{% endif %}
+
+  <form method="post" style="margin-top:14px">
+    <label>Scan the ticket</label>
+    <input type="text" name="scan" inputmode="numeric" autocomplete="off"
+           placeholder="scan here, and the three fields below fill themselves">
+    <p class="hint" style="font-size:12px;margin:6px 0 14px">
+      Or fill them in by hand — that's the point of this screen, for a count done
+      on paper.
+    </p>
+
+    <div class="row" style="gap:8px">
+      <div style="flex:1;min-width:96px">
+        <label>Game number</label>
+        <input type="text" name="game_number" inputmode="numeric" autocomplete="off"
+               value="{{ row.game_number if row else '' }}">
+      </div>
+      <div style="flex:1;min-width:96px">
+        <label>Pack number</label>
+        <input type="text" name="pack" inputmode="numeric" autocomplete="off"
+               value="{{ row.pack if row else '' }}">
+      </div>
+      <div style="flex:1;min-width:88px">
+        <label>Ticket number</label>
+        <input type="text" name="ticket" inputmode="numeric" autocomplete="off"
+               value="{{ row.ticket if row else '' }}">
+      </div>
+    </div>
+
+    <button class="primary" type="submit" style="margin-top:14px">Save this box</button>
+  </form>
+
+  {% if row %}
+  <form method="post" style="margin-top:10px"
+        onsubmit="return confirm('Take box {{ slot }} out of this count?')">
+    <input type="hidden" name="action" value="delete">
+    <button type="submit" style="background:var(--err-bg);color:var(--err)">
+      Take this box out of the count</button>
+  </form>
+  <p class="hint" style="font-size:12px;margin-top:6px">
+    Use this when the box was empty that day, or scanned by mistake.
+  </p>
+  {% endif %}
+</div>
+{% endblock %}

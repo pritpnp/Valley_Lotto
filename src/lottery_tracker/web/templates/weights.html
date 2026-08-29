@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Emphasis — Valley Lotto{% endblock %}
+{% block body %}
+<style>
+  .slider-row { padding:14px 0; border-bottom:1px solid var(--line); }
+  .slider-row:last-child { border-bottom:none; }
+  .slider-head { display:flex; justify-content:space-between; align-items:baseline; }
+  .slider-label { font-weight:700; }
+  .slider-pct { color:var(--muted); font-variant-numeric:tabular-nums; font-size:13px; }
+  .slider-desc { color:var(--muted); font-size:12.5px; margin:2px 0 8px; }
+  input[type=range] { width:100%; }
+  .ends { display:flex; justify-content:space-between; color:var(--muted); font-size:11px; }
+</style>
+<div class="card">
+  <h2 style="margin:0 0 4px">What matters to you</h2>
+  <p class="muted" style="font-size:13px">
+    Slide toward <b>More</b> to make a factor count more in the KEEP / SEND-BACK rating.
+    Middle is neutral. A game rating under <b>{{ '%g'|format(cutoff) }}</b> is sent back.
+  </p>
+
+  <form method="post">
+    {% for s in sliders %}
+      <div class="slider-row">
+        <div class="slider-head">
+          <span class="slider-label">{{ s.label }}</span>
+          <span class="slider-pct">{{ '%.0f'|format(s.eff_pct) }}% of the decision</span>
+        </div>
+        <div class="slider-desc">{{ s.desc }}</div>
+        <input type="range" name="{{ s.key }}" min="-3" max="3" step="1" value="{{ s.value|int }}">
+        <div class="ends"><span>Ignore</span><span>Neutral</span><span>More</span></div>
+      </div>
+    {% endfor %}
+    <div class="row" style="margin-top:16px">
+      <button class="primary" type="submit">Save emphasis</button>
+      <a class="btn" href="{{ url_for('dashboard') }}">Back to dashboard</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

@@ -203,3 +203,61 @@ def new_games(catalog: Catalog, within_days: int = 14,
     th = Thresholds()
     weights = weights or RatingWeights()
     return [_row(g, th, weights) for g in _ng(catalog.games, now, within_days=within_days)]
+
+
+def game_history(history_dir, inventory=None, limit: int = 30, weights=None):
+    """How each game has been decaying, from the twice-daily snapshots.
+
+    The scraper has been committing a dated snapshot of every game since June, so
+    we can replay it: for each game, its rating and prizes-remaining over time.
+    That turns "this game is at 30" into "this game fell from 78 to 30 in three
+    weeks", which is the signal for pulling it *before* it goes dead.
+
+    Returns a list of dicts (newest snapshot last) per game, inventory first.
+    """
+    from pathlib import Path
+    import json as _json
+    from lottery_tracker.model import Game
+    from lottery_tracker.rules import RatingWeights, rate
+
+    d = Path(history_dir)
+    if not d.exists():
+        return []
+    files = sorted(d.glob("*.json"))[-limit:]
+    w = weights or RatingWeights()
+    inv = {str(x) for x in (inventory or [])}
+
+    series: dict = {}
+    for f in files:
+        try:
+            raw = _json.loads(f.read_text() or "{}")
+        except (ValueError, OSError):
+            continue
+        stamp = f.stem
+        for num, gd in (raw.get("games", raw) or {}).items():
+            if inv and str(num) not in inv:
+                continue
+            try:
+                g = Game.from_dict(gd)
+            except Exception:  # noqa: BLE001 — a bad row must not kill the page
+                continue
+            score, _ = rate(g, w)
+            pct = g.overall_pct_remaining
+            series.setdefault(str(num), {"game_number": str(num), "name": g.name,
+                                         "price": g.price, "points": []})
+            series[str(num)]["points"].append({
+                "date": stamp, "rating": score,
+                "pct_left": round(100 * pct) if pct is not None else None,
+            })
+
+    out = []
+    for s in series.values():
+        pts = [p for p in s["points"] if p["rating"] is not None]
+        if len(pts) >= 2:
+            s["first"], s["last"] = pts[0]["rating"], pts[-1]["rating"]
+            s["change"] = round(s["last"] - s["first"])
+        else:
+            s["first"] = s["last"] = pts[0]["rating"] if pts else None
+            s["change"] = 0
+        out.append(s)
+    return sorted(out, key=lambda s: (s["change"] if s["change"] is not None else 0))

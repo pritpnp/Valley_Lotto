@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}Scanner check — {{ site_title }}{% endblock %}
+{% block body %}
+<style>
+  .read { border:1px solid var(--line); border-radius:12px; padding:14px; margin-top:12px;
+          display:none; }
+  .rawline { font-family:ui-monospace, monospace; font-size:19px; letter-spacing:1px;
+             word-break:break-all; }
+  .part { display:grid; grid-template-columns:1fr auto; gap:10px; padding:8px 0;
+          border-top:1px solid var(--line); font-size:14.5px; }
+  .part b { font-family:ui-monospace, monospace; font-size:16px; }
+  .plabel { color:var(--muted); }
+  .past { display:grid; grid-template-columns:1fr auto; gap:8px; padding:8px 0;
+          border-top:1px solid var(--line); font-size:13px; }
+  .past .raw { font-family:ui-monospace, monospace; color:var(--muted); word-break:break-all; }
+</style>
+
+<div class="card">
+  <h2 style="margin:0 0 4px">Scanner check</h2>
+  <p class="muted" style="font-size:13.5px">
+    Scan any ticket here and it shows exactly what your gun sent and how the app
+    read it. <b>Nothing is saved</b> — this is only for checking, so scan as much
+    as you like.
+  </p>
+
+  {% set scan_url = url_for('api_scan_check') %}
+  {% include "_scanner.html" %}
+
+  <div id="read" class="read">
+    <div class="muted" style="font-size:12px">What the gun sent</div>
+    <div class="rawline" id="raw"></div>
+    <div class="muted" style="font-size:12px;margin-top:3px" id="len"></div>
+
+    <div style="margin-top:12px">
+      <div class="part"><span class="plabel">Game</span><b id="pGame"></b></div>
+      <div class="part"><span class="plabel">Pack</span><b id="pPack"></b></div>
+      <div class="part"><span class="plabel">Ticket</span><b id="pTicket"></b></div>
+      <div class="part" id="extraRow" style="display:none">
+        <span class="plabel">Extra digits the gun added</span><b id="pExtra"></b></div>
+      <div class="part"><span class="plabel">Game name</span><b id="pName"></b></div>
+    </div>
+    <p class="muted" style="font-size:12.5px;margin:10px 0 0" id="verdict"></p>
+  </div>
+</div>
+
+{% if recent %}
+<div class="card">
+  <b>Last {{ recent|length }} saved scans</b>
+  <p class="muted" style="font-size:13px">
+    What was actually recorded, with the exact characters that produced it. If a
+    box shows a ticket number you don't recognise, its scan is in here.
+  </p>
+  {% for r in recent %}
+    <div class="past">
+      <span>
+        <b>Box {{ r.slot or '—' }}</b> · game {{ r.game_number }} · pack {{ r.pack }} ·
+        ticket <b>{{ '%03d'|format(r.ticket) }}</b>
+        <div class="raw">{{ r.raw or '(not recorded)' }}</div>
+      </span>
+      <span class="muted" style="white-space:nowrap">{{ (r.session or '')[:9] }}<br>{{ r.scanned_at[5:16] }}</span>
+    </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<script>
+window.onScanResult = function(d){
+  document.getElementById("read").style.display = "block";
+  document.getElementById("raw").textContent = d.raw || "(nothing)";
+  document.getElementById("len").textContent =
+    d.length + " digits" + (d.raw && d.raw !== d.digits ? " (as " + d.digits + ")" : "");
+
+  const set = (id, v) => document.getElementById(id).textContent = v;
+  if (!d.read) {
+    set("pGame", "—"); set("pPack", "—"); set("pTicket", "—"); set("pName", "—");
+    document.getElementById("verdict").textContent = d.message;
+    return;
+  }
+  set("pGame", d.game);
+  set("pPack", d.pack);
+  set("pTicket", String(d.ticket).padStart(3, "0"));
+  set("pName", d.name || "not in PA's list");
+  const ex = document.getElementById("extraRow");
+  if (d.extra) { ex.style.display = "grid"; set("pExtra", d.extra); }
+  else { ex.style.display = "none"; }
+  document.getElementById("verdict").textContent = d.known
+    ? "This matches a real Pennsylvania game, so the split is almost certainly right."
+    : "That game number isn't in PA's list — either it's brand new, or the gun sent something unexpected.";
+};
+</script>
+{% endblock %}

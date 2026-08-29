@@ -1,0 +1,21 @@
+# Keep the image small: the scraper's bulky archives aren't needed at runtime
+# (the app reads data/state.json + data/originals.json, which ARE copied in).
+data/raw/
+data/snapshots/
+data/history/
+data/scrape_log.jsonl
+data/*.db
+reports/
+docs/
+samples/
+tests/
+debug/
+.git/
+.github/
+__pycache__/
+**/__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
+.env

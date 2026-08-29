@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <title>{% block title %}{{ site_title or 'Valley Lotto' }}{% endblock %}</title>
+  <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" sizes="any">
+  <link rel="icon" type="image/png" sizes="32x32"
+        href="{{ url_for('static', filename='favicon-32.png') }}">
+  <link rel="apple-touch-icon"
+        href="{{ url_for('static', filename='apple-touch-icon.png') }}">
+  <style>
+    /* Brand palette, taken from the logo: gold sun, red heart, deep + leaf green.
+       Light is the default; dark redefines only the tokens, so every component
+       below is written once against the variables. */
+    :root {
+      --brand-gold:  #FFCE00;
+      --brand-amber: #F7941E;
+      --brand-red:   #E01F26;
+      --brand-green: #00954C;   /* deep leaf */
+      --brand-leaf:  #8CC63E;   /* light leaf */
+
+      --bg:      #FAF7EC;       /* warm paper, picked up from the sun */
+      --panel:   #FFFFFF;
+      --panel2:  #F1EDDD;
+      --ink:     #17251C;       /* near-black with a green cast */
+      --muted:   #5F6F63;
+      --line:    #E4DFCC;
+      --pending: #EDE8D8;
+
+      --accent:     #0B7A43;    /* deep green — actions, links */
+      --accent-ink: #FFFFFF;
+
+      --ok:    #1F8A4C;  --ok-bg:   #E4F3E9;
+      --warn:  #9A5B00;  --warn-bg: #FDF1D8;
+      --err:   #C4181E;  --err-bg:  #FBE5E5;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --bg:      #0E1611;
+        --panel:   #16211A;
+        --panel2:  #1F2D24;
+        --ink:     #E9F2EA;
+        --muted:   #9BB0A1;
+        --line:    #2C3E33;
+        --pending: #24332A;
+
+        --accent:     #34C271;
+        --accent-ink: #062B14;
+
+        --ok:    #4ADE80;  --ok-bg:   #10321F;
+        --warn:  #FBBF24;  --warn-bg: #3A2B0B;
+        --err:   #FF7A70;  --err-bg:  #3A1717;
+      }
+    }
+    :root[data-theme="dark"] {
+      --bg:#0E1611; --panel:#16211A; --panel2:#1F2D24; --ink:#E9F2EA;
+      --muted:#9BB0A1; --line:#2C3E33; --pending:#24332A;
+      --accent:#34C271; --accent-ink:#062B14;
+      --ok:#4ADE80; --ok-bg:#10321F; --warn:#FBBF24; --warn-bg:#3A2B0B;
+      --err:#FF7A70; --err-bg:#3A1717;
+    }
+    * { box-sizing: border-box; }
+    /* A phone screen is the constraint: nothing may push the page wider than
+       the viewport. Wide content (tables) scrolls inside its own container. */
+    html, body { max-width:100%; overflow-x:hidden; }
+    body { margin:0; background:var(--bg); color:var(--ink);
+      font:16px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; }
+    .wrap { max-width: 760px; margin: 0 auto; padding: 16px; }
+    header.bar { display:flex; align-items:center; justify-content:space-between;
+      gap:10px; padding:8px 12px; background:var(--panel);
+      border-bottom:3px solid transparent;
+      border-image:linear-gradient(90deg,var(--brand-green),var(--brand-leaf),
+                   var(--brand-gold),var(--brand-amber),var(--brand-red)) 1; }
+    header.bar .brand { display:flex; align-items:center; gap:8px; min-width:0;
+      font-weight:800; letter-spacing:.2px; font-size:17px;
+      overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    header.bar .brand span { overflow:hidden; text-overflow:ellipsis; }
+    .menu-btn { flex:none; padding:10px 14px; font-size:15px; font-weight:700;
+      border-radius:10px; background:var(--panel2); color:var(--ink);
+      border:1px solid var(--line); }
+
+    /* Full-screen sheet: big targets for a counter device, closes on choice. */
+    .sheet { position:fixed; inset:0; z-index:60; background:var(--bg);
+      display:none; flex-direction:column; overflow-y:auto; }
+    .sheet.open { display:flex; }
+    .sheet-head { display:flex; align-items:center; justify-content:space-between;
+      padding:14px 16px; border-bottom:1px solid var(--line); background:var(--panel);
+      position:sticky; top:0; }
+    .sheet-head b { font-size:17px; }
+    .sheet a.item, .sheet button.item { display:block; width:100%; text-align:left;
+      padding:16px 18px; font-size:17px; font-weight:600; color:var(--ink);
+      background:none; border:none; border-bottom:1px solid var(--line); }
+    .sheet a.item:hover { text-decoration:none; background:var(--panel2); }
+    .sheet .group { padding:14px 18px 6px; font-size:12px; font-weight:700;
+      letter-spacing:.06em; text-transform:uppercase; color:var(--muted); }
+    .sheet select { width:100%; padding:14px; font-size:16px; border-radius:10px;
+      background:var(--panel2); color:var(--ink); border:1px solid var(--line); }
+    a { color:var(--accent); text-decoration:none; }
+    a:hover { text-decoration:underline; }
+    .card { background:var(--panel); border:1px solid var(--line); border-radius:14px;
+      padding:18px; margin:14px 0; }
+    label { display:block; font-size:13px; color:var(--muted); margin:10px 0 4px; }
+    input[type=text], input[type=email], input[type=password], input[type=date] {
+      width:100%; padding:14px; font-size:17px; border-radius:10px;
+      border:1px solid var(--line); background:var(--panel2); color:var(--ink); }
+    input:focus { outline:2px solid var(--accent); outline-offset:1px; }
+    button, .btn { cursor:pointer; border-radius:10px; padding:13px 16px;
+      font-size:16px; font-weight:600; background:var(--panel2); color:var(--ink);
+      border:1px solid var(--line); }
+    button.primary, .btn.primary { background:var(--accent); color:var(--accent-ink);
+      border-color:transparent; }
+    button:active { transform: translateY(1px); }
+    .row { display:flex; gap:10px; flex-wrap:wrap; }
+    .muted { color:var(--muted); }
+    .flash { padding:12px 14px; border-radius:10px; margin:10px 0; }
+    .flash.err  { background:var(--err-bg);  color:var(--err); }
+    .modechip { font-size:12px; padding:6px 10px; border-radius:999px; width:auto;
+                border:1px solid var(--line); background:var(--panel2); color:var(--muted); }
+    .modechip.on { border-color:var(--accent); background:var(--ok-bg); color:var(--ink);
+                   font-weight:700; }
+    .modes { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+    .flash.warn { background:var(--warn-bg); color:var(--warn); }
+    .flash.ok   { background:var(--ok-bg);   color:var(--ok); }
+    table { width:100%; border-collapse:collapse; }
+    th,td { text-align:left; padding:8px 10px; border-bottom:1px solid var(--line); }
+    th { color:var(--muted); font-weight:600; font-size:13px; }
+    code { background:var(--panel2); padding:2px 6px; border-radius:6px; }
+  </style>
+</head>
+<body>
+  <header class="bar">
+    <div class="brand">
+      {% if logo_file %}
+        <img src="{{ url_for('static', filename=logo_file) }}" alt=""
+             style="display:block;height:34px;width:auto">
+      {% else %}
+      <svg width="30" height="30" viewBox="0 0 64 64" aria-hidden="true" focusable="false">
+        <!-- Sun rays fanning across the top, springing from the disc edge -->
+        <g fill="var(--brand-amber)">
+          <path d="M2.5 23.3L17.5 28.4L18.3 23.7ZM6.0 13.5L18.4 23.4L20.8 19.3ZM12.7 5.5L21.0 19.1L24.6 16.0ZM21.7 0.3L24.9 15.9L29.4 14.2ZM32.0 -1.5L29.6 14.2L34.4 14.2ZM42.3 0.3L34.6 14.2L39.1 15.9ZM51.3 5.5L39.4 16.0L43.0 19.1ZM58.0 13.5L43.2 19.3L45.6 23.4ZM61.5 23.3L45.7 23.7L46.5 28.4Z"/>
+        </g>
+        <circle cx="32" cy="28.5" r="15.5" fill="var(--brand-gold)"/>
+        <path d="M32 40c-8-6-12.5-9.5-12.5-14.5a6.2 6.2 0 0 1 12.5-2.9A6.2 6.2 0 0 1 44.5 25.5c0 5-4.5 8.5-12.5 14.5z"
+              fill="var(--brand-red)"/>
+        <!-- Two leaves cupping the sun, tips up and out -->
+        <path d="M32 63A27 27 0 0 1 6 33A27 27 0 0 1 32 63Z" fill="var(--brand-green)"/>
+        <path d="M32 63A27 27 0 0 0 58 33A27 27 0 0 0 32 63Z" fill="var(--brand-leaf)"/>
+      </svg>
+      {% endif %}
+      <span>{{ site_title or 'Valley Lotto' }}</span>
+    </div>
+    {% if signed_in %}
+      <button class="menu-btn" onclick="openMenu()" aria-label="Menu">☰ Menu</button>
+    {% endif %}
+  </header>
+  {% if signed_in %}
+  <nav id="menu" class="sheet" aria-hidden="true">
+    <div class="sheet-head">
+      <b>{{ site_title or 'Valley Lotto' }}</b>
+      <button onclick="closeMenu()" aria-label="Close"
+              style="padding:8px 16px;font-size:20px;line-height:1">✕</button>
+    </div>
+
+    {% if is_superadmin and all_stores %}
+      <div class="group">Store</div>
+      <form method="post" action="{{ url_for('admin_act_as') }}" style="padding:0 18px 14px">
+        <input type="hidden" name="next" value="{{ request.path }}">
+        <select name="store" onchange="this.form.submit()">
+          {% for st in all_stores %}
+            <option value="{{ st.slug }}" {% if store and store.slug == st.slug %}selected{% endif %}>
+              {{ st.name }}</option>
+          {% endfor %}
+        </select>
+      </form>
+    {% endif %}
+
+    {# Every item is gated on the capability behind it, so a part-manager sees
+       exactly what they can use and nothing that would just 403. #}
+    <div class="group">Daily</div>
+    <a class="item" href="{{ url_for('count') }}">Scan a count</a>
+    {% if can.reports %}<a class="item" href="{{ url_for('report') }}">Sales</a>{% endif %}
+    <a class="item" href="{{ url_for('dashboard') }}">Dashboard</a>
+    <a class="item" href="{{ url_for('inventory') }}">Active inventory</a>
+    {% if can.backstock %}<a class="item" href="{{ url_for('backstock') }}">Unopened packs</a>{% endif %}
+    {% if can.receive %}<a class="item" href="{{ url_for('backstock_receive') }}">New shipment</a>{% endif %}
+
+    <div class="group">Look up</div>
+    <a class="item" href="{{ url_for('catalog') }}">Full PA catalog</a>
+    <a class="item" href="{{ url_for('scan_check') }}">Scanner check</a>
+    {% if can.history %}<a class="item" href="{{ url_for('history') }}">History</a>{% endif %}
+
+    {% if can.staff or can.pricing or can.access %}
+      <div class="group">Manage</div>
+      {% if can.staff %}<a class="item" href="{{ url_for('staff_page') }}">Staff &amp; PINs</a>{% endif %}
+      {% if can.pricing %}<a class="item" href="{{ url_for('weights_page') }}">Rating emphasis</a>{% endif %}
+      {% if can.access %}<a class="item" href="{{ url_for('access_log') }}">Access log</a>{% endif %}
+    {% endif %}
+
+    {% if is_superadmin %}
+      <div class="group">Chain</div>
+      <a class="item" href="{{ url_for('overview') }}">All stores</a>
+      <a class="item" href="{{ url_for('admin_stores') }}">Stores</a>
+      <a class="item" href="{{ url_for('admin_users') }}">Managers</a>
+    {% endif %}
+
+    <div class="group">{{ staff_name or username or '' }}</div>
+    {% if staff_name %}
+      <a class="item" href="{{ url_for('pin') }}">Switch user</a>
+    {% endif %}
+    <a class="item" href="{{ url_for('logout_confirm') }}" style="color:var(--err)">
+      {{ "End shift" if pin_only else "Log out" }}</a>
+    <div style="height:40px"></div>
+  </nav>
+  {% endif %}
+
+  <div class="wrap">{% block body %}{% endblock %}</div>
+  <script>
+    // The sheet closes on choice because tapping an item navigates away; the ✕
+    // and the Android back button cover the "changed my mind" case.
+    function openMenu(){ const m=document.getElementById('menu');
+      m.classList.add('open'); m.setAttribute('aria-hidden','false');
+      history.pushState({menu:1}, ''); }
+    function closeMenu(){ const m=document.getElementById('menu');
+      m.classList.remove('open'); m.setAttribute('aria-hidden','true'); }
+    window.addEventListener('popstate', closeMenu);
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeMenu(); });
+  </script>
+</body>
+</html>

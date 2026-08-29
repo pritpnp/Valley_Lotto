@@ -39,7 +39,14 @@ class FetchError(RuntimeError):
     pass
 
 
-def fetch(url: str, *, retries: int = 3, timeout: int = 30) -> str:
+# PA's print pages are generated on demand and can take a while under load —
+# a scheduled run has seen the server accept the connection and then simply not
+# answer. Waiting longer, and waiting longer between tries, costs nothing on a
+# twice-a-day job and turns most of those into a success.
+_BACKOFF = (3, 8, 20, 45)      # seconds between attempts
+
+
+def fetch(url: str, *, retries: int = 5, timeout: int = 60) -> str:
     """GET ``url`` and return the HTML text, retrying transient failures."""
     last_err: Exception | None = None
     for attempt in range(retries):
@@ -52,7 +59,10 @@ def fetch(url: str, *, retries: int = 3, timeout: int = 30) -> str:
         except Exception as e:  # noqa: BLE001 — we re-raise a wrapped error below
             last_err = e
             if attempt < retries - 1:
-                time.sleep(2 ** attempt)  # 1s, 2s, 4s
+                wait = _BACKOFF[min(attempt, len(_BACKOFF) - 1)]
+                print(f"  {url.rsplit('=', 1)[-1]}: {type(e).__name__}, "
+                      f"retrying in {wait}s ({attempt + 1}/{retries})", flush=True)
+                time.sleep(wait)
     raise FetchError(f"Failed to fetch {url} after {retries} attempts: {last_err}")
 
 

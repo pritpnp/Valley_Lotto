@@ -119,7 +119,18 @@ def run(argv: list[str] | None = None) -> int:
     captured_at = args.now or datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     cfg = Config.load(args.config)
 
-    active_html, remaining_html, ended_html = _load_html(args.offline)
+    try:
+        active_html, remaining_html, ended_html = _load_html(args.offline)
+    except fetch.FetchError as e:
+        # PA's site being slow or down is not this program being broken, and a
+        # scheduled run shouldn't cry wolf over it: the next run picks it up.
+        # EX_TEMPFAIL (75) says "try again later" and the workflow treats it as
+        # a warning. Anything genuinely wrong still exits non-zero and fails.
+        print(f"PA's website did not answer: {e}", file=sys.stderr)
+        print("Nothing was written. The next scheduled run will try again.",
+              file=sys.stderr)
+        return 75
+
     if args.save_html and not args.offline:
         SAMPLES_DIR.mkdir(exist_ok=True)
         (SAMPLES_DIR / "active.html").write_text(active_html)

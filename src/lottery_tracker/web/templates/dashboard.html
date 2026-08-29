@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — {{ site_title }}{% endblock %}
+{% block body %}
+<style>
+  .stats { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:6px; }
+  .stat { flex:1; min-width:100px; background:var(--panel2); border:1px solid var(--line);
+          border-radius:12px; padding:10px 14px; }
+  .stat .n { font-size:26px; font-weight:800; }
+  .stat .l { font-size:12px; color:var(--muted); }
+  .stat.keep .n { color:var(--ok); } .stat.send .n { color:var(--err); }
+
+  /* One game per row, read down the page. Same shape as the catalog, so the
+     two screens feel like the same app. */
+  .g { display:flex; gap:12px; align-items:flex-start; padding:13px 8px;
+       border-top:1px solid var(--line); text-decoration:none; color:var(--ink); }
+  .g:first-of-type { border-top:none; }
+  .g:hover { background:var(--panel2); text-decoration:none; }
+  .score { font-size:26px; font-weight:800; min-width:46px; text-align:center;
+           font-variant-numeric:tabular-nums; line-height:1.1; }
+  .score.keep { color:var(--ok); }
+  .score.send { color:var(--err); }
+  .score .u { display:block; font-size:10px; font-weight:600; color:var(--muted); }
+  .gmid { flex:1; min-width:0; }
+  .gname { font-weight:650; font-size:15px; display:block; }
+  .gsub { display:block; font-size:12.5px; color:var(--muted); margin-top:4px;
+          line-height:1.5; }
+  .why { display:block; font-size:12.5px; color:var(--muted); margin-top:6px;
+         line-height:1.5; }
+  .chev { color:var(--muted); font-size:18px; flex:none; align-self:center; }
+  .badge { display:inline-block; padding:2px 8px; border-radius:999px; font-size:11px;
+           font-weight:700; letter-spacing:.3px; }
+  .b-keep { background:var(--ok-bg); color:var(--ok); }
+  .b-send { background:var(--err-bg); color:var(--err); }
+  .swapline { font-size:12.5px; color:var(--muted); margin-top:7px; padding-left:58px;
+              line-height:1.7; }
+  .swapline form { display:inline; }
+
+  .pick { display:flex; gap:10px; align-items:center; padding:11px 8px;
+          border-top:1px solid var(--line); }
+  .pick:first-of-type { border-top:none; }
+  .pick .pmid { flex:1; min-width:0; }
+  .pick .pname { display:block; font-weight:600; font-size:14.5px; }
+  .pick .psub { display:block; font-size:12px; color:var(--muted); margin-top:2px; }
+</style>
+
+{% if night_due %}
+<div class="card flash warn" style="display:block">
+  <b>Tonight's count hasn't been done.</b>
+  The night count is required — the day's sales are settled from it.
+  <a href="{{ url_for('count') }}">Start the night count →</a>
+</div>
+{% endif %}
+
+{% if data_age and data_age.stale %}
+<div class="card flash warn" style="display:block">
+  <b>Pennsylvania's numbers haven't refreshed{% if data_age.days %} for {{ data_age.days }} days{% endif %}.</b>
+  Everything below is from the last successful update, so a game may have changed
+  since. Counting and sales are unaffected — those are your own numbers.
+</div>
+{% endif %}
+
+<div class="card">
+  <div class="row" style="justify-content:space-between;align-items:baseline">
+    <h2 style="margin:0">Your games</h2>
+    <span class="muted" style="font-size:12px">PA data: {{ data_age.text }}</span>
+  </div>
+  <div class="stats" style="margin-top:12px">
+    <div class="stat"><div class="n">{{ summary.total }}</div><div class="l">tracked</div></div>
+    <div class="stat keep"><div class="n">{{ summary.keep }}</div><div class="l">keep</div></div>
+    <div class="stat send"><div class="n">{{ summary.send_back }}</div><div class="l">send back</div></div>
+  </div>
+</div>
+
+{% if rows %}
+<div class="card">
+  <p class="muted" style="font-size:12.5px;margin:0 0 8px">
+    Send-backs first. Tap a game for the full reasoning.
+  </p>
+
+  {% for r in rows %}
+    <a class="g" href="{{ url_for('game_page', game_number=r.game_number) }}">
+      <span class="score {{ 'send' if r.action == 'send_back' else 'keep' }}">
+        {{ r.rating_str }}<span class="u">of 100</span>
+      </span>
+      <span class="gmid">
+        <span class="gname">{{ r.name }}</span>
+        <span class="gsub">
+          <span class="badge {{ 'b-send' if r.action == 'send_back' else 'b-keep' }}">
+            {{ 'SEND BACK' if r.action == 'send_back' else 'KEEP' }}</span>
+          #{{ r.game_number }}{% if r.price %} · ${{ '%g'|format(r.price) }}{% endif %}
+          {%- if r.odds_value %} · wins 1 in {{ '%g'|format(r.odds_value) }}{% endif %}
+          {%- if r.pct_all is not none %} · {{ r.pct_all_str }} of prizes left{% endif %}
+        </span>
+        <span class="why">{{ r.reason }}</span>
+      </span>
+      <span class="chev">›</span>
+    </a>
+
+    {% if r.action == 'send_back' %}
+      <div class="swapline">
+        {% if r.swap_to %}
+          Put in instead:
+          {% for s in r.swap_to %}
+            <b>{{ s.name }}</b> ({{ s.rating_str }})
+            <form method="post" action="{{ url_for('inventory_add') }}">
+              <input type="hidden" name="game_number" value="{{ s.game_number }}">
+              <input type="hidden" name="next" value="{{ url_for('dashboard') }}">
+              <button style="padding:2px 9px;font-size:11px;width:auto">carry</button>
+            </form>{% if not loop.last %} · {% endif %}
+          {% endfor %}
+        {% else %}
+          Nothing better at this price right now — consider dropping the price point.
+        {% endif %}
+      </div>
+    {% endif %}
+  {% endfor %}
+</div>
+{% else %}
+<div class="card">
+  <p class="muted">No games yet.
+    <a href="{{ url_for('inventory') }}">Set up your boxes →</a></p>
+</div>
+{% endif %}
+
+{% if new_games %}
+<div class="card">
+  <b>New games just on sale</b>
+  <div style="margin-top:6px">
+  {% for g in new_games %}
+    <div class="pick">
+      <span class="pmid">
+        <a href="{{ url_for('game_page', game_number=g.game_number) }}" class="pname">{{ g.name }}</a>
+        <span class="psub">#{{ g.game_number }}{% if g.price %} · ${{ '%g'|format(g.price) }}{% endif %}
+          {%- if g.odds_value %} · wins 1 in {{ '%g'|format(g.odds_value) }}{% endif %}</span>
+      </span>
+      <form method="post" action="{{ url_for('inventory_add') }}">
+        <input type="hidden" name="game_number" value="{{ g.game_number }}">
+        <input type="hidden" name="next" value="{{ url_for('dashboard') }}">
+        <button style="padding:5px 12px;font-size:12px;width:auto">carry</button>
+      </form>
+    </div>
+  {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+{% if bring_in %}
+<div class="card">
+  <b>Best games to bring in</b>
+  {% for price, picks in bring_in.items() %}
+    <div style="margin-top:14px">
+      <b class="muted" style="font-size:13px">${{ '%g'|format(price) }} tickets</b>
+      {% for r in picks %}
+        <div class="pick">
+          <span class="pmid">
+            <a href="{{ url_for('game_page', game_number=r.game_number) }}" class="pname">{{ r.name }}</a>
+            <span class="psub">#{{ r.game_number }}
+              {%- if r.odds_value %} · wins 1 in {{ '%g'|format(r.odds_value) }}{% endif %}
+              {%- if r.pct_all_str %} · {{ r.pct_all_str }} of prizes left{% endif %}</span>
+          </span>
+          <form method="post" action="{{ url_for('inventory_add') }}">
+            <input type="hidden" name="game_number" value="{{ r.game_number }}">
+            <input type="hidden" name="next" value="{{ url_for('dashboard') }}">
+            <button style="padding:5px 12px;font-size:12px;width:auto">carry</button>
+          </form>
+        </div>
+      {% endfor %}
+    </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<div class="card">
+  <p class="muted" style="font-size:12.5px;margin:0">
+    Scores weigh win odds, prizes left, small prizes, the small-prize trend and
+    jackpot density. Below {{ '%g'|format(weights.cutoff) }} means send back.
+    <a href="{{ url_for('weights_page') }}">Change what matters →</a>
+  </p>
+</div>
+{% endblock %}

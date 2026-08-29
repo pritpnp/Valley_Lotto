@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Edit {{ label }} count — {{ site_title }}{% endblock %}
+{% block body %}
+<style>
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(72px,1fr)); gap:8px;
+          margin-top:10px; }
+  .box { border:1px solid var(--line); border-radius:10px; padding:9px 6px; text-align:center;
+         background:var(--pending); color:var(--ink); text-decoration:none; display:block; }
+  .box.filled { background:var(--ok-bg); border-color:transparent; }
+  .box .lbl { font-weight:700; font-size:14px; }
+  .box .sub { font-size:11px; color:var(--muted); min-height:26px; line-height:1.25; }
+  .box:hover { text-decoration:none; border-color:var(--accent); }
+</style>
+
+<div class="card">
+  <div class="row" style="justify-content:space-between;align-items:baseline">
+    <h2 style="margin:0">{{ label }} count</h2>
+    <a href="{{ url_for('history') }}" style="font-size:13px">← history</a>
+  </div>
+  <p class="muted" style="font-size:13.5px;margin:6px 0 0">
+    {{ date }}{% if date == today %} (today){% endif %} ·
+    {{ by_slot|length }} of {{ slots|length }} boxes recorded.
+    Tap a box to change its ticket number, game or pack — or to take it out.
+  </p>
+  <p class="hint" style="font-size:12.5px;margin-top:8px">
+    Every change is written to the change log with what it was before.
+  </p>
+</div>
+
+<div class="card">
+  <div class="grid">
+    {% for slot in slots %}
+      {% set r = by_slot.get(slot) %}
+      <a class="box {{ 'filled' if r }}"
+         href="{{ url_for('count_edit_box', date=date, sess=sess, slot=slot) }}">
+        <div class="lbl">{{ slot }}</div>
+        <div class="sub">
+          {%- if r %}{{ r.game_number }}<br>#{{ '%03d'|format(r.ticket) }}{% endif -%}
+        </div>
+      </a>
+    {% endfor %}
+  </div>
+</div>
+
+<div class="card">
+  <a class="btn" href="{{ url_for('report', date=date) }}">See this day's sales →</a>
+</div>
+{% endblock %}

@@ -106,3 +106,27 @@ max_new_fetches: 250       # cap on new detail/bulletin fetches per run
 # ONLY when the data actually changed since the last scrape (even by one number);
 # identical scrapes are archived in the log without duplicating the data. Nothing
 # that differs is ever pruned, so the change history is kept in full.
+
+# ---------------------------------------------------------------------------
+# Pack (book) sizes: how many tickets are in a full pack. Used by the scan
+# tracker to turn "open ticket -> close ticket" into tickets sold, and to bridge
+# a pack changeover. PA packs are built to a fixed DOLLAR VALUE, so the ticket
+# count depends on price (tickets = pack_value / price). Tickets in a pack are
+# numbered 000..N-1 and count UP as they sell.
+#
+# These are OPTIONAL seeds: real pack sizes are learned automatically from the
+# scan log (a scan past a configured size corrects it upward). The $30/$40 rows
+# are UNVERIFIED guesses — confirm from the PA retailer "Settled Packs" report.
+pack_sizes:
+  by_price:
+    1: 300             # $300 book  (derived)
+    2: 150             # $300 book  (well-attested)
+    3: 100             # $300 book  (derived)
+    5: 60              # $300 book  (well-attested)
+    10: 60             # $600 book  (well-attested)
+    20: 30             # $600 book  (well-attested)
+    30: 20             # ?? UNVERIFIED — could be 20/30/50. FIX ME.
+    40: 15             # ?? UNVERIFIED — undocumented. FIX ME.
+    50: 50             # $2,500 book
+  by_game: {}          # exact per-game overrides, e.g.  "1750": 20
+  use_builtin_fallback: true

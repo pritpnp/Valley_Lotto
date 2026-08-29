@@ -1,0 +1,82 @@
+{# A scan field that behaves the way a retail gun needs it to.
+
+   Set `scan_url` before including, and define `window.onScanResult(data)` in the
+   page to react to each scan. The awkward part — getting a phone to accept a
+   scanner without opening its keyboard — lives in static/scan-field.js, which
+   also carries the per-device setting for when one approach doesn't work. #}
+<style>
+  .scanrow { display:flex; gap:10px; align-items:stretch; }
+  .scanbox { flex:1; min-width:0; width:100%; padding:18px 14px; border-radius:10px;
+             border:2px dashed var(--line); background:var(--panel2);
+             font-size:22px; text-align:center; letter-spacing:1px; color:var(--ink); }
+  .scanbox:focus { outline:none; border-style:solid; border-color:var(--accent); }
+  .scanbox::placeholder { color:var(--muted); letter-spacing:0; }
+  .kb { flex:none; width:58px; font-size:22px; }
+  .scanhelp { font-size:12px; color:var(--muted); margin-top:8px; }
+  .scanhelp a { color:var(--accent); }
+</style>
+
+<div class="scanrow">
+  <input id="scanBox" class="scanbox" type="text"
+         autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"
+         placeholder="scan here…" aria-label="Scan a pack">
+  <button type="button" id="kbBtn" class="kb" onclick="toggleKeyboard()"
+          aria-label="Type by hand">⌨</button>
+</div>
+<div id="scanResult" class="flash" style="display:none;margin-top:10px"></div>
+<details class="scanhelp">
+  <summary style="cursor:pointer">Scanner not picking up? <span id="scanModeName"></span></summary>
+  <p style="margin:8px 0 0">Pick how this device listens to the gun. The setting is
+    remembered on this device only.</p>
+  <div class="modes" id="scanModes"></div>
+  <p id="modeHint" style="margin:8px 0 0"></p>
+</details>
+
+<script src="{{ url_for('static', filename='scan-field.js') }}"></script>
+<script>
+let inFlight = null;
+
+function showResult(ok, msg){
+  const r = document.getElementById("scanResult");
+  r.style.display = "block";
+  r.className = "flash " + (ok ? "ok" : "err");
+  r.textContent = msg;
+}
+
+async function send(raw){
+  try {
+    const res = await fetch("{{ scan_url }}", {
+      method: "POST", headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({raw})
+    });
+    const data = await res.json().catch(() => ({ok:false, message:"that didn't go through — scan again"}));
+    showResult(data.ok, data.message || data.error || "scanned");
+    if (window.onScanResult) window.onScanResult(data);
+  } catch(e){
+    showResult(false, "that didn't go through — scan again");
+  }
+}
+
+// One at a time: overlapping requests race each other on the server.
+function queueScan(raw){
+  inFlight = Promise.resolve(inFlight).catch(() => {}).then(() => send(raw));
+}
+
+const field = new ScanField(document.getElementById("scanBox"), queueScan);
+
+function toggleKeyboard(){
+  field.setManual(!field.manual);
+  document.getElementById("kbBtn").classList.toggle("primary", field.manual);
+}
+
+function showMode(){
+  document.getElementById("scanModeName").textContent = "— now: " + scanModeInfo().label;
+  document.getElementById("modeHint").textContent = scanModeInfo().hint;
+}
+renderScanModes(document.getElementById("scanModes"), m => {
+  field.applyMode();
+  showMode();
+  showResult(true, m.label + " — " + m.hint);
+});
+showMode();
+</script>

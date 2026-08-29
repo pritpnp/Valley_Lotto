@@ -1,0 +1,469 @@
+{% extends "base.html" %}
+{% block title %}Count — Valley Lotto{% endblock %}
+{% block body %}
+<style>
+  .big-prompt { font-size:15px; color:var(--muted); }
+  .big-slot { font-size:44px; font-weight:800; letter-spacing:1px; margin:2px 0 8px; }
+  .scanrow { display:flex; gap:10px; align-items:stretch; }
+  .scanbox { flex:1; min-width:0; width:100%; padding:18px 14px; border-radius:10px;
+             border:2px dashed var(--line); background:var(--panel2);
+             font-size:22px; text-align:center; letter-spacing:1px;
+             color:var(--ink); }
+  .scanbox:focus { outline:none; border-style:solid; border-color:var(--accent); }
+  .scanbox::placeholder { color:var(--muted); letter-spacing:0; }
+  .scanbox.live { border-style:solid; border-color:var(--accent); color:var(--ink); }
+  .kb { flex:none; width:58px; font-size:22px; }
+  .progress { font-variant-numeric: tabular-nums; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(64px,1fr)); gap:8px; margin-top:8px; }
+  .box { border:1px solid var(--line); border-radius:10px; padding:8px 6px; text-align:center;
+    background:var(--pending); cursor:pointer; user-select:none; }
+  .box .lbl { font-weight:700; font-size:14px; }
+  .box .sub { font-size:11px; color:var(--muted); min-height:13px; }
+  .box.scanned { background:var(--ok-bg); border-color:transparent; }
+  .box.current { outline:2px solid var(--accent); }
+  .box.fixing { outline:2px dashed var(--warn); }
+  .hint { font-size:13px; color:var(--muted); }
+  .scanhelp { font-size:12px; color:var(--muted); margin-top:8px; }
+  .scanhelp a { color:var(--accent); }
+  .done-banner { background:var(--ok-bg); }
+  .sessions { display:flex; flex-direction:column; gap:10px; }
+  .sess { display:block; width:100%; text-align:left; padding:14px;
+          border-radius:12px; border:1px solid var(--line); background:var(--panel2); }
+  .sess-top { display:flex; justify-content:space-between; align-items:center;
+              gap:8px; font-size:19px; }
+  .sess-sub { display:block; margin-top:4px; font-size:13px; color:var(--muted);
+              white-space:normal; }
+  .sess.required { border-color:var(--accent); border-width:2px; background:var(--panel2); }
+  .sess.required .sess-top { font-size:22px; }
+  .sess.optional { opacity:.85; }
+  .sess.done { border-style:dashed; }
+  .tag { font-size:11px; font-weight:700; letter-spacing:.5px; text-transform:uppercase;
+         padding:3px 8px; border-radius:999px; border:1px solid var(--line);
+         color:var(--muted); white-space:nowrap; }
+  .tag.required { background:var(--warn-bg, var(--pending)); color:var(--ink); border-color:transparent; }
+  .sess.done .tag { background:var(--ok-bg); color:var(--ink); border-color:transparent; }
+</style>
+
+{% if has_active %}
+{# An unfinished walk is OFFERED, not resumed automatically — landing straight
+   in a half-done afternoon count is how a night count ends up mislabelled. #}
+<div id="resume" class="card">
+  <h2 style="margin-top:0">You have a count in progress</h2>
+  <p class="muted">
+    The <b>{{ state.session }}</b> count — {{ state.done }} of {{ state.total }} boxes done.
+  </p>
+  <div class="row">
+    <button class="primary" onclick="resumeCount()">Resume it</button>
+    <button onclick="discardCount()">Start a different count</button>
+  </div>
+</div>
+{% endif %}
+
+<div id="start" class="card" style="display:none">
+  <h2>Start a count</h2>
+  <p class="muted">Pick which count this is, then scan every box in order.</p>
+  {% if counts %}
+  <div class="sessions">
+    {# most-required first: night is the one that matters #}
+    {% for s in counts.sessions|sort(attribute='rank') %}
+      {% if s.key in ('night', 'morning', 'afternoon') %}
+      <button class="sess {{ s.requirement }}{% if s.done %} done{% endif %}"
+              onclick="startCount('{{ s.key }}')">
+        <span class="sess-top">
+          <b>{{ s.label }}</b>
+          <span class="tag {{ s.requirement }}">
+            {%- if s.done %}✓ done {{ s.at_local }}
+            {%- elif s.requirement == 'required' %}Required
+            {%- elif s.requirement == 'recommended' %}Recommended
+            {%- else %}Optional{% endif -%}
+          </span>
+        </span>
+        <span class="sess-sub">
+          {%- if s.done %}{{ s.boxes }} box{{ '' if s.boxes == 1 else 'es' }} counted
+            {%- if s.by %} by {{ s.by }}{% endif %} — tap to count again
+          {%- else %}{{ s.blurb }}{% endif -%}
+        </span>
+      </button>
+      {% endif %}
+    {% endfor %}
+  </div>
+  {% if counts.overdue %}
+  <p class="flash warn" style="margin-top:12px">
+    The <b>night count</b> hasn't been done today. It's the one count that can't be skipped.
+  </p>
+  {% endif %}
+  {% else %}
+  <div class="row">
+    <button class="primary" onclick="startCount('night')">Night</button>
+    <button onclick="startCount('morning')">Morning</button>
+    <button onclick="startCount('afternoon')">Afternoon</button>
+  </div>
+  {% endif %}
+</div>
+
+<div id="missing" class="card" style="display:none">
+  <h2 style="margin:0 0 4px">Hold on — <span id="missCount">0</span> boxes have nothing recorded</h2>
+  <p class="muted">
+    You've been through all <span id="missTotal">48</span> boxes and
+    <b id="missDone">0</b> were scanned. These have nothing against them:
+  </p>
+  <p style="font-size:20px;font-weight:700;line-height:1.5" id="missList"></p>
+  <div class="row" style="margin-top:12px">
+    <button class="primary" onclick="fillMissing()">Go scan them</button>
+    <button onclick="saveAnyway()">They're empty — save the count</button>
+  </div>
+  <p class="hint">Saving with boxes missing is fine when those boxes really are
+     empty. It's a problem when a scan didn't take, which is what this is here to
+     catch.</p>
+</div>
+
+<div id="live" style="display:none">
+  <div class="card">
+    <div class="row" style="justify-content:space-between;align-items:center">
+      <div><span id="sessLabel" class="muted"></span></div>
+      <div class="progress muted"><b id="doneN">0</b> / <span id="totalN">0</span></div>
+    </div>
+    <div id="fixBanner" class="flash warn" style="display:none"></div>
+    <div class="big-prompt" id="promptLine">Scan box</div>
+    <div class="big-slot" id="slotName">—</div>
+    <div class="scanrow">
+      <!-- The gun is a keyboard, so its keystrokes only reach the page if
+           something is FOCUSED. A plain div can't be, which is why scanning did
+           nothing until the soft keyboard was opened. This is a real input that
+           stays focused, with inputmode="none" so Android does NOT raise the
+           soft keyboard for it. Tap ⌨ to switch it to a normal field and type. -->
+      <input id="scanBox" class="scanbox" type="text"
+             autocomplete="off" autocapitalize="off" autocorrect="off"
+             spellcheck="false" placeholder="scan here…" aria-label="Scan a ticket">
+      <button type="button" id="kbBtn" class="kb" onclick="toggleKeyboard()"
+              aria-label="Type by hand">⌨</button>
+    </div>
+    <details class="scanhelp">
+      <summary style="cursor:pointer">Scanner not picking up? <span id="scanModeName"></span></summary>
+      <p style="margin:8px 0 0">Pick how this device listens to the gun. Remembered
+        on this device only.</p>
+      <div class="modes" id="scanModes"></div>
+      <p id="modeHint" style="margin:8px 0 0"></p>
+    </details>
+    <div id="result" class="flash" style="display:none"></div>
+    <div class="row" style="margin-top:12px">
+      <button onclick="back()">◀ Back</button>
+      <button onclick="skip()">Skip — box is empty</button>
+    </div>
+    <p class="hint">Scan a box and it moves to the next one. Mis-scanned? Tap
+       <b>Back</b> and scan again — or tap <b>Skip</b> there, which clears what was
+       recorded and counts the box as empty. Tap any box below to fix it without
+       losing your place. The count saves itself once you've been through every box.</p>
+  </div>
+
+  <div class="card">
+    <div class="row" style="justify-content:space-between">
+      <b>Boxes</b><span class="hint">green = scanned · blue = current · tap one to change it</span>
+    </div>
+    <div id="grid" class="grid"></div>
+  </div>
+
+  {# One box's menu. Scanning while it's open closes it and carries on, so
+     opening it by mistake costs nothing. #}
+  <div id="boxSheet" class="card" style="display:none">
+    <div class="row" style="justify-content:space-between;align-items:baseline">
+      <b style="font-size:19px">Box <span id="bxSlot"></span></b>
+      <a href="#" onclick="closeBox();return false" style="font-size:13px">close ✕</a>
+    </div>
+    <p class="muted" style="font-size:13px;margin:4px 0 12px">
+      Currently <span id="bxNow"></span>. Scanning anything closes this and carries
+      on with the count.
+    </p>
+
+    <div class="row" style="gap:8px">
+      <div style="flex:1;min-width:88px">
+        <label>Game</label>
+        <input id="bxGame" type="text" inputmode="numeric" autocomplete="off">
+      </div>
+      <div style="flex:1;min-width:88px">
+        <label>Pack</label>
+        <input id="bxPack" type="text" inputmode="numeric" autocomplete="off">
+      </div>
+      <div style="flex:1;min-width:78px">
+        <label>Ticket</label>
+        <input id="bxTicket" type="text" inputmode="numeric" autocomplete="off">
+      </div>
+    </div>
+
+    <div class="row" style="margin-top:12px">
+      <button class="primary" onclick="saveBox()">Save this box</button>
+      <button onclick="goToBox()">Scan it instead</button>
+    </div>
+    <div class="row" style="margin-top:8px">
+      <button id="bxClear" onclick="clearSlot()"
+              style="background:var(--err-bg);color:var(--err)">Empty this box</button>
+    </div>
+  </div>
+</div>
+
+<script src="{{ url_for('static', filename='scan-field.js') }}"></script>
+<script>
+const INITIAL = {{ state|tojson }};
+let state = INITIAL;
+let fillingGaps = false;
+
+const $ = id => document.getElementById(id);
+
+async function postJSON(url, body) {
+  const r = await fetch(url, {method:"POST", headers:{"Content-Type":"application/json"},
+                             body: JSON.stringify(body||{})});
+  if (!r.ok) { const t = await r.text(); throw new Error(t || r.status); }
+  return r.json();
+}
+
+function hideResume(){ const r = $("resume"); if (r) r.style.display = "none"; }
+
+function startCount(label){
+  hideResume();
+  postJSON("{{ url_for('count_start') }}", {session:label}).then(applyState);
+}
+
+function resumeCount(){ hideResume(); applyState(INITIAL); }
+
+function discardCount(){
+  postJSON("{{ url_for('count_discard') }}").then(() => {
+    hideResume();
+    $("start").style.display = "block";
+  });
+}
+
+function applyState(s){
+  state = s;
+  if (!s || (s.current_slot===null && (!s.slots || s.slots.length===0) && !s.complete)) {
+    $("start").style.display = "block"; $("live").style.display = "none"; return;
+  }
+  $("start").style.display = "none"; $("live").style.display = "block";
+  $("sessLabel").textContent = (s.session||"").toUpperCase() + " count";
+  $("doneN").textContent = s.done; $("totalN").textContent = s.total;
+
+  // Filling gaps: hop straight to the next box that has nothing against it
+  // rather than walking forward over boxes that are already done.
+  if (fillingGaps && !saving) {
+    const gaps = s.pending || [];
+    if (!gaps.length) { fillingGaps = false; saveNow(); return; }
+    if (s.step && s.step.ok && gaps[0] !== s.current_slot) {
+      postJSON("{{ url_for('api_goto') }}", {slot: gaps[0]}).then(applyState);
+      return;
+    }
+  }
+
+  // The end of the walk saves the count — there is no Finish button to forget.
+  // But it must never save SHORT: if boxes have nothing recorded, say which ones
+  // and make someone decide, rather than quietly filing an incomplete count.
+  if (s.walk_done && !saving && !fillingGaps) {
+    if (s.pending && s.pending.length) { showMissing(s); return; }
+    saveNow(); return;
+  }
+
+  // current prompt
+  if (s.walk_done) {
+    $("promptLine").textContent = "Saving…";
+    $("slotName").textContent = "✓";
+  } else {
+    $("promptLine").textContent = fillingGaps ? "Missed box — scan box" : "Scan box";
+    $("slotName").textContent = s.current_slot || "—";
+  }
+
+  $("fixBanner").style.display = "none";
+
+  // step result / warning
+  const res = $("result");
+  if (s.step) {
+    res.style.display = "block";
+    const kind = s.step.needs_confirm ? "warn"
+               : s.step.ok ? (s.step.warning ? "warn" : "ok") : "err";
+    res.className = "flash " + kind;
+    res.textContent = s.step.message + (s.step.warning ? "  ⚠ " + s.step.warning : "");
+    res.style.fontWeight = s.step.needs_confirm ? "700" : "400";
+  } else { res.style.display = "none"; }
+
+  // grid
+  const g = $("grid"); g.innerHTML = "";
+  (s.slots||[]).forEach(b => {
+    const d = document.createElement("div");
+    d.className = "box" + (b.scanned ? " scanned" : "") +
+      (b.slot===s.current_slot ? " current" : "");
+    d.innerHTML = "<div class='lbl'>"+b.slot+"</div><div class='sub'>" +
+      (b.scanned ? ("#"+String(b.ticket).padStart(3,"0")) : "") + "</div>";
+    d.onclick = () => openBox(b.slot);
+    g.appendChild(d);
+  });
+
+  // The field can only take focus once it's on screen, which is why this
+  // belongs at the END of a render rather than at page load.
+  keepFocus();
+}
+
+function showMissing(s){
+  $("live").style.display = "none";
+  $("missing").style.display = "block";
+  $("missCount").textContent = s.pending.length;
+  $("missTotal").textContent = s.total;
+  $("missDone").textContent = s.done;
+  $("missList").textContent = s.pending.join(", ");
+}
+
+function fillMissing(){
+  const first = (state.pending || [])[0];
+  if (!first) { saveNow(); return; }
+  fillingGaps = true;
+  $("missing").style.display = "none";
+  postJSON("{{ url_for('api_goto') }}", {slot: first}).then(applyState);
+}
+
+function saveAnyway(){
+  fillingGaps = false;
+  $("missing").style.display = "none";
+  $("live").style.display = "block";
+  saveNow();
+}
+
+// --- one box's menu ---------------------------------------------------------
+// Tapping a box opens this rather than putting the whole screen into a "fixing"
+// mode: the mode was invisible once you'd scrolled, and there was no way to
+// change a ticket number by hand. Scanning while it's open just closes it and
+// carries on with the walk, so opening it by mistake costs nothing.
+let sheetSlot = null;
+
+function openBox(slot){
+  sheetSlot = slot;
+  const b = (state.slots || []).find(x => x.slot === slot) || {};
+  $("bxSlot").textContent = slot;
+  $("bxNow").textContent = b.scanned
+    ? ("game " + b.game + " · ticket " + String(b.ticket).padStart(3, "0"))
+    : "nothing recorded yet";
+  $("bxGame").value = b.game || "";
+  $("bxPack").value = b.pack || "";
+  $("bxTicket").value = b.scanned ? b.ticket : "";
+  $("bxClear").style.display = b.scanned ? "" : "none";
+  $("boxSheet").style.display = "block";
+}
+
+function closeBox(){
+  sheetSlot = null;
+  $("boxSheet").style.display = "none";
+  field.focus();
+}
+
+async function saveBox(){
+  const slot = sheetSlot;
+  if (!slot) return;
+  const s = await postJSON("{{ url_for('api_edit') }}", {
+    slot, game: $("bxGame").value.trim(), pack: $("bxPack").value.trim(),
+    ticket: $("bxTicket").value.trim(),
+  });
+  closeBox();
+  applyState(s);
+}
+
+async function clearSlot(slot){
+  const s = await postJSON("{{ url_for('api_clear') }}", {slot: slot || sheetSlot});
+  closeBox();
+  applyState(s);
+}
+
+async function goToBox(){
+  const slot = sheetSlot;
+  closeBox();
+  applyState(await postJSON("{{ url_for('api_goto') }}", {slot}));
+}
+
+
+// Scans are handled ONE AT A TIME. Firing two overlapping requests at the
+// server let both read the same half-finished count and write over each other,
+// which surfaced as an "internal server error" and a white screen after an
+// accidental double scan. Everything queues behind the request in flight.
+let inFlight = null;
+
+function submitScan(raw){
+  // A scan while a box's menu is open means it was opened by mistake: shut it
+  // and let the scan land on the box the walk is actually on.
+  if (sheetSlot) closeBox();
+  // Chain onto whatever is running so scans are applied in the order they were
+  // made, never concurrently — two at once used to corrupt the count.
+  inFlight = Promise.resolve(inFlight).catch(() => {}).then(() => sendScan(raw));
+  return inFlight;
+}
+
+async function sendScan(raw){
+  try {
+    let s;
+    s = await postJSON("{{ url_for('api_scan') }}", {raw});
+    applyState(s);
+  } catch(e){
+    // Never blow up the page — show it where the clerk is already looking.
+    const res = $("result");
+    res.style.display = "block";
+    res.className = "flash err";
+    res.textContent = e.message || "that scan didn't go through — scan again";
+    if (e.restart) { setTimeout(() => window.location.reload(), 1200); }
+  }
+}
+
+// --- the scan gun -----------------------------------------------------------
+// How a phone can have a focused field without its keyboard is device-specific,
+// so that lives in static/scan-field.js along with the per-device setting.
+const field = new ScanField(document.getElementById("scanBox"), submitScan, {
+  // A duplicate game is confirmed by scanning the very same ticket again, which
+  // is otherwise exactly what the double-fire guard throws away.
+  allowRepeat: () => !!(state && state.step && state.step.needs_confirm),
+});
+
+function keepFocus(){ if (field) field.focus(); }
+
+function toggleKeyboard(){
+  field.setManual(!field.manual);
+  $("kbBtn").classList.toggle("primary", field.manual);
+}
+
+function showMode(){
+  $("scanModeName").textContent = "— now: " + scanModeInfo().label;
+  $("modeHint").textContent = scanModeInfo().hint;
+}
+
+function pickScanMode(m){
+  field.applyMode();
+  showMode();
+  const res = $("result");
+  res.style.display = "block";
+  res.className = "flash ok";
+  res.textContent = m.label + " — " + m.hint;
+}
+
+async function back(){ applyState(await postJSON("{{ url_for('api_back') }}")); }
+async function skip(){ applyState(await postJSON("{{ url_for('api_skip') }}")); }
+
+// Saving happens on its own once the last box is done. The guard matters
+// because applyState runs after every scan and must only save once.
+let saving = false;
+async function saveNow(){
+  if (saving) return;
+  saving = true;
+  $("promptLine").textContent = "Saving…";
+  $("slotName").textContent = "✓";
+  try {
+    await postJSON("{{ url_for('api_commit') }}");
+    window.location = "{{ url_for('report') }}";
+  } catch(e){
+    saving = false;
+    alert("Could not save the count: " + e.message);
+  }
+}
+
+// On load: offer the unfinished count if there is one, otherwise ask which
+// count this is. Never guess.
+renderScanModes($("scanModes"), pickScanMode);
+showMode();
+if (document.getElementById("resume")) {
+  $("start").style.display = "none";
+  $("live").style.display = "none";
+} else {
+  applyState(INITIAL);
+}
+</script>
+{% endblock %}

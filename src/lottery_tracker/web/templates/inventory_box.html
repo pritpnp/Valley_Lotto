@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+{% block title %}Box {{ slot }} — {{ site_title }}{% endblock %}
+{% block body %}
+<style>
+  .menu { display:grid; gap:10px; margin-top:12px; }
+  .menu a { text-decoration:none; }
+  .menu button { width:100%; text-align:left; padding:16px; font-size:17px;
+                 border-radius:12px; }
+  .menu .sub { display:block; font-size:12.5px; color:var(--muted); font-weight:400;
+               margin-top:3px; white-space:normal; }
+  .danger { background:var(--err-bg); color:var(--err); }
+
+  .pick { display:block; width:100%; text-align:left; padding:14px 16px;
+          border:1px solid var(--line); border-radius:12px; margin-bottom:8px;
+          background:var(--panel2); color:var(--ink); font-size:15px; }
+  .pick.on { border-color:var(--accent); background:var(--ok-bg); font-weight:700; }
+  .pick .sub { display:block; font-size:12px; color:var(--muted); font-weight:400; }
+
+
+  .swap { border:1px solid var(--line); border-radius:12px; padding:12px; margin-top:10px; }
+  .swaphead { display:flex; justify-content:space-between; align-items:baseline; gap:10px; }
+  .swapname { font-weight:700; font-size:15.5px; }
+  .swapscore { font-size:24px; font-weight:800; color:var(--ok); }
+  .cmp { display:grid; grid-template-columns:1fr auto auto; gap:10px; align-items:baseline;
+         padding:7px 0; border-top:1px solid var(--line); font-size:14px; }
+  .cmp.head { border-top:none; font-size:11px; text-transform:uppercase;
+              letter-spacing:.5px; color:var(--muted); padding-bottom:2px; }
+  .cmp span:nth-child(2), .cmp span:nth-child(3) { min-width:74px; text-align:right; }
+  .clabel { color:var(--muted); }
+  .cmine { color:var(--muted); }
+  .cthem { font-weight:700; }
+  .cthem.up { color:var(--ok); }
+</style>
+
+<div class="card">
+  <div class="row" style="justify-content:space-between;align-items:baseline">
+    <h2 style="margin:0">Box {{ slot }}</h2>
+    <a href="{{ url_for('inventory') }}" style="font-size:13px">← active inventory</a>
+  </div>
+  <p class="muted" style="font-size:13.5px;margin:6px 0 0">
+    {% if current %}Holding <b>#{{ current }}</b>
+      {{ games[current].name if current in games else '' }}{% if in_box %},
+      pack {{ in_box.pack }}{% endif %}.
+    {% else %}This box is empty.{% endif %}
+  </p>
+
+  {% if not do %}
+  <div class="menu">
+    <a href="{{ url_for('inventory_box', slot=slot, do='override') }}">
+      <button>Override
+        <span class="sub">Scan a ticket or type a game number to correct what's in here.</span>
+      </button></a>
+
+    <a href="{{ url_for('inventory_box', slot=slot, do='pick') }}">
+      <button>Pick another game
+        <span class="sub">Choose from PA's active games instead of scanning.</span>
+      </button></a>
+
+    {% if current %}
+      <form method="post" onsubmit="return confirm('Empty box {{ slot }}? This only changes the map.')">
+        <input type="hidden" name="game_number" value="__clear__">
+        <button type="submit">Empty
+          <span class="sub">Mark the box as empty. Nothing is settled or returned.</span>
+        </button>
+      </form>
+
+      {% if can.settle %}
+      <a href="{{ url_for('inventory_box', slot=slot, do='settle') }}">
+        <button class="danger">Settle &amp; return
+          <span class="sub">The pack is leaving the store. Recorded with who, when and why.</span>
+        </button></a>
+      {% endif %}
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {% if do == 'override' %}
+  <form method="post" class="row" style="align-items:flex-end;gap:8px;margin-top:14px">
+    <div style="flex:1;min-width:160px">
+      <label>Scan a ticket from this box, or type a game number</label>
+      <input type="text" name="game_number" inputmode="numeric" autofocus autocomplete="off">
+    </div>
+    <button class="primary" type="submit">Save</button>
+  </form>
+  <p style="margin-top:12px"><a href="{{ url_for('inventory_box', slot=slot) }}">← back</a></p>
+  {% endif %}
+
+  {% if do == 'settle' and current and can.settle %}
+  <form method="post" action="{{ url_for('pack_settle') }}" style="margin-top:14px"
+        onsubmit="return confirm('Settle and return this pack? Only a superadmin can undo it.')">
+    <input type="hidden" name="game" value="{{ current }}">
+    <input type="hidden" name="pack" value="{{ in_box.pack if in_box else '' }}">
+    <input type="hidden" name="slot" value="{{ slot }}">
+    <input type="hidden" name="next" value="{{ url_for('inventory') }}">
+    <p class="muted" style="font-size:13px;margin:0 0 10px">
+      Game <b>{{ current }}</b>{% if in_box %}, pack <b>{{ in_box.pack }}</b>{% else %}
+      <span class="muted">(no pack recorded for this box yet — a count fills that in)</span>{% endif %}.
+      This empties the box and puts the pack on the settled-and-returned record.
+    </p>
+    <label>Why is it going back?</label>
+    <select name="reason">
+      {% for key, text in reasons %}<option value="{{ key }}">{{ text }}</option>{% endfor %}
+    </select>
+    <label style="margin-top:10px">Note (optional)</label>
+    <input type="text" name="note" placeholder="anything worth remembering">
+    <button class="primary" type="submit" style="margin-top:12px">Settle &amp; return</button>
+  </form>
+  <p style="margin-top:12px"><a href="{{ url_for('inventory_box', slot=slot) }}">← back</a></p>
+  {% endif %}
+</div>
+
+{% if do == 'pick' %}
+<div class="card">
+  <b>Pick an active game</b>
+  <div style="margin-top:10px">
+    {% for g in active %}
+      <form method="post">
+        <input type="hidden" name="game_number" value="{{ g.game_number }}">
+        <button class="pick {{ 'on' if current == g.game_number }}" type="submit">
+          {{ g.name }}
+          <span class="sub">#{{ g.game_number }}{% if g.price %} · ${{ '%g'|format(g.price) }}{% endif %}
+            {% if g.odds %} · {{ g.odds }}{% endif %}</span>
+        </button>
+      </form>
+    {% endfor %}
+  </div>
+  <p style="margin-top:12px"><a href="{{ url_for('inventory_box', slot=slot) }}">← back</a></p>
+</div>
+{% endif %}
+
+{% if detail and not do and detail.action == 'send_back' and detail.price %}
+<div class="card">
+  <b>Put this in instead</b>
+  <p class="muted" style="font-size:13px">
+    {% if detail.swaps.options %}
+      The best games you don't already carry
+      {%- if detail.swaps.price_note %}. {{ detail.swaps.price_note }}
+      {%- else %} at the same ${{ '%g'|format(detail.price) }} price{% endif %}.
+    {% else %}
+      Nothing at ${{ '%g'|format(detail.price) }} or either side of it is rated
+      well enough to be worth bringing in right now. Keep this one running until
+      something better appears, or move the box to a different price point.
+    {% endif %}
+  </p>
+
+  {% for o in detail.swaps.options %}
+  <div class="swap">
+    <div class="swaphead">
+      <span class="swapname">{{ o.name }}</span>
+      <span class="swapscore">{{ o.rating_str }}</span>
+    </div>
+    <div class="muted" style="font-size:12px;margin-bottom:8px">
+      #{{ o.game_number }} · ${{ '%g'|format(o.price) }}
+      {%- if o.price != detail.price %} <b>(${{ '%g'|format(o.price) }} box, not
+        ${{ '%g'|format(detail.price) }})</b>{% endif %}
+    </div>
+
+    {# Side by side, stacked — the comparison has to read on a phone. #}
+    <div class="cmp head"><span></span><span>now</span><span>swap</span></div>
+    {% for label, mine, theirs, better in [
+         ('Rating',      detail.mine.rating_str,   o.rating_str,
+          (o.rating or 0) > (detail.mine.rating or 0)),
+         ('Win odds',    (detail.mine.odds or '—')|replace(':', ' in '),
+                         (o.odds or '—')|replace(':', ' in '),
+          (o.odds_value or 99) < (detail.mine.odds_value or 99)),
+         ('Prizes left', detail.mine.pct_all_str,  o.pct_all_str,
+          (o.pct_all or 0) > (detail.mine.pct_all or 0)),
+         ('Low prizes',  detail.mine.low_prize_str, o.low_prize_str,
+          (o.low_prize_pct or 0) > (detail.mine.low_prize_pct or 0)) ] %}
+      <div class="cmp">
+        <span class="clabel">{{ label }}</span>
+        <span class="cmine">{{ mine }}</span>
+        <span class="cthem {{ 'up' if better else '' }}">{{ theirs }}{% if better %} ↑{% endif %}</span>
+      </div>
+    {% endfor %}
+
+    {% if can.boxes %}
+    <form method="post" style="margin-top:10px"
+          onsubmit="return confirm('Put {{ o.name }} in box {{ slot }}? This only changes the map — settle the old pack separately.')">
+      <input type="hidden" name="game_number" value="{{ o.game_number }}">
+      <button class="primary" type="submit" style="width:100%">Put this in box {{ slot }}</button>
+    </form>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% if detail and not do %}
+  {% with why_subject = "this box" %}{% include "_game_why.html" %}{% endwith %}
+{% endif %}
+{% endblock %}

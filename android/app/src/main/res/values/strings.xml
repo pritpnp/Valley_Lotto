@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">Valley Lotto</string>
+    <string name="server_title">Store website</string>
+    <string name="server_help">Paste the address of your store\'s Valley Lotto site. You only do this once — long-press the screen later to change it.</string>
+    <string name="save">Save</string>
+    <string name="retry">Try again</string>
+    <string name="change_server">Change address</string>
+    <string name="offline_title">Can\'t reach the site</string>
+    <string name="offline_body">Check the tablet\'s Wi-Fi, or that the address is right.</string>
+</resources>

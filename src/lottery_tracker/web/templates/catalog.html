@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}Catalog — {{ site_title }}{% endblock %}
+{% block body %}
+<style>
+  /* A list you read down, not a table you drag sideways. Everything needed to
+     compare two games at a glance; tap one for the full reasoning. */
+  .price-head { display:flex; justify-content:space-between; align-items:baseline;
+                margin:20px 0 6px; }
+  .price-head h3 { margin:0; font-size:20px; }
+  .g { display:flex; gap:12px; align-items:center; padding:12px 10px; text-decoration:none;
+       color:var(--ink); border-top:1px solid var(--line); }
+  .g:first-of-type { border-top:none; }
+  .g:hover { background:var(--panel2); text-decoration:none; }
+  .score { font-size:26px; font-weight:800; min-width:46px; text-align:center;
+           font-variant-numeric:tabular-nums; }
+  .score.keep { color:var(--ok); }
+  .score.send { color:var(--err); }
+  .score.mid  { color:var(--warn); }
+  .gmid { flex:1; min-width:0; }
+  .gname { font-weight:650; font-size:15px; display:block; }
+  .gsub { display:block; font-size:12.5px; color:var(--muted); margin-top:3px;
+          line-height:1.5; }
+  .chev { color:var(--muted); font-size:18px; flex:none; }
+  .mine { font-size:11px; font-weight:700; color:var(--ok); background:var(--ok-bg);
+          padding:2px 7px; border-radius:999px; margin-left:6px; white-space:nowrap; }
+  .legend { font-size:12.5px; color:var(--muted); line-height:1.6; }
+</style>
+
+{% if data_age and data_age.stale %}
+<div class="card flash warn" style="display:block">
+  <b>Pennsylvania's numbers haven't refreshed{% if data_age.days %} for {{ data_age.days }} days{% endif %}.</b>
+  Everything below is from the last successful update, so a game may have changed
+  since. Counting and sales are unaffected — those are your own numbers.
+</div>
+{% endif %}
+
+<div class="card">
+  <div class="row" style="justify-content:space-between;align-items:baseline">
+    <h2 style="margin:0">Every PA game</h2>
+    <span class="muted" style="font-size:12px">PA data: {{ data_age.text }}</span>
+  </div>
+  <p class="legend" style="margin-top:6px">
+    Ranked best first within each price, using your own emphasis settings. The big
+    number is the rating out of 100 — <b>{{ '%.0f'|format(cutoff) }} or more is worth
+    carrying</b>. Tap any game to see exactly why it scored what it did.
+  </p>
+</div>
+
+{% for price, rows in by_price.items() %}
+<div class="card">
+  <div class="price-head">
+    <h3>${{ '%g'|format(price) }} tickets</h3>
+    <span class="muted" style="font-size:12px">{{ rows|length }} games</span>
+  </div>
+
+  {% for r in rows %}
+    <a class="g" href="{{ url_for('game_page', game_number=r.game_number) }}">
+      <span class="score {{ 'send' if r.rating is not none and r.rating < cutoff
+                            else 'keep' if r.rating is not none and r.rating >= 65
+                            else 'mid' }}">{{ r.rating_str }}</span>
+      <span class="gmid">
+        <span class="gname">{{ r.name }}{% if r.carried %}<span class="mine">you carry it</span>{% endif %}</span>
+        <span class="gsub">
+          #{{ r.game_number }}
+          {%- if r.odds_value %} · wins 1 in {{ '%g'|format(r.odds_value) }}{% endif %}
+          {%- if r.pct_all is not none %} · {{ r.pct_all_str }} of prizes left{% endif %}
+          {%- if r.low_prize_pct is not none %} · {{ r.low_prize_str }} small prizes{% endif %}
+        </span>
+      </span>
+      <span class="chev">›</span>
+    </a>
+  {% endfor %}
+</div>
+{% else %}
+<div class="card">
+  <p class="muted">No catalog data yet — run the scraper to populate
+    <code>data/state.json</code>.</p>
+</div>
+{% endfor %}
+{% endblock %}
