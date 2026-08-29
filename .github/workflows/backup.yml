@@ -1,0 +1,109 @@
+name: Back up the database
+
+# A nightly encrypted dump of the Supabase database, committed to this repo.
+#
+# Why encrypted, without exception: this repository is public. A plain dump would
+# put staff names, store addresses, retailer numbers, every sale and every
+# password hash in front of anyone who found the repo. The workflow refuses to
+# run without a passphrase rather than quietly writing something readable.
+#
+# Two secrets are required (Settings → Secrets and variables → Actions):
+#   DATABASE_URL        the Supabase connection string (session pooler)
+#   BACKUP_PASSPHRASE   a long random phrase — the ONLY way to read a backup
+#
+# Losing the passphrase loses the backups. Keep it where you keep the database
+# password, not only in GitHub.
+
+on:
+  schedule:
+    - cron: "40 7 * * *"      # nightly, ~3:40am Eastern — after the night count
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: backup
+  cancel-in-progress: false
+
+jobs:
+  dump:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Check the secrets are set
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          missing=""
+          [ -z "$DATABASE_URL" ] && missing="$missing DATABASE_URL"
+          [ -z "$BACKUP_PASSPHRASE" ] && missing="$missing BACKUP_PASSPHRASE"
+          if [ -n "$missing" ]; then
+            echo "::error::Missing secret(s):$missing — see the header of this workflow."
+            exit 1
+          fi
+
+      - name: Dump the database
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          # Run pg_dump from a container matching Supabase's server major
+          # version. The runner's own client is older and refuses to dump a
+          # newer server, which is a confusing way to lose your backups.
+          docker run --rm -e PGCONNECT_TIMEOUT=30 \
+            -v "$PWD:/out" postgres:17-alpine \
+            pg_dump "$DATABASE_URL" \
+              --no-owner --no-privileges --clean --if-exists \
+              -f /out/dump.sql
+          ls -l dump.sql
+          # A dump that didn't reach the data is worse than no dump, because it
+          # looks like one. Insist it contains the tables we know exist.
+          for table in stores users scans staff packs; do
+            grep -q "CREATE TABLE public.$table" dump.sql || {
+              echo "::error::The dump has no '$table' table — refusing to save it."
+              exit 1
+            }
+          done
+
+      - name: Encrypt it
+        env:
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          stamp=$(date -u +%Y-%m-%d)
+          gpg --batch --yes --symmetric --cipher-algo AES256 \
+              --passphrase "$BACKUP_PASSPHRASE" \
+              --output "backups/valley-lotto-$stamp.sql.gpg" dump.sql
+          shred -u dump.sql || rm -f dump.sql
+          ls -l "backups/valley-lotto-$stamp.sql.gpg"
+          # Never let a readable dump reach a commit, whatever happened above.
+          if git status --porcelain | grep -E '\.sql$'; then
+            echo "::error::An unencrypted .sql file is staged. Stopping."
+            exit 1
+          fi
+
+      - name: Keep the last 30 nights
+        run: |
+          cd backups
+          ls -1t valley-lotto-*.sql.gpg 2>/dev/null | tail -n +31 | xargs -r git rm -f --
+          cd ..
+
+      - name: Commit it
+        run: |
+          git config user.name "valley-lotto-bot"
+          git config user.email "actions@github.com"
+          git add backups
+          if git diff --cached --quiet; then
+            echo "Nothing changed."
+          else
+            git commit -m "Database backup $(date -u +%Y-%m-%d)"
+            git push
+          fi
+
+      - name: Say what happened
+        run: |
+          count=$(ls -1 backups/*.sql.gpg 2>/dev/null | wc -l)
+          newest=$(ls -1t backups/*.sql.gpg 2>/dev/null | head -1)
+          size=$(du -h "$newest" 2>/dev/null | cut -f1)
+          echo "::notice::Backed up. $count night(s) kept, newest $newest ($size)."
