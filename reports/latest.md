@@ -1,8 +1,8 @@
-# Valley Lotto report — 2026-09-04T08:45:36Z
+# Valley Lotto report — 2026-09-04T18:56:20Z
 
-## ✅ No new alerts
+## ⚠️ 1 new alert(s)
 
-Nothing ended and nothing crossed your low-prize threshold since the last run.
+- 🔵 A game ENDED sales: #1705 $3,000,000 Golden Ticket (ended 09/04/2026). Started 09/2024.
 
 ## Recommendation: send back 16, keep 18
 
