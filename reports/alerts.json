@@ -1,16 +1,1 @@
-[
-  {
-    "kind": "ended",
-    "game_number": "1705",
-    "name": "$3,000,000 Golden Ticket",
-    "severity": "info",
-    "message": "A game ENDED sales: #1705 $3,000,000 Golden Ticket (ended 09/04/2026). Started 09/2024.",
-    "owned": false,
-    "details": {
-      "on_sale_date": "09/2024",
-      "sales_end_date": "09/04/2026",
-      "claim_deadline": null,
-      "price": 30.0
-    }
-  }
-]
+[]
