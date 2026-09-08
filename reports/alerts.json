@@ -1,1 +1,19 @@
-[]
+[
+  {
+    "kind": "low_prizes",
+    "game_number": "1781",
+    "name": "Win Win Win",
+    "severity": "warning",
+    "message": "A game you carry is running low \u2014 consider swapping it for a fresh game: #1781 Win Win Win (only 20% of top prizes left (1/5); 1 top prize(s) remaining).",
+    "owned": true,
+    "details": {
+      "reasons": [
+        "only 20% of top prizes left (1/5)",
+        "1 top prize(s) remaining"
+      ],
+      "top_prizes_remaining": 1,
+      "top_prizes_total": 5,
+      "top_prize_value": "$1,000,000"
+    }
+  }
+]
