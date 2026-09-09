@@ -20,6 +20,10 @@
   .box .lbl { font-weight:700; font-size:14px; }
   .box .sub { font-size:11px; color:var(--muted); min-height:13px; }
   .box.scanned { background:var(--ok-bg); border-color:transparent; }
+  /* Answered, but with nothing in it — distinct from a box nobody has been to
+     yet, which is the whole point of the end-of-walk check. */
+  .box.empty { background:var(--panel2); border-style:dashed; }
+  .box.empty .sub { font-style:italic; }
   .box.current { outline:2px solid var(--accent); }
   .box.fixing { outline:2px dashed var(--warn); }
   .hint { font-size:13px; color:var(--muted); }
@@ -50,7 +54,7 @@
 <div id="resume" class="card">
   <h2 style="margin-top:0">You have a count in progress</h2>
   <p class="muted">
-    The <b>{{ state.session }}</b> count — {{ state.done }} of {{ state.total }} boxes done.
+    The <b>{{ state.session }}</b> count — {{ state.answered }} of {{ state.total }} boxes answered.
   </p>
   <div class="row">
     <button class="primary" onclick="resumeCount()">Resume it</button>
@@ -102,10 +106,11 @@
 </div>
 
 <div id="missing" class="card" style="display:none">
-  <h2 style="margin:0 0 4px">Hold on — <span id="missCount">0</span> boxes have nothing recorded</h2>
+  <h2 style="margin:0 0 4px">Hold on — <span id="missCount">0</span> boxes were never answered</h2>
   <p class="muted">
-    You've been through all <span id="missTotal">48</span> boxes and
-    <b id="missDone">0</b> were scanned. These have nothing against them:
+    You've been through all <span id="missTotal">48</span> boxes and answered
+    <b id="missDone">0</b> of them — scanned, or marked empty. These were passed
+    over without either:
   </p>
   <p style="font-size:20px;font-weight:700;line-height:1.5" id="missList"></p>
   <div class="row" style="margin-top:12px">
@@ -158,7 +163,7 @@
 
   <div class="card">
     <div class="row" style="justify-content:space-between">
-      <b>Boxes</b><span class="hint">green = scanned · blue = current · tap one to change it</span>
+      <b>Boxes</b><span class="hint">green = scanned · dashed = empty · blue = current · tap one to change it</span>
     </div>
     <div id="grid" class="grid"></div>
   </div>
@@ -239,7 +244,10 @@ function applyState(s){
   }
   $("start").style.display = "none"; $("live").style.display = "block";
   $("sessLabel").textContent = (s.session||"").toUpperCase() + " count";
-  $("doneN").textContent = s.done; $("totalN").textContent = s.total;
+  // Boxes answered, not boxes scanned: saying "this one is empty" is an
+  // answer, and a counter that ignored it looked stuck on a wall of empties.
+  $("doneN").textContent = (s.answered === undefined ? s.done : s.answered);
+  $("totalN").textContent = s.total;
 
   // Filling gaps: hop straight to the next box that has nothing against it
   // rather than walking forward over boxes that are already done.
@@ -286,10 +294,11 @@ function applyState(s){
   const g = $("grid"); g.innerHTML = "";
   (s.slots||[]).forEach(b => {
     const d = document.createElement("div");
-    d.className = "box" + (b.scanned ? " scanned" : "") +
+    d.className = "box" + (b.scanned ? " scanned" : b.empty ? " empty" : "") +
       (b.slot===s.current_slot ? " current" : "");
     d.innerHTML = "<div class='lbl'>"+b.slot+"</div><div class='sub'>" +
-      (b.scanned ? ("#"+String(b.ticket).padStart(3,"0")) : "") + "</div>";
+      (b.scanned ? ("#"+String(b.ticket).padStart(3,"0"))
+                 : b.empty ? "empty" : "") + "</div>";
     d.onclick = () => openBox(b.slot);
     g.appendChild(d);
   });
@@ -304,7 +313,7 @@ function showMissing(s){
   $("missing").style.display = "block";
   $("missCount").textContent = s.pending.length;
   $("missTotal").textContent = s.total;
-  $("missDone").textContent = s.done;
+  $("missDone").textContent = (s.answered === undefined ? s.done : s.answered);
   $("missList").textContent = s.pending.join(", ");
 }
 

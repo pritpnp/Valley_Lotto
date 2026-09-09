@@ -52,12 +52,19 @@ def client(app):
 
 
 def _count(client, session, *codes):
+    """Walk a count and save it. Returns the business date it was filed under.
+
+    That date comes from the server, not from the timestamp on a row: rows are
+    stamped in UTC and counts are filed by the store's local day, so slicing a
+    timestamp gets the wrong day for the several hours a night when the two
+    calendars disagree.
+    """
     client.post("/count/start", json={"session": session})
     for code in codes:
         client.post("/api/scan", json={"raw": code})
     for _ in range(3):
         client.post("/api/skip")
-    client.post("/api/commit")
+    return client.post("/api/commit").get_json().get("date")
 
 
 def _rows(app, **where):
@@ -66,10 +73,6 @@ def _rows(app, **where):
         for k, v in where.items():
             q = q.where(getattr(ScanRow, k) == v)
         return db.scalars(q).all()
-
-
-def _today(client):
-    return client.post("/api/commit").get_json().get("date")
 
 
 def test_a_ticket_number_can_be_fixed_mid_count(client, app):
@@ -97,8 +100,7 @@ def test_todays_row_is_there_before_anyone_counts(client):
 
 
 def test_editing_a_box_of_a_saved_count(client, app):
-    _count(client, "night", "1750-0091798-010")
-    date = _rows(app)[0].scanned_at[:10]
+    date = _count(client, "night", "1750-0091798-010")
 
     page = client.get(f"/counts/{date}/night/edit")
     assert page.status_code == 200
@@ -112,16 +114,14 @@ def test_editing_a_box_of_a_saved_count(client, app):
 
 
 def test_a_box_can_be_taken_out_of_a_saved_count(client, app):
-    _count(client, "night", "1750-0091798-010")
-    date = _rows(app)[0].scanned_at[:10]
+    date = _count(client, "night", "1750-0091798-010")
     client.post(f"/counts/{date}/night/box/1", data={"action": "delete"},
                 follow_redirects=True)
     assert _rows(app, slot="1") == []
 
 
 def test_a_box_missed_by_the_count_can_be_added_afterwards(client, app):
-    _count(client, "night", "1750-0091798-010")
-    date = _rows(app)[0].scanned_at[:10]
+    date = _count(client, "night", "1750-0091798-010")
     client.post(f"/counts/{date}/night/box/2",
                 data={"game_number": "1744", "pack": "0100200", "ticket": "5"},
                 follow_redirects=True)
@@ -130,8 +130,7 @@ def test_a_box_missed_by_the_count_can_be_added_afterwards(client, app):
 
 
 def test_a_scan_fills_the_three_fields(client, app):
-    _count(client, "night", "1750-0091798-010")
-    date = _rows(app)[0].scanned_at[:10]
+    date = _count(client, "night", "1750-0091798-010")
     client.post(f"/counts/{date}/night/box/2", data={"scan": "1744-0100200-005"},
                 follow_redirects=True)
     row = _rows(app, slot="2")[0]
@@ -139,8 +138,7 @@ def test_a_scan_fills_the_three_fields(client, app):
 
 
 def test_a_paper_count_starts_from_the_previous_one(client, app):
-    _count(client, "morning", "1750-0091798-010", "1744-0100200-005")
-    date = _rows(app)[0].scanned_at[:10]
+    date = _count(client, "morning", "1750-0091798-010", "1744-0100200-005")
 
     client.post(f"/counts/{date}/night/create", follow_redirects=True)
     night = [r for r in _rows(app) if r.session == "night"]
@@ -149,16 +147,14 @@ def test_a_paper_count_starts_from_the_previous_one(client, app):
 
 
 def test_typing_in_a_count_that_already_exists_just_opens_it(client, app):
-    _count(client, "night", "1750-0091798-010")
-    date = _rows(app)[0].scanned_at[:10]
+    date = _count(client, "night", "1750-0091798-010")
     before = len(_rows(app))
     client.post(f"/counts/{date}/night/create", follow_redirects=True)
     assert len(_rows(app)) == before        # nothing duplicated
 
 
 def test_correcting_the_newest_count_moves_the_box_map(client, app):
-    _count(client, "night", "1750-0091798-010")
-    date = _rows(app)[0].scanned_at[:10]
+    date = _count(client, "night", "1750-0091798-010")
     client.post(f"/counts/{date}/night/box/1",
                 data={"game_number": "1744", "pack": "0100200", "ticket": "5"},
                 follow_redirects=True)
@@ -168,9 +164,8 @@ def test_correcting_the_newest_count_moves_the_box_map(client, app):
 
 def test_correcting_an_older_count_leaves_the_box_map_alone(client, app):
     """A correction to last week must not overwrite a box that changed since."""
-    _count(client, "morning", "1750-0091798-010")
+    date = _count(client, "morning", "1750-0091798-010")
     _count(client, "night", "1780-0088010-002")      # the box moved on
-    date = _rows(app)[0].scanned_at[:10]
 
     client.post(f"/counts/{date}/morning/box/1",
                 data={"game_number": "1744", "pack": "0100200", "ticket": "5"},
@@ -180,8 +175,7 @@ def test_correcting_an_older_count_leaves_the_box_map_alone(client, app):
 
 
 def test_every_correction_is_written_to_the_change_log(client, app):
-    _count(client, "night", "1750-0091798-010")
-    date = _rows(app)[0].scanned_at[:10]
+    date = _count(client, "night", "1750-0091798-010")
     client.post(f"/counts/{date}/night/box/1",
                 data={"game_number": "1750", "pack": "0091798", "ticket": "107"},
                 follow_redirects=True)
@@ -192,8 +186,7 @@ def test_every_correction_is_written_to_the_change_log(client, app):
 
 
 def test_correcting_counts_needs_the_capability(client, app):
-    _count(client, "night", "1750-0091798-010")
-    date = _rows(app)[0].scanned_at[:10]
+    date = _count(client, "night", "1750-0091798-010")
     client.post("/staff", data={"action": "add", "name": "Sam", "pin": "1111",
                                 "role": "employee", "perm": []}, follow_redirects=True)
     client.post("/pin", data={"pin": "1111"})
@@ -218,3 +211,20 @@ def test_editing_a_ticket_by_hand_keeps_the_pack(client, app):
                                        "pack": box["pack"], "ticket": "107"}).get_json()
     box = next(b for b in s["slots"] if b["slot"] == "1")
     assert (box["game"], box["pack"], box["ticket"]) == ("1750", "0091798", 107)
+
+
+def test_a_paper_count_still_copies_a_count_entered_out_of_hours(client, app):
+    """A morning count typed up at 10pm is stamped later than the night count's
+    own filing time. Ordering counts by the clock rather than by day-and-session
+    made the night sheet start from nothing, so nobody's boxes were carried over.
+    """
+    date = _count(client, "morning", "1750-0091798-010", "1744-0100200-005")
+    with app.config["SESSION_FACTORY"]() as db:
+        # As if the walk had been done late in the evening.
+        for r in db.scalars(select(ScanRow)).all():
+            r.scanned_at = f"{date}T23:50:00Z"
+        db.commit()
+
+    client.post(f"/counts/{date}/night/create", follow_redirects=True)
+    night = [r for r in _rows(app) if r.session == "night"]
+    assert {r.slot for r in night} == {"1", "2"}

@@ -32,7 +32,7 @@ from ..scans import Scan, ScanLog, _slot_sort_key
 from ..session import CountSession, standard_slots
 from ..reporting import (daily_report, render_daily_report_md, as_zone,
                          business_date, count_status, normalize_session,
-                         session_meta, local_time, SESSIONS)
+                         session_meta, local_time, SESSIONS, SESSION_ORDER)
 from ..config import Config
 from ..rules import RATING_FACTORS, rate, recommendation
 from .models import (Base, User, Store, ScanRow, ActiveCount, InventoryRow,
@@ -705,6 +705,10 @@ def _register_routes(app: Flask):
             "session": cs.session, "store": cs.store,
             "current_slot": cs.current_slot,
             "done": done, "total": total,
+            # What the progress counter shows: boxes answered either way, so
+            # marking one empty moves it along rather than looking stuck.
+            "answered": cs.answered(),
+            "empty": sorted(cs.empty),
             "complete": cs.is_complete(),
             # walk_done — not "every box filled" — is what ends a count, since
             # empty boxes are skipped rather than scanned.
@@ -712,6 +716,10 @@ def _register_routes(app: Flask):
             "pending": cs.pending_slots(),
             "slots": [
                 {"slot": s,
+                 # "empty" is an answer, not an absence: the clerk looked and
+                 # there was nothing there. The grid shows it differently and
+                 # the end of the walk doesn't ask about it again.
+                 "empty": s in cs.empty and s not in cs.entries,
                  "game": cs.entries[s].game_number if s in cs.entries else None,
                  # The pack travels with the rest: the box menu prefills from
                  # this, and without it editing a ticket by hand wiped the pack.
@@ -913,8 +921,23 @@ def _register_routes(app: Flask):
             if known is None or known.game_number != sc.game_number:
                 _set_box(sc.slot, sc.game_number, source="scan")
                 moved += 1
-        if moved:
-            audit("box.autofill", f"{moved} box(es) updated from the count")
+
+        # And a box the clerk said was empty is empty on the map too — otherwise
+        # the map keeps insisting a game is in a box that someone just looked at.
+        emptied = 0
+        for slot in cs.empty:
+            known = boxes.get(slot)
+            if known is not None and known.game_number:
+                _set_box(slot, None, source="scan")
+                emptied += 1
+
+        if moved or emptied:
+            bits = []
+            if moved:
+                bits.append(f"{moved} box(es) updated")
+            if emptied:
+                bits.append(f"{emptied} box(es) emptied")
+            audit("box.autofill", " and ".join(bits) + " from the count")
         _clear_session()
         return jsonify({"committed": len(scans), "date": _today(_store_tz())})
 
@@ -1461,21 +1484,29 @@ def _register_routes(app: Flask):
             })
         return out
 
-    def _previous_count(before_stamp: str) -> list:
-        """The most recent count before a moment — what a paper count starts from.
+    def _previous_count(date: str, sess: str) -> list:
+        """The last count taken before this one — what a paper count starts from.
 
         Copying the last known state means a paper sheet only needs the boxes
         that actually moved, which is most of the typing gone.
+
+        "Before" is by day and then by session, not by the clock: a night count
+        typed up after a morning one that was itself entered late in the evening
+        still comes after it, even though the morning count's timestamp is the
+        later of the two.
         """
-        rows = [r for r in _db().scalars(select(ScanRow).where(ScanRow.store == _store())).all()
-                if r.scanned_at < before_stamp]
-        if not rows:
-            return []
         tz = _store_tz()
-        newest = max(rows, key=lambda r: r.scanned_at)
-        key = (business_date(newest.scanned_at, tz), normalize_session(newest.session))
-        return [r for r in rows
-                if (business_date(r.scanned_at, tz), normalize_session(r.session)) == key]
+        want = (date, SESSION_ORDER.get(normalize_session(sess), 99))
+        keyed = []
+        for r in _db().scalars(select(ScanRow).where(ScanRow.store == _store())).all():
+            key = (business_date(r.scanned_at, tz),
+                   SESSION_ORDER.get(normalize_session(r.session), 99))
+            if key < want:
+                keyed.append((key, r))
+        if not keyed:
+            return []
+        newest = max(k for k, _ in keyed)
+        return [r for k, r in keyed if k == newest]
 
     def _is_newest_for_slot(row) -> bool:
         """Is this scan the latest word on what's in that box?
@@ -1522,7 +1553,7 @@ def _register_routes(app: Flask):
         stamp = _session_stamp(date, sess)
         who = session.get("staff_name") or session.get("username") or ""
         made = 0
-        for prev in _previous_count(stamp):
+        for prev in _previous_count(date, sess):
             if not prev.slot:
                 continue
             _db().add(ScanRow(store=_store(), game_number=prev.game_number,

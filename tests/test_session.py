@@ -101,19 +101,24 @@ def test_the_walk_ends_even_with_skipped_boxes():
     assert sess.walk_done is False
     sess.skip()                                     # A2 is empty
     assert sess.walk_done is True
-    assert sess.is_complete() is False              # not every box has a ticket
+    # Every box has been answered — one with a ticket, one with "it's empty".
+    assert sess.is_complete() is True
+    assert sess.pending_slots() == []
 
 
-def test_skip_and_goto_fill_later():
+def test_a_box_marked_empty_can_still_be_filled_in_later():
+    """Marking it empty is an answer, not a lock — you can go back to it."""
     sess = CountSession(slots=["A1", "A2", "A3"])
     sess.scan("1750-0091798-010", at="t1")    # A1
-    sess.skip()                                # skip A2
+    sess.skip()                                # A2 is empty
     sess.scan("1780-0088010-002", at="t3")    # A3
-    assert sess.pending_slots() == ["A2"]
-    sess.goto("A2")
+    assert sess.pending_slots() == []          # nothing is unanswered
+
+    sess.goto("A2")                            # but you can still return to it
     assert sess.current_slot == "A2"
     sess.scan("1744-0100200-005", at="t4")
-    assert sess.is_complete()
+    assert sess.entries["A2"].game_number == "1744"
+    assert "A2" not in sess.empty              # a ticket settles the question
 
 
 def test_game_per_box_updates_not_locked():
@@ -162,7 +167,8 @@ def test_any_box_can_be_marked_empty_without_losing_your_place():
     step = sess.clear("A1")
     assert step.ok and "A1" not in sess.entries
     assert sess.current_slot == "A3"           # place kept
-    assert sess.pending_slots() == ["A1", "A3"]
+    # A1 has been answered ("empty"); only A3 is still unanswered.
+    assert sess.pending_slots() == ["A3"]
 
 
 def test_clearing_a_box_that_was_already_empty_is_harmless():
@@ -182,3 +188,57 @@ def test_a_cleared_box_can_be_scanned_again():
     sess.clear("A1")
     step = sess.rescan("A1", "1744-0100200-005", at="t2")
     assert step.ok and sess.entries["A1"].game_number == "1744"
+
+
+# --- the bug: skipping an empty box then being nagged about it ---------------
+
+def test_skipping_empty_boxes_does_not_leave_them_looking_unanswered():
+    """Reported from a real count: skip the first empty box, keep scanning, and
+    the end of the walk claims every box from there on is blank. Saying "this
+    box is empty" IS an answer — it must not read as a gap."""
+    sess = CountSession(slots=["1", "2", "3", "4", "5"])
+    sess.scan("1750-0091798-010", at="t1")     # box 1
+    sess.skip()                                 # box 2 is empty
+    sess.scan("1744-0100200-005", at="t3")     # box 3
+    sess.skip()                                 # box 4 is empty
+    sess.scan("1780-0088010-002", at="t5")     # box 5
+
+    assert sess.walk_done is True
+    assert sess.pending_slots() == []           # nothing to nag about
+    assert sess.is_complete() is True
+    assert sess.empty == {"2", "4"}
+    assert sess.answered() == 5
+
+
+def test_a_box_nobody_looked_at_is_still_a_gap():
+    """The guard has to keep working for the case it was built for: jumping the
+    walk forward leaves boxes genuinely unanswered."""
+    sess = CountSession(slots=["1", "2", "3"])
+    sess.scan("1750-0091798-010", at="t1")     # box 1
+    sess.goto("3")                              # box 2 never answered
+    sess.scan("1744-0100200-005", at="t2")
+    assert sess.pending_slots() == ["2"]
+
+
+def test_the_empty_decision_survives_a_reload():
+    sess = CountSession(slots=["1", "2", "3"])
+    sess.scan("1750-0091798-010", at="t1")
+    sess.skip()
+    back = CountSession.from_state(sess.to_state())
+    assert back.empty == {"2"}
+    assert back.pending_slots() == ["3"]
+
+
+def test_scanning_a_box_marked_empty_takes_the_mark_off():
+    sess = CountSession(slots=["1", "2"])
+    sess.clear("1")
+    assert "1" in sess.empty
+    sess.scan("1750-0091798-010", at="t1")     # standing on box 1
+    assert "1" not in sess.empty and sess.entries["1"].ticket == 10
+
+
+def test_setting_a_box_by_hand_takes_the_mark_off_too():
+    sess = CountSession(slots=["1", "2"])
+    sess.clear("1")
+    sess.set_entry("1", game_number="1750", pack="0091798", ticket=12)
+    assert "1" not in sess.empty
