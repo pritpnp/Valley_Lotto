@@ -1,30 +1,42 @@
-# Valley Lotto report — 2026-09-11T08:49:44Z
+# Valley Lotto report — 2026-09-11T19:05:55Z
 
-## ✅ No new alerts
+## ⚠️ 5 new alert(s)
 
-Nothing ended and nothing crossed your low-prize threshold since the last run.
+- 🔵 🆕 New game now on sale: #1802 GAME SHOW EXPERIENCE Second-Chance Eligible ($30, odds 1:2.74) — consider stocking it.
+- 🔵 🆕 New game now on sale: #1803 Candy-Coated Ca$h ($10, odds 1:2.72) — consider stocking it.
+- 🔵 🆕 New game now on sale: #1804 Fat Stacks ($5, odds 1:3.84) — consider stocking it.
+- 🔵 🆕 New game now on sale: #1805 Ghostbusters™ Second-Chance Eligible ($2, odds 1:3.61) — consider stocking it.
+- 🔵 🆕 New game now on sale: #1806 Cash Grab ($1, odds 1:4.26) — consider stocking it.
+
+## 🆕 New games just on sale (5)
+
+- **#1802 GAME SHOW EXPERIENCE Second-Chance Eligible** ($30, odds 1:2.74, on sale 09/2026)
+- **#1803 Candy-Coated Ca$h** ($10, odds 1:2.72, on sale 09/2026)
+- **#1804 Fat Stacks** ($5, odds 1:3.84, on sale 09/2026)
+- **#1805 Ghostbusters™ Second-Chance Eligible** ($2, odds 1:3.61, on sale 09/2026)
+- **#1806 Cash Grab** ($1, odds 1:4.26, on sale 09/2026)
 
 ## Recommendation: send back 18, keep 16
 
 **🔴 Send back — and what to swap in (same price):**
 
-- #1766 LOVE IS BLIND ($2) — Scored 17 out of 100, below the 50 needed to keep it. The weakest parts are win odds at 1 in 4.54 and low-prize stock at 19%.. → swap to #1794 $20 Frenzy, #1800 Winner Winner Chicken Dinner
-- #1693 Keys and Cash ($5) — Scored 18 out of 100, below the 50 needed to keep it. The weakest parts are prizes left at 7% and low-prize stock at 8%.. → swap to #1799 THE WIZARD OF OZ™ YELLOW BRICK ROAD Second-Chance Eligible, #1793 Crossword Deluxe
-- #1767 $500 a Week for Life ($1) — Scored 22 out of 100, below the 50 needed to keep it. The weakest parts are win odds at 1 in 4.77 and prizes left at 24%.. → swap to #1795 Bright Buck$, #1801 THE WIZARD OF OZ™ GLINDA THE GOOD WITCH Second-Chance Eligible
-- #1744 Goat Load of Cash Crossword ($5) — Scored 29 out of 100, below the 50 needed to keep it. The weakest parts are low-prize stock at 8% and prizes left at 8%.. → swap to #1799 THE WIZARD OF OZ™ YELLOW BRICK ROAD Second-Chance Eligible, #1793 Crossword Deluxe
-- #1758 ELF ($5) — Scored 30 out of 100, below the 50 needed to keep it. The weakest parts are prizes left at 12% and low-prize stock at 12%.. → swap to #1799 THE WIZARD OF OZ™ YELLOW BRICK ROAD Second-Chance Eligible, #1793 Crossword Deluxe
-- #1736 High 5 ($5) — Scored 30 out of 100, below the 50 needed to keep it. The weakest parts are low-prize stock at 3% and prizes left at 3%.. → swap to #1799 THE WIZARD OF OZ™ YELLOW BRICK ROAD Second-Chance Eligible, #1793 Crossword Deluxe
-- #1757 $2,500 Festive Frenzy ($10) — Scored 31 out of 100, below the 50 needed to keep it. The weakest parts are prizes left at 8% and low-prize stock at 8%.. → swap to #1798 THE WIZARD OF OZ™ THE GREAT AND POWERFUL OZ Second-Chance Eligible, #1791 VIP Bonus Cash
-- #1739 MONOPOLY SECRET VAULT ($5) — Scored 34 out of 100, below the 50 needed to keep it. The weakest parts are win odds at 1 in 4.59 and prizes left at 21%.. → swap to #1799 THE WIZARD OF OZ™ YELLOW BRICK ROAD Second-Chance Eligible, #1793 Crossword Deluxe
+- #1766 LOVE IS BLIND ($2) — Scored 17 out of 100, below the 50 needed to keep it. The weakest parts are win odds at 1 in 4.54 and low-prize stock at 19%.. → swap to #1805 Ghostbusters™ Second-Chance Eligible, #1794 $20 Frenzy
+- #1693 Keys and Cash ($5) — Scored 18 out of 100, below the 50 needed to keep it. The weakest parts are prizes left at 7% and low-prize stock at 8%.. → swap to #1804 Fat Stacks, #1799 THE WIZARD OF OZ™ YELLOW BRICK ROAD Second-Chance Eligible
+- #1767 $500 a Week for Life ($1) — Scored 22 out of 100, below the 50 needed to keep it. The weakest parts are win odds at 1 in 4.77 and prizes left at 24%.. → swap to #1806 Cash Grab, #1795 Bright Buck$
+- #1744 Goat Load of Cash Crossword ($5) — Scored 29 out of 100, below the 50 needed to keep it. The weakest parts are low-prize stock at 8% and prizes left at 8%.. → swap to #1804 Fat Stacks, #1799 THE WIZARD OF OZ™ YELLOW BRICK ROAD Second-Chance Eligible
+- #1758 ELF ($5) — Scored 30 out of 100, below the 50 needed to keep it. The weakest parts are prizes left at 12% and low-prize stock at 12%.. → swap to #1804 Fat Stacks, #1799 THE WIZARD OF OZ™ YELLOW BRICK ROAD Second-Chance Eligible
+- #1736 High 5 ($5) — Scored 30 out of 100, below the 50 needed to keep it. The weakest parts are low-prize stock at 3% and prizes left at 3%.. → swap to #1804 Fat Stacks, #1799 THE WIZARD OF OZ™ YELLOW BRICK ROAD Second-Chance Eligible
+- #1757 $2,500 Festive Frenzy ($10) — Scored 31 out of 100, below the 50 needed to keep it. The weakest parts are prizes left at 8% and low-prize stock at 8%.. → swap to #1803 Candy-Coated Ca$h, #1798 THE WIZARD OF OZ™ THE GREAT AND POWERFUL OZ Second-Chance Eligible
+- #1739 MONOPOLY SECRET VAULT ($5) — Scored 34 out of 100, below the 50 needed to keep it. The weakest parts are win odds at 1 in 4.59 and prizes left at 21%.. → swap to #1804 Fat Stacks, #1799 THE WIZARD OF OZ™ YELLOW BRICK ROAD Second-Chance Eligible
 - #1756 Fro$ted Fortune ($20) — Pennsylvania stopped selling this game on 07/08/2026. Pull it.. → swap to #1797 Snake, Rattle and Roll, #1785 THE GAME OF LIFE
-- #1783 GOLD FISH® ($1) — Scored 38 out of 100, below the 50 needed to keep it. The weakest parts are win odds at 1 in 4.32 and low-prize trend at far faster.. → swap to #1795 Bright Buck$, #1801 THE WIZARD OF OZ™ GLINDA THE GOOD WITCH Second-Chance Eligible
-- #1751 Extreme Green ($10) — Scored 39 out of 100, below the 50 needed to keep it. The weakest parts are prizes left at 25% and low-prize stock at 25%.. → swap to #1798 THE WIZARD OF OZ™ THE GREAT AND POWERFUL OZ Second-Chance Eligible, #1791 VIP Bonus Cash
-- #1769 Code Word Crossword ($10) — Scored 42 out of 100, below the 50 needed to keep it. The weakest parts are low-prize stock at 24% and prizes left at 24%.. → swap to #1798 THE WIZARD OF OZ™ THE GREAT AND POWERFUL OZ Second-Chance Eligible, #1791 VIP Bonus Cash
-- #1772 Find the Leprechaun ($2) — Scored 42 out of 100, below the 50 needed to keep it. The weakest parts are prizes left at 16% and low-prize stock at 16%.. → swap to #1794 $20 Frenzy, #1800 Winner Winner Chicken Dinner
+- #1783 GOLD FISH® ($1) — Scored 38 out of 100, below the 50 needed to keep it. The weakest parts are win odds at 1 in 4.32 and low-prize trend at far faster.. → swap to #1806 Cash Grab, #1795 Bright Buck$
+- #1751 Extreme Green ($10) — Scored 39 out of 100, below the 50 needed to keep it. The weakest parts are prizes left at 25% and low-prize stock at 25%.. → swap to #1803 Candy-Coated Ca$h, #1798 THE WIZARD OF OZ™ THE GREAT AND POWERFUL OZ Second-Chance Eligible
+- #1769 Code Word Crossword ($10) — Scored 42 out of 100, below the 50 needed to keep it. The weakest parts are low-prize stock at 24% and prizes left at 24%.. → swap to #1803 Candy-Coated Ca$h, #1798 THE WIZARD OF OZ™ THE GREAT AND POWERFUL OZ Second-Chance Eligible
+- #1772 Find the Leprechaun ($2) — Scored 42 out of 100, below the 50 needed to keep it. The weakest parts are prizes left at 16% and low-prize stock at 16%.. → swap to #1805 Ghostbusters™ Second-Chance Eligible, #1794 $20 Frenzy
 - #1746 Millionaire Loading ($20) — Scored 47 out of 100, below the 50 needed to keep it. The weakest parts are low-prize stock at 12% and prizes left at 12%.. → swap to #1797 Snake, Rattle and Roll, #1785 THE GAME OF LIFE
 - #1738 Jackpot ($20) — Pennsylvania stopped selling this game on 08/03/2026. Pull it.. → swap to #1797 Snake, Rattle and Roll, #1785 THE GAME OF LIFE
 - #1753 Crossword Extra ($3) — Scored 48 out of 100, below the 50 needed to keep it. The weakest parts are low-prize stock at 31% and prizes left at 31%.. → no strong same-price replacement (consider dropping this price)
-- #1787 Fever Doubler ($5) — Scored 49 out of 100, below the 50 needed to keep it. The weakest parts are low-prize trend at far faster and prizes left at 50%.. → swap to #1799 THE WIZARD OF OZ™ YELLOW BRICK ROAD Second-Chance Eligible, #1793 Crossword Deluxe
+- #1787 Fever Doubler ($5) — Scored 49 out of 100, below the 50 needed to keep it. The weakest parts are low-prize trend at far faster and prizes left at 50%.. → swap to #1804 Fat Stacks, #1799 THE WIZARD OF OZ™ YELLOW BRICK ROAD Second-Chance Eligible
 - #1740 Bonus Ball Bingo ($3) — Scored 50 out of 100, below the 50 needed to keep it. The weakest parts are win odds at 1 in 4.38 and low-prize stock at 46%.. → no strong same-price replacement (consider dropping this price)
 
 | Game | # | Price | Rating | Win odds | % left (all) | Low-prize % | Density | Action |
@@ -451,16 +463,21 @@ Nothing ended and nothing crossed your low-prize threshold since the last run.
 | $50 | Million Dollar Win It All | 1784 | 1:3.61 | 0.96 | 88% |
 | $50 | Ca$h Money | 1796 | 1:3.63 | 0.02 | 100% |
 | $50 | $1,000,000 a Year for Life | 1762 | 1:3.74 | 0.85 | 70% |
+| $30 | GAME SHOW EXPERIENCE Second-Chance Eligible | 1802 | 1:2.74 | 0.96 | 100% |
 | $30 | $1,500,000 Super Star | 1790 | 1:3 | 0.74 | 81% |
 | $20 | THE GAME OF LIFE | 1785 | 1:3.43 | 1.35 | 74% |
 | $20 | Snake, Rattle and Roll | 1797 | 1:3.43 | 1.17 | 86% |
+| $10 | Candy-Coated Ca$h | 1803 | 1:2.72 | 0.98 | 100% |
 | $10 | VIP Bonus Cash | 1791 | 1:3.36 | 1.29 | 78% |
 | $10 | Ruby Rich3s | 1786 | 1:3.45 | 0.93 | 74% |
 | $10 | THE WIZARD OF OZ™ THE GREAT AND POWERFUL OZ Second-Chance Eligible | 1798 | 1:3.52 | 1.07 | 94% |
 | $5 | Wild Side | 1792 | 1:3.45 | 1.29 | 70% |
+| $5 | Fat Stacks | 1804 | 1:3.84 | 0.99 | 100% |
 | $5 | Crossword Deluxe | 1793 | 1:3.86 | 1.05 | 83% |
 | $5 | THE WIZARD OF OZ™ YELLOW BRICK ROAD Second-Chance Eligible | 1799 | 1:3.92 | 1.02 | 88% |
 | $2 | $20 Frenzy | 1794 | 1:3.59 | 1.01 | 69% |
+| $2 | Ghostbusters™ Second-Chance Eligible | 1805 | 1:3.61 | 0.98 | 100% |
 | $2 | Winner Winner Chicken Dinner | 1800 | 1:4.05 | 1.04 | 87% |
 | $1 | THE WIZARD OF OZ™ GLINDA THE GOOD WITCH Second-Chance Eligible | 1801 | 1:4.13 | 1.07 | 93% |
 | $1 | Bright Buck$ | 1795 | 1:4.25 | 0.99 | 81% |
+| $1 | Cash Grab | 1806 | 1:4.26 | 0.98 | 100% |
