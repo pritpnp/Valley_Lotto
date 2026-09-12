@@ -121,14 +121,15 @@ def test_the_count_page_carries_the_missing_box_guard(client):
     assert "Go scan them" in html
 
 
-def test_the_server_reports_which_boxes_are_still_empty(client):
+def test_the_server_reports_which_boxes_nobody_looked_at(client):
+    """The end-of-walk guard asks about boxes nobody answered — not about the
+    ones a clerk deliberately said were empty."""
     client.post("/count/start", json={"session": "night"})
     client.post("/api/scan", json={"raw": "1750-0091798-010"})
-    client.post("/api/skip")
-    client.post("/api/skip")
-    s = client.post("/api/scan", json={"raw": "1744-0100200-005"}).get_json()
-    assert s["walk_done"] is True
-    assert s["pending"] == ["2", "3"]        # what the guard lists
+    client.post("/api/skip")                 # box 2: the clerk says it's empty
+    s = client.post("/api/goto", json={"slot": "1"}).get_json()
+    assert s["pending"] == ["3", "4"]        # only the boxes nobody visited
+    assert s["empty"] == ["2"]
 
 
 # --- what to put in instead, when a box is red -------------------------------

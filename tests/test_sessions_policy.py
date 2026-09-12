@@ -4,11 +4,13 @@ Also covers the rename of the old "evening" label onto "night".
 """
 
 import pytest
+from sqlalchemy import select
 
 from lottery_tracker.reporting import (SESSIONS, count_status, normalize_session,
                                        session_meta, daily_report)
 from lottery_tracker.scans import Scan, ScanLog
 from lottery_tracker.web.app import create_app
+from lottery_tracker.web.models import BoxRow
 
 
 def _scan(session, slot, ticket, at, store="t"):
@@ -230,10 +232,46 @@ def test_clearing_does_not_move_you_along(client):
     assert s["current_slot"] == "A2"          # still where the walk had reached
 
 
-def test_a_cleared_box_is_listed_as_still_needing_a_scan(client):
+def test_a_cleared_box_counts_as_answered_not_as_a_gap(client):
+    """Clearing a box is the clerk saying "there is nothing in here". That is an
+    answer, so the end of the walk must not turn round and ask about it."""
     client.post("/count/start", json={"session": "night"})
     client.post("/api/scan", json={"raw": "1750-0091798-010"})
     client.post("/api/clear", json={"slot": "A1"})
     s = client.post("/api/scan", json={"raw": "1744-0100200-005"}).get_json()
     assert s["walk_done"] is True
-    assert s["pending"] == ["A1"]             # the guard will ask about it
+    assert s["pending"] == []                 # nothing left to ask about
+    assert "A1" in s["empty"]
+
+
+def test_marking_boxes_empty_does_not_leave_the_walk_asking_about_them(client):
+    """The clerk's report: skip an empty box, keep scanning, and at the end the
+    app claimed those boxes were still blank and refused to file the count."""
+    client.post("/count/start", json={"session": "night"})
+    s = client.post("/api/skip").get_json()          # box 1 is empty
+    while not s["walk_done"]:
+        s = client.post("/api/scan", json={"raw": "1750-0091798-010"}).get_json()
+    assert s["pending"] == []                        # no nagging
+    assert s["complete"] is True
+    assert client.post("/api/commit").get_json()["committed"] >= 1
+
+
+def test_a_box_emptied_during_a_count_is_emptied_on_the_map_too(client):
+    """Saying a box is empty during a count is the same statement as emptying it
+    from the inventory page — the map has to agree, or the box keeps showing a
+    pack that isn't on the shelf."""
+    client.post("/count/start", json={"session": "night"})
+    client.post("/api/scan", json={"raw": "1750-0091798-010"})
+    while not client.get("/api/state").get_json()["walk_done"]:
+        client.post("/api/skip")
+    client.post("/api/commit")
+
+    client.post("/count/start", json={"session": "morning"})
+    client.post("/api/skip")                       # box A1 is empty now
+    while not client.get("/api/state").get_json()["walk_done"]:
+        client.post("/api/skip")
+    client.post("/api/commit")
+
+    with client.application.config["SESSION_FACTORY"]() as db:
+        row = db.scalar(select(BoxRow).where(BoxRow.slot == "A1"))
+    assert row is None or not row.game_number

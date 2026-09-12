@@ -111,7 +111,8 @@ def test_an_empty_box_is_skipped_and_still_ends_the_walk(client):
     client.post("/api/scan", json={"raw": "1742011331200893"})
     s = client.post("/api/skip").get_json()      # this box is empty
     assert s["walk_done"] is True
-    assert s["complete"] is False                # not every box has a ticket
+    assert s["complete"] is True                 # every box has an answer
+    assert s["pending"] == []
     assert client.post("/api/commit").get_json()["committed"] == 1
 
 

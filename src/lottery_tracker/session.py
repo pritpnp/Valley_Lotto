@@ -77,6 +77,11 @@ class CountSession:
         # by digit position. Not serialized — it's supplied fresh each request.
         self.known_games = set(known_games) if known_games else None
         self.entries: dict = {}     # slot -> Scan
+        # Boxes the clerk has said are empty. Deliberately separate from simply
+        # having no entry: "nobody has looked at this box yet" and "I looked, it
+        # is empty" are different answers, and only the first is a gap worth
+        # asking about at the end of the walk.
+        self.empty: set = set()
         # A duplicate game held back until the clerk scans it a second time.
         self.pending: dict | None = None
         self.index = 0              # pointer into self.slots
@@ -88,8 +93,19 @@ class CountSession:
         return self.slots[self.index] if 0 <= self.index < len(self.slots) else None
 
     def pending_slots(self) -> list:
-        """Boxes not yet scanned, in order (catches any that were skipped)."""
-        return [s for s in self.slots if s not in self.entries]
+        """Boxes still unanswered, in order.
+
+        A box the clerk marked empty has been answered — it is not pending. It
+        used to be, which meant the end of a walk nagged about every box someone
+        had already told it was empty.
+        """
+        return [s for s in self.slots
+                if s not in self.entries and s not in self.empty]
+
+    def answered(self) -> int:
+        """Boxes with an answer: a ticket, or "it's empty"."""
+        return len([s for s in self.slots
+                    if s in self.entries or s in self.empty])
 
     def is_complete(self) -> bool:
         return not self.pending_slots()
@@ -114,6 +130,7 @@ class CountSession:
         scan = Scan.from_ticket(tc, scanned_at=at, kind="single", store=self.store,
                                 slot=slot, session=self.session, user=self.user)
         self.entries[slot] = scan
+        self.empty.discard(slot)      # a ticket in it settles the question
         return scan
 
     def _scan_warning(self, slot: str, tc: TicketCode) -> Optional[str]:
@@ -215,9 +232,11 @@ class CountSession:
         slot = self.current_slot
         self.pending = None
         had = self.entries.pop(slot, None)
+        if slot is not None:
+            self.empty.add(slot)
         self._advance()
         msg = (f"{slot} cleared — counted as empty" if had
-               else f"skipped {slot} — counted as empty")
+               else f"{slot} counted as empty")
         return ScanStep(True, slot, msg, next_slot=self.current_slot)
 
     def clear(self, slot: str) -> ScanStep:
@@ -230,6 +249,7 @@ class CountSession:
             return ScanStep(False, slot, f"unknown box {slot}", next_slot=self.current_slot)
         self.pending = None
         had = self.entries.pop(slot, None)
+        self.empty.add(slot)
         return ScanStep(True, slot,
                         f"{slot} is now empty" + ("" if had else " (it already was)"),
                         next_slot=self.current_slot)
@@ -263,6 +283,7 @@ class CountSession:
             ticket=ticket, scanned_at=at or _now_iso(), kind="manual",
             store=self.store, slot=slot, session=self.session, user=self.user,
             raw="")
+        self.empty.discard(slot)
         return ScanStep(True, slot, f"{slot} set by hand to game {game_number}, "
                                     f"ticket {ticket:03d}",
                         next_slot=self.current_slot)
@@ -287,7 +308,7 @@ class CountSession:
         return {
             "slots": self.slots, "store": self.store, "session": self.session,
             "user": self.user, "index": self.index, "committed": self.committed,
-            "pending": self.pending,
+            "pending": self.pending, "empty": sorted(self.empty),
             "entries": {k: v.to_dict() for k, v in self.entries.items()},
         }
 
@@ -298,6 +319,7 @@ class CountSession:
         s.index = int(d.get("index", 0))
         s.committed = bool(d.get("committed", False))
         s.pending = d.get("pending")
+        s.empty = set(d.get("empty") or [])
         s.entries = {k: Scan.from_dict(v) for k, v in (d.get("entries") or {}).items()}
         return s
 
