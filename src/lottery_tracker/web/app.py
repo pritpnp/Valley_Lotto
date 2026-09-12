@@ -1789,7 +1789,7 @@ def _register_routes(app: Flask):
                     st.active = request.form.get("active") == "on"
                     _db().commit()
                     audit("store.update", st.slug)
-            elif act == "wipe":
+            elif act in ("wipe", "wipe_counts"):
                 st = _db().get(Store, request.form.get("slug") or "")
                 typed = (request.form.get("confirm_name") or "").strip()
                 if st is None:
@@ -1797,6 +1797,8 @@ def _register_routes(app: Flask):
                 elif typed.lower() != (st.name or "").strip().lower():
                     error = (f"Type the store's name exactly ({st.name}) to clear it. "
                              "Nothing was cleared.")
+                elif act == "wipe_counts":
+                    error = _wipe_store_counts(st)
                 else:
                     error = _wipe_store_data(st)
             elif act == "delete":
@@ -1828,6 +1830,30 @@ def _register_routes(app: Flask):
             "staff": n(StaffRow), "packs": n(PackRow), "shipments": n(ShipmentRow),
             "managers": n(User),
         }
+
+    def _wipe_store_counts(st: Store) -> str | None:
+        """Throw away the counting history, keeping what's on the shelves.
+
+        The narrower sibling of :func:`_wipe_store_data`. Weeks of test counts
+        have to be removable without also forgetting which game is in which box,
+        which games the store carries, and what's in the stockroom — that part is
+        real even when the counts were practice.
+
+        Any count left half-finished goes too: it is made of the same test scans,
+        and leaving it would offer to resume a walk through numbers that no
+        longer exist.
+        """
+        slug = st.slug
+        scans = _db().query(ScanRow).filter(ScanRow.store == slug).count()
+
+        for model in (ScanRow, ActiveCount):
+            _db().query(model).filter(model.store == slug).delete(synchronize_session=False)
+        _db().commit()
+
+        audit("store.wipe_counts",
+              f"{st.name}: cleared {scans} scan(s) and any count in progress; "
+              "box map, carried games, packs and deliveries kept")
+        return None
 
     def _wipe_store_data(st: Store) -> str | None:
         """Start a store's counting over, keeping the store itself.

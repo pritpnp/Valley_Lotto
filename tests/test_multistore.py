@@ -411,3 +411,74 @@ def test_a_manager_cannot_clear_a_store(app):
     r = c.post("/admin/stores", data={"action": "wipe", "slug": "theirs",
                                       "confirm_name": "Theirs"})
     assert r.status_code == 403
+
+
+def test_clearing_only_the_counts_keeps_what_is_on_the_shelves(boss, app):
+    """Weeks of practice counts have to be removable without also forgetting
+    which game is in which box and what's in the stockroom — that part is real
+    even when the counting was not."""
+    from sqlalchemy import select
+    from lottery_tracker.web.models import (ScanRow, BoxRow, InventoryRow,
+                                            PackRow, ActiveCount, AuditRow)
+    _mk_store(boss, "Practice Store", "practice")
+    boss.post("/admin/act-as", data={"store": "practice"}, follow_redirects=True)
+    boss.post("/backstock/receive", data={"label": "L1"}, follow_redirects=True)
+    boss.post("/api/backstock/receive", json={"raw": "1744-0100200-001"})
+    boss.post("/count/start", json={"session": "night"})
+    boss.post("/api/scan", json={"raw": "1750-0091798-010"})
+    for _ in range(3):
+        boss.post("/api/skip")
+    boss.post("/api/commit")
+    boss.post("/count/start", json={"session": "morning"})   # left half-finished
+
+    Session = app.config["SESSION_FACTORY"]
+    with Session() as db:
+        assert db.scalars(select(BoxRow).where(BoxRow.store == "practice")).all()
+
+    boss.post("/admin/stores", data={"action": "wipe_counts", "slug": "practice",
+                                     "confirm_name": "Practice Store"},
+              follow_redirects=True)
+
+    with Session() as db:
+        gone = (ScanRow, ActiveCount)
+        for model in gone:
+            assert db.scalars(select(model).where(model.store == "practice")).all() == [], model.__name__
+        for model in (BoxRow, InventoryRow, PackRow):
+            assert db.scalars(select(model).where(model.store == "practice")).all(), model.__name__
+        assert "store.wipe_counts" in [a.action for a in db.scalars(select(AuditRow)).all()]
+
+
+def test_clearing_only_the_counts_needs_the_name_typed_exactly(boss, app):
+    from sqlalchemy import select
+    from lottery_tracker.web.models import ScanRow
+    _mk_store(boss, "Typo Store", "typo")
+    boss.post("/admin/act-as", data={"store": "typo"}, follow_redirects=True)
+    boss.post("/count/start", json={"session": "night"})
+    boss.post("/api/scan", json={"raw": "1750-0091798-010"})
+    for _ in range(3):
+        boss.post("/api/skip")
+    boss.post("/api/commit")
+
+    r = boss.post("/admin/stores", data={"action": "wipe_counts", "slug": "typo",
+                                         "confirm_name": "typo stoer"},
+                  follow_redirects=True)
+    assert b"Nothing was cleared" in r.data
+    Session = app.config["SESSION_FACTORY"]
+    with Session() as db:
+        assert db.scalars(select(ScanRow).where(ScanRow.store == "typo")).all()
+
+
+def test_a_manager_cannot_clear_a_stores_counts(app):
+    from werkzeug.security import generate_password_hash
+    from lottery_tracker.web.models import User, Store
+    Session = app.config["SESSION_FACTORY"]
+    with Session() as db:
+        db.add(Store(slug="mine", name="Mine", slots="4"))
+        db.add(User(username="mgr4", password_hash=generate_password_hash("pw"),
+                    role="manager", store="mine"))
+        db.commit()
+    c = app.test_client()
+    c.post("/login", data={"username": "mgr4", "password": "pw"})
+    r = c.post("/admin/stores", data={"action": "wipe_counts", "slug": "mine",
+                                      "confirm_name": "Mine"})
+    assert r.status_code == 403
