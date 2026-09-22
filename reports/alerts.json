@@ -1,1 +1,51 @@
-[]
+[
+  {
+    "kind": "low_prizes",
+    "game_number": "1723",
+    "name": "The Hunt for $3,000,000",
+    "severity": "info",
+    "message": "A game is running low \u2014 consider swapping it for a fresh game: #1723 The Hunt for $3,000,000 (only 20% of top prizes left (1/5); 1 top prize(s) remaining).",
+    "owned": false,
+    "details": {
+      "reasons": [
+        "only 20% of top prizes left (1/5)",
+        "1 top prize(s) remaining"
+      ],
+      "top_prizes_remaining": 1,
+      "top_prizes_total": 5,
+      "top_prize_value": "$3,000,000"
+    }
+  },
+  {
+    "kind": "low_prizes",
+    "game_number": "1773",
+    "name": "5 Star Wins",
+    "severity": "info",
+    "message": "A game is running low \u2014 consider swapping it for a fresh game: #1773 5 Star Wins (only 30% of top prizes left (3/10)).",
+    "owned": false,
+    "details": {
+      "reasons": [
+        "only 30% of top prizes left (3/10)"
+      ],
+      "top_prizes_remaining": 3,
+      "top_prizes_total": 10,
+      "top_prize_value": "$5,000"
+    }
+  },
+  {
+    "kind": "low_prizes",
+    "game_number": "1776",
+    "name": "$100 Blowout",
+    "severity": "info",
+    "message": "A game is running low \u2014 consider swapping it for a fresh game: #1776 $100 Blowout (only 38% of top prizes left (10300/27206)).",
+    "owned": false,
+    "details": {
+      "reasons": [
+        "only 38% of top prizes left (10300/27206)"
+      ],
+      "top_prizes_remaining": 10300,
+      "top_prizes_total": 27206,
+      "top_prize_value": "$100"
+    }
+  }
+]
