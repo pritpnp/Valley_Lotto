@@ -1,5 +1,5 @@
 {
-  "captured_at": "2026-09-25T09:31:33Z",
+  "captured_at": "2026-09-25T19:57:17Z",
   "games": {
     "1000": {
       "claim_deadline": null,
@@ -21691,11 +21691,11 @@
       "total_is_estimate": true
     },
     "1755": {
-      "claim_deadline": null,
+      "claim_deadline": "11/6/2027 12:00:00 AM",
       "detail_id": "3329",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1755",
-      "last_changed": "2026-09-22T19:41:08Z",
+      "last_changed": "2026-09-25T19:57:17Z",
       "name": "Merry Money Match",
       "odds": "1:2.79",
       "on_sale_date": "11/2025",
@@ -21727,7 +21727,7 @@
           "value": "$300"
         }
       ],
-      "sales_end_date": null,
+      "sales_end_date": "11/6/2026 12:00:00 AM",
       "source_pages": [
         "remaining"
       ],
@@ -21810,11 +21810,11 @@
       "total_is_estimate": false
     },
     "1757": {
-      "claim_deadline": null,
+      "claim_deadline": "11/6/2027 12:00:00 AM",
       "detail_id": "3331",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1757",
-      "last_changed": "2026-09-22T19:41:08Z",
+      "last_changed": "2026-09-25T19:57:17Z",
       "name": "$2,500 Festive Frenzy",
       "odds": "1:3.32",
       "on_sale_date": "11/2025",
@@ -21846,7 +21846,7 @@
           "value": "$20"
         }
       ],
-      "sales_end_date": null,
+      "sales_end_date": "11/6/2026 12:00:00 AM",
       "source_pages": [
         "remaining"
       ],
@@ -21867,11 +21867,11 @@
       "total_is_estimate": true
     },
     "1758": {
-      "claim_deadline": null,
+      "claim_deadline": "11/6/2027 12:00:00 AM",
       "detail_id": "3332",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1758",
-      "last_changed": "2026-09-22T19:41:08Z",
+      "last_changed": "2026-09-25T19:57:17Z",
       "name": "ELF",
       "odds": "1:3.52",
       "on_sale_date": "11/2025",
@@ -21903,7 +21903,7 @@
           "value": "$50"
         }
       ],
-      "sales_end_date": null,
+      "sales_end_date": "11/6/2026 12:00:00 AM",
       "source_pages": [
         "remaining"
       ],
