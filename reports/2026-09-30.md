@@ -1,26 +1,30 @@
-# Valley Lotto report — 2026-09-30T10:24:05Z
+# Valley Lotto report — 2026-09-30T20:43:31Z
 
-## ✅ No new alerts
+## ⚠️ 5 new alert(s)
 
-Nothing ended and nothing crossed your low-prize threshold since the last run.
+- 🔴 **[YOUR GAME]** A game you carry ENDED sales: #1736 High 5 (ended 09/28/2026). Started 04/2025.
+- 🔴 **[YOUR GAME]** A game you carry ENDED sales: #1766 LOVE IS BLIND (ended 09/28/2026). Started 12/2025.
+- 🔴 **[YOUR GAME]** A game you carry ENDED sales: #1772 Find the Leprechaun (ended 09/28/2026). Started 01/2026.
+- 🔵 A game ENDED sales: #1743 $50, $100 or $500 (ended 09/28/2026). Started 07/2025.
+- 🔵 A game ENDED sales: #1752 Winning 7s (ended 09/28/2026). Started 09/2025.
 
 ## Recommendation: send back 18, keep 16
 
 **🔴 Send back — and what to swap in (same price):**
 
-- #1766 LOVE IS BLIND ($2) — Scored 17 out of 100, below the 50 needed to keep it. The weakest parts are win odds at 1 in 4.54 and low-prize stock at 18%.. → swap to #1805 Ghostbusters™ Second-Chance Eligible, #1800 Winner Winner Chicken Dinner
+- #1766 LOVE IS BLIND ($2) — Pennsylvania stopped selling this game on 09/28/2026. Pull it.. → swap to #1805 Ghostbusters™ Second-Chance Eligible, #1800 Winner Winner Chicken Dinner
 - #1693 Keys and Cash ($5) — Scored 17 out of 100, below the 50 needed to keep it. The weakest parts are prizes left at 7% and low-prize stock at 8%.. → swap to #1793 Crossword Deluxe, #1799 THE WIZARD OF OZ™ YELLOW BRICK ROAD Second-Chance Eligible
 - #1767 $500 a Week for Life ($1) — Scored 22 out of 100, below the 50 needed to keep it. The weakest parts are win odds at 1 in 4.77 and prizes left at 22%.. → swap to #1806 Cash Grab, #1795 Bright Buck$
 - #1744 Goat Load of Cash Crossword ($5) — Scored 28 out of 100, below the 50 needed to keep it. The weakest parts are low-prize stock at 6% and prizes left at 6%.. → swap to #1793 Crossword Deluxe, #1799 THE WIZARD OF OZ™ YELLOW BRICK ROAD Second-Chance Eligible
 - #1758 ELF ($5) — Scored 29 out of 100, below the 50 needed to keep it. The weakest parts are prizes left at 11% and low-prize stock at 11%.. → swap to #1793 Crossword Deluxe, #1799 THE WIZARD OF OZ™ YELLOW BRICK ROAD Second-Chance Eligible
-- #1736 High 5 ($5) — Scored 30 out of 100, below the 50 needed to keep it. The weakest parts are low-prize stock at 3% and prizes left at 3%.. → swap to #1793 Crossword Deluxe, #1799 THE WIZARD OF OZ™ YELLOW BRICK ROAD Second-Chance Eligible
+- #1736 High 5 ($5) — Pennsylvania stopped selling this game on 09/28/2026. Pull it.. → swap to #1793 Crossword Deluxe, #1799 THE WIZARD OF OZ™ YELLOW BRICK ROAD Second-Chance Eligible
 - #1757 $2,500 Festive Frenzy ($10) — Scored 31 out of 100, below the 50 needed to keep it. The weakest parts are prizes left at 8% and low-prize stock at 8%.. → swap to #1803 Candy-Coated Ca$h, #1798 THE WIZARD OF OZ™ THE GREAT AND POWERFUL OZ Second-Chance Eligible
 - #1739 MONOPOLY SECRET VAULT ($5) — Scored 33 out of 100, below the 50 needed to keep it. The weakest parts are win odds at 1 in 4.59 and prizes left at 20%.. → swap to #1793 Crossword Deluxe, #1799 THE WIZARD OF OZ™ YELLOW BRICK ROAD Second-Chance Eligible
 - #1756 Fro$ted Fortune ($20) — Pennsylvania stopped selling this game on 07/08/2026. Pull it.. → swap to #1797 Snake, Rattle and Roll, #1785 THE GAME OF LIFE
 - #1783 GOLD FISH® ($1) — Scored 36 out of 100, below the 50 needed to keep it. The weakest parts are win odds at 1 in 4.32 and low-prize trend at far faster.. → swap to #1806 Cash Grab, #1795 Bright Buck$
 - #1751 Extreme Green ($10) — Scored 37 out of 100, below the 50 needed to keep it. The weakest parts are prizes left at 24% and low-prize stock at 24%.. → swap to #1803 Candy-Coated Ca$h, #1798 THE WIZARD OF OZ™ THE GREAT AND POWERFUL OZ Second-Chance Eligible
 - #1769 Code Word Crossword ($10) — Scored 40 out of 100, below the 50 needed to keep it. The weakest parts are low-prize stock at 18% and prizes left at 18%.. → swap to #1803 Candy-Coated Ca$h, #1798 THE WIZARD OF OZ™ THE GREAT AND POWERFUL OZ Second-Chance Eligible
-- #1772 Find the Leprechaun ($2) — Scored 42 out of 100, below the 50 needed to keep it. The weakest parts are prizes left at 15% and low-prize stock at 15%.. → swap to #1805 Ghostbusters™ Second-Chance Eligible, #1800 Winner Winner Chicken Dinner
+- #1772 Find the Leprechaun ($2) — Pennsylvania stopped selling this game on 09/28/2026. Pull it.. → swap to #1805 Ghostbusters™ Second-Chance Eligible, #1800 Winner Winner Chicken Dinner
 - #1746 Millionaire Loading ($20) — Scored 45 out of 100, below the 50 needed to keep it. The weakest parts are low-prize stock at 10% and prizes left at 10%.. → swap to #1797 Snake, Rattle and Roll, #1785 THE GAME OF LIFE
 - #1787 Fever Doubler ($5) — Scored 46 out of 100, below the 50 needed to keep it. The weakest parts are low-prize trend at far faster and prizes left at 44%.. → swap to #1793 Crossword Deluxe, #1799 THE WIZARD OF OZ™ YELLOW BRICK ROAD Second-Chance Eligible
 - #1753 Crossword Extra ($3) — Scored 47 out of 100, below the 50 needed to keep it. The weakest parts are low-prize stock at 28% and prizes left at 29%.. → no strong same-price replacement (consider dropping this price)
@@ -29,19 +33,19 @@ Nothing ended and nothing crossed your low-prize threshold since the last run.
 
 | Game | # | Price | Rating | Win odds | % left (all) | Low-prize % | Density | Action |
 |------|---|------:|:------:|:-------:|:-----------:|:-----------:|:-------:|--------|
-| LOVE IS BLIND | 1766 | $2 | 17/100 | 1:4.54 | 18% | 18% | 1.10 (n/s) | 🔴 **SEND BACK** — Scored 17 out of 100, below the 50 needed to keep it. The weakest parts are win odds at 1 in 4.54 and low-prize stock at 18%. |
+| LOVE IS BLIND | 1766 | $2 | 17/100 | 1:4.54 | 18% | 18% | 1.10 (n/s) | 🔴 **SEND BACK** — Pennsylvania stopped selling this game on 09/28/2026. Pull it. |
 | Keys and Cash | 1693 | $5 | 17/100 | 1:4.42 | 7% | 8% | 2.16 | 🔴 **SEND BACK** — Scored 17 out of 100, below the 50 needed to keep it. The weakest parts are prizes left at 7% and low-prize stock at 8%. |
 | $500 a Week for Life | 1767 | $1 | 22/100 | 1:4.77 | 22% | 22% | 1.36 (n/s) | 🔴 **SEND BACK** — Scored 22 out of 100, below the 50 needed to keep it. The weakest parts are win odds at 1 in 4.77 and prizes left at 22%. |
 | Goat Load of Cash Crossword | 1744 | $5 | 28/100 | 1:4.44 | 6% | 6% | 1.66 (n/s) | 🔴 **SEND BACK** — Scored 28 out of 100, below the 50 needed to keep it. The weakest parts are low-prize stock at 6% and prizes left at 6%. |
 | ELF | 1758 | $5 | 29/100 | 1:3.52 | 11% | 11% | 3.34 (n/s) | 🔴 **SEND BACK** — Scored 29 out of 100, below the 50 needed to keep it. The weakest parts are prizes left at 11% and low-prize stock at 11%. |
-| High 5 | 1736 | $5 | 30/100 | 1:4.46 | 3% | 3% | 6.51 | 🔴 **SEND BACK** — Scored 30 out of 100, below the 50 needed to keep it. The weakest parts are low-prize stock at 3% and prizes left at 3%. |
+| High 5 | 1736 | $5 | 30/100 | 1:4.46 | 3% | 3% | 6.51 | 🔴 **SEND BACK** — Pennsylvania stopped selling this game on 09/28/2026. Pull it. |
 | $2,500 Festive Frenzy | 1757 | $10 | 31/100 | 1:3.32 | 8% | 8% | 0.89 (n/s) | 🔴 **SEND BACK** — Scored 31 out of 100, below the 50 needed to keep it. The weakest parts are prizes left at 8% and low-prize stock at 8%. |
 | MONOPOLY SECRET VAULT | 1739 | $5 | 33/100 | 1:4.59 | 20% | 20% | 1.95 (n/s) | 🔴 **SEND BACK** — Scored 33 out of 100, below the 50 needed to keep it. The weakest parts are win odds at 1 in 4.59 and prizes left at 20%. |
 | Fro$ted Fortune | 1756 | $20 | 35/100 | 1:3.42 | 19% | 19% | 0.00 (n/s) | 🔴 **SEND BACK** — Pennsylvania stopped selling this game on 07/08/2026. Pull it. |
 | GOLD FISH® | 1783 | $1 | 36/100 | 1:4.32 | 49% | 49% | 1.02 (n/s) | 🔴 **SEND BACK** — Scored 36 out of 100, below the 50 needed to keep it. The weakest parts are win odds at 1 in 4.32 and low-prize trend at far faster. |
 | Extreme Green | 1751 | $10 | 37/100 | 1:3.49 | 24% | 24% | 0.70 (n/s) | 🔴 **SEND BACK** — Scored 37 out of 100, below the 50 needed to keep it. The weakest parts are prizes left at 24% and low-prize stock at 24%. |
 | Code Word Crossword | 1769 | $10 | 40/100 | 1:3.62 | 18% | 18% | 1.71 (n/s) | 🔴 **SEND BACK** — Scored 40 out of 100, below the 50 needed to keep it. The weakest parts are low-prize stock at 18% and prizes left at 18%. |
-| Find the Leprechaun | 1772 | $2 | 42/100 | 1:3.84 | 15% | 15% | 2.33 (n/s) | 🔴 **SEND BACK** — Scored 42 out of 100, below the 50 needed to keep it. The weakest parts are prizes left at 15% and low-prize stock at 15%. |
+| Find the Leprechaun | 1772 | $2 | 42/100 | 1:3.84 | 15% | 15% | 2.33 (n/s) | 🔴 **SEND BACK** — Pennsylvania stopped selling this game on 09/28/2026. Pull it. |
 | Millionaire Loading | 1746 | $20 | 45/100 | 1:3.46 | 10% | 10% | 2.08 (n/s) | 🔴 **SEND BACK** — Scored 45 out of 100, below the 50 needed to keep it. The weakest parts are low-prize stock at 10% and prizes left at 10%. |
 | Fever Doubler | 1787 | $5 | 46/100 | 1:3.56 | 44% | 44% | 1.40 (n/s) | 🔴 **SEND BACK** — Scored 46 out of 100, below the 50 needed to keep it. The weakest parts are low-prize trend at far faster and prizes left at 44%. |
 | Crossword Extra | 1753 | $3 | 47/100 | 1:4 | 29% | 28% | 1.39 (n/s) | 🔴 **SEND BACK** — Scored 47 out of 100, below the 50 needed to keep it. The weakest parts are low-prize stock at 28% and prizes left at 29%. |
@@ -72,7 +76,7 @@ Nothing ended and nothing crossed your low-prize threshold since the last run.
 
 ## Prize tiers per game (cheapest weighted heaviest)
 
-**#1766 LOVE IS BLIND** — active
+**#1766 LOVE IS BLIND** — ended
 
 | Prize | Wins left | Δ since last | Weight |
 |-------|----------:|:------------:|:------:|
@@ -126,7 +130,7 @@ Nothing ended and nothing crossed your low-prize threshold since the last run.
 | $100 | 2,929 | 0 | ×5 |
 | $50 | 7,377 | 0 | ×6 |
 
-**#1736 High 5** — active
+**#1736 High 5** — ended
 
 | Prize | Wins left | Δ since last | Weight |
 |-------|----------:|:------------:|:------:|
@@ -203,7 +207,7 @@ Nothing ended and nothing crossed your low-prize threshold since the last run.
 | $2,500 | 5 | 0 | ×5 |
 | $1,000 | 315 | 0 | ×6 |
 
-**#1772 Find the Leprechaun** — active
+**#1772 Find the Leprechaun** — ended
 
 | Prize | Wins left | Δ since last | Weight |
 |-------|----------:|:------------:|:------:|

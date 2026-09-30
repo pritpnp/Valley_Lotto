@@ -1,5 +1,5 @@
 {
-  "captured_at": "2026-09-30T10:24:05Z",
+  "captured_at": "2026-09-30T20:43:31Z",
   "games": {
     "1000": {
       "claim_deadline": null,
@@ -20608,11 +20608,11 @@
       "total_is_estimate": false
     },
     "1736": {
-      "claim_deadline": "9/28/2027 12:00:00 AM",
+      "claim_deadline": null,
       "detail_id": "3310",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1736",
-      "last_changed": "2026-09-29T20:38:39Z",
+      "last_changed": "2026-09-30T20:43:31Z",
       "name": "High 5",
       "odds": "1:4.46",
       "on_sale_date": "04/2025",
@@ -20644,11 +20644,12 @@
           "value": "$100"
         }
       ],
-      "sales_end_date": "9/28/2026 12:00:00 AM",
+      "sales_end_date": "09/28/2026",
       "source_pages": [
-        "remaining"
+        "remaining",
+        "sales_ended"
       ],
-      "status": "active",
+      "status": "ended",
       "tickets_printed": 12000000,
       "tier_originals": {
         "10.0": 320000,
@@ -21016,13 +21017,13 @@
       "total_is_estimate": false
     },
     "1743": {
-      "claim_deadline": "9/28/2027 12:00:00 AM",
+      "claim_deadline": null,
       "detail_id": "3317",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1743",
-      "last_changed": "2026-09-29T20:38:39Z",
+      "last_changed": "2026-09-30T20:43:31Z",
       "name": "$50, $100 or $500",
-      "odds": "1:9.12",
+      "odds": null,
       "on_sale_date": "07/2025",
       "payout_pct": null,
       "price": 10.0,
@@ -21040,17 +21041,14 @@
           "value": "$50"
         }
       ],
-      "sales_end_date": "9/28/2026 12:00:00 AM",
+      "sales_end_date": "09/28/2026",
       "source_pages": [
-        "remaining"
+        "remaining",
+        "sales_ended"
       ],
-      "status": "active",
-      "tickets_printed": 10800000,
-      "tier_originals": {
-        "100.0": 270000,
-        "50.0": 900000,
-        "500.0": 14760
-      },
+      "status": "ended",
+      "tickets_printed": null,
+      "tier_originals": {},
       "top_prize_value": "$500",
       "top_prizes_remaining": 417,
       "top_prizes_total": 591,
@@ -21514,13 +21512,13 @@
       "total_is_estimate": false
     },
     "1752": {
-      "claim_deadline": "9/28/2027 12:00:00 AM",
+      "claim_deadline": null,
       "detail_id": "3326",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1752",
-      "last_changed": "2026-09-29T20:38:39Z",
+      "last_changed": "2026-09-30T20:43:31Z",
       "name": "Winning 7s",
-      "odds": "1:4.94",
+      "odds": null,
       "on_sale_date": "09/2025",
       "payout_pct": null,
       "price": 5.0,
@@ -21550,30 +21548,18 @@
           "value": "$200"
         }
       ],
-      "sales_end_date": "9/28/2026 12:00:00 AM",
+      "sales_end_date": "09/28/2026",
       "source_pages": [
-        "remaining"
+        "remaining",
+        "sales_ended"
       ],
-      "status": "active",
-      "tickets_printed": 9600000,
-      "tier_originals": {
-        "10.0": 1136000,
-        "100.0": 32000,
-        "1000.0": 40,
-        "10000.0": 34,
-        "100000.0": 20,
-        "15.0": 352000,
-        "20.0": 288000,
-        "200.0": 1280,
-        "20000.0": 30,
-        "30.0": 76000,
-        "50.0": 56000,
-        "500.0": 800
-      },
+      "status": "ended",
+      "tickets_printed": null,
+      "tier_originals": {},
       "top_prize_value": "$100,000",
       "top_prizes_remaining": 0,
-      "top_prizes_total": 20,
-      "total_is_estimate": false
+      "top_prizes_total": 0,
+      "total_is_estimate": true
     },
     "1753": {
       "claim_deadline": null,
@@ -22312,11 +22298,11 @@
       "total_is_estimate": false
     },
     "1766": {
-      "claim_deadline": "9/28/2027 12:00:00 AM",
+      "claim_deadline": null,
       "detail_id": "3340",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1766",
-      "last_changed": "2026-09-29T20:38:39Z",
+      "last_changed": "2026-09-30T20:43:31Z",
       "name": "LOVE IS BLIND",
       "odds": "1:4.54",
       "on_sale_date": "12/2025",
@@ -22348,11 +22334,12 @@
           "value": "$20"
         }
       ],
-      "sales_end_date": "9/28/2026 12:00:00 AM",
+      "sales_end_date": "09/28/2026",
       "source_pages": [
-        "remaining"
+        "remaining",
+        "sales_ended"
       ],
-      "status": "active",
+      "status": "ended",
       "tickets_printed": 4800000,
       "tier_originals": {
         "10.0": 33600,
@@ -22679,11 +22666,11 @@
       "total_is_estimate": false
     },
     "1772": {
-      "claim_deadline": "9/28/2027 12:00:00 AM",
+      "claim_deadline": null,
       "detail_id": "3346",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1772",
-      "last_changed": "2026-09-29T20:38:39Z",
+      "last_changed": "2026-09-30T20:43:31Z",
       "name": "Find the Leprechaun",
       "odds": "1:3.84",
       "on_sale_date": "01/2026",
@@ -22715,11 +22702,12 @@
           "value": "$30"
         }
       ],
-      "sales_end_date": "9/28/2026 12:00:00 AM",
+      "sales_end_date": "09/28/2026",
       "source_pages": [
-        "remaining"
+        "remaining",
+        "sales_ended"
       ],
-      "status": "active",
+      "status": "ended",
       "tickets_printed": 4800000,
       "tier_originals": {
         "10.0": 91200,
