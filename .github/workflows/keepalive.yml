@@ -37,7 +37,7 @@ jobs:
           url="${APP_URL%/}/healthz"
           echo "Pinging $url"
 
-          # Railway sleeps idle containers, so the first request can be slow.
+          # The host sleeps idle sites, so the first request can be slow.
           # Try a few times before calling it down.
           for attempt in 1 2 3; do
             body=$(curl -sS --max-time 60 "$url") && break
@@ -53,15 +53,15 @@ jobs:
             *'"database": true'*|*'"database":true'*)
               echo "::notice::App and database both answered." ;;
             "")
-              echo "::error::The site did not answer at all. Check the service in Railway."
+              echo "::error::The site did not answer at all. Check the host's dashboard (Render)."
               exit 1 ;;
-            *'Application not found'*)
-              echo "::error::Railway has no app running at $APP_URL. The service was stopped or removed — usually the plan or trial ran out. Check the Railway dashboard."
+            *'Application not found'*|*'not found'*|*'<html'*|*'<!DOCTYPE'*)
+              echo "::error::No app is running at $APP_URL — the hosting service stopped or removed it (on Railway, the trial ran out). Check the host's dashboard."
               exit 1 ;;
             *'"database": false'*|*'"database":false'*)
               echo "::error::The app is up but cannot reach its database. Check Supabase — the project may be paused."
               exit 1 ;;
             *)
-              echo "::error::Something answered, but not the app. Check the Railway dashboard."
+              echo "::error::Something answered, but not the app. Check the host's dashboard (Render)."
               exit 1 ;;
           esac

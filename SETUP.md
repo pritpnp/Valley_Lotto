@@ -1,7 +1,7 @@
 # Scan app — setup & deploy
 
 The scan app is a small Flask web app. It runs on **SQLite locally** (zero setup)
-and on **Postgres/Supabase in production**, hosted on **Railway**. Switching
+and on **Postgres/Supabase in production**, hosted on **Render** (free plan). Switching
 between them is just the `DATABASE_URL` environment variable — the code and the
 database tables are identical, and tables auto-create on first boot.
 
@@ -20,7 +20,7 @@ box → Finish & Save → Report**.
 
 ---
 
-## Deploy to Railway + Supabase (production)
+## Deploy to Render + Supabase (production)
 
 ### 1. Supabase (the database)
 1. Create a free account at supabase.com and a new project. Pick a strong DB password.
@@ -29,20 +29,35 @@ box → Finish & Save → Report**.
 3. That's it — you do **not** need to create any tables; the app creates them on
    first boot.
 
-### 2. Railway (the app)
-1. Create a free account at railway.app → **New Project → Deploy from GitHub repo**
-   → pick `pritpnp/valley_lotto`.
-2. Railway auto-detects the `Procfile`. Set these **Variables**:
-   - `DATABASE_URL` = the Supabase URI from step 1
-   - `SECRET_KEY` = a long random string (e.g. run `python -c "import secrets;print(secrets.token_hex(32))"`)
-   - `REGISTER_CODE` = a code only you know (so random people can't sign up)
-   - `DEFAULT_STORE` = `valley` (or your store name)
-   - `SLOTS` = `48`  (boxes numbered 1..48)
-3. Deploy. Railway gives you a public URL. Open it, register the first (admin)
-   account with your `REGISTER_CODE`, and you're live.
+### 2. Render (the app) — free
+Railway's trial ended and it has no free plan, so the app runs on Render's free
+plan instead. No credit card, 750 hours a month (more than a month around the
+clock), and the data stays in Supabase, so changing hosts loses nothing.
+
+1. Sign up at render.com with GitHub. Choose **New → Blueprint**, then pick the
+   `pritpnp/Valley_Lotto` repo. Render reads `render.yaml` and fills in the rest.
+2. It asks for five values. Copy them **exactly** from the old Railway service
+   (Railway → the service → **Variables**. The Raw Editor shows them all at once):
+   - `DATABASE_URL`: the Supabase connection string
+   - `SECRET_KEY`: keep the same one so nobody is logged out
+   - `REGISTER_CODE`
+   - `DEFAULT_STORE`: **must match**, or counts go under a new, empty store
+   - `SLOTS`
+3. Choose **Apply**. The first build takes a few minutes. Render shows the
+   address, something like `https://valley-lotto.onrender.com`.
+4. In GitHub, go to repo **Settings → Secrets and variables → Actions → Variables**
+   and set `APP_URL` to that address. Two jobs use it. One checks the site
+   daily and emails you if it's down. The other keeps the site awake from 6am
+   to midnight, so nobody waits for it to start up.
+5. On the phone app, **press and hold anywhere on the page** to change the server
+   address.
+
+The free plan sleeps after 15 minutes with no visitors and takes about a minute
+to wake. During store hours the wake-up job stops that. Late at night the first
+load is slow.
 
 ### 3. Point the gun at it
-Open the Railway URL on the tablet/phone at the counter, log in, and scan. Because
+Open the Render URL on the tablet/phone at the counter, log in, and scan. Because
 the gun types the barcode like a keyboard, no app install is needed.
 
 ---
