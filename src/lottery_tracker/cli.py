@@ -18,7 +18,7 @@ from pathlib import Path
 
 from . import fetch, parse
 from .config import Config
-from .model import merge_games, update_change_tracking
+from .model import compare_with_peers, merge_games, update_change_tracking
 from . import telegram
 from .notify import render_html, render_report, send_email, write_outputs
 from .rules import Severity, evaluate
@@ -191,6 +191,8 @@ def run(argv: list[str] | None = None) -> int:
     _enrich_with_originals(current, targets, originals, offline=args.offline,
                            save_html=args.save_html, max_new_fetches=cfg.max_new_fetches)
     save_originals(DATA_DIR / "originals.json", originals)
+    # Each game's rating compares it with the best on sale at its price.
+    compare_with_peers(current)
 
     # No estimates: a top-prize count is either matched to PA's printed count for
     # the same prize, or left unknown (see _enrich_with_originals).
@@ -262,7 +264,7 @@ def run(argv: list[str] | None = None) -> int:
 
     # New games and ended games, to Telegram (when set up). Never stops the run.
     if not args.no_email and not baseline:
-        news = telegram.game_news(alerts, current, previous)
+        news = telegram.game_news(alerts, current, previous, cfg.rating_weights)
         if news:
             telegram.send(news, formatted=True)
 

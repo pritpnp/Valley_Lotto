@@ -54,12 +54,15 @@ CREATE TABLE IF NOT EXISTS store_emphasis (
     prizes_left    REAL NOT NULL DEFAULT 0,
     low_prize      REAL NOT NULL DEFAULT 0,
     low_prize_skew REAL NOT NULL DEFAULT 0,
-    jackpot_density REAL NOT NULL DEFAULT 0
+    jackpot_density REAL NOT NULL DEFAULT 0,
+    win_back       REAL NOT NULL DEFAULT 0,
+    top_prizes     REAL NOT NULL DEFAULT 0
 );
 """
 
-# Keep in sync with rules.RATING_FACTORS.
-_EMPHASIS_FACTORS = ("odds", "prizes_left", "low_prize", "low_prize_skew", "jackpot_density")
+# The rating's parts (rules.RATING_FACTORS). Older databases gain the two new
+# columns in init_db; the old ones are left in place and no longer read.
+from lottery_tracker.rules import RATING_FACTORS as _EMPHASIS_FACTORS  # noqa: E402
 
 
 def now_iso() -> str:
@@ -78,6 +81,10 @@ def connect(db_path: str | Path) -> sqlite3.Connection:
 
 def init_db(conn: sqlite3.Connection) -> None:
     conn.executescript(SCHEMA)
+    have = {r[1] for r in conn.execute("PRAGMA table_info(store_emphasis)")}
+    for col in ("win_back", "top_prizes"):
+        if col not in have:
+            conn.execute(f"ALTER TABLE store_emphasis ADD COLUMN {col} REAL NOT NULL DEFAULT 0")
     conn.commit()
 
 

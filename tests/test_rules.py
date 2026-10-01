@@ -19,12 +19,19 @@ def test_recommendation_send_back_when_ended():
 
 
 def test_recommendation_send_back_when_rating_low():
-    # Weak odds AND mostly sold through -> low weighted rating -> send back.
-    g = _g("1", status="active", top_prizes_total=10, top_prizes_remaining=1, odds="1:4.8")
-    act, reason = recommendation(g, Thresholds())
+    # Picked over, its top prizes mostly gone, and the worst odds at its price.
+    from lottery_tracker.model import compare_with_peers
+    def game(num, med_left, top_left, odds):
+        return verified(Game(game_number=num, price=5, status="active",
+                             prize_tiers=[{"value": "$10,000", "remaining": top_left},
+                                          {"value": "$100", "remaining": med_left}],
+                             tier_originals={"10000.0": 10, "100.0": 1000, "5.0": 50000}), odds=odds)
+    games = compare_with_peers({"1": game("1", 50, 1, 4.8), "2": game("2", 900, 9, 3.2)})
+    act, reason = recommendation(games["1"], Thresholds())
     assert act == "send_back"
     # the reason is written for whoever reads it, not in shorthand
     assert "out of 100" in reason and "keep it" in reason
+    assert recommendation(games["2"], Thresholds())[0] == "keep"
 
 
 def test_recommendation_keep_when_healthy():
@@ -147,36 +154,3 @@ def test_a_table_that_contradicts_pa_is_not_used():
 
 # --- the wording a clerk actually reads --------------------------------------
 
-def test_the_low_prize_trend_is_stated_without_sigma():
-    """"cheap prizes -4.0s vs game" is the right unit for the maths and the wrong
-    one for a phone."""
-    from lottery_tracker.rules import _skew_phrase
-    for z in (-2.7, -4.0, -7.0):
-        phrase = _skew_phrase(z)
-        assert "σ" not in phrase            # "prizes" has a z in it; sigma is the tell
-        assert "small prizes" in phrase and "faster" in phrase
-    assert _skew_phrase(-7.0) != _skew_phrase(-2.7)      # the size still shows
-
-
-def test_an_untrustworthy_density_says_why_not_just_noise():
-    from lottery_tracker.rules import _density_doubt
-
-    class _Tiny:
-        def tier_z_scores(self):
-            return [{"value_num": 1_000_000, "original": 5, "remaining": 2,
-                     "z": 0.3, "crit": 2.64, "significant": False},
-                    {"value_num": 100, "original": 5000, "remaining": 2000,
-                     "z": 0.1, "crit": 2.64, "significant": False}]
-
-    assert "5 top prizes" in _density_doubt(_Tiny())
-    assert "too few to tell" in _density_doubt(_Tiny())
-
-
-def test_an_explanation_never_breaks_a_rating():
-    from lottery_tracker.rules import _density_doubt
-
-    class _Broken:
-        def tier_z_scores(self):
-            raise RuntimeError("no data")
-
-    assert "left out of the score" in _density_doubt(_Broken())

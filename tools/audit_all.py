@@ -118,6 +118,8 @@ def check_version(stamp: str, raw: dict | None, prev: dict[str, Game] | None,
         except Exception as e:  # noqa: BLE001
             _crash(f, "load", num, e)
 
+    from lottery_tracker.model import compare_with_peers
+    compare_with_peers(games)
     th, w = Thresholds(), RatingWeights()
     for num in sorted(games):
         g = games[num]
@@ -194,7 +196,7 @@ def data_checks(g: Game, tag: str, f: Findings) -> None:
                   {"at": tag, "stated": g.payout_pct, "table gives": round(comp, 1)})
 
 
-TABLE_FACTORS = ("prizes_left", "low_prize", "low_prize_skew", "jackpot_density")
+TABLE_FACTORS = ("prizes_left", "win_back", "top_prizes")
 
 
 def rule_checks(g: Game, tag: str, f: Findings) -> None:

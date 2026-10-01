@@ -121,7 +121,8 @@ def load_state(path: str | Path) -> dict[str, Game]:
         return {}
     raw = json.loads(p.read_text() or "{}")
     games = raw.get("games", raw)  # tolerate either {"games": {...}} or a bare map
-    return {num: Game.from_dict(d) for num, d in games.items()}
+    from .model import compare_with_peers
+    return compare_with_peers({num: Game.from_dict(d) for num, d in games.items()})
 
 
 def save_state(path: str | Path, games: dict[str, Game], *, captured_at: str) -> None:

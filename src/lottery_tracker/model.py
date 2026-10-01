@@ -77,6 +77,12 @@ class Game:
     # wins, but no dollar figure is ever made up for them.
     tier_originals_other: dict = field(default_factory=dict)
 
+    # The best figures among games on sale at the same price, attached by
+    # compare_with_peers() whenever games are loaded. Never saved: they're
+    # worked out fresh from whichever games are on sale.
+    peer_best_win_back: Optional[float] = None
+    peer_best_odds: Optional[float] = None
+
     # Bookkeeping
     source_pages: list = field(default_factory=list)  # which pages contributed to this row
 
@@ -388,7 +394,10 @@ class Game:
             return None
 
     def to_dict(self) -> dict:
-        return asdict(self)
+        d = asdict(self)
+        d.pop("peer_best_win_back", None)
+        d.pop("peer_best_odds", None)
+        return d
 
     @classmethod
     def from_dict(cls, d: dict) -> "Game":
@@ -491,3 +500,20 @@ def update_change_tracking(
             )
 
 
+def compare_with_peers(games: dict) -> dict:
+    """Attach, to every game, the best "wins more than it costs" and "wins
+    anything" odds among games on sale at its price. The rating scores a game
+    against these, because a $1 game and a $30 game can't be compared."""
+    best_wb: dict = {}
+    best_odds: dict = {}
+    for g in games.values():
+        if g.status != "active" or g.price is None:
+            continue
+        if g.win_back_odds:
+            best_wb[g.price] = min(best_wb.get(g.price, float("inf")), g.win_back_odds)
+        if g.odds_value:
+            best_odds[g.price] = min(best_odds.get(g.price, float("inf")), g.odds_value)
+    for g in games.values():
+        g.peer_best_win_back = best_wb.get(g.price)
+        g.peer_best_odds = best_odds.get(g.price)
+    return games

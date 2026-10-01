@@ -51,11 +51,10 @@ DATA_DIR = ROOT / "data"
 
 # Slider copy for the rating factors (same wording as the FastAPI dashboard).
 FACTOR_LABELS = {
-    "odds": ("Win odds", "Chance to win ANY prize (break-even shot)"),
-    "prizes_left": ("Prizes left", "How much of the whole game is still unsold"),
-    "low_prize": ("Low-prize stock", "Cheap, commonly-won prizes still in the pack"),
-    "low_prize_skew": ("Low-prize trend", "Penalize when cheap prizes drain faster than the rest"),
-    "jackpot_density": ("Jackpot density", "Big prizes still available (for jackpot chasers)"),
+    "prizes_left": ("Prizes left", "How much of the game's reported prizes haven't been won (top prize aside)"),
+    "win_back": ("Wins more than it costs", "How often a ticket pays back more than its price"),
+    "top_prizes": ("Top prizes left", "How many of the top prizes are still out there"),
+    "odds": ("Wins anything", "How often a ticket wins at all"),
 }
 
 

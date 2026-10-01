@@ -38,11 +38,10 @@ from .pa_data import (
 
 # Friendly labels + descriptions for the emphasis sliders.
 FACTOR_LABELS = {
-    "odds": ("Win odds", "Chance to win ANY prize (break-even shot)"),
-    "prizes_left": ("Prizes left", "How much of the whole game is still unsold"),
-    "low_prize": ("Low-prize stock", "Cheap, commonly-won prizes still in the pack"),
-    "low_prize_skew": ("Low-prize trend", "Penalize when cheap prizes drain faster than the rest"),
-    "jackpot_density": ("Jackpot density", "Big prizes still available (for jackpot chasers)"),
+    "prizes_left": ("Prizes left", "How much of the game's reported prizes haven't been won (top prize aside)"),
+    "win_back": ("Wins more than it costs", "How often a ticket pays back more than its price"),
+    "top_prizes": ("Top prizes left", "How many of the top prizes are still out there"),
+    "odds": ("Wins anything", "How often a ticket wins at all"),
 }
 
 # --- paths / config ---------------------------------------------------------
@@ -255,19 +254,16 @@ def weights_page(request: Request, conn=Depends(get_db), user: dict = Depends(re
 @app.post("/weights")
 def weights_save(
     request: Request,
-    odds: float = Form(0.0),
     prizes_left: float = Form(0.0),
-    low_prize: float = Form(0.0),
-    low_prize_skew: float = Form(0.0),
-    jackpot_density: float = Form(0.0),
+    win_back: float = Form(0.0),
+    top_prizes: float = Form(0.0),
+    odds: float = Form(0.0),
     conn=Depends(get_db),
     user: dict = Depends(require_user),
 ):
     sid = active_store_id(request, user)
-    emphasis = {
-        "odds": odds, "prizes_left": prizes_left, "low_prize": low_prize,
-        "low_prize_skew": low_prize_skew, "jackpot_density": jackpot_density,
-    }
+    emphasis = {"prizes_left": prizes_left, "win_back": win_back,
+                "top_prizes": top_prizes, "odds": odds}
     # Clamp sliders to a sane range (−3..+3 notches).
     emphasis = {k: max(-3.0, min(3.0, v)) for k, v in emphasis.items()}
     db.set_emphasis(conn, sid, emphasis)

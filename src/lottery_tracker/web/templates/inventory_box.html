@@ -165,8 +165,10 @@
           (o.odds_value or 99) < (detail.mine.odds_value or 99)),
          ('Prizes left', detail.mine.pct_all_str,  o.pct_all_str,
           (o.pct_all or 0) > (detail.mine.pct_all or 0)),
-         ('Low prizes',  detail.mine.low_prize_str, o.low_prize_str,
-          (o.low_prize_pct or 0) > (detail.mine.low_prize_pct or 0)) ] %}
+         ('Wins more than it costs', detail.mine.win_back_str, o.win_back_str,
+          (o.win_back_odds or 999) < (detail.mine.win_back_odds or 999)),
+         ('Top prizes left', detail.mine.top_str, o.top_str,
+          (o.top_pct or 0) > (detail.mine.top_pct or 0)) ] %}
       <div class="cmp">
         <span class="clabel">{{ label }}</span>
         <span class="cmine">{{ mine }}</span>

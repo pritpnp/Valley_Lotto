@@ -1,8 +1,8 @@
-name: Send the picked-over games list to Telegram
+name: Send the send-back list to Telegram
 
 # Press "Run workflow" in the Actions tab for the current list of games on sale
-# with under 20% of their medium prizes left. (Games that newly become picked
-# over are also announced by the twice-daily run.)
+# rated under 50 out of 100: the same rating the app shows. (Games that newly
+# drop under the line are also announced by the twice-daily run.)
 
 on:
   workflow_dispatch: {}

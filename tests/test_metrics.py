@@ -95,29 +95,43 @@ def test_significant_low_prize_outlier_is_caught():
     assert cheap["significant"] and cheap["z"] < -2
 
 
-def test_rating_excludes_noisy_jackpot_and_respects_weights():
+def test_the_rating_is_one_combined_score_from_four_parts():
+    from lottery_tracker.model import compare_with_peers
     from lottery_tracker.rules import RatingWeights, rate
     g = mega_moolah()
+    compare_with_peers({g.game_number: g})          # alone at its price: it's the best
     score, factors = rate(g, RatingWeights())
-    fmap = {f.key: f for f in factors}
-    # Jackpot density is present but not scored (noise) -> excluded from the average.
-    assert fmap["jackpot_density"].score is None
-    # Zeroing a weight drops that factor's influence entirely.
-    s_no_odds, _ = rate(g, RatingWeights(odds=0))
-    assert s_no_odds != score
+    f = {x.key: x for x in factors}
+    assert set(f) == {"prizes_left", "win_back", "top_prizes", "odds"}
+    medium = (6 + 4 + 237 + 2306 + 856) / (15 + 15 + 600 + 5960 + 2320)
+    assert abs(f["prizes_left"].score - 100 * medium) < 1e-9
+    assert abs(f["top_prizes"].score - 100 * 2 / 3) < 1e-9
+    assert f["win_back"].score == 100 and f["odds"].score == 100
+    expected = (40 * 100 * medium + 25 * 100 + 20 * 100 * 2 / 3 + 15 * 100) / 100
+    assert abs(score - expected) < 1e-9
+    # Zeroing a weight drops that part's influence entirely.
+    assert rate(g, RatingWeights(top_prizes=0))[0] != score
+
+
+def test_a_part_without_data_is_left_out_not_scored_zero():
+    from lottery_tracker.rules import RatingWeights, rate
+    g = mega_moolah()                               # no peers attached
+    score, factors = rate(g, RatingWeights())
+    f = {x.key: x for x in factors}
+    assert f["win_back"].score is None and f["odds"].score is None
+    assert "left out" in f["odds"].note or "hasn't published" in f["odds"].note
+    # The two parts that remain share all the weight.
+    medium = (6 + 4 + 237 + 2306 + 856) / (15 + 15 + 600 + 5960 + 2320)
+    assert abs(score - (40 * 100 * medium + 20 * 100 * 2 / 3) / 60) < 1e-9
 
 
 def test_emphasis_scales_weights_around_neutral():
     from lottery_tracker.rules import RatingWeights
     base = RatingWeights()
-    # Neutral sliders (all 0) leave the base weights untouched.
     assert base.scaled({}).odds == base.odds
-    assert base.scaled({"odds": 0, "jackpot_density": 0}).jackpot_density == base.jackpot_density
-    # Push odds up, jackpot down: odds weight grows, jackpot shrinks; knobs unchanged.
-    s = base.scaled({"odds": 2, "jackpot_density": -2})
-    assert s.odds > base.odds and s.jackpot_density < base.jackpot_density
-    assert s.cutoff == base.cutoff and s.odds_good == base.odds_good
-    # Symmetric: +1 then -1 returns to base.
+    s = base.scaled({"prizes_left": 2, "top_prizes": -2})
+    assert s.prizes_left > base.prizes_left and s.top_prizes < base.top_prizes
+    assert s.cutoff == base.cutoff
     assert abs(base.scaled({"odds": 1}).scaled({"odds": -1}).odds - base.odds) < 1e-9
 
 
