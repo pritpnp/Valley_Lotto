@@ -53,15 +53,31 @@ jobs:
             *'"database": true'*|*'"database":true'*)
               echo "::notice::App and database both answered." ;;
             "")
-              echo "::error::The site did not answer at all. Check the host's dashboard (Render)."
+              why="The site did not answer at all. Check Render."; echo "::error::$why"; echo "WHY=$why" >> "$GITHUB_ENV"
               exit 1 ;;
             *'Application not found'*|*'not found'*|*'<html'*|*'<!DOCTYPE'*)
-              echo "::error::No app is running at $APP_URL — the hosting service stopped or removed it (on Railway, the trial ran out). Check the host's dashboard."
+              why="No app is running at $APP_URL. The hosting service stopped or removed it. Check Render."; echo "::error::$why"; echo "WHY=$why" >> "$GITHUB_ENV"
               exit 1 ;;
             *'"database": false'*|*'"database":false'*)
-              echo "::error::The app is up but cannot reach its database. Check Supabase — the project may be paused."
+              why="The app is up but can't reach its database. Check Supabase; the project may be paused."; echo "::error::$why"; echo "WHY=$why" >> "$GITHUB_ENV"
               exit 1 ;;
             *)
-              echo "::error::Something answered, but not the app. Check the host's dashboard (Render)."
+              why="Something answered, but not the app. Check Render."; echo "::error::$why"; echo "WHY=$why" >> "$GITHUB_ENV"
               exit 1 ;;
           esac
+
+      # The same news on Telegram, if it's set up (repository secrets
+      # TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID). Without them this does nothing.
+      - name: Tell Telegram the site is down
+        if: failure()
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          if [ -z "$TELEGRAM_BOT_TOKEN" ] || [ -z "$TELEGRAM_CHAT_ID" ]; then exit 0; fi
+          curl -sS -o /dev/null --max-time 20 \
+            "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            --data-urlencode "chat_id=${TELEGRAM_CHAT_ID}" \
+            --data-urlencode "text=🔴 Valley Lotto is down. ${WHY:-The daily check failed.}
+          Details: ${RUN_URL}" || true

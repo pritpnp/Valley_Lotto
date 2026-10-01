@@ -19,6 +19,7 @@ from pathlib import Path
 from . import fetch, parse
 from .config import Config
 from .model import merge_games, update_change_tracking
+from . import telegram
 from .notify import render_html, render_report, send_email, write_outputs
 from .rules import Severity, evaluate
 from .state import (
@@ -258,6 +259,12 @@ def run(argv: list[str] | None = None) -> int:
             send_email(subject, report_md)
         except Exception as e:  # noqa: BLE001 — email must never crash the run
             print(f"WARNING: email failed: {e}", file=sys.stderr)
+
+    # New games and ended games, to Telegram (when set up). Never stops the run.
+    if alerts and not args.no_email:
+        news = telegram.game_news(alerts, current)
+        if news:
+            telegram.send(news)
 
     print(report_md)
     print(f"\nWrote: {paths['latest']}  |  alerts: {len(alerts)}  |  games tracked: {len(current)}")
