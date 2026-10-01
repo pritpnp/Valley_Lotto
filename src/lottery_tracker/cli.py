@@ -186,14 +186,10 @@ def run(argv: list[str] | None = None) -> int:
     )
     paths = write_outputs(report_md, alerts, reports_dir=REPORTS_DIR, captured_at=captured_at)
 
-    # GitHub Pages dashboard.
-    DOCS_DIR.mkdir(parents=True, exist_ok=True)
-    (DOCS_DIR / "index.html").write_text(render_html(
-        alerts, current, inventory=cfg.inventory, thresholds=cfg.thresholds,
-        weights=cfg.rating_weights,
-        captured_at=captured_at, baseline=baseline, previous=previous,
-        bring_in_min_left=cfg.bring_in_min_left, bring_in_per_price=cfg.bring_in_per_price,
-    ))
+    # No public dashboard page any more. This repo is public, and a page about
+    # a store's games belongs behind the app's login, where the app's dashboard
+    # reads them live from the database. PA's own data is still collected and
+    # saved below, as before.
 
     # Persist the new snapshot only AFTER a successful evaluate, so a crashed run
     # doesn't swallow a transition we never reported.
