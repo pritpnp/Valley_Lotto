@@ -197,8 +197,6 @@ def rate(game: Game, weights: "RatingWeights | None" = None) -> tuple[float | No
     # 2) Prizes left — true % of the game unsold (robust; falls back to top-prize %
     #    only when we have no per-tier originals yet).
     pl = game.overall_pct_remaining
-    if pl is None:
-        pl = game.top_prize_pct_remaining
     if pl is not None:
         factors.append(Factor("prizes_left", "Prizes left", _clamp(100 * min(1.0, pl)),
                               w.prizes_left, f"{min(1.0, pl):.0%}",
@@ -332,18 +330,13 @@ def _is_low(game: Game, th: Thresholds) -> tuple[bool, list[str]]:
     """Return (is_low, reasons). A game is low if ANY configured rule trips."""
     reasons: list[str] = []
     pct = game.top_prize_pct_remaining
+    pair = game.top_prize_pair
     if th.top_prize_pct is not None and pct is not None and pct < th.top_prize_pct:
-        reasons.append(
-            f"only {pct:.0%} of top prizes left "
-            f"({game.top_prizes_remaining}/{game.top_prizes_total})"
-        )
+        reasons.append(f"only {pct:.0%} of top prizes left ({pair[0]}/{pair[1]})")
     # Count floor: only meaningful once the game has actually started depleting.
     # A game that simply HAS one top prize and hasn't sold any sits at 100% — not
     # "low" — so we require remaining to be below the estimated original.
-    depleting = game.top_prizes_total is None or (
-        game.top_prizes_remaining is not None
-        and game.top_prizes_remaining < game.top_prizes_total
-    )
+    depleting = pair is None or pair[0] < pair[1]
     if (
         th.top_prize_count_floor is not None
         and game.top_prizes_remaining is not None
@@ -447,7 +440,7 @@ def evaluate(
                 details={
                     "reasons": reasons,
                     "top_prizes_remaining": g.top_prizes_remaining,
-                    "top_prizes_total": g.top_prizes_total,
+                    "top_prizes_total": (g.top_prize_pair or (None, None))[1],
                     "top_prize_value": g.top_prize_value,
                 },
             )

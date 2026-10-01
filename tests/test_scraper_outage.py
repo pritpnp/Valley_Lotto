@@ -40,8 +40,12 @@ def test_it_waits_longer_before_giving_up():
 def test_the_workflow_treats_that_code_as_a_warning():
     wf = pathlib.Path(".github/workflows/track.yml").read_text()
     assert "75)" in wf and "::warning::" in wf
-    # and doesn't commit or raise an issue off a run that fetched nothing
-    assert wf.count("steps.run.outputs.exit_code != '75'") == 2
+    # and nothing after the scrape (commit, issue, checks) acts on a run that
+    # fetched nothing
+    import yaml
+    steps = yaml.safe_load(wf)["jobs"]["track"]["steps"]
+    after = steps[[s.get("id") for s in steps].index("run") + 1:]
+    assert after and all(s.get("if") == "steps.run.outputs.exit_code != '75'" for s in after)
 
 
 # --- the app says so when the numbers stop being refreshed -------------------

@@ -13,12 +13,23 @@ from dataclasses import dataclass, field, asdict
 from typing import Optional
 
 
+_PLAIN_MONEY = re.compile(r"\$?\s*(\d{1,3}(?:,\d{3})+|\d+)(?:\.(\d{1,2}))?")
+
+
 def _money_to_num(s: Optional[str]) -> Optional[float]:
-    """'$5,000' -> 5000.0, tolerant of stray text; None if no number found."""
-    if not s:
+    """A plain dollar amount ('$5,000', '$75', '5000.00') as a number, else None.
+
+    Strict on purpose. Reading "the first number in the text" turned
+    '$1M/YEAR/LIFE' into $1 and '$500/WEEK/LIFE' into $500. Anything that isn't
+    plainly a dollar amount comes back as None, and the caller decides what that
+    means, rather than a wrong number slipping through as a right one.
+    """
+    if s is None:
         return None
-    m = re.search(r"[\d,]+(?:\.\d+)?", s)
-    return float(m.group(0).replace(",", "")) if m else None
+    m = _PLAIN_MONEY.fullmatch(str(s).strip())
+    if not m:
+        return None
+    return float(m.group(1).replace(",", "") + ("." + m.group(2) if m.group(2) else ""))
 
 
 @dataclass
@@ -61,16 +72,74 @@ class Game:
     first_seen: Optional[str] = None      # when we first recorded this game
     last_changed: Optional[str] = None    # last time we OBSERVED its data move (None = not yet)
 
+    # Printed prizes whose value isn't a plain dollar amount and couldn't be
+    # pinned to one ({"$1M/YEAR/LIFE": 5}). Still prizes, so still counted as
+    # wins, but no dollar figure is ever made up for them.
+    tier_originals_other: dict = field(default_factory=dict)
+
     # Bookkeeping
     source_pages: list = field(default_factory=list)  # which pages contributed to this row
 
     # ---- derived helpers -------------------------------------------------
+    # How far PA's two documents may disagree before a printed prize table is
+    # treated as misread. Both are labelled "approximate" by PA: across every game
+    # on sale the table and the published odds agree to within 2%, and newly
+    # launched games show up to ~7% more prizes left than the Bulletin's
+    # approximate print run. A misread table is off by orders of magnitude.
+    ODDS_TOLERANCE = 0.05
+    LEFT_TOLERANCE = 0.10
+
+    @property
+    def printed_table_trusted(self) -> bool:
+        """Does the printed prize table (from the PA Bulletin) agree with PA's
+        other published facts? Every figure built on it is used only if so.
+
+        Two independent checks, both PA's own numbers:
+        * tickets printed ÷ every printed winner must match PA's published odds;
+        * no prize level can have more left than were printed.
+        Can't be checked (no odds, no ticket count) means not trusted.
+        """
+        if not self.tier_originals or not self.tickets_printed or not self.odds_value:
+            return False
+        winners = sum(self.tier_originals.values()) + sum((self.tier_originals_other or {}).values())
+        if winners <= 0:
+            return False
+        implied = self.tickets_printed / winners
+        if abs(implied - self.odds_value) / self.odds_value > self.ODDS_TOLERANCE:
+            return False
+        for t in self.prize_tiers or []:
+            v, rem = _money_to_num(t.get("value")), t.get("remaining")
+            printed = self.tier_originals.get(str(v)) if v is not None else None
+            if printed and rem is not None and rem > printed * (1 + self.LEFT_TOLERANCE):
+                return False
+        return True
+
+    @property
+    def top_prize_pair(self) -> Optional[tuple]:
+        """(left, printed) for the top prize PA lists, matched by dollar value.
+
+        Only ever a count left and a count printed for the SAME prize. The old
+        figure paired the left count with a "top prizes" number from elsewhere,
+        which was a different prize in 19 games. No match means unknown, never a
+        guess.
+        """
+        if not self.printed_table_trusted:
+            return None
+        listed = [(v, t.get("remaining")) for t in (self.prize_tiers or [])
+                  for v in [_money_to_num(t.get("value"))] if v is not None]
+        if not listed:
+            return None
+        top_value, left = max(listed, key=lambda x: x[0])
+        printed = self.tier_originals.get(str(top_value))
+        if not printed or left is None:
+            return None
+        return left, printed
+
     @property
     def top_prize_pct_remaining(self) -> Optional[float]:
-        """Fraction (0..1) of the top prizes that are still unclaimed, or None if unknown."""
-        if self.top_prizes_total and self.top_prizes_total > 0 and self.top_prizes_remaining is not None:
-            return self.top_prizes_remaining / self.top_prizes_total
-        return None
+        """Fraction (0..1) of the top prize still unclaimed, or None if unknown."""
+        pair = self.top_prize_pair
+        return min(1.0, pair[0] / pair[1]) if pair else None
 
     def tier_table(self, *, prev_tiers: list | None = None) -> list[dict]:
         """Return the prize tiers (high→low value) with bottom-to-top weights and
@@ -106,10 +175,13 @@ class Game:
         """
         rows = []
         tiers = self.prize_tiers or []
+        # A table that contradicts PA's other figures pairs with nothing.
+        trusted = self.printed_table_trusted
         for i, t in enumerate(tiers):
             v = _money_to_num(t.get("value"))
             rem = t.get("remaining")
-            orig = self.tier_originals.get(str(v)) if (v is not None and self.tier_originals) else None
+            orig = (self.tier_originals.get(str(v))
+                    if (v is not None and self.tier_originals and trusted) else None)
             pct = (rem / orig) if (orig and rem is not None and orig > 0) else None
             rows.append({"value": t.get("value"), "value_num": v, "remaining": rem,
                          "original": orig, "pct": pct, "weight": i + 1})
@@ -390,25 +462,3 @@ def update_change_tracking(
             )
 
 
-def estimate_top_prize_totals(
-    current: dict[str, "Game"], previous: dict[str, "Game"]
-) -> None:
-    """Estimate each game's original top-prize count as the highest 'wins
-    remaining' ever seen (this run or any prior snapshot).
-
-    PA never publishes the original print count, so this running maximum is our
-    best proxy: exact for games first seen as NEW, a lower bound for older games
-    (which only makes the % *less* alarming, never a false alarm). Mutates
-    ``current`` in place, setting ``top_prizes_total``.
-    """
-    for num, g in current.items():
-        if g.top_prizes_remaining is None:
-            continue
-        if g.top_prizes_total is not None and not g.total_is_estimate:
-            continue  # we already have the true original count from the detail page
-        prev = previous.get(num)
-        seen_max = g.top_prizes_remaining
-        if prev is not None and (prev.total_is_estimate is not False):
-            seen_max = max(seen_max, prev.top_prizes_total or 0, prev.top_prizes_remaining or 0)
-        g.top_prizes_total = seen_max
-        g.total_is_estimate = True

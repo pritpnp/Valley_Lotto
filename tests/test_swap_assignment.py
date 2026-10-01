@@ -7,21 +7,22 @@ next-best, and the rest get "nothing better at this price".
 from lottery_tracker.model import Game
 from lottery_tracker.rules import RatingWeights, Thresholds
 from lottery_app.pa_data import Catalog, store_rows
+from _games import verified
 
 
 def _poor(num, price, left):
     """A picked-over game: only `left` of 100 cheap prizes remain."""
-    return Game(game_number=num, price=price, status="active", odds="1:4.9",
-                prize_tiers=[{"value": f"${price}", "remaining": left}],
-                tier_originals={f"{float(price)}": 100})
+    return verified(Game(game_number=num, price=price, status="active", odds="1:4.9",
+                         prize_tiers=[{"value": f"${price}", "remaining": left}],
+                         tier_originals={f"{float(price)}": 100}))
 
 
 def _fresh(num, price, odds):
     """A fresh game worth bringing in; better odds rate higher."""
-    return Game(game_number=num, price=price, status="active", odds=odds,
-                prize_tiers=[{"value": "$100", "remaining": 9},
-                             {"value": f"${price}", "remaining": 9000}],
-                tier_originals={"100.0": 10, f"{float(price)}": 10000})
+    return verified(Game(game_number=num, price=price, status="active", odds=odds,
+                         prize_tiers=[{"value": "$100", "remaining": 9},
+                                      {"value": f"${price}", "remaining": 9000}],
+                         tier_originals={"100.0": 10, f"{float(price)}": 10000}))
 
 
 def _swaps(games, carried):

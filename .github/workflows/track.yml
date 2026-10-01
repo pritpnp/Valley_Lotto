@@ -72,6 +72,7 @@ jobs:
             git push
           fi
 
+
       - name: Open an issue if there are new alerts
         if: steps.run.outputs.exit_code != '75'
         env:
@@ -86,3 +87,11 @@ jobs:
           title="🎟️ Valley Lotto: $count new alert(s) — $(date -u +%Y-%m-%d)"
           gh issue create --title "$title" --body-file reports/latest.md --label "lottery-alert" \
             || gh issue create --title "$title" --body-file reports/latest.md
+
+      # Every run, every game: rate it, check it, build the report from it, and
+      # confirm the code obeyed its own rules. A new game that breaks a rule
+      # fails this run, and a failed run is what emails you. PA's numbers
+      # contradicting each other never fail it: the rules handle those.
+      - name: Check every game against the code's rules
+        if: steps.run.outputs.exit_code != '75'
+        run: python tools/audit_all.py --days 1 --no-app --ref HEAD --with-local --fail-on-code

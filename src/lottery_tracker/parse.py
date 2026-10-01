@@ -235,7 +235,7 @@ def _find_col(headers: list[str], needles: tuple[str, ...]) -> int | None:
 # Bump whenever parse_detail or parse_bulletin changes what it reads. Every game
 # is then re-read from its saved PA pages on the next run. No network is needed,
 # and no game needs fixing by hand.
-PARSER_VERSION = 1
+PARSER_VERSION = 2
 
 _DETAIL_TOP_RE = re.compile(r"offers?\s+([\d,]+)\s+[Tt]op\s+[Pp]rize", re.I)
 _DETAIL_ODDS_RE = re.compile(r"chances of winning a prize:\s*1:([\d.]+)", re.I)
@@ -266,17 +266,31 @@ def parse_detail(html: str) -> dict:
 
 
 def parse_bulletin(html: str) -> dict:
-    """Parse a PA Bulletin instant-game notice into the full original prize structure.
+    """Read a PA Bulletin instant-game notice into the printed prize structure.
 
-    The notice has one table: Win With | Super Seven | Win (prize) | Odds 1-in |
-    No. of Winners. A prize value can be won several ways, so we SUM the winner
-    counts per prize value to get the original count printed for each level.
+    The notice's prize table has a headings row naming the "Win:" column (the
+    prize) and the "No. Of Winners" column. A prize can be won several ways, so
+    the winners are summed per prize value.
 
-    Returns {"tickets_printed": int|None, "payout_pct": float|None,
-             "prize_originals": {value_num_str: original_count}}.
+    Rules, so any layout PA uses works the same way:
+
+    * The headings row is found by what it says, wherever it sits. One game's
+      table opens with a "TICKET FRONT / TICKET BACK" row, and assuming row one
+      read the wrong columns entirely.
+    * The columns are never guessed. No headings row means no table: the result
+      says so and the prize-table figures for that game simply aren't used.
+    * A prize that isn't a plain dollar amount ("$1M/YEAR/LIFE") takes the cash
+      value the notice itself states ("lump-sum payment of $14,500,000"), which
+      is also the figure PA's remaining-prizes list uses. That only happens when
+      there is exactly one such prize and exactly one stated lump sum. Otherwise
+      it is still counted as a prize, with its value left unknown.
+
+    Returns {"tickets_printed", "payout_pct", "prize_originals" {value: count},
+    "prize_other" {text: count}, "table_read": bool, "rows_unread": int,
+    "odds_computed"}.
     """
     soup = BeautifulSoup(html, "html.parser")
-    full_text = soup.get_text(" ")
+    full_text = " ".join(soup.get_text(" ").split())
     tickets = None
     m = re.search(r"Approximately\s+([\d,]+)\s+tickets", full_text)
     if m:
@@ -285,34 +299,57 @@ def parse_bulletin(html: str) -> dict:
     m = re.search(r"payout percentage is\s+([\d.]+)\s*%", full_text, re.I)
     if m:
         payout = float(m.group(1))
+    lump_sums = sorted({_money_to_num(x) for x in
+                        re.findall(r"lump-sum payment of (\$\d{1,3}(?:,\d{3})*(?:\.\d{2})?)", full_text)}
+                       - {None})
 
     originals: dict[str, int] = {}
+    other: dict[str, int] = {}
+    table_read = False
+    rows_unread = 0
     for table in soup.find_all("table"):
-        tt = table.get_text(" ")
-        if "Winners" not in tt or "Odds" not in tt:
+        rows = [[_clean(c.get_text()) for c in r.find_all(["td", "th"])]
+                for r in table.find_all("tr")]
+        head = next((i for i, r in enumerate(rows)
+                     if any(c.lower().rstrip(":").strip() == "win" for c in r)
+                     and any("winners" in c.lower() for c in r)), None)
+        if head is None:
             continue
-        rows = table.find_all("tr")
-        header = [_clean(c.get_text()) for c in rows[0].find_all(["td", "th"])]
-        win_idx = next((i for i, h in enumerate(header) if h.lower().startswith("win:")), 2)
-        num_idx = next((i for i, h in enumerate(header) if "winners" in h.lower()), len(header) - 1)
-        for r in rows[1:]:
-            cells = [_clean(c.get_text()) for c in r.find_all(["td", "th"])]
-            if len(cells) <= max(win_idx, num_idx):
+        header = rows[head]
+        win_idx = next(i for i, c in enumerate(header) if c.lower().rstrip(":").strip() == "win")
+        num_idx = next(i for i, c in enumerate(header) if "winners" in c.lower())
+        table_read = True
+        for cells in rows[head + 1:]:
+            if len(cells) != len(header):
+                rows_unread += 1
+                continue
+            cnt = cells[num_idx].replace(",", "")
+            if not cnt.isdigit():
+                rows_unread += 1
                 continue
             val = _money_to_num(cells[win_idx])
-            cnt = _money_to_num(cells[num_idx])
-            if val is not None and cnt is not None:
-                key = str(val)
-                originals[key] = originals.get(key, 0) + int(cnt)
+            if val is None:
+                other[cells[win_idx]] = other.get(cells[win_idx], 0) + int(cnt)
+            else:
+                originals[str(val)] = originals.get(str(val), 0) + int(cnt)
         break
-    # Overall odds of winning ANY prize = tickets / total winners — a reliable
-    # fallback when the detail page's prose odds can't be parsed.
+
+    if len(other) == 1 and len(lump_sums) == 1:
+        (count,) = other.values()
+        key = str(lump_sums[0])
+        originals[key] = originals.get(key, 0) + count
+        other = {}
+
+    # Overall odds of winning ANY prize = tickets / total winners, every prize
+    # counted whether or not its dollar value is known.
     odds_computed = None
-    total_winners = sum(originals.values())
+    total_winners = sum(originals.values()) + sum(other.values())
     if tickets and total_winners:
         odds_computed = f"1:{tickets / total_winners:.2f}"
     return {"tickets_printed": tickets, "payout_pct": payout,
-            "prize_originals": originals, "odds_computed": odds_computed}
+            "prize_originals": originals, "prize_other": other,
+            "table_read": table_read, "rows_unread": rows_unread,
+            "odds_computed": odds_computed}
 
 
 def parse_remaining(html: str) -> list[Game]:

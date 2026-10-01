@@ -18,7 +18,7 @@ from pathlib import Path
 
 from . import fetch, parse
 from .config import Config
-from .model import estimate_top_prize_totals, merge_games, update_change_tracking
+from .model import merge_games, update_change_tracking
 from .notify import render_html, render_report, send_email, write_outputs
 from .rules import Severity, evaluate
 from .state import (
@@ -123,12 +123,18 @@ def _enrich_with_originals(current, targets, originals, *, offline, save_html,
         if cached:
             if cached.get("prize_originals"):
                 g.tier_originals = cached["prize_originals"]
+                g.tier_originals_other = cached.get("prize_other") or {}
                 g.tickets_printed = cached.get("tickets_printed")
                 g.payout_pct = cached.get("payout_pct")
-            if cached.get("top_prizes_original") is not None:
-                g.top_prizes_total = cached["top_prizes_original"]
-                g.total_is_estimate = False
-            g.odds = cached.get("odds") or cached.get("odds_computed") or g.odds
+            # PA's published odds only. Odds worked out from the prize table
+            # would make the table "agree with itself" in the trust check.
+            g.odds = cached.get("odds") or g.odds
+        # Top prizes printed: the count for the same dollar value as the top
+        # prize PA lists, or unknown. Never a count for some other prize, and
+        # never an estimate.
+        pair = g.top_prize_pair
+        g.top_prizes_total = pair[1] if pair else None
+        g.total_is_estimate = pair is None
     if new_fetches >= max_new_fetches:
         print(f"Reached max_new_fetches ({max_new_fetches}); remaining games fill next run.",
               file=sys.stderr)
@@ -185,8 +191,8 @@ def run(argv: list[str] | None = None) -> int:
                            save_html=args.save_html, max_new_fetches=cfg.max_new_fetches)
     save_originals(DATA_DIR / "originals.json", originals)
 
-    # Fall back to the highest-ever-seen estimate for any game without a true count.
-    estimate_top_prize_totals(current, previous)
+    # No estimates: a top-prize count is either matched to PA's printed count for
+    # the same prize, or left unknown (see _enrich_with_originals).
 
     # Track when each game's data last actually moved (for the "last move" display).
     update_change_tracking(current, previous, captured_at)
