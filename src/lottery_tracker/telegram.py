@@ -25,6 +25,7 @@ LIMIT = 4000          # Telegram's cap is 4096 characters per message
 # left (PA's reported prize levels below the top). Top prizes alone never make
 # a game picked over: a game can lose its jackpot and still pay out well.
 PICKED_OVER = 0.20
+RULE = f"<i>Under {PICKED_OVER:.0%} of prizes left (top prize not counted)</i>"
 
 
 def configured() -> bool:
@@ -102,7 +103,7 @@ def low_games_list(games: dict[str, Game]) -> str:
     low = picked_over(games)
     if not low:
         return "📉 No game on sale is picked over right now."
-    lines = [f"📉 Picked-over games ({len(low)})"]
+    lines = [f"📉 Picked-over games ({len(low)})", RULE]
     price = object()
     for g in low:
         if g.price != price:
@@ -147,7 +148,7 @@ def game_news(alerts: list[Alert], games: dict[str, Game],
         lines.append("")
     newly = newly_picked_over(games, previous) if previous else []
     if newly:
-        lines.append(f"📉 Now picked over ({len(newly)})")
+        lines += [f"📉 Now picked over ({len(newly)})", RULE]
         lines += [f"{_price(g.price)} {_name(g)}" for g in newly]
     return "\n".join(lines).strip()
 
