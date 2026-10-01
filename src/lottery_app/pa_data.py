@@ -106,13 +106,33 @@ def store_rows(catalog: Catalog, inventory: set[str], th: Thresholds,
             })
         else:
             rows.append(_row(g, th, weights))
-    # Pair every SEND BACK with the best same-price replacements you don't carry.
-    for r in rows:
-        r["swap_to"] = (swap_targets(catalog, inventory, r.get("price"), th, weights, n=3)
-                        if r["action"] == "send_back" else [])
+    _assign_swaps(rows, catalog, inventory, th, weights)
     rows.sort(key=lambda r: (r["action"] != "send_back",
                              r["rating"] if r["rating"] is not None else 999))
     return rows
+
+
+def _assign_swaps(rows: list[dict], catalog: Catalog, inventory: set[str],
+                  th: Thresholds, weights: RatingWeights) -> None:
+    """Give each SEND BACK at most one replacement, never the same one twice.
+
+    Within each price, the worst game gets the best replacement, the next-worst
+    the next-best, and so on. Once the replacements run out, the rest get none
+    ("nothing better at this price"). Offering one game to two boxes would ask
+    for the same swap twice, and a single choice is easier to act on than a
+    list.
+    """
+    for r in rows:
+        r["swap_to"] = []
+    by_price: dict = {}
+    for r in rows:
+        if r["action"] == "send_back" and r.get("price") is not None:
+            by_price.setdefault(r["price"], []).append(r)
+    for price, sending in by_price.items():
+        sending.sort(key=lambda r: r["rating"] if r["rating"] is not None else -1)
+        best_first = swap_targets(catalog, inventory, price, th, weights, n=len(sending))
+        for r, swap in zip(sending, best_first):
+            r["swap_to"] = [swap]
 
 
 def catalog_rankings(

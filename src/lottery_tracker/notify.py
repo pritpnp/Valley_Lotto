@@ -111,7 +111,7 @@ def render_report(
             for g in send:
                 swaps = swap_target(games, inventory, g.price, weights, n=2)
                 swap_s = (" → swap to " + ", ".join(f"#{s.game_number} {s.name}" for s in swaps)
-                          if swaps else " → no strong same-price replacement (consider dropping this price)")
+                          if swaps else " → nothing better at this price right now")
                 lines.append(f"- #{g.game_number} {g.name} (${g.price:g}) — {recs[g.game_number][1]}.{swap_s}")
             lines.append("")
         lines.append("| Game | # | Price | Rating | Win odds | % left (all) | Low-prize % | Density | Action |")

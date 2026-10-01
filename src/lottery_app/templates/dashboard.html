@@ -47,7 +47,7 @@
           <input type="hidden" name="game_number" value="{{ s.game_number }}">
           <button class="link">+ carry</button></form>{% if not loop.last %} · {% endif %}
       {% endfor %}
-      {% else %}↳ no strong same-price replacement available — consider dropping this price point.{% endif %}
+      {% else %}↳ nothing better at this price right now.{% endif %}
     </td></tr>
     {% endif %}
   {% endfor %}
