@@ -2,9 +2,8 @@ name: Keep the site awake during store hours
 
 # Render's free plan puts the site to sleep after 15 minutes with no visitors,
 # and the first person back waits about a minute while it wakes. A visit every
-# ten minutes through the hours a clerk might count keeps it awake then, and the
-# 750 free hours a month cover even round-the-clock running, so this costs
-# nothing.
+# ten minutes through store hours keeps it awake then, and the 750 free hours a
+# month cover even round-the-clock running, so this costs nothing.
 #
 # This never fails, on purpose. A failed run sends an email, and at this
 # frequency a short outage would be dozens of them. Reporting outages is the
@@ -15,10 +14,14 @@ name: Keep the site awake during store hours
 
 on:
   schedule:
-    # 6am to midnight Eastern (UTC 10:00 to 04:00 in summer; an hour earlier in
-    # winter, which still covers opening).
-    - cron: "*/10 10-23 * * *"
-    - cron: "*/10 0-3 * * *"
+    # Store hours, 8am to 10pm Eastern. Cron runs on UTC, and Eastern shifts by
+    # an hour between summer and winter, so this spans both: first visit at
+    # 11:50 UTC (7:50am in summer, 6:50am in winter), last at 02:50 UTC (10:50pm
+    # in summer, 9:50pm in winter, and the site stays awake 15 minutes after
+    # that). Either way it is awake for the whole 8am-10pm day.
+    - cron: "50 11 * * *"
+    - cron: "*/10 12-23 * * *"
+    - cron: "*/10 0-2 * * *"
   workflow_dispatch: {}
 
 concurrency:
