@@ -114,6 +114,7 @@ def test_the_list_is_just_prices_and_games():
              "3": _game("3", 10, med_left=50, name="Six Figures"), "4": _game("4", 5, med_left=70, name="Keys & Cash")}
     assert telegram.low_games_list(games) == (
         "📉 Picked-over games (3)\n"
+        "<i>Under 20% of prizes left (top prize not counted)</i>\n"
         "\n<u>$5</u>\n<b>Goat Load #1</b>\n<b>Keys &amp; Cash #4</b>\n"   # PA's "&" escaped
         "\n<u>$10</u>\n<b>Six Figures #3</b>")
 
@@ -130,5 +131,6 @@ def test_a_game_is_announced_once_when_it_becomes_picked_over():
     after = {"1": _game("1", 5, med_left=150), "2": _game("2", 5, med_left=90)}
     assert [g.game_number for g in telegram.newly_picked_over(after, before)] == ["1"]
     msg = telegram.game_news([], after, before)
-    assert "📉 Now picked over (1)\n<u>$5</u> <b>Game 1 #1</b>" in msg and "Game 2" not in msg
+    assert ("📉 Now picked over (1)\n<i>Under 20% of prizes left (top prize not counted)</i>\n"
+            "<u>$5</u> <b>Game 1 #1</b>") in msg and "Game 2" not in msg
     assert telegram.game_news([], after, after) == ""          # nothing new, no message
