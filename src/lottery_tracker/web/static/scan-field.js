@@ -51,6 +51,20 @@ function appKeyboard(wanted) {
   try { wanted ? b.showKeyboard() : b.hideKeyboard(); } catch (e) { /* older shell */ }
 }
 
+/* A Honeywell's built-in scanner, through the app. Scans arrive as calls to
+   window.onNativeScan (see base.html), not keystrokes, so the scan field never
+   needs focus — and an unfocused field is one that can't raise the keyboard. */
+function nativeScanner() {
+  const b = appBridge();
+  try { return !!(b && b.hasNativeScanner && b.hasNativeScanner()); } catch (e) { return false; }
+}
+
+/* Once a scan has arrived from the scanner itself on this device, anything that
+   looks like the same scan typed in is a second copy, not a second scan. */
+function nativeScanSeen() {
+  try { return localStorage.getItem("nativeScanSeen") === "1"; } catch (e) { return false; }
+}
+
 /* Keep the screen awake for the length of a count, and only for that. In the
    app this is a real window flag; in a browser it's the wake-lock API where the
    browser offers one. Either way it lapses when the page is left, so a device
@@ -95,6 +109,8 @@ class ScanField {
     this.timer = null;
     this.lastRaw = "";
     this.lastAt = 0;
+    // The field native scans go to. One scan field per page.
+    window.activeScanField = this;
 
     el.addEventListener("keydown", e => this.onKey(e, true));
     el.addEventListener("input", () => this.onInput());
@@ -110,6 +126,7 @@ class ScanField {
     // field still gets its scan through.
     document.addEventListener("keydown", e => {
       if (this.manual || document.activeElement === el) return;
+      if (nativeScanSeen()) return;     // the scanner talks to us directly
       this.onKey(e, false);
     });
 
@@ -143,6 +160,9 @@ class ScanField {
 
   focus() {
     if (this.manual || document.activeElement === this.el) return;
+    // With the scanner talking to the app, the field doesn't need focus, and
+    // focus is the one thing that can still bring the keyboard up.
+    if (nativeScanner()) return;
     try { this.el.focus({preventScroll: true}); } catch (e) { this.el.focus(); }
   }
 
@@ -176,6 +196,15 @@ class ScanField {
     this.show();
     e.preventDefault();
     this.armAutoSubmit();
+  }
+
+  /* A complete scan handed over whole, from the device's own scanner. Goes the
+     same way as a typed one, so the double-fire guard and the "scan it again
+     to confirm" exception apply exactly as they do to a gun. */
+  deliver(raw) {
+    clearTimeout(this.timer);
+    this.buf = String(raw || "").trim();
+    this.flush();
   }
 
   onInput() {

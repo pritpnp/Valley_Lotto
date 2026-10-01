@@ -225,6 +225,35 @@
       m.classList.remove('open'); m.setAttribute('aria-hidden','true'); }
     window.addEventListener('popstate', closeMenu);
     document.addEventListener('keydown', e => { if (e.key === 'Escape') closeMenu(); });
+
+    // A scan from a Honeywell's own scanner, handed over by the app. Every page
+    // gets this, not just the ones with a scan field, because a scanner that
+    // used to type into whatever was on screen mustn't go dead anywhere else.
+    // In order: the page's scan field; a box marked data-scan-target; whatever
+    // field is selected. A gun ends each scan with Enter, so the last two
+    // submit their form the same way.
+    window.onNativeScan = function(raw){
+      try { localStorage.setItem('nativeScanSeen', '1'); } catch (e) {}
+      if (window.activeScanField) { window.activeScanField.deliver(raw); return; }
+      const a = document.activeElement;
+      const t = document.querySelector('[data-scan-target]')
+             || (a && a.tagName === 'INPUT' && !a.readOnly ? a : null);
+      if (!t) return;
+      t.value = raw;
+      t.dispatchEvent(new Event('input', {bubbles: true}));
+      if (t.form) { t.form.requestSubmit ? t.form.requestSubmit() : t.form.submit(); }
+    };
+
+    // Boxes that would normally take focus on load are marked data-autofocus
+    // rather than autofocus. On a Honeywell a scan box needs no focus, and
+    // focusing it only raises the keyboard over the screen for nothing.
+    // (The browser applies a real autofocus too late for a script to undo.)
+    try {
+      const native = !!(window.ValleyLotto && ValleyLotto.hasNativeScanner
+                        && ValleyLotto.hasNativeScanner());
+      const first = document.querySelector('[data-autofocus]');
+      if (first && !native) first.focus();
+    } catch (e) {}
   </script>
 </body>
 </html>
