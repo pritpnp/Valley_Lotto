@@ -46,11 +46,22 @@ jobs:
           done
 
           echo "$body"
+          # A down site FAILS the run rather than warning: a failed run is what
+          # makes GitHub email you. Warnings went unread for two weeks while
+          # Railway had taken the app offline.
           case "$body" in
             *'"database": true'*|*'"database":true'*)
               echo "::notice::App and database both answered." ;;
             "")
-              echo "::warning::The site did not answer. It may be asleep or down." ;;
+              echo "::error::The site did not answer at all. Check the service in Railway."
+              exit 1 ;;
+            *'Application not found'*)
+              echo "::error::Railway has no app running at $APP_URL. The service was stopped or removed — usually the plan or trial ran out. Check the Railway dashboard."
+              exit 1 ;;
+            *'"database": false'*|*'"database":false'*)
+              echo "::error::The app is up but cannot reach its database. Check Supabase — the project may be paused."
+              exit 1 ;;
             *)
-              echo "::warning::The app answered but could not reach its database." ;;
+              echo "::error::Something answered, but not the app. Check the Railway dashboard."
+              exit 1 ;;
           esac
