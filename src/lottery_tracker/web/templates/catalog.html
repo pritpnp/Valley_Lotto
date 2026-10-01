@@ -64,7 +64,7 @@
           #{{ r.game_number }}
           {%- if r.odds_value %} · wins 1 in {{ '%g'|format(r.odds_value) }}{% endif %}
           {%- if r.pct_all is not none %} · {{ r.pct_all_str }} of prizes left{% endif %}
-          {%- if r.low_prize_pct is not none %} · {{ r.low_prize_str }} small prizes{% endif %}
+          {%- if r.top_pct is not none %} · top prizes {{ r.top_str }}{% endif %}
         </span>
       </span>
       <span class="chev">›</span>

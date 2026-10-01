@@ -154,10 +154,15 @@ class EmphasisRow(Base):
     low_prize: Mapped[float] = mapped_column(Float, default=0.0)
     low_prize_skew: Mapped[float] = mapped_column(Float, default=0.0)
     jackpot_density: Mapped[float] = mapped_column(Float, default=0.0)
+    # The rating's current parts. (low_prize, low_prize_skew and jackpot_density
+    # belong to the old rating and are no longer read; left in place so no
+    # store's saved settings are ever dropped.)
+    win_back: Mapped[float] = mapped_column(Float, default=0.0)
+    top_prizes: Mapped[float] = mapped_column(Float, default=0.0)
 
     def to_emphasis(self) -> dict:
-        return {f: float(getattr(self, f)) for f in
-                ("odds", "prizes_left", "low_prize", "low_prize_skew", "jackpot_density")}
+        from ..rules import RATING_FACTORS
+        return {f: float(getattr(self, f) or 0.0) for f in RATING_FACTORS}
 
 
 class ActiveCount(Base):

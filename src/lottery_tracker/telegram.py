@@ -16,17 +16,10 @@ import os
 import sys
 
 from .model import Game
-from .rules import Alert
+from .rules import Alert, RatingWeights, rate
 
 API = "https://api.telegram.org/bot{token}/sendMessage"
 LIMIT = 4000          # Telegram's cap is 4096 characters per message
-
-# A game is "picked over" once fewer than this share of its medium prizes are
-# left (PA's reported prize levels below the top). Top prizes alone never make
-# a game picked over: a game can lose its jackpot and still pay out well.
-PICKED_OVER = 0.20
-RULE = f"<i>Under {PICKED_OVER:.0%} of prizes left (top prize not counted)</i>"
-
 
 def configured() -> bool:
     return bool(os.environ.get("TELEGRAM_BOT_TOKEN") and os.environ.get("TELEGRAM_CHAT_ID"))
@@ -82,11 +75,22 @@ def send(text: str, *, formatted: bool = False) -> bool:
     return ok
 
 
-def picked_over(games: dict[str, Game]) -> list[Game]:
-    return sorted((g for g in games.values() if g.status == "active"
-                   and g.medium_pct_remaining is not None
-                   and g.medium_pct_remaining < PICKED_OVER),
-                  key=lambda g: (g.price or 0, g.medium_pct_remaining))
+def _rule(w: RatingWeights) -> str:
+    return (f"<i>Score under {w.cutoff:g} of 100: prizes left, wins more than it costs, "
+            f"top prizes left and odds, combined</i>")
+
+
+def _score(g: Game, w: RatingWeights):
+    return rate(g, w)[0]
+
+
+def send_back(games: dict[str, Game], w: RatingWeights | None = None) -> list[Game]:
+    """Games on sale whose rating is under the cutoff, cheapest price first and
+    worst first within it. The same rating the app shows."""
+    w = w or RatingWeights()
+    low = [(g, _score(g, w)) for g in games.values() if g.status == "active"]
+    low = [(g, s) for g, s in low if s is not None and s < w.cutoff]
+    return [g for g, s in sorted(low, key=lambda gs: (gs[0].price or 0, gs[1]))]
 
 
 def _name(g_or_alert) -> str:
@@ -98,12 +102,13 @@ def _price(price) -> str:
     return f"<u>${price:g}</u>" if price is not None else ""
 
 
-def low_games_list(games: dict[str, Game]) -> str:
-    """Every game on sale that's picked over, by price. Formatted (HTML)."""
-    low = picked_over(games)
+def low_games_list(games: dict[str, Game], w: RatingWeights | None = None) -> str:
+    """Every game on sale to send back, by price. Formatted (HTML)."""
+    w = w or RatingWeights()
+    low = send_back(games, w)
     if not low:
-        return "📉 No game on sale is picked over right now."
-    lines = [f"📉 Picked-over games ({len(low)})", RULE]
+        return "📉 No game on sale is below the line right now."
+    lines = [f"📉 Send back ({len(low)})", _rule(w)]
     price = object()
     for g in low:
         if g.price != price:
@@ -113,20 +118,22 @@ def low_games_list(games: dict[str, Game]) -> str:
     return "\n".join(lines)
 
 
-def newly_picked_over(current: dict[str, Game], previous: dict[str, Game]) -> list[Game]:
-    """Games that crossed into picked over since the last run (told once)."""
+def newly_send_back(current: dict[str, Game], previous: dict[str, Game],
+                    w: RatingWeights | None = None) -> list[Game]:
+    """Games that dropped under the line since the last run (told once)."""
+    w = w or RatingWeights()
     out = []
-    for g in picked_over(current):
+    for g in send_back(current, w):
         was = previous.get(g.game_number)
-        if was is not None and was.medium_pct_remaining is not None \
-                and was.medium_pct_remaining >= PICKED_OVER:
+        before = _score(was, w) if was is not None else None
+        if before is not None and before >= w.cutoff:
             out.append(g)
     return out
 
 
 def game_news(alerts: list[Alert], games: dict[str, Game],
-              previous: dict[str, Game] | None = None) -> str:
-    """One message for the games that went on sale, ended, or became picked over.
+              previous: dict[str, Game] | None = None, w: RatingWeights | None = None) -> str:
+    """One message for the games that went on sale, ended, or dropped under the line.
     Formatted (HTML): prices underlined, games bold."""
     new = [a for a in alerts if a.kind == "new"]
     ended = [a for a in alerts if a.kind == "ended"]
@@ -146,9 +153,10 @@ def game_news(alerts: list[Alert], games: dict[str, Game],
             if a.owned:
                 lines.append("  ⚠️ You carry this one: pull it and settle the packs.")
         lines.append("")
-    newly = newly_picked_over(games, previous) if previous else []
+    w = w or RatingWeights()
+    newly = newly_send_back(games, previous, w) if previous else []
     if newly:
-        lines += [f"📉 Now picked over ({len(newly)})", RULE]
+        lines += [f"📉 Now send back ({len(newly)})", _rule(w)]
         lines += [f"{_price(g.price)} {_name(g)}" for g in newly]
     return "\n".join(lines).strip()
 
@@ -157,9 +165,10 @@ def main(argv: list[str] | None = None) -> int:
     args = sys.argv[1:] if argv is None else argv
     if args[:1] == ["--low-games"]:
         from pathlib import Path
+        from .config import Config
         from .state import load_state
         state = Path(args[1]) if len(args) > 1 else Path("data/state.json")
-        text = low_games_list(load_state(state))
+        text = low_games_list(load_state(state), Config.load("config.yaml").rating_weights)
         print(text)
         formatted = True
     else:

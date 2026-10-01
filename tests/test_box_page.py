@@ -70,24 +70,17 @@ def test_the_rating_breakdown_is_on_the_box_page(client, a_real_game):
     html = client.get("/inventory/box/1").data.decode()
     assert "Why this box is" in html
     assert "of this game&#39;s score" in html or "of this game's score" in html
-    assert "Win odds" in html and "Low-prize stock" in html
-    assert "Prizes left" in html
+    for part in ("Prizes left", "Wins more than it costs", "Top prizes left", "Wins anything"):
+        assert part in html, part
 
 
-def test_the_breakdown_explains_density_rather_than_just_printing_it(client, a_real_game):
+def test_the_breakdown_explains_each_part_in_plain_words(client, a_real_game):
     _fill(client, "1", a_real_game)
     html = client.get("/inventory/box/1").data.decode()
-    assert "Jackpot density" in html
-    assert "ratio" in html
-    # says WHY it's usually ignored, rather than just labelling it noise
-    assert "top\n        prizes" in html or "top prizes" in html
-    assert "too few to tell" in html or "swings on pure chance" in html
-
-
-def test_a_factor_with_no_data_says_so_instead_of_scoring_zero(client, a_real_game):
-    _fill(client, "1", a_real_game)
-    html = client.get("/inventory/box/1").data.decode()
-    assert "left out of the score" in html
+    assert "What do these four things mean?" in html
+    assert "counts the most" in html.replace("\n        ", " ")
+    assert "lose its jackpot and still" in html.replace("\n        ", " ")
+    assert "Jackpot density" not in html and "Low-prize trend" not in html
 
 
 def test_a_game_that_left_the_catalog_is_explained_not_crashed(client):
@@ -184,7 +177,7 @@ def test_the_comparison_shows_both_games_side_by_side(client):
     num, _ = _a_send_back_game()
     _fill(client, "1", num)
     html = client.get("/inventory/box/1").data.decode()
-    for label in ("Rating", "Win odds", "Prizes left", "Low prizes"):
+    for label in ("Rating", "Win odds", "Prizes left", "Wins more than it costs", "Top prizes left"):
         assert label in html, label
     assert ">now<" in html and ">swap<" in html
 
@@ -279,7 +272,7 @@ def test_the_catalog_has_no_table_to_scroll_sideways(client):
 def test_the_catalog_shows_what_you_need_to_compare_at_a_glance(client, a_real_game):
     html = client.get("/catalog").data.decode()
     assert "wins 1 in" in html
-    assert "of prizes left" in html and "small prizes" in html
+    assert "of prizes left" in html and "top prizes" in html
     assert "worth\n    carrying" in html or "worth carrying" in html
 
 
@@ -292,9 +285,9 @@ def test_every_game_opens_its_own_page(client, a_real_game):
 def test_a_game_page_carries_the_same_breakdown_as_a_box(client, a_real_game):
     html = client.get(f"/catalog/{a_real_game}").data.decode()
     assert "Why this game is" in html
-    assert "Win odds" in html
+    assert "Wins anything" in html
     assert "of this game's score" in html
-    assert "What do these five things mean?" in html
+    assert "What do these four things mean?" in html
 
 
 def test_a_game_page_says_where_the_store_has_it(client, a_real_game):

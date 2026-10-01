@@ -51,9 +51,10 @@ def _row(g: Game, th: Thresholds, weights: RatingWeights) -> dict:
     """Flatten one game into the fields the dashboard template renders."""
     action, reason = recommendation(g, th, weights)
     rating, _factors = rate(g, weights)
-    pct_all = g.overall_pct_remaining
-    if pct_all is None:
-        pct_all = g.top_prize_pct_remaining
+    # "Prizes left" everywhere is the same figure the rating uses: PA's reported
+    # prizes still out there, top prize aside.
+    pct_all = g.medium_pct_remaining
+    pair = g.top_prize_pair
     return {
         "game_number": g.game_number,
         "name": g.name,
@@ -71,6 +72,10 @@ def _row(g: Game, th: Thresholds, weights: RatingWeights) -> dict:
         "low_prize_str": _pct(g.low_prize_pct_remaining),
         "jackpot_density": g.jackpot_density,
         "jackpot_significant": g.jackpot_density_significant,
+        "win_back_odds": g.win_back_odds,
+        "win_back_str": f"1 in {g.win_back_odds:.1f}" if g.win_back_odds else "—",
+        "top_str": f"{pair[0]:,} of {pair[1]:,}" if pair else "—",
+        "top_pct": (pair[0] / pair[1]) if pair else None,
         "top_prize_value": g.top_prize_value,
         "top_prizes_remaining": g.top_prizes_remaining,
         "tiers": g.tier_health(),
@@ -254,15 +259,19 @@ def game_history(history_dir, inventory=None, limit: int = 30, weights=None):
         except (ValueError, OSError):
             continue
         stamp = f.stem
+        from lottery_tracker.model import compare_with_peers
+        snap = {}
         for num, gd in (raw.get("games", raw) or {}).items():
-            if inv and str(num) not in inv:
-                continue
             try:
-                g = Game.from_dict(gd)
+                snap[str(num)] = Game.from_dict(gd)
             except Exception:  # noqa: BLE001 — a bad row must not kill the page
                 continue
+        compare_with_peers(snap)
+        for num, g in snap.items():
+            if inv and str(num) not in inv:
+                continue
             score, _ = rate(g, w)
-            pct = g.overall_pct_remaining
+            pct = g.medium_pct_remaining
             series.setdefault(str(num), {"game_number": str(num), "name": g.name,
                                          "price": g.price, "points": []})
             series[str(num)]["points"].append({

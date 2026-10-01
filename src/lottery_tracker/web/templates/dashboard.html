@@ -172,8 +172,9 @@
 
 <div class="card">
   <p class="muted" style="font-size:12.5px;margin:0">
-    Scores weigh win odds, prizes left, small prizes, the small-prize trend and
-    jackpot density. Below {{ '%g'|format(weights.cutoff) }} means send back.
+    Scores combine prizes left, how often a ticket wins more than it costs, top
+    prizes left and how often it wins anything. Below {{ '%g'|format(weights.cutoff) }}
+    means send back.
     <a href="{{ url_for('weights_page') }}">Change what matters →</a>
   </p>
 </div>

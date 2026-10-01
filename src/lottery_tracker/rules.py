@@ -20,8 +20,8 @@ from enum import Enum
 
 from .model import Game
 
-# The five factors a store can emphasize (slider order on the UI).
-RATING_FACTORS = ("odds", "prizes_left", "low_prize", "low_prize_skew", "jackpot_density")
+# The four parts of the rating, in order of weight (slider order on the UI).
+RATING_FACTORS = ("prizes_left", "win_back", "top_prizes", "odds")
 
 
 class Severity(str, Enum):
@@ -48,34 +48,27 @@ class Thresholds:
 
 @dataclass
 class RatingWeights:
-    """The factors that decide KEEP vs SEND BACK, and how much each one counts.
+    """How much each part of the 0–100 rating counts. A game scoring under
+    ``cutoff`` is a SEND BACK.
 
-    Each factor is scored 0–100 (100 = great, 0 = terrible). The final rating is the
-    weighted average of the factors we have data for, and a game is SENT BACK when
-    its rating falls below ``cutoff``. Edit the weights in config.yaml to say which
-    factors matter most to you — set a weight to 0 to ignore that factor entirely.
-
-    Factors:
-      odds            — overall chance to win ANY prize (1:X). The break-even signal.
-      prizes_left     — true % of the whole game still unsold (robust Σrem/Σorig).
-      low_prize       — % of the CHEAP prizes left (what customers actually win).
-      low_prize_skew  — are the cheap prizes drying up FASTER than the game overall?
-                        (only counts when statistically significant, |z| ≥ 2.)
-      jackpot_density — top prizes vs sell-through. Off by default-ish (low weight)
-                        because it's not what players aim for, and it only counts at
-                        all when it's a real signal, not small-sample noise.
+    Every part is a figure PA publishes, scored 0–100 (100 = good):
+      prizes_left — share of the prizes PA reports that are still out there,
+                    not counting the top prize. How picked over the game is.
+      win_back    — chance a ticket wins more than it cost, from PA's printed
+                    prize table (every level, small prizes included), against
+                    the best game at the same price.
+      top_prizes  — share of the top prize still out there. Counts, but less:
+                    a game can lose its jackpot and still pay out well.
+      odds        — chance a ticket wins anything, against the best game at
+                    the same price.
+    A part PA's figures can't support is left out and the others share its
+    weight, so a gap never counts against a game.
     """
 
-    odds: float = 30.0
-    prizes_left: float = 25.0
-    low_prize: float = 25.0
-    low_prize_skew: float = 15.0
-    jackpot_density: float = 5.0
-
-    # Tuning knobs (you rarely need to touch these).
-    odds_good: float = 3.0       # 1:3.0 or better → full marks on odds
-    odds_bad: float = 5.0        # 1:5.0 or worse  → zero on odds
-    skew_z_full: float = 6.0     # a −6σ cheap-prize outlier → zero on the skew factor
+    prizes_left: float = 40.0
+    win_back: float = 25.0
+    top_prizes: float = 20.0
+    odds: float = 15.0
     cutoff: float = 50.0         # rating below this → SEND BACK
 
     @classmethod
@@ -91,10 +84,9 @@ class RatingWeights:
         """Apply per-store *emphasis* sliders to the base weights.
 
         Each slider sits at 0 in the middle (use the base weight as-is). Pushing it
-        up/down by one notch multiplies/divides that factor's weight by ``step``
-        (~1.6×), so +2 ≈ 2.6× the emphasis and −2 ≈ 0.4×. Only the relative sizes
-        matter (the rating renormalizes by total weight), so this is exactly a
-        "more emphasis here / less there" control. Tuning knobs are unchanged.
+        up/down by one notch multiplies/divides that part's weight by ``step``
+        (~1.6×). Only the relative sizes matter, since the rating divides by the
+        total weight.
         """
         emphasis = emphasis or {}
         new = {f: getattr(self, f) * (step ** float(emphasis.get(f, 0.0))) for f in RATING_FACTORS}
@@ -116,154 +108,67 @@ def _clamp(x: float, lo: float = 0.0, hi: float = 100.0) -> float:
     return max(lo, min(hi, x))
 
 
-def _skew_word(z: float) -> str:
-    """The short version for the value column."""
-    gap = -z
-    return "far faster" if gap >= 5 else "much faster" if gap >= 3.5 else "faster"
-
-
-def _density_meaning(jd: float) -> str:
-    """What a density number actually says about the game, in plain words."""
-    if jd >= 1.15:
-        return ("the big prizes are lasting longer than the rest of the game, so more "
-                "of them are still out there than you would expect at this point")
-    if jd <= 0.85:
-        return ("the big prizes went early — fewer are left than you would expect for "
-                "how much of this game has sold")
-    return "the big prizes are going at about the same rate as the rest of the game"
-
-
-def _skew_phrase(z: float) -> str:
-    """The low-prize trend in words anyone can act on.
-
-    This used to read "cheap prizes -4.0σ vs game — drying up". Sigma is the
-    right unit for the maths and the wrong one for a shop floor: nobody should
-    have to know what a standard deviation is to be told the small prizes are
-    going first. The size of the gap still comes through, in plain speech.
-    """
-    gap = -z
-    if gap >= 5:
-        return "the small prizes are running out far faster than the rest of the game"
-    if gap >= 3.5:
-        return "the small prizes are running out much faster than the rest of the game"
-    return "the small prizes are running out faster than the rest of the game"
-
-
-def _density_doubt(game) -> str:
-    """Why a density figure isn't trusted, written for whoever is holding the phone.
-
-    A word like "noise" reads as a shrug, and an abbreviation reads as a code you
-    are expected to already know. Saying how many top prizes were ever printed
-    shows what the problem actually is: you cannot learn anything from five
-    tickets, no matter how the five fall.
-    """
-    try:
-        zs = game.tier_z_scores()
-        top = max(zs, key=lambda r: r["value_num"]) if zs else None
-    except Exception:  # noqa: BLE001 — an explanation must never break a rating
-        top = None
-    if not top or not top.get("original"):
-        return "not enough information to judge, so it was left out of the score"
-    n = top["original"]
-    if n <= 12:
-        return (f"the game only ever had {n} top prizes, which is too few to tell "
-                f"a real pattern from plain luck, so it was left out of the score")
-    return ("close enough to ordinary luck that it means nothing, so it was left "
-            "out of the score")
-
-
 def rate(game: Game, weights: "RatingWeights | None" = None) -> tuple[float | None, list[Factor]]:
-    """Score a game 0–100 from several weighted, outlier-aware factors.
+    """Score a game 0–100: one weighted average of the four parts above.
 
-    Returns (rating, factors). ``rating`` is None only when we have no usable data at
-    all. Factors with ``score is None`` are excluded from the weighted average (and
-    the remaining weights are renormalized), so a missing input never silently drags
-    a game down — it just doesn't vote.
+    Returns (rating, factors). ``rating`` is None only when no part has data.
+    The "against the best game at the same price" parts need the game's peers,
+    which ``model.compare_with_peers`` attaches whenever games are loaded.
     """
     w = weights or RatingWeights()
     factors: list[Factor] = []
+    price = f"${game.price:g}" if game.price is not None else "this price"
 
-    # 1) Win odds — the chance to win anything.
-    if game.odds_value is not None:
-        s = _clamp(100 * (w.odds_bad - game.odds_value) / (w.odds_bad - w.odds_good))
-        factors.append(Factor("odds", "Win odds", s, w.odds, f"1 in {game.odds_value:g}",
-                              f"about one ticket in every {game.odds_value:g} wins "
-                              f"something. This is fixed when the game is printed and "
-                              f"never changes."))
-    else:
-        factors.append(Factor("odds", "Win odds", None, w.odds, "unknown",
-                              "PA hasn't published the odds for this game."))
-
-    # 2) Prizes left — true % of the game unsold (robust; falls back to top-prize %
-    #    only when we have no per-tier originals yet).
-    pl = game.overall_pct_remaining
-    if pl is not None:
-        factors.append(Factor("prizes_left", "Prizes left", _clamp(100 * min(1.0, pl)),
-                              w.prizes_left, f"{min(1.0, pl):.0%}",
-                              f"{min(1.0, pl):.0%} of all the prizes this game was "
-                              f"printed with are still unclaimed. The lower this gets, "
-                              f"the more picked over the game is."))
+    m = game.medium_pct_remaining
+    if m is not None:
+        factors.append(Factor(
+            "prizes_left", "Prizes left", _clamp(100 * m), w.prizes_left, f"{m:.0%}",
+            f"{m:.0%} of the prizes PA reports for this game are still out there, not "
+            f"counting the top prize. This counts the most: it shows how picked over "
+            f"the game is."))
     else:
         factors.append(Factor("prizes_left", "Prizes left", None, w.prizes_left, "unknown",
-                              "PA hasn't published prize counts for this game."))
+                              "PA's prize counts for this game couldn't be checked, so "
+                              "this was left out."))
 
-    # 3) Low-prize stock — % of the cheap, winnable prizes left.
-    lp = game.low_prize_pct_remaining
-    if lp is not None:
-        factors.append(Factor("low_prize", "Low-prize stock", _clamp(100 * min(1.0, lp)),
-                              w.low_prize, f"{min(1.0, lp):.0%}",
-                              f"{min(1.0, lp):.0%} of the small, common prizes are still "
-                              f"out there. These are the wins your regulars actually get, "
-                              f"so this counts for a lot."))
-    else:
-        factors.append(Factor("low_prize", "Low-prize stock", None, w.low_prize, "unknown",
-                              "PA hasn't published prize counts for this game."))
-
-    # 4) Low-prize skew — are the cheap prizes draining FASTER than the game overall?
-    #    Only a statistically significant negative z-score counts (everything else is
-    #    small-sample noise).
-    zs = game.tier_z_scores()
-    if zs:
-        zs_sorted = sorted(zs, key=lambda r: r["value_num"])
-        low = zs_sorted[: max(1, len(zs_sorted) // 2)]
-        sig_neg = [r["z"] for r in low if r["significant"] and r["z"] < 0]
-        if sig_neg:
-            worst = min(sig_neg)
-            s = _clamp(100 * (1 - (-worst) / w.skew_z_full))
-            factors.append(Factor("low_prize_skew", "Low-prize trend", s,
-                                  w.low_prize_skew, _skew_word(worst),
-                                  _skew_phrase(worst)))
-        else:
-            factors.append(Factor("low_prize_skew", "Low-prize trend", 100.0, w.low_prize_skew, "keeping pace",
-                                  "the small prizes are running down at the same rate as "
-                                  "the game overall, which is what you want to see"))
-    else:
-        factors.append(Factor("low_prize_skew", "Low-prize trend", None,
-                              w.low_prize_skew, "unknown",
-                              "this game doesn't publish enough separate prize levels "
-                              "to compare them against each other."))
-
-    # 5) Jackpot density — only votes when it's a real signal, not noise.
-    #
-    # It is silent for most games, and that is the statistic being honest rather
-    # than a setting being too strict: PA prints so few top prizes (commonly 5,
-    # sometimes 3) that even the most extreme outcome barely clears the bar. With
-    # 4 or fewer top prizes it is arithmetically impossible to clear — every one
-    # of them surviving still isn't evidence. So the number is shown with the
-    # reason it can't be trusted, instead of being allowed to move the score.
-    jd = game.jackpot_density
-    if jd is not None and game.jackpot_density_significant:
-        factors.append(Factor("jackpot_density", "Jackpot density",
-                              _clamp(100 * min(1.0, jd)), w.jackpot_density,
-                              f"{jd:.2f} times",
-                              _density_meaning(jd) + ". This game printed enough top "
-                              "prizes for that to be worth trusting."))
-    else:
+    wb, best = game.win_back_odds, game.peer_best_win_back
+    if wb and best:
+        than = (f" The best {price} game on sale does it 1 in {best:.1f}." if best < wb - 0.05
+                else f" That's the best of any {price} game on sale.")
         factors.append(Factor(
-            "jackpot_density", "Jackpot density", None, w.jackpot_density,
-            f"{jd:.2f} times" if jd is not None else "no figure",
-            (_density_meaning(jd) + ". But " + _density_doubt(game))
-            if jd is not None else "PA hasn't published enough for this game."))
+            "win_back", "Wins more than it costs", _clamp(100 * (best / wb)), w.win_back,
+            f"1 in {wb:.1f}",
+            f"about one ticket in {wb:.1f} wins more than the {price} it cost.{than}"))
+    else:
+        factors.append(Factor("win_back", "Wins more than it costs", None, w.win_back,
+                              "unknown", "PA's printed prize list for this game couldn't "
+                              "be checked, so this was left out."))
+
+    pair = game.top_prize_pair
+    if pair:
+        what = f" ({game.top_prize_value})" if game.top_prize_value else ""
+        factors.append(Factor(
+            "top_prizes", "Top prizes left", _clamp(100 * pair[0] / pair[1]), w.top_prizes,
+            f"{pair[0]:,} of {pair[1]:,}",
+            f"{pair[0]:,} of the {pair[1]:,} top prizes{what} are still out there. This "
+            f"counts, but less than the other prizes: a game can lose its jackpot and "
+            f"still pay out well."))
+    else:
+        factors.append(Factor("top_prizes", "Top prizes left", None, w.top_prizes, "unknown",
+                              "PA's top-prize count for this game couldn't be matched, so "
+                              "this was left out."))
+
+    o, bo = game.odds_value, game.peer_best_odds
+    if o and bo:
+        than = (f" The best {price} game on sale: 1 in {bo:g}." if bo < o - 0.005
+                else f" That's the best of any {price} game on sale.")
+        factors.append(Factor(
+            "odds", "Wins anything", _clamp(100 * (bo / o)), w.odds, f"1 in {o:g}",
+            f"about one ticket in {o:g} wins something, even if it's just the price of "
+            f"the ticket back. This never changes during a game.{than}"))
+    else:
+        factors.append(Factor("odds", "Wins anything", None, w.odds, "unknown",
+                              "PA hasn't published the odds for this game."))
 
     avail = [f for f in factors if f.score is not None and f.weight > 0]
     tot_w = sum(f.weight for f in avail)
