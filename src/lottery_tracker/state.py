@@ -75,6 +75,26 @@ def save_raw_html(raw_dir: str | Path, slug: str, html_by_name: dict[str, str]) 
     return d
 
 
+def save_game_page(pages_dir: str | Path, game: str, name: str, html: str) -> None:
+    """Keep a game's own PA page (detail or Bulletin), gzipped, for re-reading.
+
+    These are what the prize structure is read from. Keeping them means a better
+    reader can be applied to every game later without fetching anything again.
+    """
+    d = Path(pages_dir) / str(game)
+    d.mkdir(parents=True, exist_ok=True)
+    with gzip.open(d / f"{name}.html.gz", "wt", encoding="utf-8") as fh:
+        fh.write(html)
+
+
+def load_game_page(pages_dir: str | Path, game: str, name: str) -> str | None:
+    p = Path(pages_dir) / str(game) / f"{name}.html.gz"
+    if not p.exists():
+        return None
+    with gzip.open(p, "rt", encoding="utf-8") as fh:
+        return fh.read()
+
+
 def prune_keep_newest(dir_path: str | Path, keep: int) -> list[str]:
     """Keep only the newest ``keep`` entries (by sortable name); delete the rest.
 
