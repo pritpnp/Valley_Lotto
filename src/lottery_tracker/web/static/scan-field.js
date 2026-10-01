@@ -134,6 +134,17 @@ function scannerDiagnosis() {
   return lines;
 }
 
+/* Is the selection in some other box that can be typed in? */
+function typingElsewhere(scanEl) {
+  const a = document.activeElement;
+  if (!a || a === scanEl) return false;
+  const editable = (a.tagName === "INPUT" || a.tagName === "TEXTAREA" || a.tagName === "SELECT")
+                   && !a.readOnly && !a.disabled && a.offsetParent !== null;
+  return editable || a.isContentEditable;
+}
+
+const FORM_BITS = "input, textarea, select, label, [contenteditable]";
+
 class ScanField {
   /* el: the input. onScan(raw): called once per complete scan. */
   constructor(el, onScan, opts) {
@@ -159,6 +170,19 @@ class ScanField {
       if (!e.target.closest("button, a, input, select, textarea, summary")) this.focus();
     });
     window.addEventListener("focus", () => this.focus());
+    // A tap on a button or a box takes the selection off the scan box; the page
+    // then takes it back, and on a phone that round trip pops the keyboard up
+    // for an instant. Holding the selection where it is avoids the round trip.
+    // The tap itself still happens as normal.
+    document.addEventListener("mousedown", e => {
+      if (this.manual || document.activeElement !== el) return;
+      if (e.target.closest && e.target.closest(FORM_BITS)) return;
+      e.preventDefault();
+    });
+    // Typing in another box: in the app, let the keyboard up for it.
+    document.addEventListener("focusin", e => {
+      if (e.target !== el && typingElsewhere(el)) appKeyboard(true);
+    });
     document.addEventListener("visibilitychange", () => {
       if (!document.hidden) this.focus();
     });
@@ -166,6 +190,7 @@ class ScanField {
     // field still gets its scan through.
     document.addEventListener("keydown", e => {
       if (this.manual || document.activeElement === el) return;
+      if (typingElsewhere(el)) return;  // that's someone typing, not a scan
       if (nativeScanSeen()) return;     // the scanner talks to us directly
       this.onKey(e, false);
     });
@@ -206,6 +231,9 @@ class ScanField {
 
   focus() {
     if (this.manual || document.activeElement === this.el) return;
+    // Someone is typing in another box on the page (a box's menu, say).
+    // Taking the selection back would make that box impossible to type in.
+    if (typingElsewhere(this.el)) return;
     // Once the scanner has really sent a scan straight to the app, the field no
     // longer needs focus, and focus is the one thing that can bring the
     // keyboard up. Until then it keeps focus, so a scanner that only types
