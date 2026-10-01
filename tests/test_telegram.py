@@ -87,3 +87,42 @@ def test_new_and_ended_games_are_announced_plainly():
 
 def test_nothing_to_say_means_no_message():
     assert telegram.game_news([Alert("low_prizes", "1", "x", Severity.INFO, "m")], {}) == ""
+
+
+# --- picked-over games --------------------------------------------------------
+
+def _game(num, price, med_left, top_left=1, top=5, odds=3.5, name=None):
+    """A game whose medium prizes have `med_left` of 1,000 left."""
+    return verified(Game(game_number=num, name=name or f"Game {num}", price=price, status="active",
+                         odds=f"1:{odds}",
+                         prize_tiers=[{"value": "$10,000", "remaining": top_left},
+                                      {"value": "$100", "remaining": med_left}],
+                         tier_originals={"10000.0": top, "100.0": 1000, f"{float(price)}": 50000}))
+
+
+def test_medium_prizes_leave_out_the_top_prize():
+    g = _game("1", 5, med_left=150, top_left=0)
+    assert abs(g.medium_pct_remaining - 0.15) < 1e-9          # 150 of 1,000
+    assert g.top_prize_pair == (0, 5)
+
+
+def test_a_game_with_its_jackpot_gone_but_prizes_left_is_not_picked_over():
+    games = {"1": _game("1", 5, med_left=800, top_left=0), "2": _game("2", 5, med_left=100)}
+    assert [g.game_number for g in telegram.picked_over(games)] == ["2"]
+
+
+def test_the_list_reads_plainly():
+    games = {"1": _game("1", 5, med_left=60, name="Goat Load"), "2": _game("2", 5, med_left=900)}
+    msg = telegram.low_games_list(games)
+    assert "Picked-over games on sale (1)" in msg and "$5 tickets" in msg
+    assert "Goat Load (#1): 6% of medium prizes left" in msg
+    assert "top prize 1 of 5 left" in msg and "Game 2" not in msg
+
+
+def test_a_game_is_announced_once_when_it_becomes_picked_over():
+    before = {"1": _game("1", 5, med_left=250), "2": _game("2", 5, med_left=100)}
+    after = {"1": _game("1", 5, med_left=150), "2": _game("2", 5, med_left=90)}
+    assert [g.game_number for g in telegram.newly_picked_over(after, before)] == ["1"]
+    msg = telegram.game_news([], after, before)
+    assert "Now picked over (1)" in msg and "Game 1" in msg and "Game 2" not in msg
+    assert telegram.game_news([], after, after) == ""          # nothing new, no message

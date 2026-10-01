@@ -261,8 +261,8 @@ def run(argv: list[str] | None = None) -> int:
             print(f"WARNING: email failed: {e}", file=sys.stderr)
 
     # New games and ended games, to Telegram (when set up). Never stops the run.
-    if alerts and not args.no_email:
-        news = telegram.game_news(alerts, current)
+    if not args.no_email and not baseline:
+        news = telegram.game_news(alerts, current, previous)
         if news:
             telegram.send(news)
 
