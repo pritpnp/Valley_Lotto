@@ -10,6 +10,10 @@
           border-top:1px solid var(--line); font-size:14.5px; }
   .part b { font-family:ui-monospace, monospace; font-size:16px; }
   .plabel { color:var(--muted); }
+  .drow { padding:8px 0; border-top:1px solid var(--line); font-size:14px; }
+  .drow .q { color:var(--muted); font-size:12.5px; }
+  .drow b { display:block; margin-top:2px; }
+  .drow.good b { color:var(--ok); }
   .past { display:grid; grid-template-columns:1fr auto; gap:8px; padding:8px 0;
           border-top:1px solid var(--line); font-size:13px; }
   .past .raw { font-family:ui-monospace, monospace; color:var(--muted); word-break:break-all; }
@@ -25,6 +29,10 @@
 
   {% set scan_url = url_for('api_scan_check') %}
   {% include "_scanner.html" %}
+
+  {# What this device is doing, so a scanning problem can be described in a
+     sentence instead of guessed at. Refreshed after every scan. #}
+  <div id="diag" style="margin-top:14px"></div>
 
   <div id="read" class="read">
     <div class="muted" style="font-size:12px">What the gun sent</div>
@@ -64,7 +72,22 @@
 {% endif %}
 
 <script>
+function showDiagnosis(){
+  const host = document.getElementById("diag");
+  host.innerHTML = "<div class='muted' style='font-size:12px;margin-bottom:4px'>This device</div>";
+  scannerDiagnosis().forEach(([q, a, good]) => {
+    const row = document.createElement("div");
+    row.className = "drow" + (good ? " good" : "");
+    row.innerHTML = "<div class='q'></div><b></b>";
+    row.children[0].textContent = q;
+    row.children[1].textContent = (good ? "✓ " : "") + a;
+    host.appendChild(row);
+  });
+}
+showDiagnosis();
+
 window.onScanResult = function(d){
+  showDiagnosis();
   document.getElementById("read").style.display = "block";
   document.getElementById("raw").textContent = d.raw || "(nothing)";
   document.getElementById("len").textContent =
