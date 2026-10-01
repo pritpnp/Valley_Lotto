@@ -11,6 +11,7 @@ the log (without the token) and the run carries on.
 
 from __future__ import annotations
 
+import html
 import os
 import sys
 
@@ -46,8 +47,12 @@ def _chunks(text: str) -> list[str]:
     return out
 
 
-def send(text: str) -> bool:
-    """Send a message. Returns True if every part was delivered."""
+def send(text: str, *, formatted: bool = False) -> bool:
+    """Send a message. Returns True if every part was delivered.
+
+    formatted: the text uses Telegram's HTML tags (<b>, <u>), and any text from
+    PA inside it has been escaped.
+    """
     if not configured() or not text.strip():
         return False
     import requests
@@ -56,8 +61,10 @@ def send(text: str) -> bool:
     ok = True
     for part in _chunks(text):
         try:
-            r = requests.post(API.format(token=token), timeout=20, json={
-                "chat_id": chat, "text": part, "disable_web_page_preview": True})
+            body = {"chat_id": chat, "text": part, "disable_web_page_preview": True}
+            if formatted:
+                body["parse_mode"] = "HTML"
+            r = requests.post(API.format(token=token), timeout=20, json=body)
             if r.status_code != 200:
                 ok = False
                 # Telegram's own description, never the URL (it holds the token).
@@ -74,40 +81,6 @@ def send(text: str) -> bool:
     return ok
 
 
-def _facts(g: Game) -> list[str]:
-    """Plain facts about a game, only the ones PA's figures actually support."""
-    bits = []
-    if g.price is not None:
-        bits.append(f"${g.price:g} ticket")
-    if g.odds_value:
-        bits.append(f"wins something 1 in {g.odds_value:g}")
-    pair = g.top_prize_pair
-    if pair and g.top_prize_value:
-        bits.append(f"{pair[0]:,} of {pair[1]:,} top prizes ({g.top_prize_value}) left")
-    return bits
-
-
-def _low_line(g: Game, best: dict) -> str:
-    """One game, in plain words: how picked over, how often it pays back more."""
-    bits = [f"{g.medium_pct_remaining:.0%} of medium prizes left"]
-    if g.win_back_odds:
-        b = best.get(g.price)
-        tail = f" (best ${g.price:g} game: 1 in {b:.1f})" if b and b < g.win_back_odds - 0.05 else ""
-        bits.append(f"wins more than ${g.price:g} 1 in {g.win_back_odds:.1f}{tail}")
-    pair = g.top_prize_pair
-    if pair:
-        bits.append(f"top prize {pair[0]:,} of {pair[1]:,} left")
-    return f"• {g.name} (#{g.game_number}): " + "; ".join(bits)
-
-
-def _best_win_back(games: dict[str, Game]) -> dict:
-    best: dict = {}
-    for g in games.values():
-        if g.status == "active" and g.win_back_odds and g.price:
-            best[g.price] = min(best.get(g.price, 1e9), g.win_back_odds)
-    return best
-
-
 def picked_over(games: dict[str, Game]) -> list[Game]:
     return sorted((g for g in games.values() if g.status == "active"
                    and g.medium_pct_remaining is not None
@@ -115,21 +88,27 @@ def picked_over(games: dict[str, Game]) -> list[Game]:
                   key=lambda g: (g.price or 0, g.medium_pct_remaining))
 
 
+def _name(g_or_alert) -> str:
+    """A game's name and number, bold. PA's text is escaped for Telegram."""
+    return f"<b>{html.escape(g_or_alert.name)} #{g_or_alert.game_number}</b>"
+
+
+def _price(price) -> str:
+    return f"<u>${price:g}</u>" if price is not None else ""
+
+
 def low_games_list(games: dict[str, Game]) -> str:
-    """Every game on sale that's picked over, cheapest first."""
+    """Every game on sale that's picked over, by price. Formatted (HTML)."""
     low = picked_over(games)
     if not low:
         return "📉 No game on sale is picked over right now."
-    best = _best_win_back(games)
-    lines = [f"📉 Picked-over games on sale ({len(low)})",
-             f"Under {PICKED_OVER:.0%} of their medium prizes left. Medium prizes are the "
-             "levels PA reports, below the top prize.", ""]
-    price = None
+    lines = [f"📉 Picked-over games ({len(low)})"]
+    price = object()
     for g in low:
         if g.price != price:
             price = g.price
-            lines.append(f"${price:g} tickets")
-        lines.append(_low_line(g, best))
+            lines += ["", _price(price)]
+        lines.append(_name(g))
     return "\n".join(lines)
 
 
@@ -146,7 +125,8 @@ def newly_picked_over(current: dict[str, Game], previous: dict[str, Game]) -> li
 
 def game_news(alerts: list[Alert], games: dict[str, Game],
               previous: dict[str, Game] | None = None) -> str:
-    """One message for the games that went on sale, ended, or became picked over."""
+    """One message for the games that went on sale, ended, or became picked over.
+    Formatted (HTML): prices underlined, games bold."""
     new = [a for a in alerts if a.kind == "new"]
     ended = [a for a in alerts if a.kind == "ended"]
     lines: list[str] = []
@@ -154,29 +134,21 @@ def game_news(alerts: list[Alert], games: dict[str, Game],
         lines.append(f"🆕 New on sale ({len(new)})")
         for a in sorted(new, key=lambda a: a.game_number):
             g = games.get(a.game_number)
-            facts = _facts(g) if g else []
-            lines.append(f"• #{a.game_number} {a.name}" + (" — " + ", ".join(facts) if facts else ""))
+            lines.append(f"{_price(g.price if g else None)} {_name(a)}".strip())
         lines.append("")
     if ended:
         lines.append(f"🏁 Sales ended ({len(ended)})")
         for a in sorted(ended, key=lambda a: a.game_number):
             g = games.get(a.game_number)
-            bits = []
-            if g and g.price is not None:
-                bits.append(f"${g.price:g}")
-            if g and g.sales_end_date:
-                bits.append(f"ended {g.sales_end_date}")
-            if g and g.claim_deadline:
-                bits.append(f"cash winners until {g.claim_deadline}")
-            lines.append(f"• #{a.game_number} {a.name}" + (" — " + ", ".join(bits) if bits else ""))
+            when = f" (cash winners until {html.escape(g.claim_deadline)})" if g and g.claim_deadline else ""
+            lines.append(f"{_price(g.price if g else None)} {_name(a)}{when}".strip())
             if a.owned:
                 lines.append("  ⚠️ You carry this one: pull it and settle the packs.")
         lines.append("")
     newly = newly_picked_over(games, previous) if previous else []
     if newly:
-        best = _best_win_back(games)
         lines.append(f"📉 Now picked over ({len(newly)})")
-        lines += [_low_line(g, best) for g in newly]
+        lines += [f"{_price(g.price)} {_name(g)}" for g in newly]
     return "\n".join(lines).strip()
 
 
@@ -188,12 +160,14 @@ def main(argv: list[str] | None = None) -> int:
         state = Path(args[1]) if len(args) > 1 else Path("data/state.json")
         text = low_games_list(load_state(state))
         print(text)
+        formatted = True
     else:
         text = " ".join(args) if args else sys.stdin.read()
+        formatted = False
     if not configured():
         print("Telegram isn't set up (TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID); nothing sent.")
         return 0
-    return 0 if send(text) else 1
+    return 0 if send(text, formatted=formatted) else 1
 
 
 if __name__ == "__main__":
