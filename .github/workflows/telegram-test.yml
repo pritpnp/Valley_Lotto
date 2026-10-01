@@ -1,0 +1,28 @@
+name: Send a Telegram test message
+
+# Press "Run workflow" in the Actions tab to check the Telegram bot is set up.
+# Uses the repository secrets TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID.
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - run: pip install -r requirements.txt
+      - name: Send it
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          PYTHONPATH: src
+        run: |
+          if [ -z "$TELEGRAM_BOT_TOKEN" ] || [ -z "$TELEGRAM_CHAT_ID" ]; then
+            echo "::error::TELEGRAM_BOT_TOKEN and/or TELEGRAM_CHAT_ID secret is missing."
+            exit 1
+          fi
+          python -m lottery_tracker.telegram "✅ Valley Lotto is connected. You'll get a message here when a game goes on sale, when one ends, and if anything breaks."
