@@ -94,9 +94,33 @@ function scanModeInfo(key) {
 
 const APP_MODE = {
   key: "app", label: "Handled by the app",
-  hint: "This device is running the Valley Lotto app, which holds the keyboard "
+  hint: "This device is running the Valley Lotto app, which keeps the keyboard "
         + "down itself. Nothing here to change.",
 };
+
+/* What the device is actually doing, in plain words, for the Scanner check
+   page. Each line is [question, answer, good?]. */
+function scannerDiagnosis() {
+  const b = appBridge();
+  const lines = [];
+  lines.push(["Running inside the Valley Lotto app", b ? "Yes" : "No — this is a web browser", !!b]);
+  if (b) {
+    const knows = typeof b.hasNativeScanner === "function";
+    let found = false;
+    try { found = knows && b.hasNativeScanner(); } catch (e) {}
+    lines.push(["App can talk to the built-in scanner",
+                !knows ? "No — this is an older copy of the app. Install the newest APK."
+                : found ? "Yes — a Honeywell scanner was found"
+                : "No — the app didn't find a Honeywell scanner",
+                knows && found]);
+  }
+  const seen = nativeScanSeen();
+  lines.push(["Scans arriving straight from the scanner",
+              seen ? "Yes — no keyboard needed"
+                   : "Not yet — scans are typed into the box instead (that works too)",
+              seen]);
+  return lines;
+}
 
 class ScanField {
   /* el: the input. onScan(raw): called once per complete scan. */
@@ -145,6 +169,12 @@ class ScanField {
     el.removeAttribute("inputmode");
     if (this.manual) {
       el.setAttribute("inputmode", "numeric");
+    } else if (inApp()) {
+      // In the app, an ordinary editable field. Some scanners (Honeywell's
+      // among them) refuse to type into a read-only one, so that "no keyboard"
+      // trick made every scan vanish until the keyboard was opened. Here the
+      // keyboard is the app's to push back down, so the field can stay a real
+      // one.
     } else {
       const mode = scanModeKey();
       if (mode === "quiet") el.setAttribute("readonly", "readonly");
@@ -160,9 +190,11 @@ class ScanField {
 
   focus() {
     if (this.manual || document.activeElement === this.el) return;
-    // With the scanner talking to the app, the field doesn't need focus, and
-    // focus is the one thing that can still bring the keyboard up.
-    if (nativeScanner()) return;
+    // Once the scanner has really sent a scan straight to the app, the field no
+    // longer needs focus, and focus is the one thing that can bring the
+    // keyboard up. Until then it keeps focus, so a scanner that only types
+    // still has somewhere to type.
+    if (nativeScanner() && nativeScanSeen()) return;
     try { this.el.focus({preventScroll: true}); } catch (e) { this.el.focus(); }
   }
 
@@ -202,12 +234,17 @@ class ScanField {
      same way as a typed one, so the double-fire guard and the "scan it again
      to confirm" exception apply exactly as they do to a gun. */
   deliver(raw) {
+    // The scanner has just proved it talks to the app directly, so let go of
+    // the field: nothing needs it selected now, and a selected field is what
+    // the keyboard comes up for.
+    if (!this.manual && document.activeElement === this.el) this.el.blur();
     clearTimeout(this.timer);
     this.buf = String(raw || "").trim();
     this.flush();
   }
 
   onInput() {
+    if (!this.manual && nativeScanner() && nativeScanSeen()) { this.el.value = ""; return; }
     // Only fires when the field is really editable (manual entry, or compat
     // mode where the browser types into it as well as firing keydown).
     const cleaned = this.el.value.replace(/[^0-9-]/g, "");
