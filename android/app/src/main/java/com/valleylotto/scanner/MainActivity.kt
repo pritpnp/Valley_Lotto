@@ -2,7 +2,11 @@ package com.valleylotto.scanner
 
 import android.annotation.SuppressLint
 import android.app.AlertDialog
+import android.content.BroadcastReceiver
+import android.content.ComponentName
 import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.os.Bundle
 import android.text.InputType
 import android.view.WindowManager
@@ -18,9 +22,11 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import org.json.JSONObject
 
 /**
  * A thin, purpose-built shell around the Valley Lotto web app.
@@ -35,6 +41,11 @@ import androidx.core.view.WindowInsetsControllerCompat
  * keyboard. A page can ask Android not to show one; it cannot insist. Here we
  * can: the keyboard is held down from the app side and only allowed up when the
  * page says someone actually wants to type.
+ *
+ * On a Honeywell with a built-in scanner (an EDA52, say) the keyboard drops out
+ * of it altogether: the app asks the scanner to send each barcode straight here
+ * instead of typing it, and hands it to the page. Nothing has to be focused for
+ * that to work, so nothing ever calls the keyboard up.
  */
 class MainActivity : AppCompatActivity() {
 
@@ -50,6 +61,21 @@ class MainActivity : AppCompatActivity() {
      * until the next page loads.
      */
     private var suppressKeyboard = false
+
+    /** Whether this device has a Honeywell scanner that will send us scans. */
+    private val honeywell: List<ComponentName> by lazy {
+        packageManager.queryBroadcastReceivers(Intent(HW_CLAIM), 0)
+            .map { ComponentName(it.activityInfo.packageName, it.activityInfo.name) }
+    }
+
+    private val scanReceiver = object : BroadcastReceiver() {
+        override fun onReceive(c: Context, i: Intent) {
+            val data = i.getStringExtra("data") ?: return
+            // Quoted as a JS string literal, so a barcode can never be code.
+            val js = "window.onNativeScan && window.onNativeScan(${JSONObject.quote(data)})"
+            web.post { web.evaluateJavascript(js, null) }
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -76,6 +102,44 @@ class MainActivity : AppCompatActivity() {
 
         val url = prefs.getString(KEY_URL, null)
         if (url.isNullOrBlank()) promptForServer() else web.loadUrl(url)
+    }
+
+    /*
+     * The scanner is ours only while the app is on screen. Claiming it in
+     * onResume and releasing it in onPause gives it back to the device's normal
+     * behaviour the moment someone switches to another app.
+     */
+    override fun onResume() {
+        super.onResume()
+        if (honeywell.isEmpty()) return
+        ContextCompat.registerReceiver(this, scanReceiver, IntentFilter(ACTION_SCAN).apply {
+            addCategory(Intent.CATEGORY_DEFAULT)
+        }, ContextCompat.RECEIVER_EXPORTED)   // the scanner service is another app
+        val props = Bundle().apply {
+            putBoolean("DPR_DATA_INTENT", true)            // send scans as intents...
+            putString("DPR_DATA_INTENT_ACTION", ACTION_SCAN) // ...to us
+        }
+        sendToScanner(Intent(HW_CLAIM)
+            .putExtra(HW_EXTRA_SCANNER, "dcs.scanner.imager")   // the built-in imager
+            .putExtra(HW_EXTRA_PROFILE, "DEFAULT")              // the device's own settings
+            .putExtra(HW_EXTRA_PROPERTIES, props))
+    }
+
+    override fun onPause() {
+        if (honeywell.isNotEmpty()) {
+            sendToScanner(Intent(HW_RELEASE))
+            try { unregisterReceiver(scanReceiver) } catch (e: IllegalArgumentException) { }  // never registered
+        }
+        super.onPause()
+    }
+
+    /**
+     * Address the scanner service by name. Android 8+ drops broadcasts sent to
+     * "whoever is listening", which is what Honeywell's own sample works around
+     * the same way.
+     */
+    private fun sendToScanner(intent: Intent) {
+        for (c in honeywell) sendBroadcast(Intent(intent).setComponent(c))
     }
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -184,6 +248,13 @@ class MainActivity : AppCompatActivity() {
         fun hasKeyboardControl(): Boolean = true
 
         /**
+         * True on a Honeywell: scans arrive through window.onNativeScan, so the
+         * page needn't focus anything (and so never raises the keyboard).
+         */
+        @JavascriptInterface
+        fun hasNativeScanner(): Boolean = honeywell.isNotEmpty()
+
+        /**
          * Hold the screen awake, or let it sleep again.
          *
          * A count is a minute of scanning with no touches, and a screen that
@@ -202,7 +273,7 @@ class MainActivity : AppCompatActivity() {
     /** First launch: ask where the store's site lives. */
     private fun promptForServer() {
         val input = EditText(this).apply {
-            hint = "https://your-store.up.railway.app"
+            hint = "https://your-store.onrender.com"
             inputType = InputType.TYPE_TEXT_VARIATION_URI
             setText(prefs.getString(KEY_URL, "") ?: "")
         }
@@ -251,5 +322,14 @@ class MainActivity : AppCompatActivity() {
     companion object {
         private const val PREFS = "valley_lotto"
         private const val KEY_URL = "server_url"
+
+        // Honeywell's Data Collection Intent API.
+        private const val HW_CLAIM = "com.honeywell.aidc.action.ACTION_CLAIM_SCANNER"
+        private const val HW_RELEASE = "com.honeywell.aidc.action.ACTION_RELEASE_SCANNER"
+        private const val HW_EXTRA_SCANNER = "com.honeywell.aidc.extra.EXTRA_SCANNER"
+        private const val HW_EXTRA_PROFILE = "com.honeywell.aidc.extra.EXTRA_PROFILE"
+        private const val HW_EXTRA_PROPERTIES = "com.honeywell.aidc.extra.EXTRA_PROPERTIES"
+        /** Our own action: the scanner sends each barcode to it. */
+        private const val ACTION_SCAN = "com.valleylotto.scanner.BARCODE"
     }
 }
