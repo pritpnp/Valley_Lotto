@@ -351,12 +351,21 @@ function openBox(slot){
   $("bxTicket").value = b.scanned ? b.ticket : "";
   $("bxClear").style.display = b.scanned ? "" : "none";
   $("boxSheet").style.display = "block";
+  // The menu sits below every box, off the bottom of a phone screen. Bring it
+  // into view, or the tap looks like it did nothing.
+  $("boxSheet").scrollIntoView({behavior: "smooth", block: "start"});
 }
 
 function closeBox(){
+  const wasOpen = sheetSlot !== null;
   sheetSlot = null;
   $("boxSheet").style.display = "none";
+  if (document.activeElement && $("boxSheet").contains(document.activeElement)) {
+    document.activeElement.blur();
+  }
   field.focus();
+  // Back up to "Scan box N", which is where the eye needs to be next.
+  if (wasOpen) $("slotName").scrollIntoView({behavior: "smooth", block: "center"});
 }
 
 async function saveBox(){
