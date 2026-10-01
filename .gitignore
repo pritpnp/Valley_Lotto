@@ -12,3 +12,7 @@ data/app.db
 data/app.db-*
 *.db
 data/*.db
+
+# Printed test barcodes (tools/make_test_barcodes.py)
+test-barcodes.html
+test-barcodes.pdf
