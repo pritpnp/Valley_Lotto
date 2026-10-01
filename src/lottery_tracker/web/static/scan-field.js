@@ -45,6 +45,18 @@ function inApp() {
   try { return !!(b && b.hasKeyboardControl()); } catch (e) { return false; }
 }
 
+/* Push the keyboard down now and a few more times over the next second.
+   Selecting a box raises the keyboard a moment AFTER the box is selected, and
+   on some devices (the EDA52) the app never hears about it appearing, so a
+   single request made beforehand loses the race. */
+function holdKeyboardDown(stillWanted) {
+  if (!appBridge()) return;
+  // stillWanted: so tapping ⌨ inside that second isn't undone by a late push.
+  [0, 120, 350, 800].forEach(ms => setTimeout(() => {
+    if (stillWanted()) appKeyboard(false);
+  }, ms));
+}
+
 function appKeyboard(wanted) {
   const b = appBridge();
   if (!b) return;
@@ -139,6 +151,10 @@ class ScanField {
     el.addEventListener("keydown", e => this.onKey(e, true));
     el.addEventListener("input", () => this.onInput());
     el.addEventListener("blur", () => setTimeout(() => this.focus(), 50));
+    // Every time the box is selected, in the app, keep the keyboard down.
+    el.addEventListener("focus", () => {
+      if (!this.manual) holdKeyboardDown(() => !this.manual);
+    });
     document.addEventListener("click", e => {
       if (!e.target.closest("button, a, input, select, textarea, summary")) this.focus();
     });
