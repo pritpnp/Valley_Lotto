@@ -232,6 +232,11 @@ def _find_col(headers: list[str], needles: tuple[str, ...]) -> int | None:
     return None
 
 
+# Bump whenever parse_detail or parse_bulletin changes what it reads. Every game
+# is then re-read from its saved PA pages on the next run. No network is needed,
+# and no game needs fixing by hand.
+PARSER_VERSION = 1
+
 _DETAIL_TOP_RE = re.compile(r"offers?\s+([\d,]+)\s+[Tt]op\s+[Pp]rize", re.I)
 _DETAIL_ODDS_RE = re.compile(r"chances of winning a prize:\s*1:([\d.]+)", re.I)
 

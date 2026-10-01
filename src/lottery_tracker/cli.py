@@ -66,26 +66,55 @@ def _enrich_with_originals(current, targets, originals, *, offline, save_html,
             (SAMPLES_DIR / sample_name).write_text(html)
         return html
 
+    from .state import load_game_page, save_game_page
+    pages = DATA_DIR / "pa_pages"
+
+    def _read(num, cached, dhtml, bhtml):
+        """Read the prize structure from a game's PA pages into the cache."""
+        info = parse.parse_detail(dhtml)
+        cached = dict(cached or {})
+        cached.update({"detail_id": current[num].detail_id, **info})
+        if bhtml is not None:
+            # Replace the old reading wholesale, so nothing a newer reader
+            # dropped lingers on from an older one.
+            for k in ("prize_originals", "tickets_printed", "payout_pct"):
+                cached.pop(k, None)
+            cached.update(parse.parse_bulletin(bhtml))
+            cached["parser_version"] = parse.PARSER_VERSION
+        # Without the Bulletin this run, what was read before stays as it was,
+        # and the version stays old so it's tried again next run.
+        return cached
+
     new_fetches = 0
     for num in sorted(targets):
         g = current.get(num)
         if g is None:
             continue
         cached = originals.get(num)
-        need_bulletin = not (cached or {}).get("prize_originals")
-        if (cached is None or need_bulletin) and g.detail_id and new_fetches < max_new_fetches:
+        stale = (cached or {}).get("parser_version") != parse.PARSER_VERSION
+        dsaved = load_game_page(pages, num, "detail")
+        bsaved = load_game_page(pages, num, "bulletin")
+
+        # The reader improved and the pages are on file: re-read, no network.
+        if cached and stale and dsaved is not None:
+            originals[num] = cached = _read(num, cached, dsaved, bsaved)
+
+        # Not read yet, missing its Bulletin, or read by an older reader with no
+        # pages on file: fetch them (and keep them this time).
+        need = (cached is None or not cached.get("prize_originals")
+                or (cached.get("parser_version") != parse.PARSER_VERSION))
+        if need and g.detail_id and new_fetches < max_new_fetches:
             new_fetches += 1
             try:
                 dhtml = _get(fetch.DETAIL_URL.format(id=g.detail_id), f"detail_{g.detail_id}.html")
                 if dhtml is not None:
-                    info = parse.parse_detail(dhtml)
-                    cached = {**(cached or {}), "detail_id": g.detail_id, **info}
-                    b_url = info.get("bulletin_url")
-                    if b_url and not cached.get("prize_originals"):
-                        bhtml = _get(b_url, f"bulletin_{g.detail_id}.html")
-                        if bhtml is not None:
-                            cached.update(parse.parse_bulletin(bhtml))
-                    originals[num] = cached
+                    if not offline:
+                        save_game_page(pages, num, "detail", dhtml)
+                    b_url = parse.parse_detail(dhtml).get("bulletin_url")
+                    bhtml = _get(b_url, f"bulletin_{g.detail_id}.html") if b_url else None
+                    if bhtml is not None and not offline:
+                        save_game_page(pages, num, "bulletin", bhtml)
+                    originals[num] = cached = _read(num, cached, dhtml, bhtml)
                 if not offline:
                     time.sleep(0.2)  # be polite to PA's servers
             except Exception as e:  # noqa: BLE001
