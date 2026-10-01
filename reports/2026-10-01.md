@@ -1,4 +1,4 @@
-# Valley Lotto report — 2026-10-01T20:57:26Z
+# Valley Lotto report — 2026-10-01T22:42:49Z
 
 ## ✅ No new alerts
 
@@ -9,8 +9,8 @@ Nothing ended and nothing crossed your low-prize threshold since the last run.
 | Price | Game | # | Win odds | Density | % left |
 |------:|------|---|:-------:|:-------:|:------:|
 | $50 | Million Dollar Win It All | 1784 | 1:3.61 | 0.98 | 87% |
-| $50 | Ca$h Money | 1796 | 1:3.63 | 0.02 | 100% |
-| $50 | $1,000,000 a Year for Life | 1762 | 1:3.74 | 0.87 | 69% |
+| $50 | Ca$h Money | 1796 | 1:3.63 | 1.07 | 94% |
+| $50 | $1,000,000 a Year for Life | 1762 | 1:3.74 | 0.58 | 69% |
 | $30 | GAME SHOW EXPERIENCE Second-Chance Eligible | 1802 | 1:2.74 | 0.81 | 99% |
 | $30 | $1,500,000 Super Star | 1790 | 1:3 | 0.78 | 77% |
 | $30 | Triple Red 777 | 1780 | 1:3.11 | 1.20 | 61% |
