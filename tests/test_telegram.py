@@ -78,10 +78,8 @@ def test_new_and_ended_games_are_announced_plainly():
               Alert("ended", "1766", "LOVE IS BLIND", Severity.INFO, "ended"),
               Alert("low_prizes", "1700", "Other", Severity.INFO, "low")]
     msg = telegram.game_news(alerts, {"1807": new, "1766": old})
-    assert "🆕 New on sale (1)" in msg and "#1807 Lucky Stars" in msg
-    assert "$5 ticket" in msg and "wins something 1 in 3.6" in msg
-    assert "6 of 6 top prizes ($100,000) left" in msg
-    assert "🏁 Sales ended (1)" in msg and "cash winners until 03/27/2027" in msg
+    assert "🆕 New on sale (1)\n<u>$5</u> <b>Lucky Stars #1807</b>" in msg
+    assert "🏁 Sales ended (1)\n<u>$2</u> <b>LOVE IS BLIND #1766</b> (cash winners until 03/27/2027)" in msg
     assert "Other" not in msg                      # only new and ended games
 
 
@@ -111,12 +109,20 @@ def test_a_game_with_its_jackpot_gone_but_prizes_left_is_not_picked_over():
     assert [g.game_number for g in telegram.picked_over(games)] == ["2"]
 
 
-def test_the_list_reads_plainly():
-    games = {"1": _game("1", 5, med_left=60, name="Goat Load"), "2": _game("2", 5, med_left=900)}
-    msg = telegram.low_games_list(games)
-    assert "Picked-over games on sale (1)" in msg and "$5 tickets" in msg
-    assert "Goat Load (#1): 6% of medium prizes left" in msg
-    assert "top prize 1 of 5 left" in msg and "Game 2" not in msg
+def test_the_list_is_just_prices_and_games():
+    games = {"1": _game("1", 5, med_left=60, name="Goat Load"), "2": _game("2", 5, med_left=900),
+             "3": _game("3", 10, med_left=50, name="Six Figures"), "4": _game("4", 5, med_left=70, name="Keys & Cash")}
+    assert telegram.low_games_list(games) == (
+        "📉 Picked-over games (3)\n"
+        "\n<u>$5</u>\n<b>Goat Load #1</b>\n<b>Keys &amp; Cash #4</b>\n"   # PA's "&" escaped
+        "\n<u>$10</u>\n<b>Six Figures #3</b>")
+
+
+def test_formatted_messages_tell_telegram_so(monkeypatch):
+    sent = _setup(monkeypatch, lambda u, j: Resp())
+    telegram.send("<b>x</b>", formatted=True)
+    telegram.send("plain")
+    assert sent[0][1]["parse_mode"] == "HTML" and "parse_mode" not in sent[1][1]
 
 
 def test_a_game_is_announced_once_when_it_becomes_picked_over():
@@ -124,5 +130,5 @@ def test_a_game_is_announced_once_when_it_becomes_picked_over():
     after = {"1": _game("1", 5, med_left=150), "2": _game("2", 5, med_left=90)}
     assert [g.game_number for g in telegram.newly_picked_over(after, before)] == ["1"]
     msg = telegram.game_news([], after, before)
-    assert "Now picked over (1)" in msg and "Game 1" in msg and "Game 2" not in msg
+    assert "📉 Now picked over (1)\n<u>$5</u> <b>Game 1 #1</b>" in msg and "Game 2" not in msg
     assert telegram.game_news([], after, after) == ""          # nothing new, no message

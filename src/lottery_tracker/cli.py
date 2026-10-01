@@ -264,7 +264,7 @@ def run(argv: list[str] | None = None) -> int:
     if not args.no_email and not baseline:
         news = telegram.game_news(alerts, current, previous)
         if news:
-            telegram.send(news)
+            telegram.send(news, formatted=True)
 
     print(report_md)
     print(f"\nWrote: {paths['latest']}  |  alerts: {len(alerts)}  |  games tracked: {len(current)}")
