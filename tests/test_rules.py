@@ -3,7 +3,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from lottery_tracker.model import Game, estimate_top_prize_totals, merge_games  # noqa: E402
+from lottery_tracker.model import Game, merge_games  # noqa: E402
+from _games import verified  # noqa: E402
 from lottery_tracker.rules import Thresholds, evaluate, recommendation  # noqa: E402
 
 
@@ -61,10 +62,14 @@ def test_ended_only_alerts_once():
 
 def test_low_prize_transition_by_pct():
     th = Thresholds(top_prize_pct=0.25, top_prize_count_floor=0)
-    prev = {"5310": mk("5310", status="active", top_prizes_total=10, top_prizes_remaining=3)}
-    cur = {"5310": mk("5310", status="active", top_prizes_total=10, top_prizes_remaining=1)}
-    alerts = evaluate(cur, prev, inventory={"5310"}, thresholds=th)
+    def at(left):
+        return verified(mk("5310", status="active", top_prizes_remaining=left,
+                           prize_tiers=[{"value": "$1,000", "remaining": left},
+                                        {"value": "$5", "remaining": 5000}],
+                           tier_originals={"1000.0": 10, "5.0": 10000}))
+    alerts = evaluate({"5310": at(1)}, {"5310": at(3)}, inventory={"5310"}, thresholds=th)
     assert len(alerts) == 1 and alerts[0].kind == "low_prizes" and alerts[0].owned
+    assert "(1/10)" in alerts[0].message      # the count printed for the SAME prize
 
 
 def test_low_prize_by_count_floor():
@@ -112,19 +117,32 @@ def test_activeprint_is_authority_for_status():
     assert merged["5310"].sales_end_date == "06/15/2026"
 
 
-def test_estimate_uses_highest_count_ever_seen():
-    # New game seen at 8 -> original estimate 8 -> 100%.
-    cur = {"5432": mk("5432", status="active", top_prizes_remaining=8)}
-    estimate_top_prize_totals(cur, {})
-    assert cur["5432"].top_prizes_total == 8
-    assert abs(cur["5432"].top_prize_pct_remaining - 1.0) < 1e-9
+def test_a_top_prize_count_is_never_invented():
+    """Without PA's printed count for the same prize, the share of top prizes
+    left is unknown. It used to be estimated from the highest count ever seen,
+    and paired with counts for other prizes; both were guesses."""
+    g = mk("5432", status="active", top_prizes_remaining=2, top_prizes_total=8,
+           prize_tiers=[{"value": "$5,000", "remaining": 2}])
+    assert g.top_prize_pct_remaining is None
 
-    # Next run drops to 2, but the original estimate stays at the prior max (8).
-    prev = {"5432": mk("5432", status="active", top_prizes_total=8, top_prizes_remaining=8)}
-    cur2 = {"5432": mk("5432", status="active", top_prizes_remaining=2)}
-    estimate_top_prize_totals(cur2, prev)
-    assert cur2["5432"].top_prizes_total == 8
-    assert abs(cur2["5432"].top_prize_pct_remaining - 0.25) < 1e-9
+
+def test_the_top_prize_is_matched_by_dollar_value():
+    """A "top prizes" count for a prize PA doesn't list (Keys and Cash's
+    $100,000) must never be paired with the one it does ($5,000)."""
+    g = verified(mk("1693", status="active",
+                    prize_tiers=[{"value": "$5,000", "remaining": 6}, {"value": "$100", "remaining": 1663}],
+                    tier_originals={"100000.0": 20, "5000.0": 30, "100.0": 18000}), odds=4.42)
+    assert g.top_prize_pair == (6, 30)
+
+
+def test_a_table_that_contradicts_pa_is_not_used():
+    """Ca$h Money's table was misread: 54,829 "left" of 1,000 printed, and odds
+    of 1 in 1,500 against PA's 1 in 3.63. Nothing may be built on it."""
+    g = mk("1796", status="active", odds="1:3.63", tickets_printed=5_400_000,
+           prize_tiers=[{"value": "$500", "remaining": 54829}],
+           tier_originals={"500.0": 1000, "100.0": 2600})
+    assert not g.printed_table_trusted
+    assert g.overall_pct_remaining is None and g.top_prize_pct_remaining is None
 
 
 # --- the wording a clerk actually reads --------------------------------------

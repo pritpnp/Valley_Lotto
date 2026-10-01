@@ -9,6 +9,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from lottery_app import db  # noqa: E402
 from lottery_app.auth import hash_password, verify_password  # noqa: E402
 from lottery_tracker.model import Game  # noqa: E402
+from _games import verified, verified_dict  # noqa: E402
 
 
 # --- password hashing -------------------------------------------------------
@@ -66,16 +67,16 @@ def _client(tmp_path, monkeypatch):
     state = {
         "captured_at": "2026-06-27T16:00:00Z",
         "games": {
-            "1736": {"game_number": "1736", "name": "HIGH 5", "price": 5, "status": "active",
+            "1736": verified_dict({"game_number": "1736", "name": "HIGH 5", "price": 5, "status": "active",
                      "odds": "1:4.2",
                      "prize_tiers": [{"value": "$100000", "remaining": 1},
                                      {"value": "$50", "remaining": 500}],
-                     "tier_originals": {"100000.0": 2, "50.0": 1000}},
-            "1778": {"game_number": "1778", "name": "MONEY RUSH", "price": 2, "status": "active",
+                     "tier_originals": {"100000.0": 2, "50.0": 1000}}),
+            "1778": verified_dict({"game_number": "1778", "name": "MONEY RUSH", "price": 2, "status": "active",
                      "odds": "1:3.5",
                      "prize_tiers": [{"value": "$30000", "remaining": 4},
                                      {"value": "$20", "remaining": 800}],
-                     "tier_originals": {"30000.0": 5, "20.0": 1000}},
+                     "tier_originals": {"30000.0": 5, "20.0": 1000}}),
         },
     }
     state_path = tmp_path / "state.json"
@@ -131,18 +132,18 @@ def test_swap_targets_same_price_keepworthy():
     from lottery_tracker.rules import RatingWeights, Thresholds
     from lottery_app.pa_data import Catalog, swap_targets
     games = {
-        "carried5": Game(game_number="carried5", price=5, status="active", odds="1:4.9",
+        "carried5": verified(Game(game_number="carried5", price=5, status="active", odds="1:4.9",
                          prize_tiers=[{"value": "$5", "remaining": 1}],
-                         tier_originals={"5.0": 100}),                 # bad, carried
-        "fresh5": Game(game_number="fresh5", price=5, status="active", odds="1:3.1",
+                         tier_originals={"5.0": 100})),                # bad, carried
+        "fresh5": verified(Game(game_number="fresh5", price=5, status="active", odds="1:3.1",
                        prize_tiers=[{"value": "$100", "remaining": 9}, {"value": "$5", "remaining": 9000}],
-                       tier_originals={"100.0": 10, "5.0": 10000}),    # great $5, not carried
-        "stale5": Game(game_number="stale5", price=5, status="active", odds="1:4.9",
+                       tier_originals={"100.0": 10, "5.0": 10000})),   # great $5, not carried
+        "stale5": verified(Game(game_number="stale5", price=5, status="active", odds="1:4.9",
                        prize_tiers=[{"value": "$5", "remaining": 100}],
-                       tier_originals={"5.0": 10000}),                 # picked-over $5
-        "fresh10": Game(game_number="fresh10", price=10, status="active", odds="1:3.0",
+                       tier_originals={"5.0": 10000})),                # picked-over $5
+        "fresh10": verified(Game(game_number="fresh10", price=10, status="active", odds="1:3.0",
                         prize_tiers=[{"value": "$10", "remaining": 9000}],
-                        tier_originals={"10.0": 10000}),               # wrong price
+                        tier_originals={"10.0": 10000})),              # wrong price
     }
     cat = Catalog(games=games)
     out = swap_targets(cat, {"carried5"}, 5.0, Thresholds(), RatingWeights())

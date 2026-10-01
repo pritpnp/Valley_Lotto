@@ -4,6 +4,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from lottery_tracker.model import Game  # noqa: E402
+from _games import verified  # noqa: E402
 
 
 def super7s():
@@ -13,11 +14,11 @@ def super7s():
              ("$70", 5962), ("$35", 2837), ("$17", 97307)]
     originals = {"17000.0": 7, "1000.0": 20, "200.0": 360,
                  "70.0": 6360, "35.0": 3000, "17.0": 103200}
-    return Game(
+    return verified(Game(
         game_number="1789", name="Super 7s",
         prize_tiers=[{"value": v, "remaining": r} for v, r in tiers],
         tier_originals=originals,
-    )
+    ), odds=3.38)
 
 
 def test_tier_health_true_pct():
@@ -58,10 +59,10 @@ def mega_moolah():
              ("$3,000", 237), ("$1,000", 2306), ("$500", 856)]
     originals = {"3000000.0": 3, "300000.0": 15, "30000.0": 15,
                  "3000.0": 600, "1000.0": 5960, "500.0": 2320}
-    return Game(game_number="1742", name="Mega Moolah", price=30, status="active",
-                odds="1:3.49",
-                prize_tiers=[{"value": v, "remaining": r} for v, r in tiers],
-                tier_originals=originals)
+    return verified(Game(game_number="1742", name="Mega Moolah", price=30, status="active",
+                         odds="1:3.49",
+                         prize_tiers=[{"value": v, "remaining": r} for v, r in tiers],
+                         tier_originals=originals))
 
 
 def test_overall_pct_is_count_weighted():
@@ -88,8 +89,8 @@ def test_significant_low_prize_outlier_is_caught():
     # sampling noise) -> that tier must be flagged significant & negative.
     tiers = [{"value": "$1000", "remaining": 8},      # ~80% of 10
              {"value": "$5", "remaining": 2000}]      # only 20% of 10,000 -> outlier
-    g = Game(game_number="z", status="active", odds="1:3.5",
-             prize_tiers=tiers, tier_originals={"1000.0": 10, "5.0": 10000})
+    g = verified(Game(game_number="z", status="active", odds="1:3.5",
+                      prize_tiers=tiers, tier_originals={"1000.0": 10, "5.0": 10000}))
     cheap = [r for r in g.tier_z_scores() if r["value_num"] == 5.0][0]
     assert cheap["significant"] and cheap["z"] < -2
 
@@ -124,8 +125,8 @@ def _bulletin_game(num, price, odds, frac):
     # A game where every tier has `frac` of its prizes left.
     tiers = [{"value": "$1000", "remaining": int(10 * frac)},
              {"value": "$20", "remaining": int(100000 * frac)}]
-    return Game(game_number=num, price=price, status="active", odds=odds,
-                prize_tiers=tiers, tier_originals={"1000.0": 10, "20.0": 100000})
+    return verified(Game(game_number=num, price=price, status="active", odds=odds,
+                         prize_tiers=tiers, tier_originals={"1000.0": 10, "20.0": 100000}))
 
 
 def test_bring_in_candidates_ranks_fresh_by_odds():
