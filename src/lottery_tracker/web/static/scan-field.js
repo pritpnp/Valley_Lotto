@@ -179,6 +179,23 @@ class ScanField {
       if (e.target.closest && e.target.closest(FORM_BITS)) return;
       e.preventDefault();
     });
+    // In the app, push the keyboard down whenever it comes up uninvited, at any
+    // moment, whatever raised it. On the EDA52 it can reappear after the page
+    // updates (Skip did it), well after the box was selected. The app's screen
+    // shrinks when the keyboard comes up, and that is the one sign of it a page
+    // can see.
+    if (appBridge()) {
+      let tall = window.innerHeight, wide = window.innerWidth;
+      window.addEventListener("resize", () => {
+        if (window.innerWidth !== wide) {            // turned sideways: new baseline
+          wide = window.innerWidth; tall = window.innerHeight; return;
+        }
+        if (window.innerHeight >= tall) { tall = window.innerHeight; return; }
+        const keyboardUp = tall - window.innerHeight > 120;
+        const unwanted = () => !this.manual && !typingElsewhere(el);
+        if (keyboardUp && unwanted()) holdKeyboardDown(unwanted);
+      });
+    }
     // Typing in another box: in the app, let the keyboard up for it.
     document.addEventListener("focusin", e => {
       if (e.target !== el && typingElsewhere(el)) appKeyboard(true);
