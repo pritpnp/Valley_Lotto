@@ -1,0 +1,39 @@
+name: Keep the site awake during store hours
+
+# Render's free plan puts the site to sleep after 15 minutes with no visitors,
+# and the first person back waits about a minute while it wakes. A visit every
+# ten minutes through the hours a clerk might count keeps it awake then, and the
+# 750 free hours a month cover even round-the-clock running, so this costs
+# nothing.
+#
+# This never fails, on purpose. A failed run sends an email, and at this
+# frequency a short outage would be dozens of them. Reporting outages is the
+# daily keepalive.yml job's work.
+#
+# GitHub sometimes runs scheduled jobs late, so the odd slow first load is still
+# possible. Uses the same APP_URL repository variable as keepalive.yml.
+
+on:
+  schedule:
+    # 6am to midnight Eastern (UTC 10:00 to 04:00 in summer; an hour earlier in
+    # winter, which still covers opening).
+    - cron: "*/10 10-23 * * *"
+    - cron: "*/10 0-3 * * *"
+  workflow_dispatch: {}
+
+concurrency:
+  group: wake
+  cancel-in-progress: true
+
+jobs:
+  wake:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Visit the site
+        env:
+          APP_URL: ${{ vars.APP_URL }}
+        run: |
+          [ -n "$APP_URL" ] || { echo "No APP_URL variable set."; exit 0; }
+          curl -sS --max-time 90 -o /dev/null -w "HTTP %{http_code} in %{time_total}s\n" \
+            "${APP_URL%/}/healthz" || true

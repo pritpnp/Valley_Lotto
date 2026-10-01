@@ -1,0 +1,34 @@
+# Render Blueprint — the app on Render's free plan.
+#
+# Set up once: Render dashboard → New → Blueprint → pick this repo. It reads this
+# file, then asks for the values marked `sync: false` below. Copy those from the
+# old Railway service exactly, DEFAULT_STORE and SLOTS especially: a different
+# store id would file new counts under a store that holds none of your history.
+#
+# The data is not here. It lives in Supabase (DATABASE_URL), so moving hosts
+# moves nothing but the website.
+#
+# Free plan: no card, 750 hours a month (a whole month around the clock is 744).
+# It sleeps after 15 minutes without a visitor and takes about a minute to wake;
+# .github/workflows/wake.yml pings it through store hours so a clerk doesn't wait.
+
+services:
+  - type: web
+    name: valley-lotto
+    runtime: docker            # the existing Dockerfile, unchanged
+    plan: free
+    region: virginia           # nearest to Pennsylvania
+    branch: main
+    autoDeploy: true           # every merge to main goes live, as on Railway
+    healthCheckPath: /healthz
+    envVars:
+      - key: DATABASE_URL      # the Supabase connection string
+        sync: false
+      - key: SECRET_KEY        # copy Railway's to keep everyone logged in
+        sync: false
+      - key: REGISTER_CODE
+        sync: false
+      - key: DEFAULT_STORE
+        sync: false
+      - key: SLOTS
+        sync: false

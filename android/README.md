@@ -50,7 +50,7 @@ which gives you a plain download link to open on the device itself.
 
 1. Settings → **Allow installs from unknown sources** for your file manager or browser.
 2. Tap the `.apk` → Install.
-3. On first launch it asks for the **store's website address** (the Railway URL).
+3. On first launch it asks for the **store's website address** (the Render URL, e.g. `https://valley-lotto.onrender.com`).
    Enter it once. Long-press the screen later to change it.
 
 The app is not for public distribution — it's an internal tool for your own
