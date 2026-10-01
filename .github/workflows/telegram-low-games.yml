@@ -1,0 +1,24 @@
+name: Send the picked-over games list to Telegram
+
+# Press "Run workflow" in the Actions tab for the current list of games on sale
+# with under 20% of their medium prizes left. (Games that newly become picked
+# over are also announced by the twice-daily run.)
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - run: pip install -r requirements.txt
+      - name: Send it
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          PYTHONPATH: src
+        run: python -m lottery_tracker.telegram --low-games

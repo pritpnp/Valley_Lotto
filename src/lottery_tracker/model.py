@@ -136,6 +136,35 @@ class Game:
         return left, printed
 
     @property
+    def medium_pct_remaining(self) -> Optional[float]:
+        """Share left of the prizes PA reports below the top prize.
+
+        PA reports only its six biggest prize levels. Leaving out the top one,
+        the rest are the medium prizes: Σ left ÷ Σ printed, from PA's own counts,
+        each level matched to its printed count by dollar value, and only from a
+        prize table that agrees with PA's other figures.
+        """
+        rows = [r for r in self.tier_health()
+                if r["value_num"] is not None and r["original"] and r["remaining"] is not None]
+        if len(rows) < 2:
+            return None
+        top = max(r["value_num"] for r in rows)
+        med = [r for r in rows if r["value_num"] != top]
+        printed = sum(r["original"] for r in med)
+        return sum(min(r["remaining"], r["original"]) for r in med) / printed if printed else None
+
+    @property
+    def win_back_odds(self) -> Optional[float]:
+        """X in "1 in X" for winning more than the ticket cost, from PA's printed
+        prize table (every level, small ones included). Fixed when the game is
+        printed. Unknown if any printed prize has no known dollar value."""
+        if not self.printed_table_trusted or self.tier_originals_other or not self.price:
+            return None
+        bigger = sum(c for v, c in self.tier_originals.items()
+                     if _money_to_num(v) is not None and _money_to_num(v) > self.price)
+        return self.tickets_printed / bigger if bigger else None
+
+    @property
     def top_prize_pct_remaining(self) -> Optional[float]:
         """Fraction (0..1) of the top prize still unclaimed, or None if unknown."""
         pair = self.top_prize_pair
