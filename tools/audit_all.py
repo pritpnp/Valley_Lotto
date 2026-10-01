@@ -282,6 +282,8 @@ def main() -> None:
     ap.add_argument("--days", type=int, default=100)
     ap.add_argument("--no-app", action="store_true")
     ap.add_argument("--ref", default="origin/main", help="git history to read")
+    ap.add_argument("--fail-on-code", action="store_true",
+                    help="exit 1 if any CODE problem is found (data problems never fail)")
     ap.add_argument("--with-local", action="store_true",
                     help="also check data/state.json in this checkout, after the history")
     ap.add_argument("--out", default=None, help="write the full report as JSON here")
@@ -321,6 +323,10 @@ def main() -> None:
     for k, v in data.items():
         print(f"  {v:7}  {k}")
     print("fingerprint:", hashlib.sha256(text.encode()).hexdigest()[:16])
+    if a.fail_on_code and code:
+        print("::error::The code broke one of its own rules on PA's data. Details above; "
+              "the fix belongs in the code, as a rule, not in the data.")
+        sys.exit(1)
 
 
 if __name__ == "__main__":
