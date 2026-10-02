@@ -34,7 +34,7 @@ from ..reporting import (daily_report, render_daily_report_md, as_zone,
                          business_date, count_status, normalize_session,
                          session_meta, local_time, SESSIONS, SESSION_ORDER)
 from ..config import Config
-from ..rules import RATING_FACTORS, rate, recommendation
+from ..rules import money, rate, recommendation
 from .models import (Base, User, Store, ScanRow, ActiveCount, InventoryRow,
                      PackRow, ShipmentRow,
                      EmphasisRow, StaffRow, AccessRow, AuditRow, BoxRow)
@@ -48,15 +48,6 @@ from lottery_app import pa_data
 
 ROOT = Path(__file__).resolve().parents[3]
 DATA_DIR = ROOT / "data"
-
-# Slider copy for the rating factors (same wording as the FastAPI dashboard).
-FACTOR_LABELS = {
-    "prizes_left": ("Prizes left", "How much of the game's reported prizes haven't been won (top prize aside)"),
-    "win_back": ("Wins more than it costs", "How often a ticket pays back more than its price"),
-    "top_prizes": ("Top prizes left", "How many of the top prizes are still out there"),
-    "odds": ("Wins anything", "How often a ticket wins at all"),
-}
-
 
 # --------------------------------------------------------------------------- #
 # Helpers
@@ -1707,8 +1698,7 @@ def _register_routes(app: Flask):
         for st in stores:
             inv = {r.game_number for r in _db().scalars(
                 select(InventoryRow).where(InventoryRow.store == st.slug)).all()}
-            emph = _db().get(EmphasisRow, st.slug)
-            weights = cfg_obj.rating_weights.scaled(emph.to_emphasis() if emph else {})
+            weights = cfg_obj.rating_weights
             srows = pa_data.store_rows(_catalog(), inv, cfg_obj.thresholds, weights)
             summary = pa_data.store_summary(srows)
 
@@ -2126,14 +2116,6 @@ def _register_routes(app: Flask):
                     _db().delete(stale)
                     _db().commit()
 
-    def _emphasis_row() -> EmphasisRow:
-        row = _db().get(EmphasisRow, _store())
-        if row is None:
-            row = EmphasisRow(store=_store())
-            _db().add(row)
-            _db().commit()
-        return row
-
     def _cfg() -> Config:
         try:
             return Config.load(str(ROOT / "config.yaml"))
@@ -2141,9 +2123,9 @@ def _register_routes(app: Flask):
             return Config({})
 
     def _effective_weights():
-        """Base weights from config.yaml, scaled by this store's sliders."""
+        """The rating's settings (the send-back line) from config.yaml."""
         cfg = _cfg()
-        return cfg.rating_weights.scaled(_emphasis_row().to_emphasis()), cfg
+        return cfg.rating_weights, cfg
 
     def _night_reminder() -> dict | None:
         """A nudge for the one count that can't be skipped — but only once the
@@ -2328,7 +2310,7 @@ def _register_routes(app: Flask):
         for p2 in near:
             for row in pa_data.swap_targets(cat, inv, p2, cfg.thresholds, weights, n=n):
                 pooled.append(row)
-        pooled.sort(key=lambda r: r["rating"], reverse=True)
+        pooled.sort(key=lambda r: (r["rating"], r["sales_per_day"]), reverse=True)
         note = ""
         if pooled:
             shown = sorted({r["price"] for r in pooled[:n]})
@@ -2440,31 +2422,28 @@ def _register_routes(app: Flask):
             audit("inventory.remove", num)
         return redirect(request.form.get("next") or url_for("inventory"))
 
-    @app.route("/weights", methods=["GET", "POST"])
-    @perm_required("pricing")
+    @app.get("/weights")
+    @perm_required("count")
     def weights_page():
-        row = _emphasis_row()
-        if request.method == "POST":
-            for f in RATING_FACTORS:
-                try:
-                    v = float(request.form.get(f, 0.0) or 0.0)
-                except ValueError:
-                    v = 0.0
-                setattr(row, f, max(-3.0, min(3.0, v)))   # clamp to the slider range
-            _db().commit()
-            return redirect(url_for("weights_page"))
-
-        cfg = _cfg()
-        base = cfg.rating_weights
-        effective = base.scaled(row.to_emphasis())
-        total = sum(getattr(effective, f) for f in RATING_FACTORS) or 1.0
-        sliders = [{
-            "key": f, "label": FACTOR_LABELS[f][0], "desc": FACTOR_LABELS[f][1],
-            "value": getattr(row, f), "base": getattr(base, f),
-            "eff_pct": 100 * getattr(effective, f) / total,
-        } for f in RATING_FACTORS]
+        """How games are rated, with the typical sales a day at each price that
+        every game is measured against."""
+        from statistics import median
+        weights, _cfg_obj = _effective_weights()
+        by_price: dict = {}
+        unmeasured = 0
+        for g in _catalog().games.values():
+            if g.status != "active" or g.price is None:
+                continue
+            if g.sales_per_day is None:
+                unmeasured += 1
+                continue
+            by_price.setdefault(g.price, []).append(g.sales_per_day)
+        prices = [{"price": p, "games": len(v), "typical": money(median(v)),
+                   "line": money(median(v) * weights.cutoff / 100)}
+                  for p, v in sorted(by_price.items())]
         return render_template("weights.html", email=session.get("email"),
-                               sliders=sliders, cutoff=effective.cutoff)
+                               cutoff=weights.cutoff, prices=prices,
+                               unmeasured=unmeasured)
 
     # --- report -----------------------------------------------------------
     @app.get("/report")

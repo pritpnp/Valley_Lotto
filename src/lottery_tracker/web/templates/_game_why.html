@@ -1,5 +1,6 @@
-{# Why a game is rated the way it is: the verdict, every factor that voted, the
-   prizes still out there, and a plain-language explanation of all five.
+{# Why a game is rated the way it is: the verdict, how it sells (the one thing
+   that decides it), the facts shown for information, the prizes still out
+   there, and a plain-language explanation.
 
    Expects `detail` from app._game_detail(). Shared by the box screen and the
    catalog, which were otherwise going to drift apart. #}
@@ -50,16 +51,12 @@
           <span class="fval">{{ f.detail }}</span>
         </div>
         {% if f.voted %}
-          <div class="bar {{ 'low' if f.score < 40 else 'mid' if f.score < 65 else '' }}">
+          <div class="bar {{ 'low' if f.score < detail.cutoff else 'mid' if f.score < 50 else '' }}">
             <i style="width:{{ '%.0f'|format(f.score) }}%"></i>
           </div>
         {% endif %}
         {% if f.note %}<div class="fnote">{{ f.note[0]|upper }}{{ f.note[1:] }}</div>{% endif %}
-        <div class="fmeta">
-          {%- if f.voted %}Counted as {{ '%.0f'|format(f.score) }} out of 100, and made up
-            {{ f.share }}% of this game's score.
-          {%- else %}This was left out of the score.{% endif -%}
-        </div>
+        {% if f.voted %}<div class="fmeta">This decides the rating.</div>{% endif %}
       </div>
     {% endfor %}
   </div>
@@ -81,36 +78,34 @@
 
   <details style="margin-top:14px">
     <summary style="cursor:pointer;font-size:13.5px;color:var(--accent);font-weight:600">
-      What do these four things mean?</summary>
+      How is this worked out?</summary>
     <div class="muted" style="font-size:13.5px;line-height:1.65;margin-top:10px">
-      <p>The score out of 100 combines the four things below into one answer.
-        At or above the keep line, the game is worth its box. Below it, the game
-        is doing worse for you than the space it takes up. Every number is one
-        Pennsylvania publishes; nothing is guessed.</p>
+      <p>You earn 5% of every ticket you sell, and the lottery pays back what you
+        pay out. So a game earns its box by selling. The score out of 100 is how
+        well this game sells compared with the typical game at the same price:
+        100 means it sells at least as well as the typical one, 20 means a fifth
+        as well. Under {{ '%.0f'|format(detail.cutoff or 20) }}, send it back.</p>
 
-      <p><b>Prizes left</b> (counts the most). Out of the prizes Pennsylvania
-        reports for this game, how many haven't been won yet, leaving the top
-        prize out. A new game is near 100%. A game down at 20% has had most of
-        its good tickets taken. Pennsylvania only reports the bigger prize
-        levels, so the smallest wins ($1, $2, $5…) aren't in this count.</p>
+      <p><b>Where the sales come from.</b> Pennsylvania doesn't publish sales, but
+        about once a week it posts how many prizes of each game are still
+        unclaimed. Prizes are spread evenly through every game, so as tickets
+        sell, prizes get claimed at the same rate. From the last five weeks of
+        those counts: prizes claimed a day ÷ prizes printed = the share of the
+        game sold a day. Times the tickets printed and the price, that's dollars
+        of tickets sold a day across the state. The "give or take" is how far
+        the weekly counts stray from a steady line.</p>
 
-      <p><b>Wins more than it costs.</b> How often a ticket pays back more than
-        it cost, from the full list of prizes the game was printed with, small
-        ones included. This is what keeps a regular playing. It's compared with
-        the best game at the same price, since a $1 and a $30 game can't be
-        compared.</p>
+      <p><b>Compared at the same price only.</b> A $1 game and a $30 game can't
+        be compared, so each game is measured against the middle game of those
+        on sale at its price.</p>
 
-      <p><b>Top prizes left.</b> How many of the top prizes are still out there.
-        It counts, but less than the rest: a game can lose its jackpot and still
-        pay out well.</p>
+      <p><b>The other facts</b> (prizes left, how often it wins more than it
+        costs, top prizes left, how often it wins anything) are shown so you can
+        see what the game offers. They don't change the score: whatever
+        customers make of them already shows in what they buy.</p>
 
-      <p><b>Wins anything.</b> How often a ticket wins at all, even just the
-        price of the ticket back. Set when the game is printed, and never
-        changes. Also compared with the best game at the same price.</p>
-
-      <p>Where a part says <b>left out</b>, Pennsylvania's numbers for it
-        couldn't be checked, and the other parts share its weight. A missing
-        piece of information never counts against a game.</p>
+      <p>When a game's sales can't be measured yet, usually because it's too new
+        for three weekly counts, it says so and stays. Nothing is guessed.</p>
     </div>
   </details>
 </div>

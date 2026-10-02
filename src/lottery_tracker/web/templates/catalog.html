@@ -40,9 +40,10 @@
     <span class="muted" style="font-size:12px">PA data: {{ data_age.text }}</span>
   </div>
   <p class="legend" style="margin-top:6px">
-    Ranked best first within each price, using your own emphasis settings. The big
-    number is the rating out of 100 — <b>{{ '%.0f'|format(cutoff) }} or more is worth
-    carrying</b>. Tap any game to see exactly why it scored what it did.
+    Ranked best seller first within each price. The big number is how well it sells
+    across PA against the typical game at its price, out of 100 —
+    <b>{{ '%.0f'|format(cutoff) }} or more is worth carrying</b>. Tap any game to see
+    exactly how it was worked out.
   </p>
 </div>
 
@@ -56,12 +57,13 @@
   {% for r in rows %}
     <a class="g" href="{{ url_for('game_page', game_number=r.game_number) }}">
       <span class="score {{ 'send' if r.rating is not none and r.rating < cutoff
-                            else 'keep' if r.rating is not none and r.rating >= 65
+                            else 'keep' if r.rating is not none and r.rating >= 50
                             else 'mid' }}">{{ r.rating_str }}</span>
       <span class="gmid">
         <span class="gname">{{ r.name }}{% if r.carried %}<span class="mine">you carry it</span>{% endif %}</span>
         <span class="gsub">
           #{{ r.game_number }}
+          {%- if r.sales_per_day is not none %} · sells {{ r.sales_str }}{% endif %}
           {%- if r.odds_value %} · wins 1 in {{ '%g'|format(r.odds_value) }}{% endif %}
           {%- if r.pct_all is not none %} · {{ r.pct_all_str }} of prizes left{% endif %}
           {%- if r.top_pct is not none %} · top prizes {{ r.top_str }}{% endif %}

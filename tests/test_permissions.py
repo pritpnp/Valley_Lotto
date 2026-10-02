@@ -64,8 +64,10 @@ def test_an_employee_with_nothing_ticked_can_only_count(boss, app):
     _add(boss, "Sam", "1111")
     _pin_in(boss, "Sam", "1111", app)
     assert boss.get("/count").status_code == 200
-    for denied in ("/report", "/history", "/staff", "/access", "/weights"):
+    for denied in ("/report", "/history", "/staff", "/access"):
         assert boss.get(denied).status_code == 403, denied
+    # How games are rated is read-only, so anyone may read it.
+    assert boss.get("/weights").status_code == 200
 
 
 def test_ticking_one_box_grants_exactly_that(boss, app):

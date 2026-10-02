@@ -15,13 +15,13 @@ treated as "ended/removed" too.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field, replace
+from dataclasses import dataclass, field
 from enum import Enum
 
 from .model import Game
 
-# The four parts of the rating, in order of weight (slider order on the UI).
-RATING_FACTORS = ("prizes_left", "win_back", "top_prizes", "odds")
+# What decides the rating. One thing: how well the game sells.
+RATING_FACTORS = ("sales",)
 
 
 class Severity(str, Enum):
@@ -48,28 +48,20 @@ class Thresholds:
 
 @dataclass
 class RatingWeights:
-    """How much each part of the 0–100 rating counts. A game scoring under
-    ``cutoff`` is a SEND BACK.
+    """Where the line sits. A game rated under ``cutoff`` is a SEND BACK.
 
-    Every part is a figure PA publishes, scored 0–100 (100 = good):
-      prizes_left — share of the prizes PA reports that are still out there,
-                    not counting the top prize. How picked over the game is.
-      win_back    — chance a ticket wins more than it cost, from PA's printed
-                    prize table (every level, small prizes included), against
-                    the best game at the same price.
-      top_prizes  — share of the top prize still out there. Counts, but less:
-                    a game can lose its jackpot and still pay out well.
-      odds        — chance a ticket wins anything, against the best game at
-                    the same price.
-    A part PA's figures can't support is left out and the others share its
-    weight, so a gap never counts against a game.
+    The rating is how well a game sells across PA, against the typical game at
+    its price: 100 × its sales a day ÷ the typical (median) sales a day of the
+    games on sale at that price, capped at 100. So 100 = sells at least as well
+    as the typical game at its price, and 20 = a fifth as well.
+
+    The store earns 5% of every ticket sold and the lottery pays back what it
+    pays out, so selling is what earns a box its place. Prizes left, odds and
+    top prizes are shown with every game for information, but don't change the
+    rating: what customers make of them already shows up in what they buy.
     """
 
-    prizes_left: float = 40.0
-    win_back: float = 25.0
-    top_prizes: float = 20.0
-    odds: float = 15.0
-    cutoff: float = 50.0         # rating below this → SEND BACK
+    cutoff: float = 20.0         # rating below this → SEND BACK
 
     @classmethod
     def from_config(cls, cfg: dict | None) -> "RatingWeights":
@@ -80,25 +72,14 @@ class RatingWeights:
                 d[f] = float(cfg[f])
         return cls(**d)
 
-    def scaled(self, emphasis: dict[str, float] | None, *, step: float = 1.6) -> "RatingWeights":
-        """Apply per-store *emphasis* sliders to the base weights.
-
-        Each slider sits at 0 in the middle (use the base weight as-is). Pushing it
-        up/down by one notch multiplies/divides that part's weight by ``step``
-        (~1.6×). Only the relative sizes matter, since the rating divides by the
-        total weight.
-        """
-        emphasis = emphasis or {}
-        new = {f: getattr(self, f) * (step ** float(emphasis.get(f, 0.0))) for f in RATING_FACTORS}
-        return replace(self, **new)
-
 
 @dataclass
 class Factor:
-    """One scored input to a game's rating (for display + the decision)."""
+    """One fact about a game, as shown with its rating. ``weight`` is 100 for
+    the one that decides the rating and 0 for those shown for information."""
     key: str
     label: str
-    score: float | None     # 0..100, or None when we have no data for it
+    score: float | None     # 0..100, or None when there's no figure for it
     weight: float
     detail: str             # the value itself, short enough to sit in a column
     note: str = ""          # a full sentence saying what that value means
@@ -108,72 +89,80 @@ def _clamp(x: float, lo: float = 0.0, hi: float = 100.0) -> float:
     return max(lo, min(hi, x))
 
 
+def money(x: float) -> str:
+    """Dollars a day, rounded the way a person would say them."""
+    if x >= 100_000:
+        return f"${x / 1000:,.0f}K"
+    if x >= 10_000:
+        return f"${x / 1000:,.1f}K".replace(".0K", "K")
+    return f"${x:,.0f}"
+
+
+def sales_vs_typical(game: Game) -> float | None:
+    """This game's sales a day ÷ the typical game's at its price (1.0 = typical)."""
+    s, t = game.sales_per_day, game.peer_typical_sales
+    if s is None or not t:
+        return None
+    return s / t
+
+
 def rate(game: Game, weights: "RatingWeights | None" = None) -> tuple[float | None, list[Factor]]:
-    """Score a game 0–100: one weighted average of the four parts above.
+    """Rate a game 0–100 on how well it sells (see ``RatingWeights``).
 
-    Returns (rating, factors). ``rating`` is None only when no part has data.
-    The "against the best game at the same price" parts need the game's peers,
-    which ``model.compare_with_peers`` attaches whenever games are loaded.
+    Returns (rating, facts). ``rating`` is None when its sales couldn't be
+    measured; the first fact says why. The typical sales at its price come from
+    ``model.compare_with_peers``, which runs whenever games are loaded.
     """
-    w = weights or RatingWeights()
-    factors: list[Factor] = []
     price = f"${game.price:g}" if game.price is not None else "this price"
+    facts: list[Factor] = []
 
+    ratio = sales_vs_typical(game)
+    if ratio is not None:
+        s, t = game.sales_per_day, game.peer_typical_sales
+        pm = (f" (give or take {game.sales_uncertainty:.0%})"
+              if game.sales_uncertainty is not None else "")
+        facts.append(Factor(
+            "sales", "Sales", _clamp(100 * ratio), 100.0, f"{money(s)} a day",
+            f"Across Pennsylvania this game sells about {money(s)} of tickets a "
+            f"day{pm}, measured from {game.sales_readings} of PA's weekly prize "
+            f"counts over {game.sales_days:.0f} days. The typical {price} game "
+            f"sells {money(t)} a day, so this one sells {ratio:.0%} as much."))
+    else:
+        facts.append(Factor("sales", "Sales", None, 100.0, "not measured",
+                            game.sales_why or "Its sales couldn't be measured."))
+
+    info = " For information: it doesn't change the rating."
     m = game.medium_pct_remaining
-    if m is not None:
-        factors.append(Factor(
-            "prizes_left", "Prizes left", _clamp(100 * m), w.prizes_left, f"{m:.0%}",
-            f"{m:.0%} of the prizes PA reports for this game are still out there, not "
-            f"counting the top prize. This counts the most: it shows how picked over "
-            f"the game is."))
-    else:
-        factors.append(Factor("prizes_left", "Prizes left", None, w.prizes_left, "unknown",
-                              "PA's prize counts for this game couldn't be checked, so "
-                              "this was left out."))
+    facts.append(Factor(
+        "prizes_left", "Prizes left", None if m is None else _clamp(100 * m), 0.0,
+        "unknown" if m is None else f"{m:.0%}",
+        (f"{m:.0%} of the prizes PA reports for this game are still out there, not "
+         f"counting the top prize." + info) if m is not None else
+        "PA's prize counts for this game couldn't be checked."))
 
-    wb, best = game.win_back_odds, game.peer_best_win_back
-    if wb and best:
-        than = (f" The best {price} game on sale does it 1 in {best:.1f}." if best < wb - 0.05
-                else f" That's the best of any {price} game on sale.")
-        factors.append(Factor(
-            "win_back", "Wins more than it costs", _clamp(100 * (best / wb)), w.win_back,
-            f"1 in {wb:.1f}",
-            f"about one ticket in {wb:.1f} wins more than the {price} it cost.{than}"))
-    else:
-        factors.append(Factor("win_back", "Wins more than it costs", None, w.win_back,
-                              "unknown", "PA's printed prize list for this game couldn't "
-                              "be checked, so this was left out."))
+    wb = game.win_back_odds
+    facts.append(Factor(
+        "win_back", "Wins more than it costs", None, 0.0,
+        f"1 in {wb:.1f}" if wb else "unknown",
+        (f"About one ticket in {wb:.1f} wins more than the {price} it cost." + info)
+        if wb else "PA's printed prize list for this game couldn't be checked."))
 
     pair = game.top_prize_pair
-    if pair:
-        what = f" ({game.top_prize_value})" if game.top_prize_value else ""
-        factors.append(Factor(
-            "top_prizes", "Top prizes left", _clamp(100 * pair[0] / pair[1]), w.top_prizes,
-            f"{pair[0]:,} of {pair[1]:,}",
-            f"{pair[0]:,} of the {pair[1]:,} top prizes{what} are still out there. This "
-            f"counts, but less than the other prizes: a game can lose its jackpot and "
-            f"still pay out well."))
-    else:
-        factors.append(Factor("top_prizes", "Top prizes left", None, w.top_prizes, "unknown",
-                              "PA's top-prize count for this game couldn't be matched, so "
-                              "this was left out."))
+    what = f" ({game.top_prize_value})" if game.top_prize_value else ""
+    facts.append(Factor(
+        "top_prizes", "Top prizes left", None, 0.0,
+        f"{pair[0]:,} of {pair[1]:,}" if pair else "unknown",
+        (f"{pair[0]:,} of the {pair[1]:,} top prizes{what} are still out there." + info)
+        if pair else "PA's top-prize count for this game couldn't be matched."))
 
-    o, bo = game.odds_value, game.peer_best_odds
-    if o and bo:
-        than = (f" The best {price} game on sale: 1 in {bo:g}." if bo < o - 0.005
-                else f" That's the best of any {price} game on sale.")
-        factors.append(Factor(
-            "odds", "Wins anything", _clamp(100 * (bo / o)), w.odds, f"1 in {o:g}",
-            f"about one ticket in {o:g} wins something, even if it's just the price of "
-            f"the ticket back. This never changes during a game.{than}"))
-    else:
-        factors.append(Factor("odds", "Wins anything", None, w.odds, "unknown",
-                              "PA hasn't published the odds for this game."))
+    o = game.odds_value
+    facts.append(Factor(
+        "odds", "Wins anything", None, 0.0, f"1 in {o:g}" if o else "unknown",
+        (f"About one ticket in {o:g} wins something, even if it's just the price "
+         f"of the ticket back." + info) if o else
+        "PA hasn't published the odds for this game."))
 
-    avail = [f for f in factors if f.score is not None and f.weight > 0]
-    tot_w = sum(f.weight for f in avail)
-    rating = sum(f.weight * f.score for f in avail) / tot_w if tot_w > 0 else None
-    return rating, factors
+    return (facts[0].score, facts)
 
 
 @dataclass
@@ -197,38 +186,25 @@ def recommendation(
 ) -> tuple[str, str]:
     """One clear call per game: ("keep" | "send_back", reason).
 
-    Driven by the weighted 0–100 rating (see ``rate``): SEND BACK when sales have
-    ended, or when the rating falls below the cutoff. The reason names the factors
-    that hurt the score the most, so you can see *why* — and re-weight what matters
-    to you in config.yaml.
+    SEND BACK when PA has stopped selling it, or when its rating (how well it
+    sells against the typical game at its price, see ``rate``) is under the
+    cutoff. A game whose sales can't be measured yet stays, and says why.
     """
     if game.status == "ended":
         when = f" on {game.sales_end_date}" if game.sales_end_date else ""
         return ("send_back", f"Pennsylvania stopped selling this game{when}. Pull it.")
 
     w = weights or RatingWeights()
-    score, factors = rate(game, w)
+    score, facts = rate(game, w)
     if score is None:
-        return ("keep", "There isn't enough information about this game yet, "
-                        "so it stays for now.")
-
-    # Biggest drags first: low score × high weight.
-    drags = sorted(
-        (f for f in factors if f.score is not None and f.weight > 0),
-        key=lambda f: f.weight * (100 - f.score), reverse=True,
-    )
-    weak = [f"{f.label.lower()} at {f.detail}" for f in drags[:2] if f.score < 60]
+        return ("keep", f"{facts[0].note} It stays until it can be.")
+    ratio = sales_vs_typical(game)
+    price = f"${game.price:g}" if game.price is not None else "this price"
+    said = (f"Sells {money(game.sales_per_day)} a day across PA, {ratio:.0%} of the "
+            f"typical {price} game ({money(game.peer_typical_sales)}).")
     if score < w.cutoff:
-        why = (" The weakest parts are " + " and ".join(weak) + "."
-               if weak else " Nothing about it stands out as good.")
-        return ("send_back",
-                f"Scored {score:.0f} out of 100, below the {w.cutoff:.0f} needed to "
-                f"keep it.{why}")
-    tail = (f" Worth keeping an eye on {weak[0]}." if weak
-            else " Nothing about it needs watching.")
-    return ("keep",
-            f"Scored {score:.0f} out of 100, above the {w.cutoff:.0f} needed to "
-            f"keep it.{tail}")
+        return ("send_back", f"{said} Under {w.cutoff:.0f}% means send it back.")
+    return ("keep", said)
 
 
 def _is_low(game: Game, th: Thresholds) -> tuple[bool, list[str]]:

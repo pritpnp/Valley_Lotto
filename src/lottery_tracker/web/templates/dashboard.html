@@ -88,7 +88,7 @@
           <span class="badge {{ 'b-send' if r.action == 'send_back' else 'b-keep' }}">
             {{ 'SEND BACK' if r.action == 'send_back' else 'KEEP' }}</span>
           #{{ r.game_number }}{% if r.price %} · ${{ '%g'|format(r.price) }}{% endif %}
-          {%- if r.odds_value %} · wins 1 in {{ '%g'|format(r.odds_value) }}{% endif %}
+          {%- if r.sales_per_day is not none %} · sells {{ r.sales_str }} in PA{% endif %}
           {%- if r.pct_all is not none %} · {{ r.pct_all_str }} of prizes left{% endif %}
         </span>
         <span class="why">{{ r.reason }}</span>
@@ -155,8 +155,7 @@
           <span class="pmid">
             <a href="{{ url_for('game_page', game_number=r.game_number) }}" class="pname">{{ r.name }}</a>
             <span class="psub">#{{ r.game_number }}
-              {%- if r.odds_value %} · wins 1 in {{ '%g'|format(r.odds_value) }}{% endif %}
-              {%- if r.pct_all_str %} · {{ r.pct_all_str }} of prizes left{% endif %}</span>
+              {%- if r.sales_per_day is not none %} · sells {{ r.sales_str }} in PA{% endif %}</span>
           </span>
           <form method="post" action="{{ url_for('inventory_add') }}">
             <input type="hidden" name="game_number" value="{{ r.game_number }}">
@@ -172,10 +171,10 @@
 
 <div class="card">
   <p class="muted" style="font-size:12.5px;margin:0">
-    Scores combine prizes left, how often a ticket wins more than it costs, top
-    prizes left and how often it wins anything. Below {{ '%g'|format(weights.cutoff) }}
+    Scores are how well each game sells across Pennsylvania, against the typical
+    game at its price (100 = at least typical). Below {{ '%g'|format(weights.cutoff) }}
     means send back.
-    <a href="{{ url_for('weights_page') }}">Change what matters →</a>
+    <a href="{{ url_for('weights_page') }}">How it's worked out →</a>
   </p>
 </div>
 {% endblock %}

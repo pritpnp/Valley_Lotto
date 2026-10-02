@@ -4,7 +4,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from lottery_tracker.model import Game, merge_games  # noqa: E402
-from _games import verified  # noqa: E402
+from _games import selling, verified  # noqa: E402
 from lottery_tracker.rules import Thresholds, evaluate, recommendation  # noqa: E402
 
 
@@ -18,20 +18,19 @@ def test_recommendation_send_back_when_ended():
     assert act == "send_back"
 
 
-def test_recommendation_send_back_when_rating_low():
-    # Picked over, its top prizes mostly gone, and the worst odds at its price.
+def test_recommendation_send_back_when_it_sells_under_the_line():
+    # Three $5 games; the slow one sells 10% of the typical (median) one.
     from lottery_tracker.model import compare_with_peers
-    def game(num, med_left, top_left, odds):
-        return verified(Game(game_number=num, price=5, status="active",
-                             prize_tiers=[{"value": "$10,000", "remaining": top_left},
-                                          {"value": "$100", "remaining": med_left}],
-                             tier_originals={"10000.0": 10, "100.0": 1000, "5.0": 50000}), odds=odds)
-    games = compare_with_peers({"1": game("1", 50, 1, 4.8), "2": game("2", 900, 9, 3.2)})
+    games = compare_with_peers({n: selling(_g(n, price=5, status="active"), d)
+                                for n, d in (("1", 3_000), ("2", 30_000), ("3", 60_000))})
     act, reason = recommendation(games["1"], Thresholds())
     assert act == "send_back"
     # the reason is written for whoever reads it, not in shorthand
-    assert "out of 100" in reason and "keep it" in reason
+    assert "$3,000 a day" in reason and "10% of the typical $5 game" in reason
     assert recommendation(games["2"], Thresholds())[0] == "keep"
+    # Exactly at the line is kept; just under it is not.
+    games["1"].sales_per_day = 6_000
+    assert recommendation(compare_with_peers(games)["1"], Thresholds())[0] == "keep"
 
 
 def test_recommendation_keep_when_healthy():

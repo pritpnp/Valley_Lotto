@@ -1,39 +1,49 @@
 {% extends "base.html" %}
-{% block title %}Emphasis — Valley Lotto{% endblock %}
+{% block title %}How games are rated — Valley Lotto{% endblock %}
 {% block body %}
 <style>
-  .slider-row { padding:14px 0; border-bottom:1px solid var(--line); }
-  .slider-row:last-child { border-bottom:none; }
-  .slider-head { display:flex; justify-content:space-between; align-items:baseline; }
-  .slider-label { font-weight:700; }
-  .slider-pct { color:var(--muted); font-variant-numeric:tabular-nums; font-size:13px; }
-  .slider-desc { color:var(--muted); font-size:12.5px; margin:2px 0 8px; }
-  input[type=range] { width:100%; }
-  .ends { display:flex; justify-content:space-between; color:var(--muted); font-size:11px; }
+  .prow { display:flex; justify-content:space-between; gap:10px; padding:9px 0;
+          border-top:1px solid var(--line); font-size:14px; }
+  .prow:first-of-type { border-top:none; }
+  .prow span:last-child { text-align:right; color:var(--muted); }
+  .how p { font-size:13.5px; line-height:1.6; margin:0 0 10px; }
 </style>
-<div class="card">
-  <h2 style="margin:0 0 4px">What matters to you</h2>
-  <p class="muted" style="font-size:13px">
-    Slide toward <b>More</b> to make a factor count more in the KEEP / SEND-BACK rating.
-    Middle is neutral. A game rating under <b>{{ '%g'|format(cutoff) }}</b> is sent back.
-  </p>
+<div class="card how">
+  <h2 style="margin:0 0 8px">How games are rated</h2>
+  <p>You earn 5% of every ticket you sell, and the lottery pays back what you pay
+    out. So a game earns its box by selling.</p>
+  <p>Each game's score out of 100 is how well it sells across Pennsylvania compared
+    with the typical game at the same price. 100 means it sells at least as well as
+    the typical one; 20 means a fifth as well. <b>Under {{ '%g'|format(cutoff) }},
+    send it back.</b></p>
+  <p>Pennsylvania doesn't publish sales, but about once a week it posts how many of
+    each game's prizes are still unclaimed. Prizes are spread evenly through a game,
+    so they get claimed as fast as tickets sell. From the last five weeks of those
+    counts: prizes claimed a day ÷ prizes printed = the share of the game sold a
+    day, and times the tickets printed and the price, the dollars sold a day.</p>
+  <p class="muted">Prizes left, odds and top prizes are shown on every game for
+    information, but don't change the score: whatever customers make of them
+    already shows in what they buy.</p>
+</div>
 
-  <form method="post">
-    {% for s in sliders %}
-      <div class="slider-row">
-        <div class="slider-head">
-          <span class="slider-label">{{ s.label }}</span>
-          <span class="slider-pct">{{ '%.0f'|format(s.eff_pct) }}% of the decision</span>
-        </div>
-        <div class="slider-desc">{{ s.desc }}</div>
-        <input type="range" name="{{ s.key }}" min="-3" max="3" step="1" value="{{ s.value|int }}">
-        <div class="ends"><span>Ignore</span><span>Neutral</span><span>More</span></div>
+<div class="card">
+  <b>What "typical" is right now</b>
+  <div style="margin-top:8px">
+    {% for p in prices %}
+      <div class="prow">
+        <span>${{ '%g'|format(p.price) }} games ({{ p.games }})</span>
+        <span>typical {{ p.typical }}/day · send back under {{ p.line }}/day</span>
       </div>
+    {% else %}
+      <p class="muted">No sales measured yet.</p>
     {% endfor %}
-    <div class="row" style="margin-top:16px">
-      <button class="primary" type="submit">Save emphasis</button>
-      <a class="btn" href="{{ url_for('dashboard') }}">Back to dashboard</a>
-    </div>
-  </form>
+  </div>
+  {% if unmeasured %}
+    <p class="muted" style="font-size:12.5px;margin:10px 0 0">{{ unmeasured }} game{{ 's' if unmeasured != 1 }}
+      on sale can't be measured yet (usually too new). They stay until they can be.</p>
+  {% endif %}
+  <div class="row" style="margin-top:14px">
+    <a class="btn" href="{{ url_for('dashboard') }}">Back to dashboard</a>
+  </div>
 </div>
 {% endblock %}

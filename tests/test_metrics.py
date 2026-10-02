@@ -4,7 +4,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from lottery_tracker.model import Game  # noqa: E402
-from _games import verified  # noqa: E402
+from _games import selling, verified  # noqa: E402
 
 
 def super7s():
@@ -95,44 +95,47 @@ def test_significant_low_prize_outlier_is_caught():
     assert cheap["significant"] and cheap["z"] < -2
 
 
-def test_the_rating_is_one_combined_score_from_four_parts():
+def test_the_rating_is_sales_against_the_typical_game_at_its_price():
     from lottery_tracker.model import compare_with_peers
     from lottery_tracker.rules import RatingWeights, rate
+    games = {n: selling(Game(game_number=n, price=30, status="active"), d)
+             for n, d in (("a", 10_000), ("b", 40_000), ("c", 90_000))}
+    g = selling(mega_moolah(), 2_000)
+    games[g.game_number] = g
+    compare_with_peers(games)
+    assert g.peer_typical_sales == 25_000            # median of 2K, 10K, 40K, 90K
+    score, facts = rate(g, RatingWeights())
+    assert abs(score - 100 * 2_000 / 25_000) < 1e-9  # 8: sells 8% of typical
+    assert facts[0].key == "sales" and facts[0].weight == 100
+    # A strong seller stops at 100.
+    assert rate(games["c"])[0] == 100
+
+
+def test_prize_facts_are_shown_but_do_not_change_the_rating():
+    from lottery_tracker.model import compare_with_peers
+    from lottery_tracker.rules import rate
+    a = selling(mega_moolah(), 5_000)
+    b = selling(Game(game_number="b", price=30, status="active"), 20_000)
+    compare_with_peers({"a": a, "b": b})
+    score, facts = rate(a)
+    shown = {f.key: f for f in facts}
+    assert {"prizes_left", "win_back", "top_prizes", "odds"} <= set(shown)
+    assert all(shown[k].weight == 0 for k in ("prizes_left", "win_back", "top_prizes", "odds"))
+    # Gutting the prizes changes nothing: only sales decide.
+    a.prize_tiers = [{"value": t["value"], "remaining": 0} for t in a.prize_tiers]
+    assert rate(a)[0] == score
+
+
+def test_unmeasured_sales_mean_no_rating_and_say_why():
+    from lottery_tracker.model import compare_with_peers
+    from lottery_tracker.rules import Thresholds, rate, recommendation
     g = mega_moolah()
-    compare_with_peers({g.game_number: g})          # alone at its price: it's the best
-    score, factors = rate(g, RatingWeights())
-    f = {x.key: x for x in factors}
-    assert set(f) == {"prizes_left", "win_back", "top_prizes", "odds"}
-    medium = (6 + 4 + 237 + 2306 + 856) / (15 + 15 + 600 + 5960 + 2320)
-    assert abs(f["prizes_left"].score - 100 * medium) < 1e-9
-    assert abs(f["top_prizes"].score - 100 * 2 / 3) < 1e-9
-    assert f["win_back"].score == 100 and f["odds"].score == 100
-    expected = (40 * 100 * medium + 25 * 100 + 20 * 100 * 2 / 3 + 15 * 100) / 100
-    assert abs(score - expected) < 1e-9
-    # Zeroing a weight drops that part's influence entirely.
-    assert rate(g, RatingWeights(top_prizes=0))[0] != score
-
-
-def test_a_part_without_data_is_left_out_not_scored_zero():
-    from lottery_tracker.rules import RatingWeights, rate
-    g = mega_moolah()                               # no peers attached
-    score, factors = rate(g, RatingWeights())
-    f = {x.key: x for x in factors}
-    assert f["win_back"].score is None and f["odds"].score is None
-    assert "left out" in f["odds"].note or "hasn't published" in f["odds"].note
-    # The two parts that remain share all the weight.
-    medium = (6 + 4 + 237 + 2306 + 856) / (15 + 15 + 600 + 5960 + 2320)
-    assert abs(score - (40 * 100 * medium + 20 * 100 * 2 / 3) / 60) < 1e-9
-
-
-def test_emphasis_scales_weights_around_neutral():
-    from lottery_tracker.rules import RatingWeights
-    base = RatingWeights()
-    assert base.scaled({}).odds == base.odds
-    s = base.scaled({"prizes_left": 2, "top_prizes": -2})
-    assert s.prizes_left > base.prizes_left and s.top_prizes < base.top_prizes
-    assert s.cutoff == base.cutoff
-    assert abs(base.scaled({"odds": 1}).scaled({"odds": -1}).odds - base.odds) < 1e-9
+    g.sales_why = "PA has posted 1 prize count for this game in the last 35 days."
+    compare_with_peers({"x": g})
+    score, facts = rate(g)
+    assert score is None and facts[0].note == g.sales_why
+    action, reason = recommendation(g, Thresholds())
+    assert action == "keep" and g.sales_why in reason
 
 
 def _bulletin_game(num, price, odds, frac):

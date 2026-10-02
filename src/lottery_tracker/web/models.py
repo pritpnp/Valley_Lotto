@@ -140,10 +140,11 @@ class InventoryRow(Base):
 
 
 class EmphasisRow(Base):
-    """Per-store emphasis sliders for the KEEP/SEND-BACK rating.
+    """Per-store emphasis sliders from when the rating blended several parts.
 
-    One notch multiplies that factor's base weight by 1.6**notch (see
-    ``RatingWeights.scaled``). 0 = neutral; the UI clamps to -3..+3.
+    No longer read: the rating is now one thing, how well a game sells (see
+    ``rules.RatingWeights``), so there is nothing to weigh against anything else.
+    The table is left in place so no store's saved settings are ever dropped.
     """
 
     __tablename__ = "store_emphasis"
@@ -154,15 +155,8 @@ class EmphasisRow(Base):
     low_prize: Mapped[float] = mapped_column(Float, default=0.0)
     low_prize_skew: Mapped[float] = mapped_column(Float, default=0.0)
     jackpot_density: Mapped[float] = mapped_column(Float, default=0.0)
-    # The rating's current parts. (low_prize, low_prize_skew and jackpot_density
-    # belong to the old rating and are no longer read; left in place so no
-    # store's saved settings are ever dropped.)
     win_back: Mapped[float] = mapped_column(Float, default=0.0)
     top_prizes: Mapped[float] = mapped_column(Float, default=0.0)
-
-    def to_emphasis(self) -> dict:
-        from ..rules import RATING_FACTORS
-        return {f: float(getattr(self, f) or 0.0) for f in RATING_FACTORS}
 
 
 class ActiveCount(Base):

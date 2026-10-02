@@ -16,7 +16,7 @@ import os
 import sys
 
 from .model import Game
-from .rules import Alert, RatingWeights, rate
+from .rules import Alert, RatingWeights, money, rate
 
 API = "https://api.telegram.org/bot{token}/sendMessage"
 LIMIT = 4000          # Telegram's cap is 4096 characters per message
@@ -76,8 +76,8 @@ def send(text: str, *, formatted: bool = False) -> bool:
 
 
 def _rule(w: RatingWeights) -> str:
-    return (f"<i>Score under {w.cutoff:g} of 100: prizes left, wins more than it costs, "
-            f"top prizes left and odds, combined</i>")
+    return (f"<i>Sells under {w.cutoff:g}% of the typical game at its price, "
+            f"across PA</i>")
 
 
 def _score(g: Game, w: RatingWeights):
@@ -91,6 +91,10 @@ def send_back(games: dict[str, Game], w: RatingWeights | None = None) -> list[Ga
     low = [(g, _score(g, w)) for g in games.values() if g.status == "active"]
     low = [(g, s) for g, s in low if s is not None and s < w.cutoff]
     return [g for g, s in sorted(low, key=lambda gs: (gs[0].price or 0, gs[1]))]
+
+
+def _sells(g: Game) -> str:
+    return f" · {money(g.sales_per_day)}/day" if g.sales_per_day is not None else ""
 
 
 def _name(g_or_alert) -> str:
@@ -114,7 +118,7 @@ def low_games_list(games: dict[str, Game], w: RatingWeights | None = None) -> st
         if g.price != price:
             price = g.price
             lines += ["", _price(price)]
-        lines.append(_name(g))
+        lines.append(_name(g) + _sells(g))
     return "\n".join(lines)
 
 
@@ -157,7 +161,7 @@ def game_news(alerts: list[Alert], games: dict[str, Game],
     newly = newly_send_back(games, previous, w) if previous else []
     if newly:
         lines += [f"📉 Now send back ({len(newly)})", _rule(w)]
-        lines += [f"{_price(g.price)} {_name(g)}" for g in newly]
+        lines += [f"{_price(g.price)} {_name(g)}{_sells(g)}" for g in newly]
     return "\n".join(lines).strip()
 
 

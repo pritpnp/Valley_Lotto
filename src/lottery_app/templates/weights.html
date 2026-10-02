@@ -1,37 +1,15 @@
 {% extends "base.html" %}
-{% block title %}Emphasis · {{ store.name if store else 'Valley Lotto' }}{% endblock %}
+{% block title %}How games are rated · {{ store.name if store else 'Valley Lotto' }}{% endblock %}
 {% block content %}
-<h1>Emphasis</h1>
-<p class="muted">Tune what matters for <b>{{ store.name if store else 'this store' }}</b>. Each slider
-sits in the middle by default. Slide <b>right</b> to put MORE emphasis on a factor, <b>left</b> for LESS.
-This only changes this store — other stores keep their own settings.</p>
-
-<form method="post" action="/weights" class="card">
-  {% for s in sliders %}
-  <div class="slider-row">
-    <div class="slider-head">
-      <span class="slider-label">{{ s.label }}</span>
-      <span class="slider-pct" id="pct-{{ s.key }}">{{ '%.0f' % s.eff_pct }}% of the score</span>
-    </div>
-    <p class="muted slider-desc">{{ s.desc }}</p>
-    <div class="slider-track">
-      <span class="end">less</span>
-      <input type="range" name="{{ s.key }}" min="-3" max="3" step="1" value="{{ s.value|int }}"
-             oninput="this.nextElementSibling.nextElementSibling.textContent = (this.value>0?'+':'')+this.value">
-      <span class="end">more</span>
-      <span class="notch">{{ '+' if s.value > 0 else '' }}{{ s.value|int }}</span>
-    </div>
-  </div>
-  {% endfor %}
-  <div class="row" style="margin-top:14px">
-    <button type="submit" class="primary">Save emphasis</button>
-    <span class="muted">A game is sent back when its rating falls below {{ '%g' % cutoff }}/100.</span>
-  </div>
-</form>
-
-<p class="muted" style="font-size:13px;margin-top:16px">
-  Example: if your customers chase big jackpots and don't care about the odds of winning something small,
-  push <b>Top prizes left</b> right and <b>Wins anything</b> left. The percentages above show roughly how much
-  each factor will count toward the KEEP / SEND-BACK rating after you save.
-</p>
+<h1>How games are rated</h1>
+<div class="card">
+<p>A store earns 5% of every ticket it sells, and the lottery pays back what it pays out,
+so a game earns its box by selling.</p>
+<p>Each game's rating out of 100 is how well it sells across Pennsylvania against the
+typical game at the same price: 100 = at least as well as the typical one, 20 = a fifth
+as well. <b>Under {{ '%g' % cutoff }}, send it back.</b></p>
+<p class="muted">Sales come from PA's weekly prize counts: prizes claimed a day ÷ prizes
+printed = share of the game sold a day; times tickets printed and price = dollars a day.
+Prizes left, odds and top prizes are shown for information and don't change the rating.</p>
+</div>
 {% endblock %}

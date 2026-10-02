@@ -2,7 +2,7 @@
 
 Roles alone were too blunt. Some people need part of a manager's job — the one
 who receives deliveries, or the shift lead who settles a pack — without getting
-staff administration or pricing along with it. So a manager keeps everything by
+staff administration along with it. So a manager keeps everything by
 virtue of being a manager, and an employee gets exactly the boxes ticked next to
 their name.
 
@@ -35,8 +35,6 @@ CAPABILITIES = (
      "blurb": "Change which game is assigned to a box by hand."},
     {"key": "history", "label": "See history",
      "blurb": "Past days, per-game trends, and the change log."},
-    {"key": "pricing", "label": "Tune the ratings",
-     "blurb": "The emphasis sliders that decide keep vs send-back."},
     {"key": "staff", "label": "Manage staff PINs",
      "blurb": "Add people, reset PINs, and set these permissions. Hand out sparingly."},
     {"key": "access", "label": "See the access log",

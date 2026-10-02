@@ -54,11 +54,9 @@
   </tbody>
 </table>
 <p class="muted" style="font-size:13px">
-  <b>Rating (0–100)</b> = weighted blend of win odds, % of all prizes left, low-prize stock,
-  low-prize trend, and (when it's a real signal) jackpot density. Under the cutoff → SEND BACK.
-  <b>% left (all)</b> is Σ wins remaining ÷ Σ original wins across every tier — driven by the
-  abundant cheap prizes, not the noisy jackpot count. <b>Density n/s</b> = not statistically
-  significant, so it's ignored. Tune the weights in <code>config.yaml</code>.
+  <b>Rating (0–100)</b> = how well the game sells across PA (dollars of tickets a day, from
+  PA's weekly prize counts) against the typical game at its price, capped at 100. Under the
+  cutoff → SEND BACK. Prizes left and odds are shown for information only.
 </p>
 {% endif %}
 

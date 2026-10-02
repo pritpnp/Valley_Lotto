@@ -23,16 +23,13 @@ thresholds:
   top_prize_pct: 0.40        # 🟠 SWAP when fewer than 40% of the top prizes remain
   top_prize_count_floor: 1   # OR when the top prize is down to its last 1 (and depleting)
 
-# KEEP vs SEND BACK is one 0-100 rating combining four parts, each a figure PA
-# publishes, scored 0-100. A game is SENT BACK when its rating falls below
-# `cutoff`. Change the weights to say what matters most (0 ignores a part). A
-# part PA's figures can't support is left out, and the rest share its weight.
+# KEEP vs SEND BACK is one 0-100 rating: how well a game sells across PA (its
+# dollars of tickets a day, measured from PA's weekly prize counts) against the
+# typical game at its price, capped at 100. 100 = sells at least as well as the
+# typical game at its price; 20 = a fifth as well. A game is SENT BACK when its
+# rating falls below `cutoff`. See src/lottery_tracker/sales.py for the method.
 rating_weights:
-  prizes_left: 40          # reported prizes still out there, top prize aside (counts most)
-  win_back: 25             # how often a ticket wins more than it cost, vs the best at its price
-  top_prizes: 20           # top prizes still out there (counts, but less)
-  odds: 15                 # how often a ticket wins anything, vs the best at its price
-  cutoff: 50               # rating below this -> SEND BACK
+  cutoff: 20               # sells under 20% of the typical game at its price -> SEND BACK
 
 # If true, evaluate the low-prize rule for EVERY active game (useful for spotting
 # fresh games worth stocking) using the estimated original count. True original
