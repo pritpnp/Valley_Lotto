@@ -106,18 +106,44 @@ def sales_vs_typical(game: Game) -> float | None:
     return s / t
 
 
-def rate(game: Game, weights: "RatingWeights | None" = None) -> tuple[float | None, list[Factor]]:
+def _own_ok(own) -> bool:
+    """A store's own figure (store_sales.StoreSales) is used when there is one
+    and its typical box sells something to compare with."""
+    return own is not None and own.typical > 0
+
+
+def rate(game: Game, weights: "RatingWeights | None" = None, *,
+         own=None) -> tuple[float | None, list[Factor]]:
     """Rate a game 0–100 on how well it sells (see ``RatingWeights``).
 
     Returns (rating, facts). ``rating`` is None when its sales couldn't be
     measured; the first fact says why. The typical sales at its price come from
     ``model.compare_with_peers``, which runs whenever games are loaded.
+
+    ``own`` is the store's own figure for this game (store_sales.StoreSales),
+    when the store has counted long enough. It then decides instead, against
+    the store's own typical box at the price, and PA-wide sales are shown for
+    information.
     """
     price = f"${game.price:g}" if game.price is not None else "this price"
     facts: list[Factor] = []
 
     ratio = sales_vs_typical(game)
-    if ratio is not None:
+    if _own_ok(own):
+        r = own.per_box_day / own.typical
+        facts.append(Factor(
+            "sales", "Sales", _clamp(100 * r), 100.0, f"{money(own.per_box_day)} a box a day",
+            f"In your store this game sells about {money(own.per_box_day)} a box a day, "
+            f"from {own.box_days} counted box-days over the last {own.days} days you "
+            f"counted. Your typical {price} box sells {money(own.typical)} a day, so this "
+            f"one sells {r:.0%} as much."))
+        if ratio is not None:
+            facts.append(Factor(
+                "pa_sales", "Sales across PA", None, 0.0, f"{money(game.sales_per_day)} a day",
+                f"Across Pennsylvania it sells about {money(game.sales_per_day)} a day, "
+                f"{ratio:.0%} of the typical {price} game. For information: your own "
+                f"store's sales decide the rating."))
+    elif ratio is not None:
         s, t = game.sales_per_day, game.peer_typical_sales
         pm = (f" (give or take {game.sales_uncertainty:.0%})"
               if game.sales_uncertainty is not None else "")
@@ -182,7 +208,7 @@ class Alert:
 
 
 def recommendation(
-    game: Game, th: Thresholds, weights: "RatingWeights | None" = None
+    game: Game, th: Thresholds, weights: "RatingWeights | None" = None, *, own=None
 ) -> tuple[str, str]:
     """One clear call per game: ("keep" | "send_back", reason).
 
@@ -195,13 +221,18 @@ def recommendation(
         return ("send_back", f"Pennsylvania stopped selling this game{when}. Pull it.")
 
     w = weights or RatingWeights()
-    score, facts = rate(game, w)
+    score, facts = rate(game, w, own=own)
     if score is None:
         return ("keep", f"{facts[0].note} It stays until it can be.")
-    ratio = sales_vs_typical(game)
     price = f"${game.price:g}" if game.price is not None else "this price"
-    said = (f"Sells {money(game.sales_per_day)} a day across PA, {ratio:.0%} of the "
-            f"typical {price} game ({money(game.peer_typical_sales)}).")
+    if _own_ok(own):
+        said = (f"Sells {money(own.per_box_day)} a box a day in your store, "
+                f"{own.per_box_day / own.typical:.0%} of your typical {price} box "
+                f"({money(own.typical)}).")
+    else:
+        said = (f"Sells {money(game.sales_per_day)} a day across PA, "
+                f"{sales_vs_typical(game):.0%} of the typical {price} game "
+                f"({money(game.peer_typical_sales)}).")
     if score < w.cutoff:
         return ("send_back", f"{said} Under {w.cutoff:.0f}% means send it back.")
     return ("keep", said)

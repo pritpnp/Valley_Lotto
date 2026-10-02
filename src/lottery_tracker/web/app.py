@@ -1154,7 +1154,8 @@ def _register_routes(app: Flask):
         cat = _catalog()
         weights, cfg = _effective_weights()
         rated = {r["game_number"]: r for r in
-                 pa_data.store_rows(cat, _inventory(), cfg.thresholds, weights)}
+                 pa_data.store_rows(cat, _inventory(), cfg.thresholds, weights,
+                                    own=_own_sales())}
 
         rows = []
         for game in sorted(set(held) | set(on_floor)):
@@ -1699,7 +1700,8 @@ def _register_routes(app: Flask):
             inv = {r.game_number for r in _db().scalars(
                 select(InventoryRow).where(InventoryRow.store == st.slug)).all()}
             weights = cfg_obj.rating_weights
-            srows = pa_data.store_rows(_catalog(), inv, cfg_obj.thresholds, weights)
+            srows = pa_data.store_rows(_catalog(), inv, cfg_obj.thresholds, weights,
+                                       own=_own_sales(st.slug, st.timezone))
             summary = pa_data.store_summary(srows)
 
             log = _store_log(st.slug)
@@ -2122,6 +2124,44 @@ def _register_routes(app: Flask):
         except Exception:  # noqa: BLE001 — a bad config must not take the app down
             return Config({})
 
+    _own_cache: dict = {}
+
+    def _own_sales(slug=None, tz=None) -> dict:
+        """{game number: StoreSales} from this store's own counts (see
+        store_sales.py); empty until the store has counted long enough.
+
+        Worked out from the last four weeks of daily reports, today left out
+        because it isn't over. Kept for ten minutes, or until a count is added,
+        so pages don't redo a month of reports on every view.
+        """
+        from sqlalchemy import func
+        from ..store_sales import WINDOW_DAYS, measure
+        slug = slug or _store()
+        tz = tz if tz is not None else _store_tz()
+        n, last = _db().execute(select(func.count(ScanRow.id), func.max(ScanRow.id))
+                                .where(ScanRow.store == slug)).one()
+        if not n:
+            return {}
+        today = _today(tz)
+        key = (slug, n, last, today, int(datetime.now(timezone.utc).timestamp() // 600))
+        if key in _own_cache:
+            return _own_cache[key]
+        log = _store_log(slug)
+        dates = set(_recent_dates(today, WINDOW_DAYS))
+        try:
+            resolver = Config.load(str(ROOT / "config.yaml")).pack_resolver()
+        except Exception:  # noqa: BLE001 — a bad config must not take the page down
+            resolver = None
+        prices, opened = _load_prices(), _packs_opened_by_date(slug)
+        days = sorted({business_date(sc.scanned_at, tz) for sc in log.scans} & dates)
+        reports = [daily_report(log, d, prices=prices, resolver=resolver, store=slug, tz=tz,
+                                packs_opened=opened.get(d)) for d in days]
+        out = measure(reports)
+        for k in [k for k in _own_cache if k[0] == slug]:
+            del _own_cache[k]           # one entry per store; never grows
+        _own_cache[key] = out
+        return out
+
     def _effective_weights():
         """The rating's settings (the send-back line) from config.yaml."""
         cfg = _cfg()
@@ -2144,7 +2184,7 @@ def _register_routes(app: Flask):
         cat = _catalog()
         inv = _inventory()
         weights, cfg = _effective_weights()
-        rows = pa_data.store_rows(cat, inv, cfg.thresholds, weights)
+        rows = pa_data.store_rows(cat, inv, cfg.thresholds, weights, own=_own_sales())
         return render_template(
             "dashboard.html", email=session.get("email"),
             night_due=_night_reminder(),
@@ -2199,7 +2239,8 @@ def _register_routes(app: Flask):
         boxes = _box_map()
         weights, cfg = _effective_weights()
         rated = {r["game_number"]: r for r in
-                 pa_data.store_rows(cat, _inventory(), cfg.thresholds, weights)}
+                 pa_data.store_rows(cat, _inventory(), cfg.thresholds, weights,
+                                    own=_own_sales())}
 
         rows = []
         for slot in _store_slots():
@@ -2276,7 +2317,8 @@ def _register_routes(app: Flask):
     def _row_for(game_number: str) -> dict | None:
         """One game flattened the same way the dashboard flattens it."""
         weights, cfg = _effective_weights()
-        rows = pa_data.store_rows(_catalog(), {game_number}, cfg.thresholds, weights)
+        rows = pa_data.store_rows(_catalog(), {game_number}, cfg.thresholds, weights,
+                                  own=_own_sales())
         return rows[0] if rows else None
 
     def _swap_options(price, n: int = 2) -> dict:
@@ -2340,8 +2382,9 @@ def _register_routes(app: Flask):
                     "jackpot_density": None, "jackpot_significant": False,
                     "sales_end_date": None}
 
-        action, reason = recommendation(g, cfg.thresholds, weights)
-        rating, factors = rate(g, weights)
+        own = _own_sales().get(game_number)
+        action, reason = recommendation(g, cfg.thresholds, weights, own=own)
+        rating, factors = rate(g, weights, own=own)
         total = sum(f.weight for f in factors if f.score is not None and f.weight > 0)
         rows = []
         for f in factors:
