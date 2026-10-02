@@ -1,10 +1,17 @@
 name: Send the send-back list to Telegram
 
-# Press "Run workflow" in the Actions tab for the current list of games on sale
-# rated under 50 out of 100: the same rating the app shows. (Games that newly
-# drop under the line are also announced by the twice-daily run.)
+# Every morning, the games on sale to send back: those selling under 20% of the
+# typical game at their price across PA, the same rating the app shows. Press
+# "Run workflow" in the Actions tab to get it any other time. (Games that newly
+# drop under the line are also announced by the twice-daily data run.)
 
 on:
+  schedule:
+    # Once a day, before the store opens: 7:52am Eastern in summer, 6:52am in
+    # winter (GitHub's schedule runs on UTC, which doesn't change with the
+    # clocks). It reads the data from the midnight run. GitHub sometimes starts
+    # scheduled jobs a few minutes late.
+    - cron: "52 11 * * *"
   workflow_dispatch: {}
 
 jobs:
