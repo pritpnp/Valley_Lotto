@@ -69,17 +69,19 @@ def test_the_rating_breakdown_is_on_the_box_page(client, a_real_game):
     _fill(client, "1", a_real_game)
     html = client.get("/inventory/box/1").data.decode()
     assert "Why this box is" in html
-    assert "of this game&#39;s score" in html or "of this game's score" in html
-    for part in ("Prizes left", "Wins more than it costs", "Top prizes left", "Wins anything"):
+    # Sales decide; the prize facts are there for information.
+    for part in ("Sales", "Prizes left", "Wins more than it costs", "Top prizes left",
+                 "Wins anything"):
         assert part in html, part
 
 
 def test_the_breakdown_explains_each_part_in_plain_words(client, a_real_game):
     _fill(client, "1", a_real_game)
     html = client.get("/inventory/box/1").data.decode()
-    assert "What do these four things mean?" in html
-    assert "counts the most" in html.replace("\n        ", " ")
-    assert "lose its jackpot and still" in html.replace("\n        ", " ")
+    text = " ".join(html.split())
+    assert "How is this worked out?" in html
+    assert "You earn 5% of every ticket you sell" in text
+    assert "prizes claimed a day ÷ prizes printed" in text
     assert "Jackpot density" not in html and "Low-prize trend" not in html
 
 
@@ -285,9 +287,8 @@ def test_every_game_opens_its_own_page(client, a_real_game):
 def test_a_game_page_carries_the_same_breakdown_as_a_box(client, a_real_game):
     html = client.get(f"/catalog/{a_real_game}").data.decode()
     assert "Why this game is" in html
-    assert "Wins anything" in html
-    assert "of this game's score" in html
-    assert "What do these four things mean?" in html
+    assert "Sales" in html and "Wins anything" in html
+    assert "How is this worked out?" in html
 
 
 def test_a_game_page_says_where_the_store_has_it(client, a_real_game):

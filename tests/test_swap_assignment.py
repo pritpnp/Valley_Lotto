@@ -7,22 +7,30 @@ next-best, and the rest get "nothing better at this price".
 from lottery_tracker.model import Game
 from lottery_tracker.rules import RatingWeights, Thresholds
 from lottery_app.pa_data import Catalog, store_rows
-from _games import verified
+from _games import selling, verified
+
+TYPICAL = 50_000      # the typical game's sales a day, at every price here
+SELLS = {"1:3.0": 90_000, "1:3.1": 85_000, "1:3.2": 80_000, "1:3.6": 60_000}
 
 
 def _poor(num, price, left):
-    """A picked-over game: only `left` of 100 cheap prizes remain."""
-    return verified(Game(game_number=num, price=price, status="active", odds="1:4.9",
-                         prize_tiers=[{"value": f"${price}", "remaining": left}],
-                         tier_originals={f"{float(price)}": 100}))
+    """A slow seller: `left` hundred dollars a day, far under the line."""
+    g = selling(verified(Game(game_number=num, price=price, status="active", odds="1:4.9",
+                              prize_tiers=[{"value": f"${price}", "remaining": left}],
+                              tier_originals={f"{float(price)}": 100})), left * 100)
+    g.peer_typical_sales = TYPICAL
+    return g
 
 
 def _fresh(num, price, odds):
-    """A fresh game worth bringing in; better odds rate higher."""
-    return verified(Game(game_number=num, price=price, status="active", odds=odds,
-                         prize_tiers=[{"value": "$100", "remaining": 9},
-                                      {"value": f"${price}", "remaining": 9000}],
-                         tier_originals={"100.0": 10, f"{float(price)}": 10000}))
+    """A strong seller worth bringing in; the better-odds ones here sell more."""
+    g = selling(verified(Game(game_number=num, price=price, status="active", odds=odds,
+                              prize_tiers=[{"value": "$100", "remaining": 9},
+                                           {"value": f"${price}", "remaining": 9000}],
+                              tier_originals={"100.0": 10, f"{float(price)}": 10000})),
+                SELLS[odds])
+    g.peer_typical_sales = TYPICAL
+    return g
 
 
 def _swaps(games, carried):

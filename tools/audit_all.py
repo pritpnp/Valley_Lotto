@@ -35,6 +35,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "src"))
 
+from lottery_tracker import sales  # noqa: E402
 from lottery_tracker.model import Game  # noqa: E402
 from lottery_tracker.rules import RatingWeights, Thresholds, evaluate, rate, recommendation  # noqa: E402
 from lottery_tracker.notify import render_report  # noqa: E402
@@ -107,7 +108,7 @@ def history(days: int, ref: str) -> list[tuple[str, dict]]:
 # --- per-version checks --------------------------------------------------------
 
 def check_version(stamp: str, raw: dict | None, prev: dict[str, Game] | None,
-                  f: Findings) -> dict[str, Game]:
+                  f: Findings, readings: list | None = None) -> dict[str, Game]:
     if raw is None:
         f.add("DATA state file unreadable", stamp)
         return prev or {}
@@ -119,6 +120,13 @@ def check_version(stamp: str, raw: dict | None, prev: dict[str, Game] | None,
             _crash(f, "load", num, e)
 
     from lottery_tracker.model import compare_with_peers
+    # Sales a day as the tracker would have measured them at this version, from
+    # PA's postings up to it (older versions didn't save the figure).
+    if readings is not None:
+        try:
+            sales.attach(games, readings)
+        except Exception as e:  # noqa: BLE001
+            _crash(f, "sales", stamp, e)
     compare_with_peers(games)
     th, w = Thresholds(), RatingWeights()
     for num in sorted(games):
@@ -196,7 +204,7 @@ def data_checks(g: Game, tag: str, f: Findings) -> None:
                   {"at": tag, "stated": g.payout_pct, "table gives": round(comp, 1)})
 
 
-TABLE_FACTORS = ("prizes_left", "win_back", "top_prizes")
+TABLE_FACTORS = ("sales", "prizes_left", "win_back", "top_prizes")
 
 
 def rule_checks(g: Game, tag: str, f: Findings) -> None:
@@ -217,6 +225,20 @@ def rule_checks(g: Game, tag: str, f: Findings) -> None:
                       {"at": tag, "pair": pair, "printed for that prize": printed})
             if not trusted:
                 f.add("CODE top-prize figure from an untrusted table", tag)
+        if g.sales_per_day is not None:
+            if not trusted:
+                f.add("CODE sales measured from a prize table that contradicts PA", tag)
+            if g.sales_per_day < 0 or math.isnan(g.sales_per_day):
+                f.add("CODE sales a day below zero or not a number",
+                      {"at": tag, "sales": g.sales_per_day})
+            if g.sales_readings < sales.MIN_READINGS or g.sales_days < sales.MIN_DAYS:
+                f.add("CODE sales measured from too few of PA's postings",
+                      {"at": tag, "readings": g.sales_readings, "days": g.sales_days})
+            if g.sales_uncertainty is not None and g.sales_uncertainty > sales.MAX_UNCERTAINTY:
+                f.add("CODE sales used despite counts too uneven to read",
+                      {"at": tag, "uncertainty": g.sales_uncertainty})
+        elif g.status == "active" and not g.sales_why and g.sales_readings:
+            f.add("CODE sales left unmeasured without saying why", tag)
         pct = g.top_prize_pct_remaining
         if _bad_number(None if pct is None else 100 * pct):
             f.add("CODE top-prize share not a number from 0 to 100%", {"at": tag, "pct": pct})
@@ -298,8 +320,11 @@ def main() -> None:
         versions.append(("current checkout", json.loads((ROOT / "data" / "state.json").read_text())))
     prev = None
     games_seen = set()
+    readings: list = []
     for stamp, raw in versions:
-        prev = check_version(stamp, raw, prev, f)
+        if raw and raw.get("captured_at"):
+            sales.extend(readings, raw)
+        prev = check_version(stamp, raw, prev, f, readings)
         games_seen |= set(prev)
     pages = 0 if a.no_app else check_app(f)
 

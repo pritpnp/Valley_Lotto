@@ -4,7 +4,7 @@ from lottery_tracker import telegram
 from lottery_tracker.model import Game
 from lottery_tracker.rules import Alert, Severity
 
-from _games import verified
+from _games import selling, verified
 
 TOKEN = "123456:SECRET-TOKEN"
 
@@ -109,22 +109,30 @@ def _peers(d):
     return compare_with_peers(d)
 
 
-def test_a_game_with_its_jackpot_gone_but_prizes_left_is_kept():
-    # 80% of prizes left, no top prizes: 0.4*80 + 0.25*100 + 0.2*0 + 0.15*100 = 72
-    games = _peers({"1": _game("1", 5, med_left=800, top_left=0), "2": _game("2", 5, med_left=100)})
+def _seller(num, price, per_day, name=None):
+    return selling(Game(game_number=num, name=name or f"Game {num}", price=price,
+                        status="active"), per_day)
+
+
+def test_a_game_that_sells_is_kept_whatever_its_prizes_look_like():
+    # Game 1 has had every prize claimed but still sells; game 2 is fresh but doesn't.
+    g1 = selling(_game("1", 5, med_left=0, top_left=0), 50_000)
+    g2 = selling(_game("2", 5, med_left=1000, top_left=5), 1_000)
+    games = _peers({"1": g1, "2": g2, "3": _seller("3", 5, 40_000)})
     assert [g.game_number for g in telegram.send_back(games)] == ["2"]
 
 
 def test_the_list_is_just_prices_and_games():
-    games = _peers({"1": _game("1", 5, med_left=60, name="Goat Load"), "2": _game("2", 5, med_left=900),
-                    "3": _game("3", 10, med_left=50, name="Six Figures"),
-                    "4": _game("4", 5, med_left=70, name="Keys & Cash")})
+    games = _peers({"1": _seller("1", 5, 2_000, "Goat Load"), "2": _seller("2", 5, 50_000),
+                    "4": _seller("4", 5, 3_000, "Keys & Cash"), "5": _seller("5", 5, 60_000),
+                    "3": _seller("3", 10, 1_000, "Six Figures"), "6": _seller("6", 10, 40_000),
+                    "7": _seller("7", 10, 50_000)})
     assert telegram.low_games_list(games) == (
         "📉 Send back (3)\n"
-        "<i>Score under 50 of 100: prizes left, wins more than it costs, top prizes left "
-        "and odds, combined</i>\n"
-        "\n<u>$5</u>\n<b>Goat Load #1</b>\n<b>Keys &amp; Cash #4</b>\n"   # PA's "&" escaped
-        "\n<u>$10</u>\n<b>Six Figures #3</b>")
+        "<i>Sells under 20% of the typical game at its price, across PA</i>\n"
+        "\n<u>$5</u>\n<b>Goat Load #1</b> · $2,000/day\n"
+        "<b>Keys &amp; Cash #4</b> · $3,000/day\n"                     # PA's "&" escaped
+        "\n<u>$10</u>\n<b>Six Figures #3</b> · $1,000/day")
 
 
 def test_formatted_messages_tell_telegram_so(monkeypatch):
@@ -135,10 +143,13 @@ def test_formatted_messages_tell_telegram_so(monkeypatch):
 
 
 def test_a_game_is_announced_once_when_it_drops_under_the_line():
-    before = _peers({"1": _game("1", 5, med_left=250), "2": _game("2", 5, med_left=100)})   # 54, 48
-    after = _peers({"1": _game("1", 5, med_left=100), "2": _game("2", 5, med_left=90)})     # 48, 47.6
+    def at(one, two):
+        return _peers({"1": _seller("1", 5, one), "2": _seller("2", 5, two),
+                       "3": _seller("3", 5, 40_000), "4": _seller("4", 5, 40_000)})
+    before = at(9_000, 4_000)       # typical 24,500: 1 at 37% (kept), 2 at 16% (under)
+    after = at(4_000, 3_000)        # typical 22,000: 1 drops to 18%
     assert [g.game_number for g in telegram.newly_send_back(after, before)] == ["1"]
     msg = telegram.game_news([], after, before)
-    assert "📉 Now send back (1)" in msg and "<u>$5</u> <b>Game 1 #1</b>" in msg
+    assert "📉 Now send back (1)" in msg and "<u>$5</u> <b>Game 1 #1</b> · $4,000/day" in msg
     assert "Game 2" not in msg
     assert telegram.game_news([], after, after) == ""          # nothing new, no message

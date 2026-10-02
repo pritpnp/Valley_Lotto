@@ -14,7 +14,8 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from lottery_tracker.model import Game
-from lottery_tracker.rules import RatingWeights, Thresholds, rate, recommendation
+from lottery_tracker.rules import (RatingWeights, Thresholds, money, rate, recommendation,
+                                   sales_vs_typical)
 from lottery_tracker.state import load_state
 
 
@@ -47,10 +48,12 @@ def _pct(x: float | None) -> str:
     return "—" if x is None else f"{min(1.0, x):.0%}"
 
 
-def _row(g: Game, th: Thresholds, weights: RatingWeights) -> dict:
-    """Flatten one game into the fields the dashboard template renders."""
-    action, reason = recommendation(g, th, weights)
-    rating, _factors = rate(g, weights)
+def _row(g: Game, th: Thresholds, weights: RatingWeights, own=None) -> dict:
+    """Flatten one game into the fields the dashboard template renders. ``own``:
+    the store's own sales figure for it (store_sales.StoreSales), if any."""
+    action, reason = recommendation(g, th, weights, own=own)
+    rating, _factors = rate(g, weights, own=own)
+    here = own is not None and own.typical > 0
     # "Prizes left" everywhere is the same figure the rating uses: PA's reported
     # prizes still out there, top prize aside.
     pct_all = g.medium_pct_remaining
@@ -64,6 +67,12 @@ def _row(g: Game, th: Thresholds, weights: RatingWeights) -> dict:
         "reason": reason,
         "rating": rating,
         "rating_str": "—" if rating is None else f"{rating:.0f}",
+        "sales_per_day": g.sales_per_day,
+        "sales_str": "—" if g.sales_per_day is None else f"{money(g.sales_per_day)}/day",
+        "sales_vs_typical": sales_vs_typical(g),
+        # Decided on the store's own counts rather than PA-wide sales.
+        "sales_here": here,
+        "store_sales_str": f"{money(own.per_box_day)}/box/day" if here else None,
         "odds": g.odds,
         "odds_value": g.odds_value,
         "pct_all": pct_all,
@@ -85,7 +94,7 @@ def _row(g: Game, th: Thresholds, weights: RatingWeights) -> dict:
 
 
 def store_rows(catalog: Catalog, inventory: set[str], th: Thresholds,
-               weights: RatingWeights | None = None) -> list[dict]:
+               weights: RatingWeights | None = None, own: dict | None = None) -> list[dict]:
     """Dashboard rows for the games a store carries.
 
     Includes inventory games even if they've vanished from the catalog (so the
@@ -103,6 +112,7 @@ def store_rows(catalog: Catalog, inventory: set[str], th: Thresholds,
                 "status": "unknown", "action": "send_back",
                 "reason": "not found in PA catalog — likely ended, verify and pull",
                 "rating": None, "rating_str": "—",
+                "sales_per_day": None, "sales_str": "—", "sales_vs_typical": None,
                 "odds": None, "odds_value": None, "pct_all": None, "pct_all_str": "—",
                 "low_prize_pct": None, "low_prize_str": "—",
                 "jackpot_density": None, "jackpot_significant": False, "top_prize_value": None,
@@ -110,10 +120,11 @@ def store_rows(catalog: Catalog, inventory: set[str], th: Thresholds,
                 "sales_end_date": None,
             })
         else:
-            rows.append(_row(g, th, weights))
+            rows.append(_row(g, th, weights, (own or {}).get(num)))
     _assign_swaps(rows, catalog, inventory, th, weights)
     rows.sort(key=lambda r: (r["action"] != "send_back",
-                             r["rating"] if r["rating"] is not None else 999))
+                             r["rating"] if r["rating"] is not None else 999,
+                             r["sales_per_day"] or 0))
     return rows
 
 
@@ -134,7 +145,9 @@ def _assign_swaps(rows: list[dict], catalog: Catalog, inventory: set[str],
         if r["action"] == "send_back" and r.get("price") is not None:
             by_price.setdefault(r["price"], []).append(r)
     for price, sending in by_price.items():
-        sending.sort(key=lambda r: r["rating"] if r["rating"] is not None else -1)
+        # Worst first: lowest rating, then slowest PA-wide.
+        sending.sort(key=lambda r: (r["rating"] if r["rating"] is not None else -1,
+                                    r["sales_per_day"] if r["sales_per_day"] is not None else -1))
         best_first = swap_targets(catalog, inventory, price, th, weights, n=len(sending))
         for r, swap in zip(sending, best_first):
             r["swap_to"] = [swap]
@@ -155,7 +168,8 @@ def catalog_rankings(
         row = _row(g, th, weights)
         row["carried"] = g.game_number in inv
         rows.append(row)
-    rows.sort(key=lambda r: (r["rating"] if r["rating"] is not None else -1), reverse=True)
+    rows.sort(key=lambda r: (r["rating"] if r["rating"] is not None else -1,
+                             r["sales_per_day"] or 0), reverse=True)
     return rows
 
 
@@ -179,7 +193,9 @@ def swap_targets(
         if row["rating"] is None or row["rating"] < weights.cutoff:
             continue
         cands.append(row)
-    cands.sort(key=lambda r: r["rating"], reverse=True)
+    # Best seller first. The rating stops at 100, so it can't tell two strong
+    # sellers apart; their sales a day can.
+    cands.sort(key=lambda r: r["sales_per_day"], reverse=True)
     return cands[:n]
 
 
@@ -193,25 +209,21 @@ def bring_in_candidates(
     catalog: Catalog, inventory: set[str], th: Thresholds,
     *, weights: RatingWeights | None = None, min_left: float = 0.6, per_price: int = 4,
 ) -> dict[float, list[dict]]:
-    """Best fresh games to BRING IN, grouped by price point.
-
-    Catalog-wide: any active game NOT already carried, with strong odds and a high
-    share of prizes still in the pack (robust % remaining). Ranked by odds (best
-    first) within each price. Returns {price: [rows]} for the "bring in" board.
-    """
+    """Best games to BRING IN, grouped by price point: games on sale that you
+    don't carry, rated at or above the cutoff, best sellers first.
+    Returns {price: [rows]}, dearest price first. ``min_left`` is no longer
+    used (selling decides) and is accepted so older callers keep working."""
     weights = weights or RatingWeights()
     by_price: dict[float, list[dict]] = {}
     for g in catalog.games.values():
         if g.status != "active" or g.game_number in inventory or g.price is None:
             continue
-        left = g.overall_pct_remaining
-        if left is None or left < min_left:
+        row = _row(g, th, weights)
+        if row["rating"] is None or row["rating"] < weights.cutoff:
             continue
-        if th.weak_odds is not None and g.odds_value is not None and g.odds_value > th.weak_odds:
-            continue
-        by_price.setdefault(g.price, []).append(_row(g, th, weights))
+        by_price.setdefault(g.price, []).append(row)
     for price, rows in by_price.items():
-        rows.sort(key=lambda r: (r["odds_value"] is None, r["odds_value"] or 9e9))
+        rows.sort(key=lambda r: r["sales_per_day"], reverse=True)
         by_price[price] = rows[:per_price]
     return dict(sorted(by_price.items(), key=lambda kv: -kv[0]))
 

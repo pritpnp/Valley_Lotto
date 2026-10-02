@@ -40,7 +40,7 @@
     {% for r in rows %}
       <a class="bx {{ 'empty' if not r.game_number
                      else ('send' if r.rated and r.rated.action == 'send_back'
-                           else ('keep' if r.rated and r.rated.rating and r.rated.rating >= 65 else '')) }}"
+                           else ('keep' if r.rated and r.rated.rating and r.rated.rating >= 50 else '')) }}"
          href="{{ url_for('inventory_box', slot=r.slot) }}">
         <div class="n">BOX {{ r.slot }}</div>
         {% if r.game_number %}

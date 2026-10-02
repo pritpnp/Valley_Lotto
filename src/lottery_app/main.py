@@ -23,7 +23,7 @@ from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
 
 from lottery_tracker.config import Config
-from lottery_tracker.rules import RATING_FACTORS, Thresholds
+from lottery_tracker.rules import Thresholds
 
 from . import db
 from .auth import hash_password, verify_password
@@ -35,14 +35,6 @@ from .pa_data import (
     store_rows,
     store_summary,
 )
-
-# Friendly labels + descriptions for the emphasis sliders.
-FACTOR_LABELS = {
-    "prizes_left": ("Prizes left", "How much of the game's reported prizes haven't been won (top prize aside)"),
-    "win_back": ("Wins more than it costs", "How often a ticket pays back more than its price"),
-    "top_prizes": ("Top prizes left", "How many of the top prizes are still out there"),
-    "odds": ("Wins anything", "How often a ticket wins at all"),
-}
 
 # --- paths / config ---------------------------------------------------------
 # Resolved at call time (not import time) so the running process — and tests —
@@ -108,10 +100,10 @@ def require_user(request: Request, conn=Depends(get_db)) -> dict:
 
 
 def effective_weights(conn, store_id: int):
-    """Base config weights with this store's emphasis sliders applied."""
+    """The rating's settings (the send-back line) from config.yaml. The rating
+    is one thing, how well a game sells, so there are no per-store sliders."""
     cfg = _config()
-    emphasis = db.get_emphasis(conn, store_id)
-    return cfg.rating_weights.scaled(emphasis), cfg
+    return cfg.rating_weights, cfg
 
 
 def active_store_id(request: Request, user: dict) -> int:
@@ -227,47 +219,15 @@ def catalog_page(request: Request, conn=Depends(get_db), user: dict = Depends(re
 
 @app.get("/weights", response_class=HTMLResponse)
 def weights_page(request: Request, conn=Depends(get_db), user: dict = Depends(require_user)):
+    """How games are rated (read-only: nothing to tune)."""
     sid = active_store_id(request, user)
     store = db.get_store(conn, sid)
-    emphasis = db.get_emphasis(conn, sid)
     cfg = _config()
-    effective = cfg.rating_weights.scaled(emphasis)
-    # Build slider rows with the resulting effective weight (as a %, for feedback).
-    base = cfg.rating_weights
-    eff_total = sum(getattr(effective, f) for f in RATING_FACTORS) or 1.0
-    sliders = []
-    for f in RATING_FACTORS:
-        label, desc = FACTOR_LABELS[f]
-        sliders.append({
-            "key": f, "label": label, "desc": desc,
-            "value": emphasis.get(f, 0.0),
-            "base": getattr(base, f),
-            "eff_pct": 100 * getattr(effective, f) / eff_total,
-        })
     return templates.TemplateResponse(
         request, "weights.html",
         {"user": user, "store": dict(store) if store else None,
-         "sliders": sliders, "cutoff": cfg.rating_weights.cutoff},
+         "cutoff": cfg.rating_weights.cutoff},
     )
-
-
-@app.post("/weights")
-def weights_save(
-    request: Request,
-    prizes_left: float = Form(0.0),
-    win_back: float = Form(0.0),
-    top_prizes: float = Form(0.0),
-    odds: float = Form(0.0),
-    conn=Depends(get_db),
-    user: dict = Depends(require_user),
-):
-    sid = active_store_id(request, user)
-    emphasis = {"prizes_left": prizes_left, "win_back": win_back,
-                "top_prizes": top_prizes, "odds": odds}
-    # Clamp sliders to a sane range (−3..+3 notches).
-    emphasis = {k: max(-3.0, min(3.0, v)) for k, v in emphasis.items()}
-    db.set_emphasis(conn, sid, emphasis)
-    return RedirectResponse("/weights", 303)
 
 
 @app.get("/inventory", response_class=HTMLResponse)

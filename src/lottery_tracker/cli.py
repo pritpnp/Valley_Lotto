@@ -16,7 +16,7 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-from . import fetch, parse
+from . import fetch, parse, sales
 from .config import Config
 from .model import compare_with_peers, merge_games, update_change_tracking
 from . import telegram
@@ -191,7 +191,12 @@ def run(argv: list[str] | None = None) -> int:
     _enrich_with_originals(current, targets, originals, offline=args.offline,
                            save_html=args.save_html, max_new_fetches=cfg.max_new_fetches)
     save_originals(DATA_DIR / "originals.json", originals)
-    # Each game's rating compares it with the best on sale at its price.
+    # How fast each game sells, from PA's prize counts over the last few weeks
+    # (every saved snapshot plus this run). Then each game's rating compares it
+    # with the typical game on sale at its price.
+    sales.attach(current, sales.load_readings(
+        DATA_DIR / "snapshots",
+        {"captured_at": captured_at, "games": {n: g.to_dict() for n, g in current.items()}}))
     compare_with_peers(current)
 
     # No estimates: a top-prize count is either matched to PA's printed count for

@@ -82,6 +82,17 @@ class Game:
     # worked out fresh from whichever games are on sale.
     peer_best_win_back: Optional[float] = None
     peer_best_odds: Optional[float] = None
+    # The typical (median) PA-wide sales a day of the games on sale at the same
+    # price, from those whose sales could be measured. Also worked out fresh.
+    peer_typical_sales: Optional[float] = None
+
+    # How fast it sells across PA (see sales.py), measured at each scrape from
+    # PA's weekly prize counts. None = not measured; ``sales_why`` says why.
+    sales_per_day: Optional[float] = None      # dollars of tickets a day, PA-wide
+    sales_uncertainty: Optional[float] = None  # ± as a share, 0.06 = ±6%
+    sales_readings: int = 0                    # PA postings the figure rests on
+    sales_days: float = 0.0                    # days those postings span
+    sales_why: Optional[str] = None
 
     # Bookkeeping
     source_pages: list = field(default_factory=list)  # which pages contributed to this row
@@ -397,6 +408,7 @@ class Game:
         d = asdict(self)
         d.pop("peer_best_win_back", None)
         d.pop("peer_best_odds", None)
+        d.pop("peer_typical_sales", None)
         return d
 
     @classmethod
@@ -501,11 +513,14 @@ def update_change_tracking(
 
 
 def compare_with_peers(games: dict) -> dict:
-    """Attach, to every game, the best "wins more than it costs" and "wins
-    anything" odds among games on sale at its price. The rating scores a game
-    against these, because a $1 game and a $30 game can't be compared."""
+    """Attach, to every game, what the games on sale at its price look like: the
+    typical (median) sales a day, and the best "wins more than it costs" and
+    "wins anything" odds. Games are only ever compared at the same price, because
+    a $1 game and a $30 game can't be."""
+    from statistics import median
     best_wb: dict = {}
     best_odds: dict = {}
+    sales: dict = {}
     for g in games.values():
         if g.status != "active" or g.price is None:
             continue
@@ -513,7 +528,10 @@ def compare_with_peers(games: dict) -> dict:
             best_wb[g.price] = min(best_wb.get(g.price, float("inf")), g.win_back_odds)
         if g.odds_value:
             best_odds[g.price] = min(best_odds.get(g.price, float("inf")), g.odds_value)
+        if g.sales_per_day is not None:
+            sales.setdefault(g.price, []).append(g.sales_per_day)
     for g in games.values():
         g.peer_best_win_back = best_wb.get(g.price)
         g.peer_best_odds = best_odds.get(g.price)
+        g.peer_typical_sales = median(sales[g.price]) if g.price in sales else None
     return games

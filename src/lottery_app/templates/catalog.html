@@ -2,8 +2,8 @@
 {% block title %}Catalog · {{ store.name if store else 'Valley Lotto' }}{% endblock %}
 {% block content %}
 <h1>Full PA catalog — {{ total }} active games, ranked</h1>
-<p class="muted">Every active PA scratch-off, scored with <b>{{ store.name if store else 'this store' }}'s</b>
-emphasis. ★ = you carry it. Use this to pick same-price replacements for anything you send back.
+<p class="muted">Every active PA scratch-off, rated on how well it sells against the typical game
+at its price. ★ = you carry it. Use this to pick same-price replacements for anything you send back.
 Data captured {{ captured_at or '—' }}.</p>
 
 {% for price, items in by_price.items() %}

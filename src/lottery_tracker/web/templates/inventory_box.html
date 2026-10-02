@@ -160,6 +160,8 @@
     {% for label, mine, theirs, better in [
          ('Rating',      detail.mine.rating_str,   o.rating_str,
           (o.rating or 0) > (detail.mine.rating or 0)),
+         ('Sells in PA', detail.mine.sales_str,    o.sales_str,
+          (o.sales_per_day or 0) > (detail.mine.sales_per_day or 0)),
          ('Win odds',    (detail.mine.odds or '—')|replace(':', ' in '),
                          (o.odds or '—')|replace(':', ' in '),
           (o.odds_value or 99) < (detail.mine.odds_value or 99)),

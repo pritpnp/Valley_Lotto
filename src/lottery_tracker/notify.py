@@ -135,16 +135,11 @@ def render_report(
             )
         lines.append("")
         lines.append(
-            "> **Rating (0–100)** is a weighted blend of the factors below; under "
-            f"{weights.cutoff:g} → SEND BACK. Set the weights in `config.yaml`.\n"
-            "> - **Win odds (1:X)** — chance a ticket wins *any* prize (the break-even signal). "
-            "Lower is better.\n"
-            "> - **% left (all)** — true share of the *whole* game still unsold "
-            "(Σ wins remaining ÷ Σ original wins over every tracked tier — dominated by the abundant "
-            "cheap prizes, not the noisy jackpot count).\n"
-            "> - **Low-prize %** — share of the *cheap* prizes left (what customers actually win).\n"
-            "> - **Density** — top prizes vs sell-through; shown **(n/s)** when it's small-sample "
-            "noise rather than a real signal, in which case it does not affect the rating."
+            "> **Rating (0–100)** is how well the game sells across PA (dollars of tickets a "
+            "day, from PA's weekly prize counts) against the typical game at its price, capped "
+            f"at 100. Under {weights.cutoff:g} → SEND BACK.\n"
+            "> - **Win odds (1:X)**, **% left (all)**, **Low-prize %** and **Density** are shown "
+            "for information and don't change the rating."
         )
         lines.append("")
 
@@ -264,7 +259,7 @@ def bring_in_candidates(games: dict[str, Game], inventory: set[str], *,
 def swap_target(games: dict[str, Game], inventory: set[str], price, weights: RatingWeights,
                 *, n: int = 2) -> list[Game]:
     """Best same-price replacements for a game you're sending back: active, not
-    carried, KEEP-worthy (rating above cutoff), highest rating first."""
+    carried, KEEP-worthy (rating above cutoff), best seller first."""
     if price is None:
         return []
     cands = []
@@ -274,7 +269,7 @@ def swap_target(games: dict[str, Game], inventory: set[str], price, weights: Rat
         score, _ = rate(g, weights)
         if score is None or score < weights.cutoff:
             continue
-        cands.append((score, g))
+        cands.append((g.sales_per_day, g))
     cands.sort(key=lambda t: t[0], reverse=True)
     return [g for _, g in cands[:n]]
 
@@ -524,24 +519,17 @@ def render_html(
 {new_html}
 <h2>Your games — ranked by overall rating (act on the lowest first)</h2>
 <table><thead><tr><th>Game</th><th>#</th><th class="r">Price</th>
-<th class="r" title="weighted 0-100 blend of the factors below; under {weights.cutoff:g} = send back">Rating</th>
+<th class="r" title="sales vs the typical game at its price, 0-100; under {weights.cutoff:g} = send back">Rating</th>
 <th>Win odds</th>
 <th class="r" title="true % of the whole game unsold: Σ wins remaining ÷ Σ original wins">% left (all)</th>
 <th class="r" title="% of the cheap prizes left — what customers actually win">Low-prize %</th>
 <th class="r" title="top-prize % ÷ sell-through; shown n/s when it's small-sample noise">Density</th>
 <th>Action</th></tr></thead>
 <tbody>{''.join(rows)}</tbody></table>
-<p class="sub" style="margin-top:12px"><b>Rating (0–100)</b> is a weighted blend of the factors below; under
-{weights.cutoff:g} → <b>SEND BACK</b>. Hover the Action badge for the exact reason. You set the weights in
-<code>config.yaml</code> (currently odds {weights.odds:g}, prizes-left {weights.prizes_left:g}, low-prize {weights.low_prize:g},
-low-prize trend {weights.low_prize_skew:g}, jackpot density {weights.jackpot_density:g}).<br>
-<b>Win odds (1:X)</b> — chance a ticket wins <i>any</i> prize (the break-even signal); lower is better.
-<b>% left (all)</b> — the true share of the <i>whole</i> game still unsold: Σ wins remaining ÷ Σ original wins across every
-tracked tier. Because the cheap prizes number in the thousands and the jackpots in single digits, this is driven by reliable
-data, <i>not</i> the noisy top-prize count.
-<b>Low-prize %</b> — share of the cheap prizes left (no incentive to play once these are gone).
-<b>Density</b> — top prizes vs sell-through; marked <b>n/s</b> (and ignored by the rating) when it's small-sample noise
-rather than a real signal. Green ≥1.15, orange &lt;0.85.</p>
+<p class="sub" style="margin-top:12px"><b>Rating (0–100)</b> is how well the game sells across PA
+(dollars of tickets a day, from PA's weekly prize counts) against the typical game at its price, capped
+at 100; under {weights.cutoff:g} → <b>SEND BACK</b>. The other columns are shown for information and
+don't change the rating.</p>
 <h2>All prize tiers — cheapest weighted heaviest</h2>
 <p class="sub">Every published prize per game, the wins still left, and the change since the last scrape
 (▼ = claimed). Weights run heaviest at the bottom (cheapest prize). We scrape twice a day, so this trend

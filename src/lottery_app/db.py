@@ -60,9 +60,10 @@ CREATE TABLE IF NOT EXISTS store_emphasis (
 );
 """
 
-# The rating's parts (rules.RATING_FACTORS). Older databases gain the two new
-# columns in init_db; the old ones are left in place and no longer read.
-from lottery_tracker.rules import RATING_FACTORS as _EMPHASIS_FACTORS  # noqa: E402
+# Slider columns from when the rating blended several parts. The rating is now
+# one thing (how well a game sells), so nothing reads them; they're kept so no
+# store's saved settings are dropped.
+_EMPHASIS_FACTORS = ("prizes_left", "win_back", "top_prizes", "odds")
 
 
 def now_iso() -> str:

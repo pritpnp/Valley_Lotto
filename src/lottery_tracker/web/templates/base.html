@@ -187,13 +187,13 @@
 
     <div class="group">Look up</div>
     <a class="item" href="{{ url_for('catalog') }}">Full PA catalog</a>
+    <a class="item" href="{{ url_for('weights_page') }}">How games are rated</a>
     <a class="item" href="{{ url_for('scan_check') }}">Scanner check</a>
     {% if can.history %}<a class="item" href="{{ url_for('history') }}">History</a>{% endif %}
 
-    {% if can.staff or can.pricing or can.access %}
+    {% if can.staff or can.access %}
       <div class="group">Manage</div>
       {% if can.staff %}<a class="item" href="{{ url_for('staff_page') }}">Staff &amp; PINs</a>{% endif %}
-      {% if can.pricing %}<a class="item" href="{{ url_for('weights_page') }}">Rating emphasis</a>{% endif %}
       {% if can.access %}<a class="item" href="{{ url_for('access_log') }}">Access log</a>{% endif %}
     {% endif %}
 

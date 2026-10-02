@@ -90,32 +90,29 @@ def test_dashboard_rating_matches_the_shared_engine(client):
             assert f"{expected:.0f}" in html
 
 
-def test_emphasis_slider_changes_the_rating(client):
-    """Moving a slider must actually re-weight the decision."""
-    cat = pa_data.load_catalog("data/state.json")
-    active = [g for g in cat.games.values() if g.status == "active"][:8]
-    if not active:
-        pytest.skip("no active games in state.json")
-    for g in active:
-        client.post("/inventory/add", data={"game_number": g.game_number})
-
-    before = client.get("/dashboard").data
-    client.post("/weights", data={"odds": "3", "prizes_left": "-3", "low_prize": "0",
-                                  "low_prize_skew": "0", "jackpot_density": "0"})
-    after = client.get("/dashboard").data
-    assert before != after, "slider change had no effect on the dashboard"
-
-    # ...and the saved notches come back on the form.
+def test_the_rating_page_explains_and_has_nothing_to_tune(client):
     page = client.get("/weights").data.decode()
-    assert 'name="odds" min="-3" max="3" step="1" value="3"' in page
+    assert "How games are rated" in page
+    assert "5% of every ticket" in page
+    assert 'type="range"' not in page                 # no sliders any more
+    # Posting old slider values changes nothing and isn't accepted.
+    assert client.post("/weights", data={"odds": "3"}).status_code == 405
 
 
-def test_emphasis_clamped_to_range(client):
-    client.post("/weights", data={"odds": "99", "prizes_left": "-99", "low_prize": "0",
-                                  "low_prize_skew": "0", "jackpot_density": "0"})
+def test_the_rating_page_lists_the_typical_sales_at_each_price(client, tmp_path, monkeypatch):
+    from _games import selling_dict
+    state = {"captured_at": "2026-10-01T00:00:00Z", "games": {
+        n: selling_dict({"game_number": n, "name": f"G{n}", "price": 5, "status": "active"}, d)
+        for n, d in (("1", 10_000), ("2", 30_000), ("3", 50_000))}}
+    import json
+    p = tmp_path / "state.json"
+    p.write_text(json.dumps(state))
+    from lottery_app import pa_data as pd
+    real = pd.load_catalog
+    monkeypatch.setattr(pd, "load_catalog", lambda _path: real(p))
     page = client.get("/weights").data.decode()
-    assert 'name="odds" min="-3" max="3" step="1" value="3"' in page
-    assert 'name="prizes_left" min="-3" max="3" step="1" value="-3"' in page
+    assert "$5 games (3)" in page
+    assert "typical $30K/day · send back under $6,000/day" in page
 
 
 def test_catalog_renders_and_marks_carried(client):
