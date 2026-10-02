@@ -54,19 +54,42 @@ def test_two_boxes_of_one_game_count_as_two_box_days():
     assert s.box_days == 28 and s.per_box_day == 20
 
 
-def test_the_store_figure_decides_for_a_game_it_carries():
-    # PA-wide this game is a strong seller; in this store it barely moves.
-    g = selling(Game(game_number="slow", name="Slow", price=5, status="active"), 90_000)
-    other = selling(Game(game_number="x", price=5, status="active"), 30_000)
-    compare_with_peers({"slow": g, "x": other})
-    assert rate(g)[0] == 100                                  # PA-wide
-    own = store_sales.measure(_reports(14, _three_games))["slow"]
+def _pa(slow_per_day):
+    g = selling(Game(game_number="slow", name="Slow", price=5, status="active"), slow_per_day)
+    others = {n: selling(Game(game_number=n, price=5, status="active"), 50_000)
+              for n in ("x", "y")}
+    compare_with_peers({"slow": g, **others})
+    return g
+
+
+def test_with_store_counts_the_rating_is_half_pa_half_store():
+    own = store_sales.measure(_reports(14, _three_games))["slow"]   # $10 vs $100: 10
+    g = _pa(15_000)                                                  # 30% of $50K: 30
+    assert rate(g)[0] == 30                                          # PA-wide alone
     score, facts = rate(g, own=own)
-    assert score == 10                                         # $10 vs a typical $100 box
+    assert score == 20                                               # (10 + 30) / 2
+    voted = {f.key: f.weight for f in facts if f.weight > 0}
+    assert voted == {"store_sales": 50, "sales": 50}
     assert "In your store" in facts[0].note
-    assert any(f.key == "pa_sales" for f in facts)            # PA-wide still shown
-    action, reason = recommendation(g, Thresholds(), own=own)
-    assert action == "send_back" and "your typical $5 box" in reason
+
+
+def test_both_have_to_be_low_enough_together_to_send_back():
+    own = store_sales.measure(_reports(14, _three_games))["slow"]   # store: 10
+    strong = _pa(100_000)                                            # PA: 100
+    action, reason = recommendation(strong, Thresholds(), own=own)
+    assert action == "keep"                                          # (10 + 100) / 2 = 55
+    assert "your typical $5 box" in reason and "across PA" in reason
+    assert "Both together: 55 out of 100" in reason
+    weak = _pa(5_000)                                                # PA: 10
+    action, reason = recommendation(weak, Thresholds(), own=own)
+    assert action == "send_back" and "Both together: 10 out of 100" in reason
+
+
+def test_store_figure_alone_rates_a_game_pa_cannot_measure():
+    own = store_sales.measure(_reports(14, _three_games))["slow"]
+    g = Game(game_number="slow", price=5, status="active", sales_why="too new")
+    compare_with_peers({"slow": g})
+    assert rate(g, own=own)[0] == 10
 
 
 def test_the_app_switches_to_the_stores_own_sales_after_two_weeks(tmp_path):
@@ -109,4 +132,5 @@ def test_the_app_switches_to_the_stores_own_sales_after_two_weeks(tmp_path):
     html = " ".join(c.get("/inventory/box/1").data.decode().split())
     assert "In your store this game sells about $10 a box a day" in html
     assert "your typical $5 box ($100)" in html
-    assert "send back" in html.lower()
+    if games[slow].get("sales_per_day") is not None:     # PA-wide counts too, equally
+        assert "Counts for 50% of the rating." in html

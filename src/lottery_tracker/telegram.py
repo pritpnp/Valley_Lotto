@@ -16,7 +16,7 @@ import os
 import sys
 
 from .model import Game
-from .rules import Alert, RatingWeights, money, rate
+from .rules import Alert, RatingWeights, money, pct, rate
 
 API = "https://api.telegram.org/bot{token}/sendMessage"
 LIMIT = 4000          # Telegram's cap is 4096 characters per message
@@ -76,8 +76,8 @@ def send(text: str, *, formatted: bool = False) -> bool:
 
 
 def _rule(w: RatingWeights) -> str:
-    return (f"<i>Sells under {w.cutoff:g}% of the typical game at its price, "
-            f"across PA</i>")
+    return (f"<i>Sells under {w.cutoff:g}% of what the typical game at the same "
+            f"price sells, across PA</i>")
 
 
 def _score(g: Game, w: RatingWeights):
@@ -94,7 +94,17 @@ def send_back(games: dict[str, Game], w: RatingWeights | None = None) -> list[Ga
 
 
 def _sells(g: Game) -> str:
-    return f" · {money(g.sales_per_day)}/day" if g.sales_per_day is not None else ""
+    if g.sales_per_day is None:
+        return ""
+    share = f" ({pct(g.sales_per_day / g.peer_typical_sales)})" if g.peer_typical_sales else ""
+    return f" · {money(g.sales_per_day)}/day{share}"
+
+
+def _typical(g: Game) -> str:
+    """The yardstick for a price: what its typical (middle) game sells."""
+    if not g.peer_typical_sales:
+        return ""
+    return f" · typical ${g.price:g} game sells {money(g.peer_typical_sales)}/day"
 
 
 def _name(g_or_alert) -> str:
@@ -117,7 +127,7 @@ def low_games_list(games: dict[str, Game], w: RatingWeights | None = None) -> st
     for g in low:
         if g.price != price:
             price = g.price
-            lines += ["", _price(price)]
+            lines += ["", _price(price) + _typical(g)]
         lines.append(_name(g) + _sells(g))
     return "\n".join(lines)
 

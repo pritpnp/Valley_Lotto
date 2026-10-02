@@ -55,6 +55,10 @@ class RatingWeights:
     games on sale at that price, capped at 100. So 100 = sells at least as well
     as the typical game at its price, and 20 = a fifth as well.
 
+    Once a store has two weeks of its own counts, a game it carries also gets
+    the same kind of score from its sales in the store, against the store's
+    own typical box at the price, and the rating is the average of the two.
+
     The store earns 5% of every ticket sold and the lottery pays back what it
     pays out, so selling is what earns a box its place. Prizes left, odds and
     top prizes are shown with every game for information, but don't change the
@@ -98,6 +102,13 @@ def money(x: float) -> str:
     return f"${x:,.0f}"
 
 
+def pct(x: float) -> str:
+    """A share as a whole percent, rounded down, so a game just under the line
+    never reads as on it (19.6% shows as 19%, not 20%)."""
+    import math
+    return f"{math.floor(100 * x + 1e-9)}%"
+
+
 def sales_vs_typical(game: Game) -> float | None:
     """This game's sales a day ÷ the typical game's at its price (1.0 = typical)."""
     s, t = game.sales_per_day, game.peer_typical_sales
@@ -121,9 +132,10 @@ def rate(game: Game, weights: "RatingWeights | None" = None, *,
     ``model.compare_with_peers``, which runs whenever games are loaded.
 
     ``own`` is the store's own figure for this game (store_sales.StoreSales),
-    when the store has counted long enough. It then decides instead, against
-    the store's own typical box at the price, and PA-wide sales are shown for
-    information.
+    when the store has counted long enough. Then both count, equally: the
+    rating is the average of the PA-wide score and the in-store score (its
+    sales a box a day against the store's own typical box at the price). With
+    only one of the two, that one is the rating.
     """
     price = f"${game.price:g}" if game.price is not None else "this price"
     facts: list[Factor] = []
@@ -132,29 +144,24 @@ def rate(game: Game, weights: "RatingWeights | None" = None, *,
     if _own_ok(own):
         r = own.per_box_day / own.typical
         facts.append(Factor(
-            "sales", "Sales", _clamp(100 * r), 100.0, f"{money(own.per_box_day)} a box a day",
+            "store_sales", "Sales in your store", _clamp(100 * r), 100.0,
+            f"{money(own.per_box_day)} a box a day",
             f"In your store this game sells about {money(own.per_box_day)} a box a day, "
             f"from {own.box_days} counted box-days over the last {own.days} days you "
             f"counted. Your typical {price} box sells {money(own.typical)} a day, so this "
-            f"one sells {r:.0%} as much."))
-        if ratio is not None:
-            facts.append(Factor(
-                "pa_sales", "Sales across PA", None, 0.0, f"{money(game.sales_per_day)} a day",
-                f"Across Pennsylvania it sells about {money(game.sales_per_day)} a day, "
-                f"{ratio:.0%} of the typical {price} game. For information: your own "
-                f"store's sales decide the rating."))
-    elif ratio is not None:
+            f"one sells {pct(r)} as much."))
+    if ratio is not None:
         s, t = game.sales_per_day, game.peer_typical_sales
         pm = (f" (give or take {game.sales_uncertainty:.0%})"
               if game.sales_uncertainty is not None else "")
         facts.append(Factor(
-            "sales", "Sales", _clamp(100 * ratio), 100.0, f"{money(s)} a day",
+            "sales", "Sales across PA", _clamp(100 * ratio), 100.0, f"{money(s)} a day",
             f"Across Pennsylvania this game sells about {money(s)} of tickets a "
             f"day{pm}, measured from {game.sales_readings} of PA's weekly prize "
             f"counts over {game.sales_days:.0f} days. The typical {price} game "
-            f"sells {money(t)} a day, so this one sells {ratio:.0%} as much."))
+            f"sells {money(t)} a day, so this one sells {pct(ratio)} as much."))
     else:
-        facts.append(Factor("sales", "Sales", None, 100.0, "not measured",
+        facts.append(Factor("sales", "Sales across PA", None, 100.0, "not measured",
                             game.sales_why or "Its sales couldn't be measured."))
 
     info = " For information: it doesn't change the rating."
@@ -188,7 +195,12 @@ def rate(game: Game, weights: "RatingWeights | None" = None, *,
          f"of the ticket back." + info) if o else
         "PA hasn't published the odds for this game."))
 
-    return (facts[0].score, facts)
+    voted = [f.score for f in facts if f.weight > 0 and f.score is not None]
+    if len(voted) > 1:                       # both count, equally
+        for f in facts:
+            if f.weight > 0:
+                f.weight = 50.0
+    return (sum(voted) / len(voted) if voted else None, facts)
 
 
 @dataclass
@@ -223,18 +235,23 @@ def recommendation(
     w = weights or RatingWeights()
     score, facts = rate(game, w, own=own)
     if score is None:
-        return ("keep", f"{facts[0].note} It stays until it can be.")
+        why = next(f.note for f in facts if f.key == "sales")
+        return ("keep", f"{why} It stays until it can be.")
     price = f"${game.price:g}" if game.price is not None else "this price"
+    parts = []
     if _own_ok(own):
-        said = (f"Sells {money(own.per_box_day)} a box a day in your store, "
-                f"{own.per_box_day / own.typical:.0%} of your typical {price} box "
-                f"({money(own.typical)}).")
-    else:
-        said = (f"Sells {money(game.sales_per_day)} a day across PA, "
-                f"{sales_vs_typical(game):.0%} of the typical {price} game "
-                f"({money(game.peer_typical_sales)}).")
+        parts.append(f"Sells {money(own.per_box_day)} a box a day in your store, "
+                     f"{pct(own.per_box_day / own.typical)} of your typical {price} box "
+                     f"({money(own.typical)}).")
+    if sales_vs_typical(game) is not None:
+        parts.append(f"Sells {money(game.sales_per_day)} a day across PA, "
+                     f"{pct(sales_vs_typical(game))} of the typical {price} game "
+                     f"({money(game.peer_typical_sales)}).")
+    said = " ".join(parts)
+    if len(parts) > 1:
+        said += f" Both together: {score:.0f} out of 100."
     if score < w.cutoff:
-        return ("send_back", f"{said} Under {w.cutoff:.0f}% means send it back.")
+        return ("send_back", f"{said} Under {w.cutoff:.0f} means send it back.")
     return ("keep", said)
 
 
