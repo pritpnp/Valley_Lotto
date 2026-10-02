@@ -3,7 +3,8 @@
 PA-wide sales (sales.py) say how a game does across the state. Once a store has
 counted for long enough, its own counts say how the game does on its own shelf,
 which is what actually earns it. Then, for the games it carries, the rating
-compares each game with the store's own typical box at the same price instead.
+also compares each game with the store's own typical box at the same price, and
+averages that with the PA-wide score (rules.rate).
 
 A box's day is measured when it was counted at least twice that day (the
 morning count to the night count is the day's sales). Per game:
@@ -18,7 +19,7 @@ The switch is all or nothing per game, and only on solid ground:
 * at least ``MIN_PEERS`` games at its price are measured in the store, so
   "typical" means something.
 
-Anything short of that keeps the PA-wide figure. Nothing is guessed.
+Anything short of that leaves the PA-wide figure alone. Nothing is guessed.
 """
 
 from __future__ import annotations

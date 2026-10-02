@@ -56,7 +56,8 @@
           </div>
         {% endif %}
         {% if f.note %}<div class="fnote">{{ f.note[0]|upper }}{{ f.note[1:] }}</div>{% endif %}
-        {% if f.voted %}<div class="fmeta">This decides the rating.</div>{% endif %}
+        {% if f.voted %}<div class="fmeta">{{ 'This decides the rating.' if f.share == 100
+          else 'Counts for %d%% of the rating.'|format(f.share) }}</div>{% endif %}
       </div>
     {% endfor %}
   </div>
@@ -95,9 +96,11 @@
         of tickets sold a day across the state. The "give or take" is how far
         the weekly counts stray from a steady line.</p>
 
-      <p><b>Your own counts take over.</b> Once your store has two weeks of morning
-        and night counts, a game you carry is rated on what it sells in your store
-        (dollars a box a day) against your own typical box at the same price.</p>
+      <p><b>Your own counts join in.</b> Once your store has two weeks of morning
+        and night counts, a game you carry is also rated on what it sells in your
+        store (dollars a box a day) against your own typical box at the same price,
+        and the score is the average of the two: half Pennsylvania, half your
+        store.</p>
 
       <p><b>Compared at the same price only.</b> A $1 game and a $30 game can't
         be compared, so each game is measured against the middle game of those

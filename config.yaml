@@ -27,7 +27,9 @@ thresholds:
 # dollars of tickets a day, measured from PA's weekly prize counts) against the
 # typical game at its price, capped at 100. 100 = sells at least as well as the
 # typical game at its price; 20 = a fifth as well. A game is SENT BACK when its
-# rating falls below `cutoff`. See src/lottery_tracker/sales.py for the method.
+# rating falls below `cutoff`. Once a store has two weeks of its own counts, a game
+# it carries is rated half on PA-wide sales and half on its sales in the store
+# (against the store's own typical box at that price). See sales.py, store_sales.py.
 rating_weights:
   cutoff: 20               # sells under 20% of the typical game at its price -> SEND BACK
 

@@ -129,10 +129,12 @@ def test_the_list_is_just_prices_and_games():
                     "7": _seller("7", 10, 50_000)})
     assert telegram.low_games_list(games) == (
         "📉 Send back (3)\n"
-        "<i>Sells under 20% of the typical game at its price, across PA</i>\n"
-        "\n<u>$5</u>\n<b>Goat Load #1</b> · $2,000/day\n"
-        "<b>Keys &amp; Cash #4</b> · $3,000/day\n"                     # PA's "&" escaped
-        "\n<u>$10</u>\n<b>Six Figures #3</b> · $1,000/day")
+        "<i>Sells under 20% of what the typical game at the same price sells, across PA</i>\n"
+        "\n<u>$5</u> · typical $5 game sells $26.5K/day\n"
+        "<b>Goat Load #1</b> · $2,000/day (7%)\n"
+        "<b>Keys &amp; Cash #4</b> · $3,000/day (11%)\n"               # PA's "&" escaped
+        "\n<u>$10</u> · typical $10 game sells $40K/day\n"
+        "<b>Six Figures #3</b> · $1,000/day (2%)")
 
 
 def test_formatted_messages_tell_telegram_so(monkeypatch):
@@ -150,6 +152,6 @@ def test_a_game_is_announced_once_when_it_drops_under_the_line():
     after = at(4_000, 3_000)        # typical 22,000: 1 drops to 18%
     assert [g.game_number for g in telegram.newly_send_back(after, before)] == ["1"]
     msg = telegram.game_news([], after, before)
-    assert "📉 Now send back (1)" in msg and "<u>$5</u> <b>Game 1 #1</b> · $4,000/day" in msg
+    assert "📉 Now send back (1)" in msg and "<u>$5</u> <b>Game 1 #1</b> · $4,000/day (18%)" in msg
     assert "Game 2" not in msg
     assert telegram.game_news([], after, after) == ""          # nothing new, no message
