@@ -1,1 +1,18 @@
-[]
+[
+  {
+    "kind": "low_prizes",
+    "game_number": "1753",
+    "name": "Crossword Extra",
+    "severity": "info",
+    "message": "A game is running low \u2014 consider swapping it for a fresh game: #1753 Crossword Extra (only 30% of top prizes left (3/10)).",
+    "owned": false,
+    "details": {
+      "reasons": [
+        "only 30% of top prizes left (3/10)"
+      ],
+      "top_prizes_remaining": 3,
+      "top_prizes_total": 10,
+      "top_prize_value": "$50,000"
+    }
+  }
+]
