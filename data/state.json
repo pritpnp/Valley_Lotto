@@ -1,5 +1,5 @@
 {
-  "captured_at": "2026-10-12T22:50:48Z",
+  "captured_at": "2026-10-13T11:37:49Z",
   "games": {
     "1000": {
       "claim_deadline": null,
@@ -23213,11 +23213,11 @@
       "total_is_estimate": true
     },
     "1706": {
-      "claim_deadline": null,
+      "claim_deadline": "11/20/2027 12:00:00 AM",
       "detail_id": "3278",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1706",
-      "last_changed": "2026-10-12T22:50:48Z",
+      "last_changed": "2026-10-13T11:37:49Z",
       "name": "GAME OF THRONES\u2122",
       "odds": "1:3.68",
       "on_sale_date": "09/2024",
@@ -23250,7 +23250,7 @@
         }
       ],
       "sales_days": 34.1,
-      "sales_end_date": null,
+      "sales_end_date": "11/20/2026 12:00:00 AM",
       "sales_per_day": 15279.65,
       "sales_readings": 7,
       "sales_uncertainty": 0.1134,
@@ -27018,11 +27018,11 @@
       "total_is_estimate": false
     },
     "1771": {
-      "claim_deadline": null,
+      "claim_deadline": "11/20/2027 12:00:00 AM",
       "detail_id": "3345",
       "first_seen": "2026-06-27T17:06:51Z",
       "game_number": "1771",
-      "last_changed": "2026-10-12T22:50:48Z",
+      "last_changed": "2026-10-13T11:37:49Z",
       "name": "Big Bonus Triple Play",
       "odds": "1:3.77",
       "on_sale_date": "01/2026",
@@ -27055,7 +27055,7 @@
         }
       ],
       "sales_days": 34.1,
-      "sales_end_date": null,
+      "sales_end_date": "11/20/2026 12:00:00 AM",
       "sales_per_day": 8935.14,
       "sales_readings": 7,
       "sales_uncertainty": 0.1158,
