@@ -9,6 +9,8 @@
   .fact .l { font-size:11.5px; color:var(--muted); }
 </style>
 
+{% with flag_carried = carried %}{% include "_order_flag.html" %}{% endwith %}
+
 <div class="card">
   <div class="row" style="justify-content:space-between;align-items:baseline">
     <h2 style="margin:0">{{ detail.name }}</h2>

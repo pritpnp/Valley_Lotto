@@ -32,6 +32,10 @@
   .cthem.up { color:var(--ok); }
 </style>
 
+{% if not do %}
+  {% with flag_carried = true %}{% include "_order_flag.html" %}{% endwith %}
+{% endif %}
+
 <div class="card">
   <div class="row" style="justify-content:space-between;align-items:baseline">
     <h2 style="margin:0">Box {{ slot }}</h2>

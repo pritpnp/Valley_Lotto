@@ -24,6 +24,7 @@
   .bx.keep { background:var(--ok-bg); border-color:transparent; }
   .pill { display:inline-block; font-size:10px; font-weight:700; padding:1px 6px;
           border-radius:999px; background:var(--panel); color:var(--muted); }
+  .pill.gone { background:var(--warn-bg); color:var(--warn); white-space:normal; }
 </style>
 
 <div class="card">
@@ -35,6 +36,14 @@
     What's in each dispenser box. Running a count fills this in automatically —
     every scan tells us which game is in which box. Tap a box to set it by hand.
   </p>
+  {% set gone = rows|selectattr('rated')|map(attribute='rated')
+                    |selectattr('no_longer_shipped')|list %}
+  {% if order and order.as_of and (gone or unplaced|selectattr('no_longer_shipped')|list) %}
+  <div class="flash warn" style="font-size:13px">
+    <b>PA no longer ships</b> the games marked below: PA's order list as of
+    {{ order.as_of_text }} doesn't include them, so their boxes will run dry.
+  </div>
+  {% endif %}
 
   <div class="boxgrid">
     {% for r in rows %}
@@ -49,6 +58,7 @@
             #{{ r.game_number }}{% if r.game and r.game.price %} · ${{ '%g'|format(r.game.price) }}{% endif %}
             {% if r.rated and r.rated.rating is not none %} · {{ r.rated.rating_str }}{% endif %}
           </div>
+          {% if r.rated and r.rated.no_longer_shipped %}<span class="pill gone">PA no longer ships this</span>{% endif %}
           {% if r.source == 'scan' %}<span class="pill">from a scan</span>{% endif %}
         {% else %}
           <div class="g">empty — tap to set</div>
@@ -68,7 +78,8 @@
     <div class="line">
       <span class="lmid">
         <a class="lname" href="{{ url_for('game_page', game_number=g.game_number) }}">{{ g.name }}</a>
-        <span class="lsub">#{{ g.game_number }}{% if g.price %} · ${{ '%g'|format(g.price) }}{% endif %}</span>
+        <span class="lsub">#{{ g.game_number }}{% if g.price %} · ${{ '%g'|format(g.price) }}{% endif %}
+          {% if g.no_longer_shipped %}<span class="pill gone">PA no longer ships this</span>{% endif %}</span>
       </span>
       <form method="post" action="{{ url_for('inventory_remove') }}">
         <input type="hidden" name="game_number" value="{{ g.game_number }}">

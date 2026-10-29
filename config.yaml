@@ -57,23 +57,23 @@ max_new_fetches: 250       # cap on new detail/bulletin fetches per run
 # ---------------------------------------------------------------------------
 # Pack (book) sizes: how many tickets are in a full pack. Used by the scan
 # tracker to turn "open ticket -> close ticket" into tickets sold, and to bridge
-# a pack changeover. PA packs are built to a fixed DOLLAR VALUE, so the ticket
-# count depends on price (tickets = pack_value / price). Tickets in a pack are
-# numbered 000..N-1 and count UP as they sell.
+# a pack changeover. Tickets in a pack are numbered 000..N-1 and count UP as
+# they sell.
 #
-# These are OPTIONAL seeds: real pack sizes are learned automatically from the
-# scan log (a scan past a configured size corrects it upward). The $30/$40 rows
-# are UNVERIFIED guesses — confirm from the PA retailer "Settled Packs" report.
+# by_price is from PA's own "Scratch-Offs Available for Ordering" list as of
+# 10/26/26 (every game at each price agrees). Once the app has saved PA's
+# weekly order list, each game's own number from that list is used instead;
+# by_game below beats both. A scan past a size still corrects it upward.
 pack_sizes:
   by_price:
-    1: 300             # $300 book  (derived)
-    2: 150             # $300 book  (well-attested)
-    3: 100             # $300 book  (derived)
-    5: 60              # $300 book  (well-attested)
-    10: 60             # $600 book  (well-attested)
-    20: 30             # $600 book  (well-attested)
-    30: 20             # ?? UNVERIFIED — could be 20/30/50. FIX ME.
-    40: 15             # ?? UNVERIFIED — undocumented. FIX ME.
-    50: 50             # $2,500 book
-  by_game: {}          # exact per-game overrides, e.g.  "1750": 20
+    1: 100             # PA order list 10/26/26
+    2: 100             # PA order list 10/26/26
+    3: 100             # PA order list 10/26/26
+    5: 60              # PA order list 10/26/26
+    10: 60             # PA order list 10/26/26
+    20: 30             # PA order list 10/26/26
+    30: 30             # PA order list 10/26/26
+    40: 15             # ?? no $40 games exist — placeholder, unverified
+    50: 50             # PA order list 10/26/26
+  by_game: {}          # exact per-game overrides, e.g.  "1750": 30
   use_builtin_fallback: true

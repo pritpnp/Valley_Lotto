@@ -34,10 +34,12 @@ from ..reporting import (daily_report, render_daily_report_md, as_zone,
                          business_date, count_status, normalize_session,
                          session_meta, local_time, SESSIONS, SESSION_ORDER)
 from ..config import Config
+from ..packs import PackSizeResolver
 from ..rules import money, rate, recommendation
 from .models import (Base, User, Store, ScanRow, ActiveCount, InventoryRow,
                      PackRow, ShipmentRow,
-                     EmphasisRow, StaffRow, AccessRow, AuditRow, BoxRow)
+                     EmphasisRow, StaffRow, AccessRow, AuditRow, BoxRow,
+                     OrderListRow, OrderGameRow)
 from .migrate import ensure_schema
 from . import permissions as perms
 
@@ -1155,7 +1157,8 @@ def _register_routes(app: Flask):
         weights, cfg = _effective_weights()
         rated = {r["game_number"]: r for r in
                  pa_data.store_rows(cat, _inventory(), cfg.thresholds, weights,
-                                    own=_own_sales())}
+                                    own=_own_sales(),
+                                    orderable=_order_lists()["orderable"])}
 
         rows = []
         for game in sorted(set(held) | set(on_floor)):
@@ -1641,6 +1644,7 @@ def _register_routes(app: Flask):
         if tab == "sales":
             log = _store_log()
             prices = _load_prices()
+            resolver = _pack_resolver()
             opened = _packs_opened_by_date()
             dates = sorted({business_date(sc.scanned_at, tz) for sc in log.scans},
                            reverse=True)[:60]
@@ -1650,8 +1654,8 @@ def _register_routes(app: Flask):
             if today not in dates:
                 dates = [today] + dates
             for d in dates:
-                rep = daily_report(log, d, prices=prices, store=_store(), tz=tz,
-                                   packs_opened=opened.get(d))
+                rep = daily_report(log, d, prices=prices, resolver=resolver,
+                                   store=_store(), tz=tz, packs_opened=opened.get(d))
                 ctx["days"].append({"report": rep, "date": d, "counts": _counts_on(d)})
             # Per-game totals across the whole window: the real sell-through.
             totals: dict = {}
@@ -1694,6 +1698,8 @@ def _register_routes(app: Flask):
         """Every store side by side — where the chain is leaking money."""
         stores = _db().scalars(select(Store).order_by(Store.name)).all()
         prices = _load_prices()
+        resolver = _pack_resolver()
+        orderable = _order_lists()["orderable"]
         cfg_obj = _cfg()
         rows = []
         for st in stores:
@@ -1701,19 +1707,22 @@ def _register_routes(app: Flask):
                 select(InventoryRow).where(InventoryRow.store == st.slug)).all()}
             weights = cfg_obj.rating_weights
             srows = pa_data.store_rows(_catalog(), inv, cfg_obj.thresholds, weights,
-                                       own=_own_sales(st.slug, st.timezone))
+                                       own=_own_sales(st.slug, st.timezone),
+                                       orderable=orderable)
             summary = pa_data.store_summary(srows)
 
             log = _store_log(st.slug)
             opened = _packs_opened_by_date(st.slug)
             today = _today(st.timezone)
-            rep = daily_report(log, today, prices=prices, store=st.slug, tz=st.timezone,
+            rep = daily_report(log, today, prices=prices, resolver=resolver,
+                               store=st.slug, tz=st.timezone,
                                packs_opened=opened.get(today))
             dates = sorted({business_date(sc.scanned_at, st.timezone) for sc in log.scans},
                            reverse=True)[:7]
             week_tickets = week_rev = 0
             for d in dates:
-                r = daily_report(log, d, prices=prices, store=st.slug, tz=st.timezone,
+                r = daily_report(log, d, prices=prices, resolver=resolver,
+                                 store=st.slug, tz=st.timezone,
                                  packs_opened=opened.get(d))
                 week_tickets += r.total_tickets
                 week_rev += (r.total_revenue or 0)
@@ -2124,6 +2133,99 @@ def _register_routes(app: Flask):
         except Exception:  # noqa: BLE001 — a bad config must not take the app down
             return Config({})
 
+    # --- PA's weekly order list -------------------------------------------
+    # The feed job saves PA's "Scratch-Offs Available for Ordering" list once a
+    # week. It answers two things the catalog can't: how many tickets are really
+    # in each game's pack, and which games can still be ordered. Until the first
+    # list is saved, nothing below changes anything.
+    _NO_ORDER_LIST = {"as_of": None, "as_of_text": "", "orderable": None, "sizes": {}}
+    _order_cache: dict = {}
+
+    def _order_lists() -> dict:
+        """What PA's saved order lists say.
+
+        ``as_of``: the latest list's date, None with no list saved yet.
+        ``orderable``: the game numbers on that latest list (None with no list,
+        which means "don't filter anything" everywhere it's used).
+        ``sizes``: {game number: tickets per pack}, from each game's most recent
+        list that has it, so a game dropped this week keeps its real size.
+
+        A new list arrives once a week, so the full read is kept until one does;
+        spotting one is a single tiny query, made at most once per page.
+        """
+        if "order_lists" in g:
+            return g.order_lists
+        try:
+            mark = tuple(_db().execute(select(
+                select(func.count()).select_from(OrderListRow).scalar_subquery(),
+                select(func.max(OrderListRow.as_of)).scalar_subquery(),
+                select(func.count(OrderGameRow.id)).scalar_subquery(),
+                select(func.max(OrderGameRow.id)).scalar_subquery(),
+            )).one())
+            if _order_cache.get("mark") != mark:
+                # Only the dates of the lists: each row also holds its PDF.
+                saved = set(_db().scalars(select(OrderListRow.as_of)).all())
+                games = [r for r in _db().execute(
+                    select(OrderGameRow.as_of, OrderGameRow.game_number,
+                           OrderGameRow.tickets_per_pack)
+                    .order_by(OrderGameRow.as_of)).all() if r.as_of in saved]
+                view = dict(_NO_ORDER_LIST)
+                if games:
+                    latest = games[-1].as_of
+                    sizes = {}
+                    for r in games:           # oldest first, so the newest wins
+                        if r.tickets_per_pack and r.tickets_per_pack > 0:
+                            sizes[str(r.game_number).strip()] = int(r.tickets_per_pack)
+                    view = {"as_of": latest, "as_of_text": _short_date(latest),
+                            "orderable": {str(r.game_number).strip() for r in games
+                                          if r.as_of == latest},
+                            "sizes": sizes}
+                _order_cache.clear()
+                _order_cache.update(mark=mark, view=view)
+            view = _order_cache["view"]
+        except Exception as e:  # noqa: BLE001 — no order list beats no page
+            app.logger.warning("could not read PA's order lists: %s", e)
+            try:
+                _db().rollback()
+            except Exception:  # noqa: BLE001
+                pass
+            view = _NO_ORDER_LIST
+        g.order_lists = view
+        return view
+
+    def _short_date(iso: str) -> str:
+        """2026-10-26 -> "Oct 26" (with the year only when it isn't this one)."""
+        try:
+            d = datetime.strptime(iso, "%Y-%m-%d")
+        except (TypeError, ValueError):
+            return str(iso or "")
+        text = f"{d:%b} {d.day}"
+        return text if d.year == datetime.now(timezone.utc).year else f"{text}, {d.year}"
+
+    def _not_shipped(game_number) -> bool:
+        """A game PA's latest order list leaves out. False with no list saved."""
+        orderable = _order_lists()["orderable"]
+        return orderable is not None and str(game_number or "").strip() not in orderable
+
+    def _pack_resolver() -> PackSizeResolver:
+        """The one pack-size answer for every report in the app.
+
+        config.yaml's sizes by price, then each game's own tickets per pack from
+        PA's order lists on top, then config.yaml's per-game sizes on top of
+        those. The day's report, history, the chain overview and the store's own
+        sales all use this, so the same day adds up the same on every screen.
+        """
+        if "pack_resolver" in g:
+            return g.pack_resolver
+        cfg = _cfg()
+        by_game = dict(_order_lists()["sizes"])
+        by_game.update({str(k).strip(): v for k, v in cfg.pack_sizes_by_game.items()
+                        if v is not None})
+        g.pack_resolver = PackSizeResolver(
+            by_price=cfg.pack_sizes_by_price, by_game=by_game,
+            use_builtin_fallback=cfg.pack_use_builtin_fallback)
+        return g.pack_resolver
+
     _own_cache: dict = {}
 
     def _own_sales(slug=None, tz=None) -> dict:
@@ -2143,15 +2245,14 @@ def _register_routes(app: Flask):
         if not n:
             return {}
         today = _today(tz)
-        key = (slug, n, last, today, int(datetime.now(timezone.utc).timestamp() // 600))
+        # A new order list can change a game's pack size, so it starts afresh.
+        key = (slug, n, last, today, _order_lists()["as_of"],
+               int(datetime.now(timezone.utc).timestamp() // 600))
         if key in _own_cache:
             return _own_cache[key]
         log = _store_log(slug)
         dates = set(_recent_dates(today, WINDOW_DAYS))
-        try:
-            resolver = Config.load(str(ROOT / "config.yaml")).pack_resolver()
-        except Exception:  # noqa: BLE001 — a bad config must not take the page down
-            resolver = None
+        resolver = _pack_resolver()
         prices, opened = _load_prices(), _packs_opened_by_date(slug)
         days = sorted({business_date(sc.scanned_at, tz) for sc in log.scans} & dates)
         reports = [daily_report(log, d, prices=prices, resolver=resolver, store=slug, tz=tz,
@@ -2184,17 +2285,22 @@ def _register_routes(app: Flask):
         cat = _catalog()
         inv = _inventory()
         weights, cfg = _effective_weights()
-        rows = pa_data.store_rows(cat, inv, cfg.thresholds, weights, own=_own_sales())
+        # With PA's order list saved, replacements and the bring-in board only
+        # offer games that can actually be ordered (None = no list yet = all).
+        order = _order_lists()
+        rows = pa_data.store_rows(cat, inv, cfg.thresholds, weights, own=_own_sales(),
+                                  orderable=order["orderable"])
         return render_template(
             "dashboard.html", email=session.get("email"),
             night_due=_night_reminder(),
             rows=rows, summary=pa_data.store_summary(rows),
             captured_at=cat.captured_at, data_age=_catalog_age(cat.captured_at),
-            weights=weights,
+            weights=weights, order=order,
             new_games=pa_data.new_games(cat, within_days=14, weights=weights),
             bring_in=pa_data.bring_in_candidates(
                 cat, inv, cfg.thresholds, weights=weights,
-                min_left=cfg.bring_in_min_left, per_price=cfg.bring_in_per_price),
+                min_left=cfg.bring_in_min_left, per_price=cfg.bring_in_per_price,
+                orderable=order["orderable"]),
         )
 
     @app.get("/catalog")
@@ -2203,7 +2309,9 @@ def _register_routes(app: Flask):
         cat = _catalog()
         inv = _inventory()
         weights, cfg = _effective_weights()
-        rows = pa_data.catalog_rankings(cat, cfg.thresholds, weights, inventory=inv)
+        order = _order_lists()
+        rows = pa_data.catalog_rankings(cat, cfg.thresholds, weights, inventory=inv,
+                                        orderable=order["orderable"])
         by_price: dict = {}
         for r in rows:
             by_price.setdefault(r["price"] or 0, []).append(r)
@@ -2211,7 +2319,7 @@ def _register_routes(app: Flask):
         return render_template("catalog.html", email=session.get("email"),
                                by_price=by_price, cutoff=weights.cutoff,
                                data_age=_catalog_age(cat.captured_at),
-                               captured_at=cat.captured_at)
+                               captured_at=cat.captured_at, order=order)
 
     @app.get("/catalog/<game_number>")
     @login_required
@@ -2228,7 +2336,8 @@ def _register_routes(app: Flask):
         held = len([p for p in _packs(state="backstock", game=game_number)])
         return render_template("game.html", detail=detail, game_number=game_number,
                                boxes=sorted(boxes, key=_slot_sort_key),
-                               held=held, carried=game_number in _inventory())
+                               held=held, carried=game_number in _inventory(),
+                               order=_order_lists())
 
     @app.get("/inventory")
     @login_required
@@ -2238,9 +2347,10 @@ def _register_routes(app: Flask):
         games = cat.games
         boxes = _box_map()
         weights, cfg = _effective_weights()
+        order = _order_lists()
         rated = {r["game_number"]: r for r in
                  pa_data.store_rows(cat, _inventory(), cfg.thresholds, weights,
-                                    own=_own_sales())}
+                                    own=_own_sales(), orderable=order["orderable"])}
 
         rows = []
         for slot in _store_slots():
@@ -2261,10 +2371,11 @@ def _register_routes(app: Flask):
             g = games.get(num)
             unplaced.append({"game_number": num,
                              "name": g.name if g else "(not on PA active list)",
-                             "price": g.price if g else None})
+                             "price": g.price if g else None,
+                             "no_longer_shipped": _not_shipped(num)})
         filled = sum(1 for r in rows if r["game_number"])
         return render_template("inventory.html", rows=rows, unplaced=unplaced,
-                               filled=filled, total=len(rows))
+                               filled=filled, total=len(rows), order=order)
 
     @app.route("/inventory/box/<slot>", methods=["GET", "POST"])
     @perm_required("boxes")
@@ -2307,18 +2418,21 @@ def _register_routes(app: Flask):
                                current=current.game_number if current else None,
                                in_box=in_box, reasons=SETTLE_REASONS,
                                detail=detail, do=request.args.get("do") or "",
-                               games=cat.games)
+                               games=cat.games, order=_order_lists())
 
     def _price_ladder() -> list:
-        """The price points PA actually sells at right now, cheapest first."""
+        """The price points PA actually sells at right now, cheapest first —
+        once PA's order list is saved, only prices with a game you can order."""
+        orderable = _order_lists()["orderable"]
         return sorted({g.price for g in _catalog().games.values()
-                       if g.status == "active" and g.price})
+                       if g.status == "active" and g.price
+                       and (orderable is None or g.game_number in orderable)})
 
     def _row_for(game_number: str) -> dict | None:
         """One game flattened the same way the dashboard flattens it."""
         weights, cfg = _effective_weights()
         rows = pa_data.store_rows(_catalog(), {game_number}, cfg.thresholds, weights,
-                                  own=_own_sales())
+                                  own=_own_sales(), orderable=_order_lists()["orderable"])
         return rows[0] if rows else None
 
     def _swap_options(price, n: int = 2) -> dict:
@@ -2329,13 +2443,18 @@ def _register_routes(app: Flask):
         is worth carrying — which is itself worth knowing, it means the whole
         price point is picked over — step one rung down or up the ladder and take
         the best from there.
+
+        Once PA's order list is saved, only games on it: a game PA won't ship
+        can't go in anyone's box.
         """
         weights, cfg = _effective_weights()
         cat, inv = _catalog(), _inventory()
+        orderable = _order_lists()["orderable"]
         if not price:
             return {"options": [], "price_note": ""}
 
-        same = pa_data.swap_targets(cat, inv, price, cfg.thresholds, weights, n=n)
+        same = pa_data.swap_targets(cat, inv, price, cfg.thresholds, weights, n=n,
+                                    orderable=orderable)
         if same:
             return {"options": same[:n], "price_note": ""}
 
@@ -2350,7 +2469,8 @@ def _register_routes(app: Flask):
 
         pooled = []
         for p2 in near:
-            for row in pa_data.swap_targets(cat, inv, p2, cfg.thresholds, weights, n=n):
+            for row in pa_data.swap_targets(cat, inv, p2, cfg.thresholds, weights, n=n,
+                                            orderable=orderable):
                 pooled.append(row)
         pooled.sort(key=lambda r: (r["rating"], r["sales_per_day"]), reverse=True)
         note = ""
@@ -2380,7 +2500,8 @@ def _register_routes(app: Flask):
                     "status": "unknown", "sell_through": None,
                     "top_prize_value": None, "top_prizes_remaining": None,
                     "jackpot_density": None, "jackpot_significant": False,
-                    "sales_end_date": None}
+                    "sales_end_date": None,
+                    "no_longer_shipped": _not_shipped(game_number)}
 
         own = _own_sales().get(game_number)
         action, reason = recommendation(g, cfg.thresholds, weights, own=own)
@@ -2414,6 +2535,8 @@ def _register_routes(app: Flask):
             "jackpot_density": g.jackpot_density,
             "jackpot_significant": g.jackpot_density_significant,
             "sales_end_date": g.sales_end_date,
+            # Not on PA's latest order list: once its packs are gone, they're gone.
+            "no_longer_shipped": _not_shipped(game_number),
         }
 
     @app.post("/inventory/add")
@@ -2495,11 +2618,7 @@ def _register_routes(app: Flask):
         date = request.args.get("date") or _today(_store_tz())
         rows = _db().scalars(select(ScanRow).where(ScanRow.store == _store())).all()
         log = ScanLog(scans=[r.to_scan() for r in rows])
-        try:
-            resolver = Config.load(str(ROOT / "config.yaml")).pack_resolver()
-        except Exception:  # noqa: BLE001 — report must render even without config
-            resolver = None
-        rep = daily_report(log, date, prices=_load_prices(), resolver=resolver,
+        rep = daily_report(log, date, prices=_load_prices(), resolver=_pack_resolver(),
                            store=_store(), tz=_store_tz(),
                            # Packs that came out of back stock but never showed
                            # up in a count still sold; this is what counts them.

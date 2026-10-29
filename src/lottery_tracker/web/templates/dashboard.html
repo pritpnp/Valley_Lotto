@@ -31,6 +31,9 @@
            font-weight:700; letter-spacing:.3px; }
   .b-keep { background:var(--ok-bg); color:var(--ok); }
   .b-send { background:var(--err-bg); color:var(--err); }
+  .b-gone { background:var(--warn-bg); color:var(--warn); }
+  .gone { display:block; font-size:12.5px; color:var(--warn); margin-top:4px;
+          line-height:1.5; }
   .swapline { font-size:12.5px; color:var(--muted); margin-top:7px; padding-left:58px;
               line-height:1.7; }
   .swapline form { display:inline; }
@@ -87,11 +90,16 @@
         <span class="gsub">
           <span class="badge {{ 'b-send' if r.action == 'send_back' else 'b-keep' }}">
             {{ 'SEND BACK' if r.action == 'send_back' else 'KEEP' }}</span>
+          {% if r.no_longer_shipped %}<span class="badge b-gone">PA NO LONGER SHIPS THIS</span>{% endif %}
           #{{ r.game_number }}{% if r.price %} · ${{ '%g'|format(r.price) }}{% endif %}
           {%- if r.sales_per_day is not none %} · sells {{ r.sales_str }} in PA{% endif %}
           {%- if r.pct_all is not none %} · {{ r.pct_all_str }} of prizes left{% endif %}
         </span>
         <span class="why">{{ r.reason }}</span>
+        {% if r.no_longer_shipped and order and order.as_of %}
+          <span class="gone">PA's order list as of {{ order.as_of_text }} doesn't
+            include it, so its boxes will run dry.</span>
+        {% endif %}
       </span>
       <span class="chev">›</span>
     </a>
