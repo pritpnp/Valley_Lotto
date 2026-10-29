@@ -519,12 +519,51 @@ def test_before_the_switch_the_old_scrapers_latest_draw_wins_even_if_pa_is_ahead
     assert pb["source"] == "pa_feed"
 
 
-def test_after_the_switch_newer_old_scraper_data_is_ignored(db):
+def test_after_the_switch_the_old_scrapers_same_or_older_draw_is_ignored(db):
+    save_fixtures(db)                                              # same draws from both
+    store.set_setting(db, store.PBMM_SOURCE, "pa_feed", T0)
+    store.compare_and_switch(db, T0)
+    store.save_draws(db, [_pb("old_scraper", date="2026-10-24", numbers="01 02 03 04 05")], T0)
+    games = display.build_payload(db, now=T0)["games"]
+    assert games[11] == SPEC_POWERBALL
+    assert games[12]["source"] == "pa_feed" and games[12]["jackpot"]["text"] == "$463,000,000"
+
+
+def test_after_the_switch_a_newer_old_scraper_draw_shows_until_pa_catches_up(db):
+    """PA's feed fell behind and the owner turned the old scraper back on."""
     save_fixtures(db)
     store.set_setting(db, store.PBMM_SOURCE, "pa_feed", T0)
-    store.save_draws(db, [_pb("old_scraper", date="2026-10-28", numbers="01 02 03 04 05")], T0)
-    pb = display.build_payload(db, now=T0)["games"][11]
-    assert pb["draw_date"] == "2026-10-26" and pb["source"] == "pa_feed"
+    later = T0 + timedelta(days=1)
+    store.save_draws(db, [_pb("old_scraper", date="2026-10-28", numbers="02 03 04 05 06",
+                              bonus="07", jackpot=730000000.0, jackpot_text="$730 Million",
+                              next_date="2026-10-31")], later)
+    payload = display.build_payload(db, now=later)
+    assert payload["pbmm_source"] == "pa_feed"
+    assert payload["games"][11] == {
+        "id": "12", "title": "Powerball", "position": 11, "draw_date": "2026-10-28",
+        "numbers": ["02", "03", "04", "05", "06"],
+        "extras": [{"code": "PB", "label": "Powerball", "value": "07"}],   # nothing of PA's
+        "next_draw_date": "2026-10-31",
+        "jackpot": {"text": "$730 Million", "amount": 730000000},
+        "cash_value": None,
+        "source": "old_scraper",
+        "seen_at": "2026-10-30T00:10:00Z",
+    }
+    assert payload["games"][12]["source"] == "pa_feed"            # Mega Millions: PA's is as new
+
+    caught_up = FEED.replace(b"<drawdate>10/26/2026</drawdate><numbers>18 26 49 50 54 PB: 01",
+                             b"<drawdate>10/28/2026</drawdate><numbers>02 03 04 05 06 PB: 07")
+    store.save_draws(db, draws.parse_feed(caught_up), later + timedelta(minutes=10))
+    pb = display.build_payload(db, now=later)["games"][11]
+    assert pb["source"] == "pa_feed" and pb["draw_date"] == "2026-10-28"
+    assert pb["extras"][1] == {"code": "PP", "label": "Power Play", "value": "03"}
+
+
+def test_after_the_switch_the_old_scraper_fills_in_a_game_pa_never_had(db):
+    store.save_draws(db, draws.parse_old_scraper(OLD), T0)
+    store.set_setting(db, store.PBMM_SOURCE, "pa_feed", T0)
+    assert [g["source"] for g in display.build_payload(db, now=T0)["games"]] == \
+        ["old_scraper", "old_scraper"]
 
 
 def test_a_game_pa_adds_shows_up_by_itself(db):
