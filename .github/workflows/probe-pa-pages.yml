@@ -1,0 +1,68 @@
+name: Probe PA pages (temporary)
+
+# Temporary: downloads the draw-game logos PA shows on its own website, for the
+# store TV page. Removed afterwards.
+on:
+  push:
+    branches: ["claude/pa-lottery-tracker-11t1ul"]
+    paths: [".github/workflows/probe-pa-pages.yml"]
+
+permissions:
+  contents: write
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Fetch logos
+        run: |
+          mkdir -p probe-out/logos && cd probe-out
+          python3 - <<'PY'
+          import html, json, re, urllib.parse, urllib.request
+          UA = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36"}
+          B = "https://www.palottery.pa.gov"
+          pages = ["Draw-Games.aspx", "Draw-Games/Powerball.aspx", "Draw-Games/Mega-Millions.aspx",
+                   "Draw-Games/Cash-5.aspx", "Draw-Games/Match-6.aspx", "draw-games/treasure-hunt.aspx",
+                   "Draw-Games/PICK-2.aspx", "Draw-Games/PICK-3.aspx", "Draw-Games/PICK-4.aspx",
+                   "Draw-Games/PICK-5.aspx", "millionaireforlife", "Draw-Games/Powerball-Xs-and-Os.aspx",
+                   "Draw-Games/Powerball/Double-Play.aspx", ""]
+          def get(url):
+              with urllib.request.urlopen(urllib.request.Request(url, headers=UA), timeout=60) as r:
+                  return r.read(), r.headers.get("Content-Type", "")
+          seen, found = set(), []
+          for p in pages:
+              try:
+                  body, _ = get(f"{B}/{p}")
+              except Exception as e:
+                  found.append({"page": p, "error": str(e)}); continue
+              s = body.decode("utf-8", "replace")
+              for m in re.finditer(r'<img\b[^>]*>', s, re.I):
+                  tag = m.group(0)
+                  src = re.search(r'src="([^"]+)"', tag)
+                  if not src: continue
+                  url = urllib.parse.urljoin(f"{B}/{p}", html.unescape(src.group(1)))
+                  alt = (re.search(r'alt="([^"]*)"', tag) or [None, ""])[1]
+                  if url in seen: continue
+                  seen.add(url)
+                  found.append({"page": p, "src": url, "alt": html.unescape(alt)})
+          json.dump(found, open("images.json", "w"), indent=1)
+          keep = re.compile(r"logo|powerball|mega|cash.?5|match.?6|treasure|pick.?[2-5]|millionaire|xs|double", re.I)
+          n = 0
+          for f in found:
+              u = f.get("src", "")
+              if not u or not keep.search(u + " " + f.get("alt", "")): continue
+              try:
+                  data, ctype = get(u)
+              except Exception as e:
+                  f["download_error"] = str(e); continue
+              name = re.sub(r"[^A-Za-z0-9._-]+", "_", urllib.parse.urlparse(u).path.split("/")[-1])[:80] or f"img{n}"
+              open(f"logos/{n:02d}_{name}", "wb").write(data)
+              f["saved"] = f"{n:02d}_{name}"; f["bytes"] = len(data); f["type"] = ctype; n += 1
+          json.dump(found, open("images.json", "w"), indent=1)
+          print(n, "images saved")
+          PY
+      - name: Commit what was fetched (temporary)
+        run: |
+          git config user.name "github-actions" && git config user.email "github-actions@github.com"
+          git add probe-out && git commit -m "Probe output (temporary)" && git push
