@@ -1,0 +1,34 @@
+===== Draw-Games_Cash-5.aspx.html
+- Quick Cash is an instant win game that prints with every Cash 5 ticket and offers a chance to win $2 to $6.
+- 5 Quick Cash is an instant win game that prints with every Cash 5 ticket and offers a chance to win $2 to $6.
+===== Draw-Games_Match-6.aspx.html
+- Each game costs $2.
+===== Draw-Games_Mega-Millions.aspx.html
+- Read More Watch It Try It How to Play Mega Millions 1 Visit your PA Lottery retailer and pick up a Mega Millions playslip or Buy Now Online ! Each $5 play purchased includes a built-in, randomly selected multiplier to increase non-jackpot winnings by 2X, 3X, 4X, 5X or 10X.
+===== Draw-Games_Millionaire-For-Life_FAQ.aspx.html
+- Match the selected numbers to the drawn numbers to win! Q: How much does it cost to play Millionaire for Life? A: The cost of Millionaire for Life is $5 per play.
+- The overall cost will increase with each additional drawing selected.
+===== Draw-Games_PICK-2.aspx.html
+- Now, play PICK 2 with Wild Ball .
+- If desired, select the Wild Ball option.
+===== Draw-Games_PICK-3.aspx.html
+- Now, play PICK 3 with Wild Ball .
+- If desired, select the Wild Ball option.
+===== Draw-Games_PICK-4.aspx.html
+- Now, play PICK 4 with Wild Ball .
+- If desired, select the Wild Ball option.
+===== Draw-Games_PICK-5.aspx.html
+- Now, play PICK 5 with Wild Ball .
+- Each game costs $1.
+- If desired, select the Wild Ball option.
+===== Draw-Games_Powerball-Xs-and-Os.aspx.html
+- The cost is $5 per play.
+- 2 With each $5 play, select eight NFL team logos.
+===== Draw-Games_Powerball.aspx.html
+- For an additional dollar, you can select the Power Play ® add-on.
+- For just another dollar you can select the Double Play add-on.
+===== draw-games_treasure-hunt.aspx.html
+- Each game costs $1.
+===== millionaireforlife.html
+- The cost is $5 per play.
+- 2 With each $5 play, select five numbers from 1 to 58 and one number, the Millionaire Ball™ number, from 1 to 5.
