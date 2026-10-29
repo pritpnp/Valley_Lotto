@@ -184,9 +184,9 @@ Public data. Headers: `Access-Control-Allow-Origin: *`,
   letterboxed, no scrollbars, cursor hidden, nothing to click.
 * Cycles through every game in the feed, all 16 today. Grouping a game's Day
   and Evening draws onto one slide is fine as long as every draw is shown.
-  Each slide: the game's logo where the owner has one (Mega Millions and
-  Powerball, cut from his current sign; `tv/logos/`), otherwise a bold custom
-  wordmark; the ticket price ("$2 Ticket") when known; "WINNING NUMBERS"; the
+  Each slide: the game's official logo as PA shows it on palottery.pa.gov
+  (`tv/logos/`; Double Play uses Powerball's with a "DOUBLE PLAY" label; a game
+  PA adds later gets a styled name until it has one); the ticket price ("$2 Ticket") when known; "WINNING NUMBERS"; the
   draw date; the numbers as balls (bonus balls in the game's own colour and
   labelled); "Next Drawing:" with "TONIGHT" when it's today in
   America/New_York; the jackpot in a loud point-out box; cash value when
