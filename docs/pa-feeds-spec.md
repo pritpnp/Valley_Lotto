@@ -184,11 +184,24 @@ Public data. Headers: `Access-Control-Allow-Origin: *`,
   letterboxed, no scrollbars, cursor hidden, nothing to click.
 * Cycles through every game in the feed, all 16 today. Grouping a game's Day
   and Evening draws onto one slide is fine as long as every draw is shown.
-  Each slide: game name (styled text, NO PA or Powerball/Mega Millions logos),
-  draw date, the numbers as balls (bonus balls styled distinctly and labelled),
-  next draw ("TONIGHT" when it's today in America/New_York), jackpot (big),
-  cash value when present. Long jackpot texts ("$1,000,000 A Year For Life")
-  must fit.
+  Each slide: the game's logo where the owner has one (Mega Millions and
+  Powerball, cut from his current sign; `tv/logos/`), otherwise a bold custom
+  wordmark; the ticket price ("$2 Ticket") when known; "WINNING NUMBERS"; the
+  draw date; the numbers as balls (bonus balls in the game's own colour and
+  labelled); "Next Drawing:" with "TONIGHT" when it's today in
+  America/New_York; the jackpot in a loud point-out box; cash value when
+  present. Long jackpot texts ("$1,000,000 A Year For Life") must fit.
+* Look and feel (owner's direction, from his current sign): bold retail
+  point-of-sale energy, NOT a dry or generic "AI" look. Each game in its own
+  saturated brand colour block (Mega Millions blue #234090, Powerball red
+  #ab1e2c on his sign), heavy white uppercase type, a dark band carrying big
+  number balls, a yellow "$X Ticket" callout, and the jackpot as the big
+  point-out (his is green #197b30 with a yellow border). Keep that punch and
+  familiarity, make it polished and animated, and fit more games than his
+  two-up sign.
+* Ticket prices come from `tv/games.json` (per game id: display name, colour,
+  logo, price). Only prices the owner has confirmed are filled in (Powerball
+  $2 and Mega Millions $5, from his sign); a game without a price shows none.
 * Data: fetch `/api/numbers` every 2 minutes; keep the last good data in
   localStorage and show it at once on load; if a fetch fails, keep showing the
   last data and retry; a small, discreet "last updated" note. **Reload the
