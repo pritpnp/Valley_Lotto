@@ -200,8 +200,26 @@ Public data. Headers: `Access-Control-Allow-Origin: *`,
   familiarity, make it polished and animated, and fit more games than his
   two-up sign.
 * Ticket prices come from `tv/games.json` (per game id: display name, colour,
-  logo, price). Only prices the owner has confirmed are filled in (Powerball
-  $2 and Mega Millions $5, from his sign); a game without a price shows none.
+  logo, price text). From PA's own Game Guide (dated 2026-04-07) and game
+  pages (read 2026-10-28):
+
+  | Game (feed id) | Price shown |
+  |---|---|
+  | Powerball (12) | $2 (Power Play +$1) |
+  | Mega Millions (15) | $5 |
+  | Millionaire for Life (37) | $5 |
+  | Cash 5 (8) | $2 (includes Quick Cash) |
+  | Match 6 (11) | $2 |
+  | Treasure Hunt (7) | $1 |
+  | PICK 2 (31, 27) | $1 |
+  | PICK 3 (32, 28) | 50¢ or $1 |
+  | PICK 4 (33, 29) | 50¢ or $1 |
+  | PICK 5 (34, 30) | $1 |
+  | Powerball Double Play (36) | +$1 add-on to Powerball |
+  | Powerball Xs & Os (38) | $5 |
+
+  Wild Ball doubles the cost of a PICK play. A game PA adds later has no
+  price until one is put in `games.json`, and shows none.
 * Data: fetch `/api/numbers` every 2 minutes; keep the last good data in
   localStorage and show it at once on load; if a fetch fails, keep showing the
   last data and retry; a small, discreet "last updated" note. **Reload the
