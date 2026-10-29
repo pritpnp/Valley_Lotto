@@ -424,6 +424,9 @@ html, body {
 .tk-l1 { display: block; font: italic 900 40px/40px var(--sans); text-transform: uppercase; letter-spacing: -.005em; }
 .tk-l2 { display: block; font: 900 18px/22px var(--sans); text-transform: uppercase; letter-spacing: .06em; margin-top: 4px; white-space: nowrap; }
 .tk-upd { display: block; font: 600 17px/20px var(--sans); margin-top: 8px; opacity: .82; white-space: nowrap; }
+/* "Numbers from 6:40 PM": the numbers haven't been refreshed from PA for a
+   while. Easy for staff to spot, nothing that alarms customers. */
+.tk-upd.is-stale { color: #9b1c1c; opacity: 1; }
 
 .tk-view { position: absolute; left: 300px; top: 6px; right: 0; height: 118px; overflow: hidden; }
 .tk-track { position: absolute; left: 0; top: 0; height: 118px; white-space: nowrap; font-size: 0; }

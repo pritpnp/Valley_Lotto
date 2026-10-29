@@ -22,6 +22,7 @@ from pathlib import Path
 
 from flask import (Flask, current_app, g, redirect, render_template, request,
                    session, url_for, jsonify, abort)
+from flask.sessions import SecureCookieSessionInterface
 from sqlalchemy import create_engine, func, select, text
 from sqlalchemy.orm import sessionmaker
 from werkzeug.exceptions import HTTPException
@@ -200,6 +201,7 @@ def create_app(config: dict | None = None) -> Flask:
     )
 
     app.permanent_session_lifetime = timedelta(days=90)   # keep the device signed in
+    app.session_interface = _NoCookieOnPublicFeeds()
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     engine = create_engine(_normalize_db_url(db_url), future=True,
                            connect_args={"check_same_thread": False} if db_url.startswith("sqlite") else {})
@@ -421,6 +423,20 @@ def current_user():
 
 # Public, read-only feeds of PA data: no login, no session, not access-logged.
 _PUBLIC_FEEDS = {"/api/numbers"}
+
+
+class _NoCookieOnPublicFeeds(SecureCookieSessionInterface):
+    """The usual signed session cookie, except that a public feed never sends
+    one, not even to a visitor who is signed in. Its answers are marked as fine
+    for a shared cache to keep and hand to anyone, and Flask otherwise sends a
+    signed-in visitor's cookie back on every answer (to keep the 90-day login
+    fresh). That has to be stopped here: the cookie is written after the view
+    and the after-request hooks have run, so they can't take it out."""
+
+    def save_session(self, app, session, response):
+        if request.path in _PUBLIC_FEEDS:
+            return
+        super().save_session(app, session, response)
 
 
 def _register_routes(app: Flask):

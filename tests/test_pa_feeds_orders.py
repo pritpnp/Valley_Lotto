@@ -549,3 +549,27 @@ def test_cross_check_notes_are_sent_with_the_new_list(db, sent, monkeypatch, no_
     Web(monkeypatch, {job.RETAILERS_URL: retailer_page(url), url: order_pdf()})
     job.orders(db, T0)
     assert len(sent) == 2 and "worth a look" in sent[1] and "2026-10-19" in sent[1]
+
+
+def test_a_new_list_telegram_didnt_take_is_told_on_the_next_run_once(tmp_path, monkeypatch):
+    # The list is saved either way; only the message waits for Telegram to be
+    # back, and the list isn't downloaded or compared again for it.
+    delivered, up = [], {"now": False}
+    monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "t")
+    monkeypatch.setenv("TELEGRAM_CHAT_ID", "c")
+    monkeypatch.setattr(telegram, "send", lambda text, formatted=False:
+                        up["now"] and (delivered.append(text) or True))
+    url = f"sqlite:///{tmp_path / 'job.db'}"
+    monkeypatch.setenv("DATABASE_URL", url)
+    web = Web(monkeypatch, {job.RETAILERS_URL: PAGE, PDF_URL: PDF})
+    assert job.run(["orders"], now=T0) == 0
+    assert delivered == []
+    up["now"] = True
+    for hours in (1, 2):
+        assert job.run(["orders"], now=T0 + timedelta(hours=hours)) == 0
+    assert len(delivered) == 1 and "55 games" in delivered[0]
+    assert web.asked == [job.RETAILERS_URL, PDF_URL, job.RETAILERS_URL, job.RETAILERS_URL]
+    e = create_engine(url)
+    with Session(e) as s:
+        assert s.scalar(select(func.count()).select_from(OrderListRow)) == 1
+    e.dispose()

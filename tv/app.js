@@ -24,6 +24,9 @@
   var RETRY_MS = 30 * 1000;
   var RELOAD_MS = 60 * 60 * 1000;
   var FETCH_TIMEOUT_MS = 20 * 1000;
+  var NOTE_MS = 60 * 1000;               // the "Updated" note is redrawn this often
+  var STALE_MS = 2 * 60 * 60 * 1000;     // numbers older than this say so
+  var NOTE_W = 236;                      // widest the note can be inside the yellow label
   var TZ = 'America/New_York';
 
   var params = parseQuery(window.location.search);
@@ -52,7 +55,7 @@
     tickerSig: '',
     current: null        // current slide element
   };
-  var timers = { slide: 0, poll: 0, reload: 0, slideJobs: [] };
+  var timers = { slide: 0, poll: 0, reload: 0, note: 0, slideJobs: [] };
 
   /* ------------------------------------------------------------ helpers */
 
@@ -918,18 +921,25 @@
 
     timers.slide = setTimeout(function () {
       if (state.needsRebuild) {
-        var key = plan.units.map(function (u) { return u.key; }).join('|');
+        // carry on from where we were in the cycle. The hero pair comes back
+        // more than once, so this is found by its turn (its second showing
+        // stays the second), not as the first slide with the same games.
+        var key = slideKey(plan), turn = 0, s;
+        for (s = 0; s < state.index; s++) if (slideKey(state.slides[s]) === key) turn++;
         rebuildSlides();
-        // carry on from where we were in the cycle
         var at = -1;
-        for (var s = 0; s < state.slides.length; s++) {
-          if (state.slides[s].units.map(function (u) { return u.key; }).join('|') === key) { at = s; break; }
+        for (s = 0; s < state.slides.length; s++) {
+          if (slideKey(state.slides[s]) === key) { at = s; if (turn-- === 0) break; }
         }
         showSlide(at + 1);
       } else {
         showSlide(state.index + 1);
       }
     }, holdMs);
+  }
+
+  function slideKey(plan) {
+    return plan.units.map(function (u) { return u.key; }).join('|');
   }
 
   function rebuildSlides() {
@@ -1081,13 +1091,42 @@
     trackEl.className = 'tk-track run';
   }
 
+  // When the numbers were last read from PA: the newest seen_at (the feed
+  // job stamps each game every time it reads it), not when this TV last
+  // reached the app. An app from before seen_at only gives generated_at.
+  function lastRead(data) {
+    var newest = null;
+    data.games.forEach(function (g) {
+      var t = g.seen_at ? new Date(g.seen_at) : null;
+      if (t && !isNaN(t) && (!newest || t > newest)) newest = t;
+    });
+    if (newest) return newest;
+    var gen = data.generated_at ? new Date(data.generated_at) : null;
+    return gen && !isNaN(gen) ? gen : null;
+  }
+
+  // The small note under the ticker label: "Updated 8:20 PM", with the day
+  // when it wasn't today. Once the numbers haven't been refreshed from PA for
+  // a while it says "Numbers from 6:40 PM" instead: plain to staff that the
+  // feed has stopped, nothing that alarms customers.
   function renderUpdated(data) {
-    var stamp = data && (data.generated_at ? new Date(data.generated_at) : null);
-    if (!stamp || isNaN(stamp)) { updatedEl.textContent = ''; return; }
-    var p = nyParts(stamp);
-    var label = 'Updated ' + clock12(p);
-    if (isoDay(p) !== todayNY()) label = 'Updated ' + MONTHS[p.mo - 1].slice(0, 3) + ' ' + p.d + ', ' + clock12(p);
+    var stamp = data ? lastRead(data) : null;
+    var label = '', cls = 'tk-upd';
+    if (stamp) {
+      var p = nyParts(stamp);
+      var when = clock12(p);
+      if (isoDay(p) !== todayNY()) when = MONTHS[p.mo - 1].slice(0, 3) + ' ' + p.d + ', ' + when;
+      var stale = now().getTime() - stamp.getTime() > STALE_MS;
+      label = (stale ? 'Numbers from ' : 'Updated ') + when;
+      if (stale) cls += ' is-stale';
+    }
+    if (updatedEl.textContent === label && updatedEl.className === cls) return;
     updatedEl.textContent = label;
+    updatedEl.className = cls;
+    updatedEl.style.fontSize = '';
+    updatedEl.style.display = 'inline-block';
+    fitWidth(updatedEl, NOTE_W, 12);
+    updatedEl.style.display = '';
   }
 
   /* --------------------------------------------------------------- data */
@@ -1189,6 +1228,11 @@
     else if (!DEMO) showEmpty();
     poll();
     scheduleReload();
+    // The note depends on the clock as well as the data (the day once it is
+    // past midnight, "Numbers from" once they are old), so it is redrawn
+    // every minute, also while the app can't be reached.
+    clearInterval(timers.note);
+    timers.note = setInterval(function () { if (state.data) renderUpdated(state.data); }, NOTE_MS);
   }
 
   function whenFontsReady(cb) {

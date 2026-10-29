@@ -12,7 +12,10 @@ Three jobs live here:
 * **Telling the owner, once.** A problem goes to Telegram the first time it's
   seen, not every ten minutes; a short "fixed" note follows when it clears. A
   website that doesn't answer, or answers with something that isn't the page at
-  all, is only mentioned once it has kept failing for over an hour.
+  all, is only mentioned once it has kept failing for over an hour. That a
+  message was sent is saved before it goes, so a run that fails afterwards (or
+  a database that won't save anything) can't have it sent again every ten
+  minutes; one Telegram doesn't take is tried again at the next run.
 * **The side-by-side check.** Powerball and Mega Millions are read from PA's
   feed and from the old scraper; every draw is compared. After 14 days of exact
   matches (at least 4 draws of each game) the TVs switch to PA's feed, for good.
@@ -54,6 +57,7 @@ OLD_LAST_NEW = "old_last_new_at"       # the last time the old scraper showed a 
 OLD_OFF_TOLD = "old_off_told_at"       # the last "turn the old scraper OFF" message
 OLD_ON_TOLD = "old_on_told"            # why "turn it back ON" was last sent (JSON list)
 PA_FAILING_SINCE = "pa_failing_since"  # PA's feed gave no Powerball/Mega Millions since
+PENDING = "pending:"                   # + what happened: a message still to be delivered
 
 # The games both sources cover: id -> (name, bonus ball code).
 PBMM = {POWERBALL: ("Powerball", "PB"), MEGA_MILLIONS: ("Mega Millions", "MB")}
@@ -180,6 +184,27 @@ def send(text: str) -> bool:
     return telegram.send(text, formatted=True)
 
 
+def _send_and_remember(session, key: str, value: str, text: str, now: datetime) -> bool:
+    """Send ``text``, remembering that it went by setting ``key`` to ``value``.
+
+    That's saved for good (with all the run has done so far) before the message
+    goes. So a database that won't save it (Supabase makes one read-only when
+    it's over its size limit) stops the message too, and nothing that goes wrong
+    later in the run can undo it and have the same message sent again at every
+    run. If Telegram doesn't take the message, ``key`` is put back as it was, so
+    the next run tries again. (With no Telegram set up, it stays: there's nothing
+    to try again.) Returns True if the message was delivered."""
+    before = get_setting(session, key, "")
+    set_setting(session, key, value, now)
+    session.commit()
+    if send(text):
+        return True
+    if telegram.configured():
+        set_setting(session, key, before, now)
+        session.commit()
+    return False
+
+
 def report(session, slot: str, problem: str | None, now: datetime, *,
            key: str | None = None) -> bool:
     """Tell Telegram about ``problem`` (HTML) unless it was the last thing said
@@ -196,15 +221,50 @@ def report(session, slot: str, problem: str | None, now: datetime, *,
             return False
         # Remembered once it's delivered (or there's no Telegram to deliver it
         # to), so a message lost to a Telegram outage is tried again next run.
-        if send(problem) or not telegram.configured():
-            set_setting(session, setting, signature, now)
+        _send_and_remember(session, setting, signature, problem, now)
         return True
     if before:
         set_setting(session, setting, "", now)
+        session.commit()            # saved before the note goes, as above
         if FIXED.get(slot):
             send(FIXED[slot])
             return True
     return False
+
+
+def tell(session, event: str, text: str, now: datetime) -> None:
+    """Tell the owner about something that happened once (a mismatch, the
+    switch, a new order list), and make sure it gets there. The message waits in
+    pa_feed_settings until Telegram takes it, so one lost to a Telegram outage
+    goes out at a later run instead of never. Only the message is tried again:
+    what it's about was dealt with, and saved, when it happened. ``event`` names
+    it (one message per event)."""
+    set_setting(session, PENDING + event, text, now)
+    deliver_pending(session, now)
+
+
+def deliver_pending(session, now: datetime) -> int:
+    """Send the messages still waiting (see :func:`tell`), oldest first. Each is
+    taken off the list for good before it goes (as in :func:`_send_and_remember`);
+    one Telegram doesn't take goes back on, and the rest wait for the next run,
+    since Telegram is likely down. Returns how many went out."""
+    waiting = session.scalars(select(FeedSettingRow)
+                              .where(FeedSettingRow.key.startswith(PENDING))
+                              .order_by(FeedSettingRow.updated_at, FeedSettingRow.key)).all()
+    delivered = 0
+    for row in waiting:
+        key, text, queued = row.key, row.value, row.updated_at
+        session.delete(row)
+        session.commit()
+        if not text:
+            continue
+        if send(text) or not telegram.configured():
+            delivered += 1
+            continue
+        session.add(FeedSettingRow(key=key, value=text, updated_at=queued))
+        session.commit()
+        break
+    return delivered
 
 
 _QUOTED = re.compile(r"“[^”]*”")
@@ -439,6 +499,12 @@ def compare_and_switch(session, now: datetime) -> dict:
     if new_checks and in_trial and not get_setting(session, TRIAL_STARTED):
         set_setting(session, TRIAL_STARTED, now.isoformat(), now)
     mismatches = [c for c in new_checks if not c.matched]
+    if mismatches and in_trial:
+        set_setting(session, TRIAL_STARTED, now.isoformat(), now)
+    # Told once all of it is saved: a message Telegram doesn't take is tried
+    # again later on its own, without checking the draw or restarting the trial
+    # a second time.
+    told = []
     for c in mismatches:
         pa, old = readings[(c.game_id, c.draw_date)]
         name, _ = PBMM[c.game_id]
@@ -446,13 +512,14 @@ def compare_and_switch(session, now: datetime) -> dict:
                  if in_trial else
                  "The TVs keep using PA's feed (they already switched); nothing "
                  "changes on its own.")
-        send(f"⚠️ <b>{esc(name)}</b>, draw of {nice_date(c.draw_date)}: PA's feed "
-             f"and the old scraper disagree.\n"
-             f"PA's feed: {esc(_numbers_text(pa.numbers.split(), json.loads(pa.extras)))}\n"
-             f"Old scraper: {esc(_numbers_text(old.numbers.split(), json.loads(old.extras)))}\n"
-             f"{after}")
-    if mismatches and in_trial:
-        set_setting(session, TRIAL_STARTED, now.isoformat(), now)
+        told.append((f"mismatch {c.game_id} {c.draw_date}",
+                     f"⚠️ <b>{esc(name)}</b>, draw of {nice_date(c.draw_date)}: PA's feed "
+                     f"and the old scraper disagree.\n"
+                     f"PA's feed: {esc(_numbers_text(pa.numbers.split(), json.loads(pa.extras)))}\n"
+                     f"Old scraper: {esc(_numbers_text(old.numbers.split(), json.loads(old.extras)))}\n"
+                     f"{after}"))
+    for event, text in told:
+        tell(session, event, text, now)
 
     switched = False
     if in_trial:
@@ -461,10 +528,11 @@ def compare_and_switch(session, now: datetime) -> dict:
             set_setting(session, PBMM_SOURCE, PA_FEED, now)
             set_setting(session, SWITCHED_AT, now.isoformat(), now)
             switched = True
-            send(f"✅ Powerball and Mega Millions on the TVs now come from PA's own feed. "
+            tell(session, "switched",
+                 f"✅ Powerball and Mega Millions on the TVs now come from PA's own feed. "
                  f"For {TRIAL_DAYS} days every draw matched the old scraper exactly "
                  f"({counts[POWERBALL]} Powerball and {counts[MEGA_MILLIONS]} Mega Millions "
-                 f"draws), so the old scraper isn't needed any more.")
+                 f"draws), so the old scraper isn't needed any more.", now)
     return {"checked": len(new_checks), "mismatches": len(mismatches), "switched": switched}
 
 
@@ -635,22 +703,22 @@ def advise_old_scraper(session, now: datetime) -> dict:
             print("Turn the old scraper back ON (already said): "
                   + " ".join(reasons[k] for k in sorted(reasons)), flush=True)
             return said
-        if send(_turn_on_message(reasons)) or not telegram.configured():
-            set_setting(session, OLD_ON_TOLD, json.dumps(sorted(reasons)), now)
+        _send_and_remember(session, OLD_ON_TOLD, json.dumps(sorted(reasons)),
+                           _turn_on_message(reasons), now)
         said["on"] = True
         return said
     if told:
         set_setting(session, OLD_ON_TOLD, "", now)
-        send(FIXED["old_on"])
         # That note says to turn it OFF again: the weekly reminder starts from here.
         set_setting(session, OLD_OFF_TOLD, now.isoformat(), now)
+        session.commit()            # saved before the note goes (see _send_and_remember)
+        send(FIXED["old_on"])
         said["fine"] = True
         return said
     last_told = _from_iso(get_setting(session, OLD_OFF_TOLD))
     if old_scraper_running(session, now) and (last_told is None
                                               or now - last_told >= OFF_REMINDER):
-        if send(_turn_off_message()) or not telegram.configured():
-            set_setting(session, OLD_OFF_TOLD, now.isoformat(), now)
+        _send_and_remember(session, OLD_OFF_TOLD, now.isoformat(), _turn_off_message(), now)
         said["off"] = True
     return said
 

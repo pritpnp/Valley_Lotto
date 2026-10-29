@@ -67,7 +67,12 @@ clicked.
   real ones arrive.
 * Shows **TONIGHT!** on a game's draw day (Pennsylvania time).
 * A small "Updated 8:20 PM" note in the bottom-left corner says when the
-  numbers were last refreshed.
+  numbers were last refreshed from PA (the feed job checks PA every 10
+  minutes). It gives the day too when that wasn't today ("Updated Oct 28,
+  11:50 PM"). If the numbers haven't been refreshed for more than 2 hours, it
+  says "Numbers from 6:40 PM" instead, in dark red: the TV still shows the
+  numbers it has, but the feed job has stopped (check **PA numbers and order
+  list** in the repository's **Actions** tab) or the TV has lost the internet.
 * If PA adds a new game, it appears by itself with its name (no logo or price
   until one is added to `games.json`).
 

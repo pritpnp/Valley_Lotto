@@ -336,6 +336,73 @@ def test_an_old_scraper_next_draw_with_the_wrong_weekday_is_left_out():
     assert pb.jackpot_date is None and not reading.complete
 
 
+def test_an_old_scraper_next_draw_with_the_wrong_year_is_left_out_and_reported():
+    # The old scraper builds the next draw's date with the current year, so on
+    # Dec 29-31 Friday, January 1 comes out as January 1 of the year that's
+    # ending (its weekday worked out from that same wrong date). A next draw
+    # before the draw itself would put "Results coming soon" on the TVs.
+    import json
+    mm = {"numbers": [14, 19, 21, 45, 67, 3], "date": "December 29, 2026 Drawing",
+          "nextDrawing": "Thursday, January 1, 2026", "nextJackpot": "$463 Million"}
+    reading = draws.read_old_scraper(json.dumps(
+        {"powerball": json.loads(_old())["powerball"], "megaMillions": mm}))
+    mega = [d for d in reading.draws if d.game_id == "15"][0]
+    assert mega.jackpot_date is None
+    assert mega.numbers == ["14", "19", "21", "45", "67"] and mega.jackpot_text == "$463 Million"
+    assert not reading.complete and len(reading.problems) == 1
+    assert "Mega Millions" in reading.problems[0]
+    assert "“Thursday, January 1, 2026”" in reading.problems[0]
+    assert "“December 29, 2026 Drawing”" in reading.problems[0]
+    with pytest.raises(FeedError):
+        draws.parse_old_scraper(json.dumps({"powerball": json.loads(_old())["powerball"],
+                                            "megaMillions": mm}))
+
+
+@pytest.mark.parametrize("next_drawing,ok", [
+    ("Monday, October 26, 2026", False),       # the same day as the draw
+    ("Tuesday, October 27, 2026", True),       # the next day
+    ("Monday, November 2, 2026", True),        # a week later: a weekly game's next draw
+    ("Tuesday, November 3, 2026", False),      # more than a week later
+    ("Sunday, October 25, 2026", False),       # before the draw
+])
+def test_an_old_scraper_next_draw_must_be_within_a_week_after_the_draw(next_drawing, ok):
+    reading = draws.read_old_scraper(_old(nextDrawing=next_drawing))
+    pb = [d for d in reading.draws if d.game_id == "12"][0]
+    assert (pb.jackpot_date is not None) == ok
+    assert reading.complete == ok and (reading.problems == []) == ok
+
+
+@pytest.mark.parametrize("jackpotdate,ok", [
+    ("10/29/2026", True),
+    ("11/04/2026", True),                      # a week later, like Powerball Xs & Os
+    ("11/05/2026", False),
+    ("10/27/2026", False),
+    ("01/01/2026", False),                     # the wrong year
+])
+def test_pas_next_draw_date_must_be_within_a_week_after_the_draw(jackpotdate, ok):
+    reading = draws.read_feed(_feed(_game(drawdate="10/28/2026", jackpotdate=jackpotdate,
+                                          jackpot="$1,000")))
+    d = reading.draws[0]
+    assert (d.jackpot_date is not None) == ok
+    assert d.jackpot_amount == 1000.0 and d.numbers == ["01", "02", "03"]   # the rest is kept
+    assert reading.complete == ok
+    if not ok:
+        assert len(reading.problems) == 1
+        assert f"“{jackpotdate}”" in reading.problems[0] and "“10/28/2026”" in reading.problems[0]
+
+
+def test_pas_next_draw_date_on_the_draw_day_itself_is_left_out_quietly():
+    # Right after a draw PA may post the numbers before it moves the next draw
+    # on. The feed is read every ten minutes, so reporting that would be a
+    # Telegram (and a "fixed" note) at every draw. Nothing on the TVs says the
+    # next draw is a draw that's already over, either.
+    reading = draws.read_feed(_feed(_game(drawdate="10/28/2026", jackpotdate="10/28/2026",
+                                          jackpot="$716,000,000")))
+    d = reading.draws[0]
+    assert d.jackpot_date is None and d.jackpot_amount == 716000000.0
+    assert reading.complete and reading.problems == []
+
+
 def test_an_old_scraper_jackpot_that_isnt_millions_keeps_its_text():
     pb = [d for d in draws.read_old_scraper(_old(nextJackpot="$20 Million Annuity")).draws
           if d.game_id == "12"][0]

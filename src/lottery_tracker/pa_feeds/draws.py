@@ -21,7 +21,7 @@ from __future__ import annotations
 import json
 import re
 from dataclasses import dataclass, field
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from decimal import Decimal, InvalidOperation
 
 from xml.etree.ElementTree import tostring
@@ -100,6 +100,17 @@ class Reading:
 # --------------------------------------------------------------------------- #
 # Small strict readers shared by both sources
 # --------------------------------------------------------------------------- #
+
+NEXT_DRAW_WITHIN = timedelta(days=7)   # every game draws at least once a week
+
+
+def next_draw_fits(draw_date: str, next_date: str) -> bool:
+    """The next draw comes after the draw, and within a week of it (Powerball
+    Xs & Os draws weekly). Anything else is a wrong date: the old scraper, for
+    one, writes the year that's ending into a January 1 next draw."""
+    draw = date.fromisoformat(draw_date)
+    return draw < date.fromisoformat(next_date) <= draw + NEXT_DRAW_WITHIN
+
 
 _MONEY = re.compile(r"\$(\d{1,3}(?:,\d{3})+|\d+)(?:\.(\d{2}))?")
 _MILLIONS = re.compile(r"\$(\d+(?:\.\d+)?)\s+(million|billion)", re.IGNORECASE)
@@ -290,6 +301,19 @@ def read_feed(xml_text: str | bytes) -> Reading:
                 problems.append(f"{name}: can't read the next draw date "
                                 f"“{_text(el, 'jackpotdate')}”; left out.")
                 complete = False
+            elif jackpot_date == draw_date:
+                # The draw's own date: PA has posted the numbers but not yet
+                # moved the next draw on. This feed is read every ten minutes,
+                # so that's no news (a Telegram and a "fixed" note at every
+                # draw). It's left out until it moves; the TVs show no "Next
+                # Drawing" meanwhile, rather than one that's already over.
+                jackpot_date = None
+            elif not next_draw_fits(draw_date, jackpot_date):
+                problems.append(f"{name}: the next draw date “{_text(el, 'jackpotdate')}” "
+                                f"isn't within a week after the draw date "
+                                f"“{_text(el, 'drawdate')}”; left out.")
+                jackpot_date = None
+                complete = False
         jackpot_text = _text(el, "jackpotamount")
         cash_text = _text(el, "cashvalue")
         draws.append(Draw(
@@ -403,6 +427,12 @@ def read_old_scraper(json_text: str | bytes) -> Reading:
             if next_date is None:
                 problems.append(f"{title}: can't read the old scraper's next draw "
                                 f"“{_shown(entry.get('nextDrawing'))}”; left out.")
+                complete = False
+            elif not next_draw_fits(draw_date, next_date):
+                problems.append(f"{title}: the old scraper's next draw "
+                                f"“{_shown(entry.get('nextDrawing'))}” isn't within a week "
+                                f"after its draw “{_shown(entry.get('date'))}”; left out.")
+                next_date = None
                 complete = False
         jackpot = entry.get("nextJackpot")
         jackpot = " ".join(jackpot.split()) if isinstance(jackpot, str) and jackpot.strip() else None

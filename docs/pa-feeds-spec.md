@@ -32,7 +32,14 @@ Real samples of all three inputs are in `tests/fixtures/pa/` (fetched
 * Telegram: HTML parse mode, escape PA text, never log the token. Reuse
   `lottery_tracker.telegram.send`. Never send the same problem twice in a row:
   remember the last problem's signature in `pa_feed_settings`; send a short
-  "fixed" note when it clears.
+  "fixed" note when it clears. What a message is about (and that it was sent)
+  is saved, committed, before the message goes: a database that won't save it
+  stops the message too, and nothing that fails later in the run can have it
+  sent again every ten minutes. A message Telegram doesn't take is tried again
+  at the next run: a problem's signature is put back; a one-off message (a
+  mismatch, the switch, a new order list) waits in `pa_feed_settings`
+  (`pending:<event>`) until it's delivered, and only the message is tried
+  again, never what it's about.
 * The repo is PUBLIC. No secrets, no store data in the repo. PA's public pages
   as test fixtures are fine.
 * Plain language in anything the user reads (he's a store owner, not a coder).
@@ -66,7 +73,12 @@ Postgres in production (Supabase, via `DATABASE_URL`), SQLite in tests.
     PB = Powerball, PP = Power Play, MB = Mega Ball, Mill Ball = Millionaire
     Ball. An unknown label is kept (label = the code) and reported once as a
     format change. Dates are `MM/DD/YYYY`; empty elements (`<jackpotdate />`)
-    mean none.
+    mean none. A next draw date (`jackpotdate`) is kept only if it's after the
+    draw date and at most 7 days after it (Powerball Xs & Os draws weekly);
+    otherwise it's left out and reported. The one exception is the draw's own
+    date (PA has posted the numbers but not yet moved the next draw on): it's
+    left out without a report, since the feed is read every ten minutes and
+    that would be a message at every draw.
   * The feed's BOM / XML declaration must be handled (the real file starts with
     a UTF-8 BOM). Use `xml.etree.ElementTree` (or defusedxml if available); no
     regex parsing of XML.
@@ -78,7 +90,11 @@ Postgres in production (Supabase, via `DATABASE_URL`), SQLite in tests.
     "$463 Million" → 463000000 (strict: number + Million/Billion only). A
     `nextJackpot` that isn't an amount at all (the old scraper writes
     "Unavailable" when powerball.com has no jackpot line) is left out and
-    reported; one that starts with a `$` amount keeps its text.
+    reported; one that starts with a `$` amount keeps its text. `nextDrawing`
+    must name the right weekday, and is kept only if it's after the draw and
+    at most 7 days after it, as for PA's `jackpotdate` (the old scraper writes
+    the year that's ending into a January 1 next draw); otherwise it's left out
+    and reported.
 * `orders.py`
   * `find_order_link(html, base_url) -> url`: the `<a>` whose text, with
     `&nbsp;`/whitespace collapsed, is "Scratch-Offs Available for Ordering"
@@ -109,7 +125,9 @@ Postgres in production (Supabase, via `DATABASE_URL`), SQLite in tests.
     since then matched; ≥ 4 matched draws of each game since then. On switch:
     Telegram "✅ ..." once. After switching, keep comparing if old data still
     arrives; a mismatch is reported but never switches back automatically.
-  * Mismatch: Telegram immediately with both readings, reset the trial.
+  * Mismatch: Telegram immediately with both readings, reset the trial. (A
+    message Telegram doesn't take goes out at a later run; the trial isn't
+    reset again for it.)
   * Old scraper data missing for > 3 days during the trial: report once.
 * `display.py`: `build_payload(session) -> dict` (the TV feed, below). Used by
   the app's `/api/numbers`.
@@ -120,6 +138,18 @@ Postgres in production (Supabase, via `DATABASE_URL`), SQLite in tests.
   emails every ten minutes). Network fetches use a browser User-Agent,
   timeouts, and one retry. A fetch that fails is reported only after it has
   kept failing for over an hour (remember first failure time).
+  A problem with the database itself is a `::warning::` and exit 0, never a
+  failed run: it can't be reached, it turns down the login (an old password in
+  the GitHub secret after a Supabase password reset), it won't save anything
+  (Supabase's read-only mode, Postgres code 25006, when a project is over its
+  size limit), or `DATABASE_URL` isn't a usable link. Nothing can be remembered
+  in a database like that, so the owner is told on Telegram by a stateless
+  rule: only on the `numbers` run that starts between 9:00 and 9:10 AM
+  America/New_York, about once a day while it lasts. The message says what to
+  do (put the same link Render uses into the GitHub secret `DATABASE_URL`;
+  for read-only, free up space or upgrade the Supabase plan). Never the link
+  or any part of it, in the log or on Telegram. (The keepalive check can't
+  see these: it checks the app, which has its own copy of the link.)
   `numbers` = fetch feed + fetch old `lottery.json` from
   `https://raw.githubusercontent.com/pritpnp/powerball-megamillion/main/lottery.json`
   + save + compare + maybe switch. `orders` = retailers page → link → PDF
@@ -138,7 +168,10 @@ Postgres in production (Supabase, via `DATABASE_URL`), SQLite in tests.
 ## TV feed: `GET /api/numbers` (the app, no login)
 
 Public data. Headers: `Access-Control-Allow-Origin: *`,
-`Cache-Control: public, max-age=60`. Never includes store data.
+`Cache-Control: public, max-age=60`. Never includes store data, and never
+sends a session cookie, not even to a visitor who is signed in to the app
+(the app's session interface skips saving the session for public feeds; a
+shared cache could otherwise hand one visitor's login to another).
 
 ```json
 {

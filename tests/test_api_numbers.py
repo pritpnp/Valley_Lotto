@@ -42,6 +42,31 @@ def test_it_is_safe_to_cache_and_to_read_from_another_site(app):
     assert "Set-Cookie" not in r.headers
 
 
+def test_it_never_sends_the_session_cookie_even_to_someone_signed_in(app):
+    # A browser signed in to the app holds the 90-day login cookie, and Flask
+    # sends a signed-in visitor's cookie back on every answer. On this one,
+    # marked as fine for a shared cache to keep, it would be the store's login
+    # handed to whoever the cache answers next.
+    c = app.test_client()
+    c.post("/register", data={"username": "prit", "password": "pw"})
+    assert c.get_cookie("session") is not None                  # signed in
+    assert "Set-Cookie" in c.get("/count").headers              # pages do refresh it
+    r = c.get("/api/numbers")
+    assert r.status_code == 200 and r.headers["Cache-Control"] == "public, max-age=60"
+    assert "Set-Cookie" not in r.headers
+    assert "Cookie" not in r.headers.get("Vary", "")             # the same for everyone
+    assert c.get("/count").status_code == 200                   # and still signed in
+
+
+def test_a_failure_never_sends_the_session_cookie_either(app, monkeypatch):
+    import lottery_tracker.pa_feeds.display as display
+    monkeypatch.setattr(display, "build_payload", lambda session, now=None: 1 / 0)
+    c = app.test_client()
+    c.post("/register", data={"username": "prit", "password": "pw"})
+    r = c.get("/api/numbers")
+    assert r.status_code == 503 and "Set-Cookie" not in r.headers
+
+
 def test_it_carries_no_store_data(app):
     # Sign in and set up a store, then make sure none of it leaks into the feed.
     c = app.test_client()

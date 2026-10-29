@@ -25,6 +25,9 @@ PDF_URL = ("https://www.palottery.pa.gov/PaLotteryWebSite/media/Retailer-Documen
            "Retailer-Tools/Scratch-Offs_Order/Scratch-Offs_Order_10-26-26.pdf")
 
 T0 = datetime(2026, 10, 29, 0, 10, tzinfo=timezone.utc)
+# Powerball's draw of Wed Oct 28 has Sat Oct 31 as its next draw, not Oct 28.
+NEXT_SATURDAY = (b"<jackpotdate>10/28/2026</jackpotdate><jackpotamount>$716",
+                 b"<jackpotdate>10/31/2026</jackpotdate><jackpotamount>$716")
 
 
 @pytest.fixture()
@@ -229,7 +232,7 @@ def test_a_moving_jackpot_updates_the_same_row(db):
 def test_a_new_draw_is_a_new_row(db):
     save_fixtures(db, T0)
     nxt = FEED.replace(b"<drawdate>10/26/2026</drawdate><numbers>18 26",
-                       b"<drawdate>10/28/2026</drawdate><numbers>02 26")
+                       b"<drawdate>10/28/2026</drawdate><numbers>02 26").replace(*NEXT_SATURDAY)
     store.save_draws(db, draws.parse_feed(nxt), T0 + timedelta(days=1))
     assert sorted(r.draw_date for r in rows(db, source="pa_feed", game_id="12")) == \
         ["2026-10-26", "2026-10-28"]
@@ -749,6 +752,83 @@ def test_a_turn_on_message_telegram_didnt_take_is_tried_again(db, monkeypatch):
     assert len(on) == 2                                             # failed once, then delivered
 
 
+class Telegram:
+    """Stands in for Telegram, set up, and up or down (``up``)."""
+
+    def __init__(self, monkeypatch):
+        self.up, self.tried, self.delivered = True, [], []
+        monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "t")
+        monkeypatch.setenv("TELEGRAM_CHAT_ID", "c")
+        monkeypatch.setattr(telegram, "send", self.send)
+
+    def send(self, text, formatted=False):
+        self.tried.append(text)
+        if self.up:
+            self.delivered.append(text)
+        return self.up
+
+
+def test_a_mismatch_telegram_didnt_take_is_told_later_and_nothing_else_repeats(db, monkeypatch):
+    tg = Telegram(monkeypatch)
+    run_days(db, 0, 6)
+    tg.up = False
+    run_days(db, 7, 7, mismatch_on={7})                             # Mon: Powerball differs
+    assert tg.delivered == [] and len(tg.tried) == 1
+    started = store.get_setting(db, store.TRIAL_STARTED)
+    checks = db.scalar(select(func.count()).select_from(DrawCheckRow))
+    store.deliver_pending(db, START + timedelta(days=7, minutes=10))   # still down: kept
+    tg.up = True
+    for minutes in (20, 30, 40):
+        store.deliver_pending(db, START + timedelta(days=7, minutes=minutes))
+        store.compare_and_switch(db, START + timedelta(days=7, minutes=minutes))
+    assert len(tg.delivered) == 1
+    assert "disagree" in tg.delivered[0] and "Mon Nov 9, 2026" in tg.delivered[0]
+    assert "starts over" in tg.delivered[0]
+    # Only the message was tried again: the trial didn't start over a second time,
+    # and the draw wasn't checked again.
+    assert store.get_setting(db, store.TRIAL_STARTED) == started == \
+        (START + timedelta(days=7)).isoformat()
+    assert db.scalar(select(func.count()).select_from(DrawCheckRow)) == checks
+    assert run_days(db, 8, 21) == 21                                # 14 days from day 7, as before
+
+
+def test_the_switch_message_telegram_didnt_take_is_told_later_once(db, monkeypatch):
+    tg = Telegram(monkeypatch)
+    run_days(db, 0, 13)
+    tg.up = False
+    assert run_days(db, 14, 14) == 14
+    assert tg.delivered == [] and len(tg.tried) == 1
+    switched_at = store.get_setting(db, store.SWITCHED_AT)
+    tg.up = True
+    store.deliver_pending(db, START + timedelta(days=14, minutes=10))
+    run_days(db, 15, 20)
+    store.deliver_pending(db, START + timedelta(days=20, minutes=10))
+    assert [m for m in tg.delivered if m.startswith("✅")] == [tg.tried[0]]
+    assert store.pbmm_source(db) == "pa_feed"
+    assert store.get_setting(db, store.SWITCHED_AT) == switched_at
+
+
+def test_waiting_messages_go_out_oldest_first_and_stop_while_telegram_is_down(db, monkeypatch):
+    tg = Telegram(monkeypatch)
+    tg.up = False
+    store.tell(db, "first", "1st", T0)
+    store.tell(db, "second", "2nd", T0 + timedelta(minutes=10))
+    assert tg.tried == ["1st", "1st"]                               # no use trying the rest
+    tg.up = True
+    assert store.deliver_pending(db, T0 + timedelta(minutes=20)) == 2
+    assert tg.delivered == ["1st", "2nd"]
+    assert store.deliver_pending(db, T0 + timedelta(minutes=30)) == 0
+    assert db.scalar(select(func.count()).select_from(store.FeedSettingRow)
+                     .where(store.FeedSettingRow.key.startswith(store.PENDING))) == 0
+
+
+def test_without_telegram_a_message_isnt_kept_waiting(db, monkeypatch):
+    monkeypatch.delenv("TELEGRAM_BOT_TOKEN", raising=False)
+    store.tell(db, "orders 2026-10-26", "📋 a list", T0)
+    assert db.scalar(select(func.count()).select_from(store.FeedSettingRow)
+                     .where(store.FeedSettingRow.key.startswith(store.PENDING))) == 0
+
+
 # --- the TV feed ------------------------------------------------------------------------------
 
 SPEC_POWERBALL = {
@@ -886,7 +966,8 @@ def test_before_the_switch_the_old_scrapers_latest_draw_wins_even_if_pa_is_ahead
     save_fixtures(db)
     store.compare_and_switch(db, T0)
     newer = FEED.replace(b"<drawdate>10/26/2026</drawdate><numbers>18 26 49 50 54 PB: 01",
-                         b"<drawdate>10/28/2026</drawdate><numbers>01 02 03 04 05 PB: 06")
+                         b"<drawdate>10/28/2026</drawdate><numbers>01 02 03 04 05 PB: 06"
+                         ).replace(*NEXT_SATURDAY)
     store.save_draws(db, draws.parse_feed(newer), T0 + timedelta(hours=1))
     pb = display.build_payload(db, now=T0)["games"][11]
     assert pb["draw_date"] == "2026-10-26" and pb["source"] == "old_scraper"
@@ -930,7 +1011,8 @@ def test_after_the_switch_a_newer_old_scraper_draw_shows_until_pa_catches_up(db)
     assert payload["games"][12]["source"] == "pa_feed"            # Mega Millions: PA's is as new
 
     caught_up = FEED.replace(b"<drawdate>10/26/2026</drawdate><numbers>18 26 49 50 54 PB: 01",
-                             b"<drawdate>10/28/2026</drawdate><numbers>02 03 04 05 06 PB: 07")
+                             b"<drawdate>10/28/2026</drawdate><numbers>02 03 04 05 06 PB: 07"
+                             ).replace(*NEXT_SATURDAY)
     store.save_draws(db, draws.parse_feed(caught_up), later + timedelta(minutes=10))
     pb = display.build_payload(db, now=later)["games"][11]
     assert pb["source"] == "pa_feed" and pb["draw_date"] == "2026-10-28"
@@ -1020,8 +1102,8 @@ def test_without_a_database_link_it_says_so_plainly_and_succeeds(monkeypatch, ca
 ])
 def test_a_database_that_cant_be_reached_is_a_warning_not_a_failed_run(monkeypatch, capsys, sent, url):
     # A failed run emails the owner, and at every ten minutes a database outage
-    # would be dozens of emails. (The daily keepalive check reports a database
-    # that stays down.) The log is public: no password, server or user in it.
+    # would be dozens of emails. (The owner is told once a day instead: see the
+    # daily-run tests below.) The log is public: no password, server or user in it.
     monkeypatch.setenv("DATABASE_URL", url)
     web = everything(monkeypatch)
     assert job.run(["numbers"], now=T0) == 0
@@ -1068,6 +1150,203 @@ def test_the_database_going_away_part_way_through_is_a_warning_not_a_failed_run(
     out = capsys.readouterr()
     assert "::warning::" in out.out and "next run" in out.out
     assert "s3cret" not in out.out + out.err and "postgres.abc" not in out.out + out.err
+
+
+# A database problem can't be remembered in the database, so the owner is told
+# about one on the run that starts between 9:00 and 9:10 in the morning, Eastern.
+MIDNIGHT = datetime(2026, 10, 29, 4, 0, tzinfo=timezone.utc)       # midnight Eastern (EDT)
+NINE_AM = MIDNIGHT + timedelta(hours=9)
+
+
+@pytest.mark.parametrize("when,daily", [
+    (datetime(2026, 10, 29, 13, 0, tzinfo=timezone.utc), True),     # 9:00 AM EDT
+    (datetime(2026, 10, 29, 13, 9, 59, tzinfo=timezone.utc), True),
+    (datetime(2026, 10, 29, 13, 10, tzinfo=timezone.utc), False),
+    (datetime(2026, 10, 29, 12, 59, 59, tzinfo=timezone.utc), False),
+    (datetime(2026, 10, 29, 9, 5, tzinfo=timezone.utc), False),      # 9:05 UTC is 5:05 AM there
+    (datetime(2026, 11, 2, 14, 5, tzinfo=timezone.utc), True),       # 9:05 AM EST, after the clocks change
+    (datetime(2026, 11, 2, 13, 5, tzinfo=timezone.utc), False),
+])
+def test_the_daily_run_is_the_one_between_9_and_9_10_eastern(when, daily):
+    assert job.daily_run(when) is daily
+
+
+class NoDatabase:
+    """An engine whose connection fails with ``error``."""
+
+    def __init__(self, error):
+        self.error = error
+
+    def connect(self):
+        raise self.error
+
+    def dispose(self):
+        pass
+
+
+def _login_turned_down():
+    from sqlalchemy.exc import OperationalError
+    return OperationalError(None, None, Exception(
+        'connection failed: connection to server at "10.1.2.3", port 6543 failed: '
+        'FATAL:  password authentication failed for user "postgres.abc"'))
+
+
+def test_a_database_login_turned_down_is_told_once_a_day_with_what_to_do(monkeypatch, capsys, sent):
+    # The Supabase password was reset and Render updated, but not the GitHub
+    # secret: every run is turned away, nothing is saved, and the TVs show older
+    # and older numbers. A failed run every ten minutes would be an email each
+    # time, so it's a warning, and the owner hears it on Telegram once a day.
+    import sqlalchemy
+    monkeypatch.setenv("DATABASE_URL",
+                       "postgresql://postgres.abc:old-s3cret@aws-0.pooler.supabase.com:6543/postgres")
+    monkeypatch.setattr(sqlalchemy, "create_engine", lambda *a, **k: NoDatabase(_login_turned_down()))
+    web = everything(monkeypatch)
+    for minutes in range(0, 2 * 24 * 60, 10):                       # two days, as GitHub runs it
+        assert job.run(["numbers"], now=MIDNIGHT + timedelta(minutes=minutes)) == 0
+        if minutes % 60 == 0:                                       # and the hourly order list, at :07
+            assert job.run(["orders"], now=MIDNIGHT + timedelta(minutes=minutes + 7)) == 0
+    assert len(sent) == 2                                           # once a day
+    assert sent[0] == sent[1]
+    assert "turned down" in sent[0] and "password" in sent[0]
+    assert "GitHub" in sent[0] and "DATABASE_URL" in sent[0] and "Render" in sent[0]
+    assert "once a day" in sent[0]
+    out = capsys.readouterr()
+    assert "::warning::" in out.out and "turned down" in out.out
+    for part in ("old-s3cret", "postgres.abc", "pooler.supabase.com", "10.1.2.3", "6543"):
+        assert part not in out.out + out.err + "".join(sent)
+    assert web.asked == []
+
+
+def test_a_database_that_cant_be_reached_is_told_on_the_daily_run(monkeypatch, capsys, sent):
+    monkeypatch.setenv("DATABASE_URL", "postgres://postgres.abc:s3cret-pw@127.0.0.1:1/postgres")
+    everything(monkeypatch)
+    assert job.run(["numbers"], now=NINE_AM - timedelta(minutes=10)) == 0
+    assert sent == []
+    assert job.run(["numbers"], now=NINE_AM + timedelta(minutes=3)) == 0
+    assert len(sent) == 1
+    assert "can't reach the database" in sent[0] and "DATABASE_URL" in sent[0]
+    assert "Render" in sent[0]
+    out = capsys.readouterr()
+    for part in ("s3cret-pw", "postgres.abc", "127.0.0.1"):
+        assert part not in out.out + out.err + sent[0]
+
+
+def test_a_database_link_that_cant_be_used_is_told_on_the_daily_run(monkeypatch, capsys, sent):
+    monkeypatch.setenv("DATABASE_URL", "https://postgres.abc:s3cret-pw@db.example.com/postgres")
+    everything(monkeypatch)
+    assert job.run(["numbers"], now=NINE_AM + timedelta(minutes=3)) == 0
+    assert job.run(["orders"], now=NINE_AM + timedelta(minutes=7)) == 0
+    assert len(sent) == 1
+    assert "isn't a database link" in sent[0] and "Render" in sent[0]
+    out = capsys.readouterr()
+    for part in ("s3cret-pw", "postgres.abc", "db.example.com"):
+        assert part not in out.out + out.err + sent[0]
+
+
+def test_a_database_that_wont_save_anything_is_a_warning_not_a_message_every_run(monkeypatch,
+                                                                                tmp_path, capsys):
+    # Supabase makes a project read-only when it goes over its plan's size
+    # limit. PA's feed has been down for over an hour, so there's news to tell,
+    # but that it was told can't be saved: it mustn't go out again every ten
+    # minutes. Told once a day instead, as what it is.
+    import requests
+    tg = Telegram(monkeypatch)
+    path = tmp_path / "job.db"
+    monkeypatch.setenv("DATABASE_URL", f"sqlite:///{path}")
+    web = everything(monkeypatch)
+    assert job.run(["numbers"], now=T0) == 0
+    web.pages[job.FEED_URL] = requests.ConnectTimeout("slow")
+    assert job.run(["numbers"], now=T0 + timedelta(minutes=10)) == 0     # the first failure
+    assert tg.tried == []
+    monkeypatch.setenv("DATABASE_URL", f"sqlite:///file:{path}?mode=ro&uri=true")
+    for minutes in range(80, 80 + 6 * 60, 10):                      # 6 hours of runs (until 2:20 AM)
+        assert job.run(["numbers"], now=T0 + timedelta(minutes=minutes)) == 0
+    assert tg.tried == []
+    out = capsys.readouterr().out
+    assert "::warning::" in out and "read-only" in out
+    for minutes in range(-20, 30, 10):                              # 8:40 to 9:20 AM
+        assert job.run(["numbers"], now=NINE_AM + timedelta(minutes=minutes)) == 0
+    assert len(tg.tried) == 1
+    assert "read-only" in tg.tried[0] and "Supabase" in tg.tried[0] and "size limit" in tg.tried[0]
+
+
+def test_a_read_only_postgres_is_a_warning_not_a_failed_run(monkeypatch, tmp_path, capsys, sent):
+    # How Postgres says it: an InternalError (not an OperationalError), code 25006.
+    from sqlalchemy.exc import InternalError
+
+    class ReadOnlySqlTransaction(Exception):
+        sqlstate = "25006"
+
+    monkeypatch.setenv("DATABASE_URL", f"sqlite:///{tmp_path / 'job.db'}")
+    everything(monkeypatch)
+
+    def refused(*a, **k):
+        raise InternalError("UPDATE pa_draw_results ...", {}, ReadOnlySqlTransaction(
+            "cannot execute UPDATE in a read-only transaction"))
+    monkeypatch.setattr(store, "save_draws", refused)
+    assert job.run(["numbers"], now=T0) == 0
+    out = capsys.readouterr()
+    assert out.out.startswith("::warning::") or "\n::warning::" in out.out
+    assert "read-only" in out.out and sent == []
+    assert job.run(["numbers"], now=NINE_AM + timedelta(minutes=5)) == 0
+    assert len(sent) == 1 and "read-only" in sent[0]
+
+
+def test_another_database_error_is_still_a_failed_run(monkeypatch, tmp_path):
+    from sqlalchemy.exc import IntegrityError
+    monkeypatch.setenv("DATABASE_URL", f"sqlite:///{tmp_path / 'job.db'}")
+    everything(monkeypatch)
+
+    def clash(*a, **k):
+        raise IntegrityError("INSERT INTO pa_draw_results ...", {}, Exception("UNIQUE constraint"))
+    monkeypatch.setattr(store, "save_draws", clash)
+    with pytest.raises(IntegrityError):
+        job.run(["numbers"], now=T0)
+
+
+def test_a_message_isnt_sent_again_when_the_run_fails_after_it(monkeypatch, tmp_path, sent):
+    # What a message is about is saved before it goes, so the database going
+    # away later in the same run can't undo that and have it sent again.
+    import requests
+    from sqlalchemy.exc import OperationalError
+    monkeypatch.setenv("DATABASE_URL", f"sqlite:///{tmp_path / 'job.db'}")
+    web = everything(monkeypatch)
+    job.run(["numbers"], now=T0)
+    web.pages[job.FEED_URL] = requests.ConnectTimeout("slow")
+    job.run(["numbers"], now=T0 + timedelta(minutes=10))
+    compare = store.compare_and_switch
+
+    def gone(*a, **k):
+        raise OperationalError("SELECT ...", {}, Exception("server closed the connection"))
+    monkeypatch.setattr(store, "compare_and_switch", gone)
+    assert job.run(["numbers"], now=T0 + timedelta(minutes=80)) == 0
+    assert len(sent) == 1 and "Can't read PA's number feed" in sent[0]
+    monkeypatch.setattr(store, "compare_and_switch", compare)
+    for minutes in (90, 100):
+        assert job.run(["numbers"], now=T0 + timedelta(minutes=minutes)) == 0
+    assert len(sent) == 1
+
+
+def test_a_mismatch_lost_to_a_telegram_outage_is_told_on_the_next_run_once(monkeypatch, tmp_path):
+    tg = Telegram(monkeypatch)
+    url = f"sqlite:///{tmp_path / 'job.db'}"
+    monkeypatch.setenv("DATABASE_URL", url)
+    old = json.loads(OLD)
+    old["powerball"]["numbers"][0] = 8                              # 08 26 49 50 54, PA has 18
+    everything(monkeypatch, **{job.OLD_SCRAPER_URL: json.dumps(old).encode()})
+    tg.up = False
+    assert job.run(["numbers"], now=T0) == 0
+    assert tg.delivered == [] and any("disagree" in t for t in tg.tried)
+    tg.up = True
+    for minutes in (10, 20, 30):
+        assert job.run(["numbers"], now=T0 + timedelta(minutes=minutes)) == 0
+    disagree = [t for t in tg.delivered if "disagree" in t]
+    assert len(disagree) == 1 and "Old scraper: 08 26 49 50 54" in disagree[0]
+    e = create_engine(url)
+    with Session(e) as s:
+        assert s.scalar(select(func.count()).select_from(DrawCheckRow)) == 2
+        assert store.get_setting(s, store.TRIAL_STARTED) == T0.isoformat()
+    e.dispose()
 
 
 def everything(monkeypatch, **override):

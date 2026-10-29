@@ -10,8 +10,11 @@ name: PA numbers and order list
 # Problems (PA's site down for over an hour, a format change) go to Telegram
 # once, and the run still ends green: a red X here means a bug in the code,
 # not PA having a bad day, so it can't turn into an email every ten minutes.
-# A database that can't be reached is a yellow warning here, not a red X (the
-# daily keepalive.yml check is what reports a database that stays down).
+# A database problem (it can't be reached, turns down the login, has gone
+# read-only, or the DATABASE_URL secret isn't a usable link) is a yellow warning
+# here, not a red X. It's told on Telegram once a day while it lasts, on the
+# run that starts between 9:00 and 9:10 AM Eastern. (keepalive.yml can't see
+# it: that checks the app, which has its own copy of the link on Render.)
 on:
   schedule:
     - cron: "*/10 * * * *"   # numbers
