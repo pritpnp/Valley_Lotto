@@ -1,0 +1,28 @@
+{
+  "megaMillions": {
+    "numbers": [
+      14,
+      19,
+      21,
+      45,
+      67,
+      3
+    ],
+    "date": "October 27, 2026 Drawing",
+    "nextDrawing": "Friday, October 30, 2026",
+    "nextJackpot": "$463 Million"
+  },
+  "powerball": {
+    "numbers": [
+      18,
+      26,
+      49,
+      50,
+      54,
+      1
+    ],
+    "date": "October 26, 2026 Drawing",
+    "nextDrawing": "Wednesday, October 28, 2026",
+    "nextJackpot": "$716 Million"
+  }
+}

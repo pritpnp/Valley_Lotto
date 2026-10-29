@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from sqlalchemy import String, Integer, Float, Boolean, DateTime, Text, UniqueConstraint
+from sqlalchemy import String, Integer, Float, Boolean, DateTime, Text, UniqueConstraint, LargeBinary
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
@@ -333,3 +333,94 @@ class PackRow(Base):
     def is_held(self) -> bool:
         """Unopened and still ours — the thing "backstock" means."""
         return self.state == "backstock"
+
+
+# --------------------------------------------------------------------------- #
+# Pennsylvania's own published data (not store data).
+#
+# Filled by the scheduled PA feed job (``lottery_tracker.pa_feeds``), read by the
+# app: the draw-game winning numbers for the store TVs, and PA's weekly list of
+# scratch-offs retailers can order. Public facts, but kept here so the app reads
+# them live, with no redeploy, and so every reading is on record.
+# --------------------------------------------------------------------------- #
+
+class DrawResultRow(Base):
+    """One draw of one game, as one source reported it.
+
+    ``source`` is ``"pa_feed"`` (PA's own number feed) or ``"old_scraper"`` (the
+    Powerball/Mega Millions scraper being retired). The same draw from the two
+    sources is two rows, which is what lets them be compared.
+    """
+
+    __tablename__ = "pa_draw_results"
+    __table_args__ = (UniqueConstraint("source", "game_id", "draw_date", name="uq_draw_source_game_date"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    source: Mapped[str] = mapped_column(String(16), index=True)          # pa_feed | old_scraper
+    game_id: Mapped[str] = mapped_column(String(16), index=True)         # PA's feed id, e.g. "12"
+    title: Mapped[str] = mapped_column(String(128))                      # "Powerball"
+    draw_date: Mapped[str] = mapped_column(String(10), index=True)       # YYYY-MM-DD
+    numbers: Mapped[str] = mapped_column(String(128))                    # main numbers, "18 26 49 50 54"
+    extras: Mapped[str] = mapped_column(Text, default="[]")              # JSON [{"code","label","value"}]
+    jackpot_date: Mapped[str | None] = mapped_column(String(10), nullable=True)   # next draw, YYYY-MM-DD
+    jackpot_text: Mapped[str | None] = mapped_column(String(128), nullable=True)  # as published
+    jackpot_amount: Mapped[float | None] = mapped_column(Float, nullable=True)    # plain dollars only
+    cash_value_text: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    cash_value_amount: Mapped[float | None] = mapped_column(Float, nullable=True)
+    raw: Mapped[str] = mapped_column(Text, default="")                   # the entry exactly as read
+    first_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+    last_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+
+
+class DrawCheckRow(Base):
+    """One draw compared between PA's feed and the old scraper."""
+
+    __tablename__ = "pa_draw_checks"
+    __table_args__ = (UniqueConstraint("game_id", "draw_date", name="uq_draw_check_game_date"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    game_id: Mapped[str] = mapped_column(String(16), index=True)
+    draw_date: Mapped[str] = mapped_column(String(10), index=True)
+    matched: Mapped[bool] = mapped_column(Boolean)
+    detail: Mapped[str] = mapped_column(Text, default="")                # what differed, in words
+    checked_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+
+
+class FeedSettingRow(Base):
+    """Small facts the feed job keeps between runs: which source the TVs use
+    for Powerball and Mega Millions, when the side-by-side trial started, and
+    the last problem reported (so the same one isn't sent every ten minutes)."""
+
+    __tablename__ = "pa_feed_settings"
+
+    key: Mapped[str] = mapped_column(String(64), primary_key=True)
+    value: Mapped[str] = mapped_column(Text, default="")
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+
+
+class OrderListRow(Base):
+    """One week's "Scratch-Offs Available for Ordering" list from PA, saved once
+    per "As of" date, with the PDF itself so it can be read again later."""
+
+    __tablename__ = "pa_order_lists"
+
+    as_of: Mapped[str] = mapped_column(String(10), primary_key=True)     # YYYY-MM-DD, from the PDF
+    url: Mapped[str] = mapped_column(Text)
+    pdf_sha256: Mapped[str] = mapped_column(String(64))
+    pdf: Mapped[bytes] = mapped_column(LargeBinary)
+    games: Mapped[int] = mapped_column(Integer)
+    fetched_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+
+
+class OrderGameRow(Base):
+    """One game on one week's order list."""
+
+    __tablename__ = "pa_order_games"
+    __table_args__ = (UniqueConstraint("as_of", "game_number", name="uq_order_game_week"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    as_of: Mapped[str] = mapped_column(String(10), index=True)
+    game_number: Mapped[str] = mapped_column(String(16), index=True)
+    price: Mapped[float] = mapped_column(Float)
+    tickets_per_pack: Mapped[int] = mapped_column(Integer)
+    name: Mapped[str] = mapped_column(String(255))
