@@ -2162,7 +2162,8 @@ def _register_routes(app: Flask):
                 select(func.count(OrderGameRow.id)).scalar_subquery(),
                 select(func.max(OrderGameRow.id)).scalar_subquery(),
             )).one())
-            if _order_cache.get("mark") != mark:
+            cached = _order_cache.get("latest")       # (mark, view), swapped whole
+            if cached is None or cached[0] != mark:
                 # Only the dates of the lists: each row also holds its PDF.
                 saved = set(_db().scalars(select(OrderListRow.as_of)).all())
                 games = [r for r in _db().execute(
@@ -2180,9 +2181,9 @@ def _register_routes(app: Flask):
                             "orderable": {str(r.game_number).strip() for r in games
                                           if r.as_of == latest},
                             "sizes": sizes}
-                _order_cache.clear()
-                _order_cache.update(mark=mark, view=view)
-            view = _order_cache["view"]
+                cached = (mark, view)
+                _order_cache["latest"] = cached
+            view = cached[1]
         except Exception as e:  # noqa: BLE001 — no order list beats no page
             app.logger.warning("could not read PA's order lists: %s", e)
             try:
@@ -2217,14 +2218,21 @@ def _register_routes(app: Flask):
         """
         if "pack_resolver" in g:
             return g.pack_resolver
-        cfg = _cfg()
-        by_game = dict(_order_lists()["sizes"])
-        by_game.update({str(k).strip(): v for k, v in cfg.pack_sizes_by_game.items()
-                        if v is not None})
-        g.pack_resolver = PackSizeResolver(
-            by_price=cfg.pack_sizes_by_price, by_game=by_game,
-            use_builtin_fallback=cfg.pack_use_builtin_fallback)
-        return g.pack_resolver
+        from_pa = dict(_order_lists()["sizes"])
+        try:
+            cfg = _cfg()
+            by_game = dict(from_pa)
+            by_game.update({str(k).strip(): v for k, v in cfg.pack_sizes_by_game.items()
+                            if v is not None})
+            resolver = PackSizeResolver(
+                by_price=cfg.pack_sizes_by_price, by_game=by_game,
+                use_builtin_fallback=cfg.pack_use_builtin_fallback)
+        except (AttributeError, TypeError, ValueError):
+            # A typo in config.yaml's pack sizes must not take a report down:
+            # PA's own numbers still stand.
+            resolver = PackSizeResolver(by_game=from_pa)
+        g.pack_resolver = resolver
+        return resolver
 
     _own_cache: dict = {}
 

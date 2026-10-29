@@ -1,0 +1,58 @@
+name: PA numbers and order list
+
+# Reads what Pennsylvania publishes and saves it in the app's database:
+#   * every 10 minutes, the winning numbers of every draw game (for the store
+#     TVs), plus the old Powerball/Mega Millions scraper while the two are
+#     checked side by side;
+#   * every hour, the weekly "Scratch-Offs Available for Ordering" list.
+# "Run workflow" in the Actions tab does both.
+#
+# Problems (PA's site down for over an hour, a format change) go to Telegram
+# once, and the run still ends green: a red X here means a bug in the code,
+# not PA having a bad day, so it can't turn into an email every ten minutes.
+on:
+  schedule:
+    - cron: "*/10 * * * *"   # numbers
+    - cron: "7 * * * *"      # order list (GitHub's schedule is UTC and can start late)
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pa-feeds
+  cancel-in-progress: false
+
+jobs:
+  read:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-app.txt
+            requirements-feeds.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt -r requirements-app.txt -r requirements-feeds.txt
+
+      - name: Read PA's feeds
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          SCHEDULE: ${{ github.event.schedule }}
+          PYTHONPATH: src
+        run: |
+          case "$SCHEDULE" in
+            "*/10 * * * *") what=numbers ;;
+            "7 * * * *")    what=orders ;;
+            *)              what=all ;;
+          esac
+          python -m lottery_tracker.pa_feeds "$what"

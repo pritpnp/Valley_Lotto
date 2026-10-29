@@ -93,6 +93,7 @@ class Reading:
     draws: list[Draw]
     problems: list[str] = field(default_factory=list)
     complete: bool = True
+    order: list[str] = field(default_factory=list)   # every game id, as listed
 
 
 # --------------------------------------------------------------------------- #
@@ -221,8 +222,11 @@ def read_feed(xml_text: str | bytes) -> Reading:
     draws: list[Draw] = []
     problems: list[str] = []
     complete = True
+    order: list[str] = []
     for position, el in enumerate(games):
         game_id = (el.get("id") or "").strip()
+        if game_id and game_id not in order:
+            order.append(game_id)
         title = _text(el, "title")
         name = title or (f"game {game_id}" if game_id else f"entry {position + 1}")
         if not game_id or not title:
@@ -267,7 +271,7 @@ def read_feed(xml_text: str | bytes) -> Reading:
         problems.append(f"game {', '.join(dupes)} is listed twice; left out.")
         draws = [d for d in draws if d.game_id not in dupes]
         complete = False
-    return Reading(draws, problems, complete)
+    return Reading(draws, problems, complete, order)
 
 
 def parse_feed(xml_text: str | bytes) -> list[Draw]:

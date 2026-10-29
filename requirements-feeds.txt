@@ -1,0 +1,3 @@
+# PA feed job (.github/workflows/pa-feeds.yml). Install on top of
+# requirements.txt and requirements-app.txt (SQLAlchemy, psycopg).
+pdfplumber>=0.11   # reads the weekly "Scratch-Offs Available for Ordering" PDF
