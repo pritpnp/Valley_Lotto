@@ -44,6 +44,8 @@
   var flashEl = document.getElementById('divider-flash');
   var trackEl = document.getElementById('track');
   var updatedEl = document.getElementById('updated');
+  var clockTimeEl = document.getElementById('clock-time');
+  var clockDateEl = document.getElementById('clock-date');
   var emptyEl = document.getElementById('empty');
 
   var config = { settings: {}, extras: {}, games: {} };
@@ -55,7 +57,7 @@
     tickerSig: '',
     current: null        // current slide element
   };
-  var timers = { slide: 0, poll: 0, reload: 0, note: 0, slideJobs: [] };
+  var timers = { slide: 0, poll: 0, reload: 0, note: 0, clock: 0, slideJobs: [] };
 
   /* ------------------------------------------------------------ helpers */
 
@@ -875,7 +877,7 @@
 
   function holdSeconds(plan) {
     var s = config.settings;
-    return plan.hero ? (s.heroSeconds || 16) : (s.slideSeconds || 12);
+    return plan.hero ? (s.heroSeconds || 21) : (s.slideSeconds || 17);
   }
 
   function showSlide(i) {
@@ -1129,6 +1131,17 @@
     updatedEl.style.display = '';
   }
 
+  // The time in Pennsylvania at the right end of the ticker ("7:38 PM",
+  // "THU, OCT 29"). Checked every second, redrawn only when the minute moves.
+  function renderClock() {
+    var p = nyParts(now());
+    var time = clock12(p);
+    if (clockTimeEl.textContent === time) return;
+    var day = dayInfo(isoDay(p));
+    clockTimeEl.textContent = time;
+    clockDateEl.textContent = day ? day.wd + ', ' + day.mon + ' ' + day.d : '';
+  }
+
   /* --------------------------------------------------------------- data */
 
   function applyData(data) {
@@ -1233,6 +1246,9 @@
     // every minute, also while the app can't be reached.
     clearInterval(timers.note);
     timers.note = setInterval(function () { if (state.data) renderUpdated(state.data); }, NOTE_MS);
+    renderClock();
+    clearInterval(timers.clock);
+    timers.clock = setInterval(renderClock, 1000);
   }
 
   function whenFontsReady(cb) {

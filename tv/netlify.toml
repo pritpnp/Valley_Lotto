@@ -43,3 +43,8 @@
   # this public repo anyway). Without this, Netlify's secret scanner stops the
   # build whenever APP_URL is marked "Contains secret values".
   SECRETS_SCAN_OMIT_KEYS = "APP_URL"
+
+[functions]
+  # netlify/functions/refresh-numbers.mts: asks the app every 10 minutes, which
+  # makes it read PA's number feed when its copy is over 5 minutes old.
+  directory = "netlify/functions"

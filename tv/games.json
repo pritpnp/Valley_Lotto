@@ -2,8 +2,8 @@
   "_about": "How each PA game looks on the store TV, keyed by PA's feed game id. name: shown when there is no logo; color: the game's colour block (picked to suit its official logo); logo: PA's official game logo in logos/ with its pixel size (logoSize) so it can be sized before it loads; logoLabel: a label shown with the logo (Double Play uses the Powerball logo); price: the yellow ticket-price callout, shown only when set (from PA's Game Guide, 2026-04-07); group/draw: the Day and Evening draws of a PICK game share one panel. A game PA adds later shows up automatically with a styled name, a stock colour and no price until it gets an entry here.",
 
   "settings": {
-    "slideSeconds": 12,
-    "heroSeconds": 16,
+    "slideSeconds": 17,
+    "heroSeconds": 21,
     "heroEvery": 3,
     "tickerPixelsPerSecond": 130
   },

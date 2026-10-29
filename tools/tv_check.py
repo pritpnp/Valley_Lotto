@@ -213,23 +213,23 @@ with sync_playwright() as p:
     calls = api.calls
     run_for(page, 6000)                  # the poll fires while the hero slide is up
     check("new data arrived during the hero slide", api.calls > calls and current_slide(page) == plan[again], current_slide(page))
-    run_for(page, 16000)
+    run_for(page, 21000)                 # a hero slide holds 21 s
     nxt = current_slide(page)
     check("next slide after the repeated hero is " + expected, nxt == expected, nxt)
     # and the cycle carries on in order from there
-    run_for(page, 12000)
+    run_for(page, 17000)                 # other slides hold 17 s
     check("then " + plan[again + 2], current_slide(page) == plan[again + 2], current_slide(page))
 
     # Same, during the first hero slide: carries on with slide 1. The last
     # poll answered 2:02:31 (fake clock), so the next one is due at 2:04:31.
     api.answer = feed("2026-10-29T14:20:00Z", "2026-10-29T14:04:25Z")
-    run_for(page, 87000)                 # 2:04:26
+    run_for(page, 77000)                 # 2:04:26
     page.evaluate("__tv.go(0)")
     settle(page)
     calls = api.calls
     run_for(page, 6000)
     check("new data arrived during the first hero slide", api.calls > calls and current_slide(page) == plan[0], current_slide(page))
-    run_for(page, 16000)
+    run_for(page, 21000)
     check("next slide after the first hero is " + plan[1], current_slide(page) == plan[1], current_slide(page))
     check("no page errors", not errors, "; ".join(errors))
     browser.close()

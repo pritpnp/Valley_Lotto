@@ -428,7 +428,21 @@ html, body {
    while. Easy for staff to spot, nothing that alarms customers. */
 .tk-upd.is-stale { color: #9b1c1c; opacity: 1; }
 
-.tk-view { position: absolute; left: 300px; top: 6px; right: 0; height: 118px; overflow: hidden; }
+.tk-view { position: absolute; left: 300px; top: 6px; right: 230px; height: 118px; overflow: hidden; }
+
+/* The time, Eastern, at the right end of the ticker: the left label's mirror. */
+.tk-clock {
+  position: absolute; right: -30px; top: 0; height: 124px; width: 290px; z-index: 2;
+  background: var(--yellow); color: var(--ink);
+  -webkit-transform: skewX(-12deg); transform: skewX(-12deg);
+  box-shadow: -8px 0 0 rgba(0,0,0,.35);
+}
+.tk-clock-in {
+  position: absolute; left: 0; right: 30px; top: 0; bottom: 0; padding-top: 14px; text-align: center;
+  -webkit-transform: skewX(12deg); transform: skewX(12deg);
+}
+.tk-time { display: block; font: italic 900 50px/54px var(--sans); letter-spacing: -.01em; white-space: nowrap; }
+.tk-date { display: block; font: 900 18px/22px var(--sans); text-transform: uppercase; letter-spacing: .06em; margin-top: 6px; white-space: nowrap; }
 .tk-track { position: absolute; left: 0; top: 0; height: 118px; white-space: nowrap; font-size: 0; }
 .tk-track.run { -webkit-animation: tk 60s linear infinite; animation: tk 60s linear infinite; }
 .tk-set { display: inline-block; height: 118px; white-space: nowrap; vertical-align: top; }
