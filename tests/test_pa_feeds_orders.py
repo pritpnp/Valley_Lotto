@@ -241,6 +241,29 @@ def test_one_bad_row_rejects_the_whole_list(row):
         orders.parse_order_pdf(order_pdf(rows=("1801 $1 100 GLINDA", row, "1717 $50 50 LION")))
 
 
+def test_a_row_missing_its_tickets_per_pack_isnt_read_from_the_name():
+    # With its Tix/Pack cell empty, "5 STAR WINS" reads as game number, price,
+    # a whole number and a name: "1773 $1 5 STAR WINS", 5 tickets a pack of a
+    # game called "STAR WINS". Where the 5 sits on the page (under GAMES
+    # AVAILABLE TO ORDER, not under Tix/Pack) says it's the name.
+    gap = "1773 $1" + " " * 19 + "5 STAR WINS"
+    with pytest.raises(OrderListError, match="1773"):
+        orders.parse_order_pdf(order_pdf(rows=("1801 $1 100 GLINDA", gap)))
+    full = "1773 $1 100" + " " * 15 + "5 STAR WINS"          # the same row, complete
+    assert orders.parse_order_pdf(order_pdf(rows=(full,))).games == [
+        orders.OrderGame("1773", 1.0, 100, "5 STAR WINS")]
+
+
+def test_a_name_the_database_cant_hold_rejects_the_list(monkeypatch):
+    # Postgres can't store the NUL character, which a broken font in the PDF
+    # could produce; saving it would fail the run every hour.
+    real = orders._pdf_lines
+    monkeypatch.setattr(orders, "_pdf_lines", lambda pdf: [
+        (text.replace("GLINDA", "GLIN\x00DA"), starts) for text, starts in real(pdf)])
+    with pytest.raises(OrderListError, match="1801"):
+        orders.parse_order_pdf(order_pdf(rows=("1801 $1 100 GLINDA",)))
+
+
 def test_the_longest_row_allowed_is_what_the_database_holds():
     cols = OrderGameRow.__table__.c
     assert (orders.LONGEST_NUMBER, orders.LONGEST_NAME) == (cols.game_number.type.length,

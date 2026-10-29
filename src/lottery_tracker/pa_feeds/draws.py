@@ -25,6 +25,7 @@ from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
 
 from xml.etree.ElementTree import tostring
+from xml.parsers import expat
 
 try:  # safer XML parsing when it's installed; the standard library otherwise
     from defusedxml.ElementTree import fromstring  # type: ignore[import-not-found]
@@ -190,6 +191,32 @@ def _text(game, tag: str) -> str | None:
     return " ".join(el.text.split())
 
 
+class _DocumentType(Exception):
+    pass
+
+
+def _declares_a_type(xml_text: str | bytes) -> bool:
+    """True if the XML reader itself sees a DOCTYPE or an entity declaration.
+
+    Looking for the text "<!DOCTYPE" isn't enough on its own: in a document
+    written in UTF-16 those aren't the bytes, but the reader decodes them and
+    would expand the entities. So the document is read once by the same reader
+    with nothing but a stop at the first declaration, before anything in it is
+    expanded. (Anything it can't read is left to the real reading to report.)"""
+    def stop(*_):
+        raise _DocumentType
+    reader = expat.ParserCreate()
+    reader.StartDoctypeDeclHandler = stop
+    reader.EntityDeclHandler = stop
+    try:
+        reader.Parse(xml_text, True)
+    except _DocumentType:
+        return True
+    except Exception:  # noqa: BLE001 — not readable XML: the real reading says so
+        pass
+    return False
+
+
 def _raw(el) -> str:
     tail, el.tail = el.tail, None          # just the <game>, not what follows it
     try:
@@ -213,7 +240,7 @@ def read_feed(xml_text: str | bytes) -> Reading:
     # expand into huge text or pull in other files, so it's refused before
     # parsing, whichever XML library is installed.
     head = xml_text if isinstance(xml_text, str) else xml_text.decode("utf-8", "replace")
-    if re.search(r"<!\s*(DOCTYPE|ENTITY)", head, re.IGNORECASE):
+    if re.search(r"<!\s*(DOCTYPE|ENTITY)", head, re.IGNORECASE) or _declares_a_type(xml_text):
         raise FeedError("PA's number feed changed shape: it now declares a document type, "
                         "which it never did, so it isn't read.")
     try:

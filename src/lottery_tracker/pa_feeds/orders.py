@@ -97,7 +97,8 @@ _AS_OF = re.compile(r"\bAs\s+of\s*:?\s*(\d{1,2})/(\d{1,2})/(\d{4}|\d{2})(?!\d)",
 _ROW = re.compile(r"(\d+)\s+(\$\S+)\s+(\d+)\s+(\S.*)")
 _HEADINGS = ("Price", "Tix/Pack", "GAMES AVAILABLE TO ORDER")
 # The database's column sizes (``OrderGameRow`` in web/models.py). Postgres
-# refuses anything longer, so a row like that isn't one this list can hold.
+# refuses anything longer (or a NUL character in any text), so a row like that
+# isn't one this list can hold.
 LONGEST_NUMBER, LONGEST_NAME = 16, 255
 # The whole heading line, word for word (the "As of" date shares its line). A
 # column added between these would still give rows that read as game number,
@@ -114,19 +115,36 @@ def _heading_at(line: str) -> list[int]:
     return [upper.find(h.upper()) for h in _HEADINGS]
 
 
-def _pdf_pages(pdf_bytes: bytes) -> list[str]:
+def _pdf_lines(pdf_bytes: bytes) -> list[tuple[str, list[float] | None]]:
+    """Every line of text in the PDF, page by page, top to bottom, with where
+    each of its words starts across the page (None when that can't be told)."""
     import pdfplumber
     try:
         with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
-            return [page.extract_text() or "" for page in pdf.pages]
+            pages = [page.extract_text_lines(return_chars=True) for page in pdf.pages]
     except Exception as e:  # noqa: BLE001 — any failure here means "not a readable PDF"
         raise OrderListError(f"PA's order list isn't a readable PDF ({type(e).__name__}).") from e
+    return [(line["text"], _word_starts(line)) for page in pages for line in page]
+
+
+def _word_starts(line: dict) -> list[float] | None:
+    """Where each word of a line starts across the page, from its letters."""
+    letters = [c for c in line.get("chars") or [] if not c["text"].isspace()]
+    words = line["text"].split()
+    if "".join(c["text"] for c in letters) != "".join(words):
+        return None          # letters that don't line up one for one (a ligature)
+    at = [c["x0"] for c in letters for _ in c["text"]]
+    starts, i = [], 0
+    for w in words:
+        starts.append(at[i])
+        i += len(w)
+    return starts
 
 
 def parse_order_pdf(pdf_bytes: bytes) -> OrderList:
     """The PDF -> :class:`OrderList`, or :class:`OrderListError` with the reason."""
-    pages = _pdf_pages(pdf_bytes)
-    text = "\n".join(pages)
+    lines = _pdf_lines(pdf_bytes)
+    text = "\n".join(t for t, _ in lines)
 
     dates = {_ymd(*m.groups()) for m in _AS_OF.finditer(text)}
     if not dates:
@@ -138,8 +156,10 @@ def parse_order_pdf(pdf_bytes: bytes) -> OrderList:
 
     games: list[OrderGame] = []
     heading_seen = False
-    for line in text.splitlines():
-        line = " ".join(line.split())
+    names_at = None              # where the GAMES AVAILABLE TO ORDER column starts
+    for line, starts in lines:
+        words = line.split()
+        line = " ".join(words)
         if not line:
             continue
         m = _ROW.fullmatch(line)
@@ -147,8 +167,12 @@ def parse_order_pdf(pdf_bytes: bytes) -> OrderList:
             price = money_amount(m.group(2))
             if not heading_seen:
                 raise OrderListError("PA's order list has games above its heading.")
+            # With its Tix/Pack cell empty, "1773 $1 5 STAR WINS" would read as 5
+            # tickets a pack of "STAR WINS": a number that starts under the game
+            # names is the name's, so the row is missing its tickets per pack.
+            in_names = starts is not None and names_at is not None and starts[2] >= names_at
             if (price is None or int(m.group(3)) <= 0 or len(m.group(1)) > LONGEST_NUMBER
-                    or len(m.group(4)) > LONGEST_NAME):
+                    or len(m.group(4)) > LONGEST_NAME or "\x00" in line or in_names):
                 raise OrderListError(f"PA's order list has a line that isn't game number, "
                                      f"price, tickets per pack and name: “{line}”.")
             games.append(OrderGame(game_number=m.group(1), price=price,
@@ -162,6 +186,7 @@ def parse_order_pdf(pdf_bytes: bytes) -> OrderList:
                 raise OrderListError(f"PA's order list heading changed: “{line}” "
                                      f"(expected Price, Tix/Pack, GAMES AVAILABLE TO ORDER).")
             heading_seen = True
+            names_at = starts[[w.upper() for w in words].index("GAMES")] if starts else None
             continue
         if _AS_OF.fullmatch(line) or line.casefold() == "as of":
             continue

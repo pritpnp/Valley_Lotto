@@ -252,22 +252,38 @@ def _too_long(column: str, value: str | None) -> bool:
     return value is not None and limit is not None and len(value) > limit
 
 
+def _unholdable(value: str | None) -> bool:
+    """Holds the NUL character, which Postgres can't store in any text column
+    (SQLite, in the tests, can). Like text that's too long, it would lose the
+    whole run, every run. Only the old scraper's JSON can carry one."""
+    return value is not None and "\x00" in value
+
+
 def _fit(d: Draw) -> tuple[Draw | None, list[str]]:
     """The draw as it can be saved, and a note for each thing left out because
-    it's longer than the database holds. None when that's the game itself (its
-    id, name or numbers); a jackpot or cash value is left out on its own."""
+    the database can't hold it. None when that's the game itself (its id, name
+    or numbers); a jackpot or cash value is left out on its own."""
+    numbers = " ".join(d.numbers)
+    name = d.title.replace("\x00", "")           # what the notes quote, never the NUL
     if (_too_long("game_id", d.game_id) or _too_long("title", d.title)
-            or _too_long("numbers", " ".join(d.numbers))):
-        name = d.title if len(d.title) <= 60 else d.title[:60] + "…"
+            or _too_long("numbers", numbers)):
+        name = name if len(name) <= 60 else name[:60] + "…"
         return None, [f"{name}: its id, name or numbers are longer than the database "
                       f"can hold; left out."]
+    if any(_unholdable(v) for v in (d.game_id, d.title, numbers)):
+        return None, [f"{name}: its id, name or numbers have a character the database "
+                      f"can't hold; left out."]
     notes = []
     for text, amount, label in (("jackpot_text", "jackpot_amount", "jackpot"),
                                 ("cash_value_text", "cash_value_amount", "cash value")):
         value = getattr(d, text)
         if _too_long(text, value):
-            notes.append(f"{d.title}: the {label} “{value[:40]}…” is longer than the "
-                         f"database can hold; left out.")
+            notes.append(f"{name}: the {label} “{value[:40].replace(chr(0), '')}…” is longer "
+                         f"than the database can hold; left out.")
+            d = replace(d, **{text: None, amount: None})
+        elif _unholdable(value):
+            notes.append(f"{name}: the {label} has a character the database can't "
+                         f"hold; left out.")
             d = replace(d, **{text: None, amount: None})
     return d, notes
 

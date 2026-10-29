@@ -172,6 +172,27 @@ def test_text_longer_than_the_database_holds_is_left_out_with_a_note(db):
             assert value is None or len(value) <= DrawResultRow.__table__.c[col].type.length
 
 
+def test_a_character_the_database_cant_hold_is_left_out_with_a_note(db):
+    # Postgres can't store the NUL character at all (SQLite here can), and one
+    # in the old scraper's jackpot text would lose the whole run, every run.
+    old = json.loads(OLD)
+    old["powerball"]["nextJackpot"] = "$716 Million\u0000"
+    reading = draws.read_old_scraper(json.dumps(old))
+    notes = store.save_draws(db, reading.draws, T0)
+    assert len(notes) == 1 and notes[0].startswith("Powerball: the jackpot")
+    assert "character" in notes[0] and "left out" in notes[0] and "\x00" not in notes[0]
+    pb = rows(db, source="old_scraper", game_id="12")[0]
+    assert pb.numbers == "18 26 49 50 54" and pb.jackpot_text is None and pb.jackpot_amount is None
+    assert rows(db, source="old_scraper", game_id="15")[0].jackpot_text == "$463 Million"
+    bad_name = Draw(game_id="99", title="New\u0000Game", draw_date="2026-10-28", numbers=["01"])
+    assert "left out" in store.save_draws(db, [bad_name], T0)[0]
+    assert rows(db, game_id="99") == []
+    for row in db.scalars(select(DrawResultRow)):
+        for col in ("game_id", "title", "numbers", "extras", "raw", "jackpot_text",
+                    "cash_value_text"):
+            assert "\x00" not in (getattr(row, col) or "")
+
+
 def test_the_feeds_order_is_remembered(db):
     save_fixtures(db)
     assert store.feed_order(db) == ["31", "27", "32", "28", "33", "29", "34", "30",
@@ -866,6 +887,44 @@ def test_a_database_that_cant_be_reached_is_a_warning_not_a_failed_run(monkeypat
     assert "s3cret-pw" not in out.out + out.err and "127.0.0.1" not in out.out + out.err
     assert "postgres.abc" not in out.out + out.err
     assert web.asked == [] and sent == []
+
+
+@pytest.mark.parametrize("url", [
+    "postgres.abc:s3cret-pw@aws-0.pooler.supabase.com:6543/postgres",       # the start left off
+    "postgresql://postgres.abc:s3cret-pw@db.example.com:6543x/postgres",    # a mangled port
+    "https://postgres.abc:s3cret-pw@db.example.com/postgres",               # not a database link
+    "postgresql://postgres.abc:s3cret-pw@127.0.0.1:1/postgres?pgbouncer=true",   # an option it rejects
+])
+def test_a_database_link_that_cant_be_used_is_a_warning_not_a_failed_run(monkeypatch, capsys, sent,
+                                                                         url):
+    # A mistyped secret isn't a bug in the code, and failing would mean an email
+    # every ten minutes until it's fixed. Said plainly instead, with nothing of
+    # the link in the public log.
+    monkeypatch.setenv("DATABASE_URL", url)
+    web = everything(monkeypatch)
+    assert job.run(["numbers"], now=T0) == 0
+    out = capsys.readouterr()
+    assert out.out.startswith("::warning::") and "DATABASE_URL" in out.out
+    assert "s3cret-pw" not in out.out + out.err and "postgres.abc" not in out.out + out.err
+    assert web.asked == [] and sent == []
+
+
+def test_the_database_going_away_part_way_through_is_a_warning_not_a_failed_run(monkeypatch, tmp_path,
+                                                                                capsys, sent):
+    # The same as a database that can't be reached at the start: not a bug, and
+    # its full message names the server and user, which the public log mustn't.
+    from sqlalchemy.exc import OperationalError
+    monkeypatch.setenv("DATABASE_URL", f"sqlite:///{tmp_path / 'job.db'}")
+    everything(monkeypatch)
+
+    def gone(*a, **k):
+        raise OperationalError("INSERT INTO pa_draw_results ...", {}, Exception(
+            'connection to server at "db.s3cret.example.com" failed: user "postgres.abc"'))
+    monkeypatch.setattr(store, "save_draws", gone)
+    assert job.run(["numbers"], now=T0) == 0
+    out = capsys.readouterr()
+    assert "::warning::" in out.out and "next run" in out.out
+    assert "s3cret" not in out.out + out.err and "postgres.abc" not in out.out + out.err
 
 
 def everything(monkeypatch, **override):

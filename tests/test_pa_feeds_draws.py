@@ -191,6 +191,7 @@ def test_a_game_listed_twice_is_left_out():
     "not xml at all",
     '<?xml version="1.0"?><games></games>',             # no games
     '<?xml version="1.0"?><games><game id="1">',        # cut off
+    b'<?xml version="1.0" encoding="bogus"?><games><game id="1" /></games>',   # unknown encoding
 ])
 def test_a_document_that_isnt_the_feed_fails_loudly(text):
     with pytest.raises(FeedError):
@@ -214,6 +215,20 @@ def test_a_feed_that_declares_entities_is_refused_not_expanded(doctype):
         draws.read_feed("﻿" + text)
     with pytest.raises(FeedError, match="document type"):
         draws.read_feed(text.encode("utf-8"))
+
+
+@pytest.mark.parametrize("encoding", ["utf-16", "utf-16-le", "utf-16-be"])
+def test_a_document_type_is_refused_in_any_encoding(encoding):
+    # In UTF-16 "<!DOCTYPE" isn't those bytes, so looking for the text wasn't
+    # enough: the XML reader decodes it and would have expanded the entities.
+    text = ('<?xml version="1.0" encoding="UTF-16"?><!DOCTYPE games [<!ENTITY a "aaaaaaaaaa">'
+            '<!ENTITY b "&a;&a;&a;&a;&a;&a;&a;&a;&a;&a;">]><games>' + _game(title="&b;")
+            + "</games>")
+    with pytest.raises(FeedError, match="document type"):
+        draws.read_feed(text.encode(encoding))
+    # the same feed without the document type still reads, in that encoding
+    plain = text.replace(text[text.index("<!DOCTYPE"):text.index("<games>")], "")
+    assert draws.read_feed(plain.replace("&b;", "Test").encode(encoding)).draws[0].title == "Test"
 
 
 # --- strict money ----------------------------------------------------------------

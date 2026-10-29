@@ -12,9 +12,10 @@ Supabase link the app uses), TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID.
 Anything PA or the network can cause (a page that doesn't answer, a format
 change) is told to Telegram once and the run still ends normally (exit 0), so a
 problem doesn't turn into a failure email every ten minutes. A database that
-can't be reached is a warning in the log, for the same reason (the daily
-keepalive check reports one that stays down). Only a real crash, a bug in this
-code, ends with an error.
+can't be reached (or stops answering part way through), or a DATABASE_URL that
+isn't a link this can use, is a warning in the log, for the same reason (the
+daily keepalive check reports a database that stays down). Only a real crash, a
+bug in this code, ends with an error.
 """
 
 from __future__ import annotations
@@ -43,6 +44,9 @@ STATE_PATH = Path(__file__).resolve().parents[3] / "data" / "state.json"
 NO_DATABASE = ("Nothing saved: the database link has to be added as a GitHub secret "
                "named DATABASE_URL (the same Supabase link the app uses) before PA's "
                "numbers and order list can be stored.")
+BAD_DATABASE = ("Nothing saved: the GitHub secret DATABASE_URL isn't a database link this "
+                "can use. Copy the link the app uses from Supabase again and save it as "
+                "that secret.")
 
 # PA's site turns away anything that doesn't look like a browser.
 HEADERS = {
@@ -302,10 +306,19 @@ def run(argv: list[str] | None = None, *, now: datetime | None = None) -> int:
         print(NO_DATABASE)
         return 0
     from sqlalchemy import create_engine
-    from sqlalchemy.exc import OperationalError
+    from sqlalchemy.exc import ArgumentError, DBAPIError, NoSuchModuleError, OperationalError
     from sqlalchemy.orm import Session
 
-    engine = create_engine(_db_url(url), future=True)
+    # Only the kind of error is ever shown below: the link holds the password,
+    # the full messages name the database's server and user, and this log is
+    # public.
+    try:
+        engine = create_engine(_db_url(url), future=True)
+    except (ArgumentError, NoSuchModuleError, ValueError) as e:
+        # A mistyped secret, not a bug: a failed run every ten minutes would be
+        # an email each time until it's fixed.
+        print(f"::warning::{BAD_DATABASE} ({type(e).__name__})", flush=True)
+        return 0
     try:
         try:
             with engine.connect():
@@ -313,22 +326,32 @@ def run(argv: list[str] | None = None, *, now: datetime | None = None) -> int:
         except OperationalError as e:
             # Supabase down or paused, or a network blip: not a bug, so not a
             # failed run (every ten minutes, that would be dozens of emails; the
-            # daily keepalive check reports a database that stays down). Only
-            # the kind of error is shown: the full message names the database's
-            # server and user, and this log is public.
+            # daily keepalive check reports a database that stays down).
             print(f"::warning::The database couldn't be reached "
                   f"({type(e.orig or e).__name__}), so nothing was read or saved this "
                   f"time. The next run tries again.", flush=True)
             return 0
-        store.create_tables(engine)
-        now = now or store.utcnow()
-        with Session(engine) as session:
-            if args.what in ("numbers", "all"):
-                numbers(session, now)
-                session.commit()
-            if args.what in ("orders", "all"):
-                orders(session, now)
-                session.commit()
+        except DBAPIError as e:
+            # It answered, but the link has something it won't take (an option
+            # like ?pgbouncer=true): the secret again, not a bug.
+            print(f"::warning::{BAD_DATABASE} ({type(e.orig or e).__name__})", flush=True)
+            return 0
+        try:
+            store.create_tables(engine)
+            now = now or store.utcnow()
+            with Session(engine) as session:
+                if args.what in ("numbers", "all"):
+                    numbers(session, now)
+                    session.commit()
+                if args.what in ("orders", "all"):
+                    orders(session, now)
+                    session.commit()
+        except OperationalError as e:
+            # The database went away part way through: the same blip as above.
+            # What wasn't saved yet is read and saved again next time.
+            print(f"::warning::The database stopped answering part way through "
+                  f"({type(e.orig or e).__name__}). The next run tries again.", flush=True)
+            return 0
     finally:
         engine.dispose()
     return 0
