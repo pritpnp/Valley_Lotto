@@ -1,7 +1,7 @@
 # Netlify settings for the store TV page.
 # In Netlify set "Base directory" to  tv  (everything below is relative to it).
 # Netlify needs one environment variable: APP_URL = the store app's address,
-# for example https://valley-lotto.onrender.com (no slash at the end needed).
+# for example https://your-app.onrender.com (no slash at the end needed).
 
 [build]
   publish = "."
@@ -36,3 +36,10 @@
   for = "/logos/*"
   [headers.values]
     Cache-Control = "public, max-age=86400"
+
+[build.environment]
+  # APP_URL isn't a secret: the page has to send its numbers requests there,
+  # so it is written into _redirects on purpose (and the app's address is in
+  # this public repo anyway). Without this, Netlify's secret scanner stops the
+  # build whenever APP_URL is marked "Contains secret values".
+  SECRETS_SCAN_OMIT_KEYS = "APP_URL"
