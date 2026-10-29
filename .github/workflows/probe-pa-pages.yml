@@ -1,0 +1,46 @@
+name: Probe PA pages (temporary)
+
+# Temporary: fetches PA's draw-game pages this session can't reach, to read each
+# game's ticket price from PA itself. Removed afterwards.
+on:
+  push:
+    branches: ["claude/pa-lottery-tracker-11t1ul"]
+    paths: [".github/workflows/probe-pa-pages.yml"]
+
+permissions:
+  contents: write
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Fetch
+        run: |
+          mkdir -p probe-out && cd probe-out
+          UA="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36"
+          B=https://www.palottery.pa.gov
+          for p in Draw-Games/Cash-5.aspx Draw-Games/Match-6.aspx draw-games/treasure-hunt.aspx \
+                   Draw-Games/PICK-2.aspx Draw-Games/PICK-3.aspx Draw-Games/PICK-4.aspx Draw-Games/PICK-5.aspx \
+                   Draw-Games/Powerball.aspx Draw-Games/Mega-Millions.aspx Draw-Games/Powerball-Xs-and-Os.aspx \
+                   millionaireforlife Draw-Games/Millionaire-For-Life/FAQ.aspx; do
+            f=$(echo "$p" | tr '/' '_').html
+            curl -sS -L -A "$UA" --max-time 60 -o "$f" -w "%{http_code} $p\n" "$B/$p" | tee -a log.txt
+          done
+          curl -sS -L -A "$UA" --max-time 60 -o game-guide.pdf -w "%{http_code} game guide\n" "$B/PaLotteryWebSite/media/Page-Images/Game%20Guide/Game-Guide.pdf" | tee -a log.txt
+          python3 - <<'PY' > prices.txt
+          import glob, html, re
+          for f in sorted(glob.glob("*.html")):
+              s = open(f, encoding="utf-8", errors="replace").read()
+              s = re.sub(r"(?is)<(script|style)[^>]*>.*?</\1>", " ", s)
+              t = html.unescape(re.sub(r"<[^>]+>", " ", s))
+              t = " ".join(t.split())
+              print("=====", f)
+              for m in re.finditer(r"[^.]{0,220}(?:cost|costs|price|per play|per game|cents|\$1 |\$2 |\$5 |add-on|Wild Ball)[^.]{0,220}\.", t, re.I):
+                  print("-", m.group(0).strip())
+          PY
+          rm -f *.html
+      - name: Commit what was fetched (temporary)
+        run: |
+          git config user.name "github-actions" && git config user.email "github-actions@github.com"
+          git add probe-out && git commit -m "Probe output (temporary)" && git push
