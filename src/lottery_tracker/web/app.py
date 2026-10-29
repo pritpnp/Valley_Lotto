@@ -419,12 +419,18 @@ def current_user():
     return _db().get(User, uid)
 
 
+# Public, read-only feeds of PA data: no login, no session, not access-logged.
+_PUBLIC_FEEDS = {"/api/numbers"}
+
+
 def _register_routes(app: Flask):
 
     @app.before_request
     def _open_db():
         g.session_factory = app.config["SESSION_FACTORY"]
         g.store = app.config["DEFAULT_STORE"]
+        if request.path in _PUBLIC_FEEDS:
+            return              # no session: these answers are cached and shared
         # The store login is meant to persist on a counter device for weeks, so
         # the clerk never types a password; the PIN layer identifies the person.
         session.permanent = True
@@ -469,7 +475,9 @@ def _register_routes(app: Flask):
 
     # Skip the noise: Railway health checks and static assets would otherwise
     # dominate the log and hide the traffic you actually want to see.
-    _NO_LOG = {"/healthz", "/favicon.ico"}
+    # The store TVs ask for the numbers every two minutes; logging that would
+    # bury the visits worth seeing under thousands of rows a day.
+    _NO_LOG = {"/healthz", "/favicon.ico"} | _PUBLIC_FEEDS
 
     @app.after_request
     def _log_request(resp):
@@ -506,6 +514,27 @@ def _register_routes(app: Flask):
             db_ok, detail = False, type(e).__name__
             app.logger.warning("health check: database unreachable (%s)", e)
         return {"ok": True, "database": db_ok, "detail": detail}
+
+    @app.get("/api/numbers")
+    def api_numbers():
+        """PA's latest winning numbers for every draw game, for the store TVs
+        (the ``tv/`` page on Netlify, shown by AbleSign).
+
+        No login, on purpose: it's PA's public data and nothing else, never
+        store data. No session cookie either, because Netlify and the TVs may
+        cache it for a minute and share it. See ``pa_feeds.display``.
+        """
+        from ..pa_feeds.display import build_payload
+        try:
+            resp = jsonify(build_payload(_db()))
+            resp.headers["Cache-Control"] = "public, max-age=60"
+        except Exception as e:  # noqa: BLE001 — the TVs keep their last numbers
+            app.logger.warning("numbers feed failed: %s", e)
+            resp = jsonify({"error": "The numbers aren't available right now."})
+            resp.status_code = 503
+            resp.headers["Cache-Control"] = "no-store"
+        resp.headers["Access-Control-Allow-Origin"] = "*"
+        return resp
 
     @app.get("/")
     def index():
