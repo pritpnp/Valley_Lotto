@@ -203,3 +203,29 @@ Public data. Headers: `Access-Control-Allow-Origin: *`,
   large canvases; aim for smooth 60fps on a cheap stick and low CPU when idle.
   Must run for days without leaking memory (no growing DOM, timers cleared).
 * Professional custom animated background and transitions.
+
+## Telling the owner to turn the old scraper on or off (Telegram)
+
+This session can't change the old repo, so the owner turns its workflow on or
+off by hand; the feed job tells him when, on the existing Telegram bot.
+
+* **Is the old scraper running?** Inferred from its data, nothing else: it is
+  "running" if its `lottery.json` has shown a draw date newer than any it showed
+  before within the last 4 days (Powerball draws Mon/Wed/Sat and Mega Millions
+  Tue/Fri, so a daily scraper always has something new within 4 days).
+  Remember the last time new old-scraper data appeared (`old_last_new_at`).
+* **Turn it OFF**: once switched (`pbmm_source` = `pa_feed`) while the old
+  scraper still looks like it's running, send "🔌 Turn the old Powerball/Mega
+  Millions scraper OFF" with the exact steps: GitHub → powerball-megamillion →
+  Actions → "Daily Lottery Update" → ⋯ (top right) → Disable workflow. Remind
+  at most once a week while it still looks like it's running.
+* **Turn it back ON**: after the switch, if PA's feed stops being trustworthy
+  for Powerball or Mega Millions, send "⚠️ Turn the old scraper back ON" with
+  the steps (same place → Enable workflow), saying why. Triggers: PA's newest
+  draw for game 12 or 15 is more than 4 days old (draws missed), the PA feed
+  has been failing for more than 6 hours, or a mismatch with old data (if any
+  still arrives). Once per distinct problem; a "PA's feed is fine again, you can
+  turn the old scraper OFF again" note when it clears.
+* **TV fallback**: after the switch, if the old scraper has a NEWER draw for
+  game 12 or 15 than PA's feed (PA stale, owner turned the old one back on),
+  the TV shows the old scraper's draw for that game until PA catches up.
