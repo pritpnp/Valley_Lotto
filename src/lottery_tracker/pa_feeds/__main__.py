@@ -26,6 +26,7 @@ from pathlib import Path
 
 import requests
 
+from ..web.models import OrderListRow
 from . import draws as draws_
 from . import orders as orders_
 from . import store
@@ -175,8 +176,10 @@ def _already_have(session, url: str) -> bool:
     """This week's link was read already (same link, or a list with its date)."""
     if store.saved_order_list(session, url) is not None:
         return True
+    if store.get_setting(session, store.ORDERS_LAST_URL) == url:
+        return True
     linked = orders_.url_date(url)
-    return linked is not None and session.get(store.OrderListRow, linked) is not None
+    return linked is not None and session.get(OrderListRow, linked) is not None
 
 
 def orders(session, now: datetime) -> None:
@@ -217,6 +220,7 @@ def orders(session, now: datetime) -> None:
     store.report(session, "orders_format", None, now)
 
     result = store.save_order_list(session, order_list, url, pdf, now)
+    store.set_setting(session, store.ORDERS_LAST_URL, url, now)
     if result == "different":
         when = store.nice_date(order_list.as_of)
         store.report(session, "orders_conflict", store.problem_list(

@@ -44,6 +44,7 @@ PBMM_SOURCE = "pbmm_source"            # "old_scraper" until the switch, then "p
 TRIAL_STARTED = "trial_started_at"     # first comparison; reset by any mismatch
 SWITCHED_AT = "switched_at"
 FEED_ORDER = "feed_order"              # PA's game ids, in the feed's order (JSON)
+ORDERS_LAST_URL = "orders_last_url"    # the last order-list link read through
 
 # The games both sources cover: id -> (name, bonus ball code).
 PBMM = {POWERBALL: ("Powerball", "PB"), MEGA_MILLIONS: ("Mega Millions", "MB")}
@@ -140,6 +141,11 @@ def pbmm_source(session) -> str:
 # Telling the owner, once
 # --------------------------------------------------------------------------- #
 
+def esc(text: str) -> str:
+    """PA's text made safe for Telegram's HTML (only &, < and > matter there)."""
+    return html.escape(text, quote=False)
+
+
 def _plain(text: str) -> str:
     return html.unescape(re.sub(r"<[^>]+>", "", text))
 
@@ -156,7 +162,7 @@ def report(session, slot: str, problem: str | None, now: datetime, *,
     about ``slot``. ``problem=None`` means the slot is fine now: a short "fixed"
     note goes out if a problem had been reported. ``key`` is what makes two
     problems "the same" (the text itself when not given). Returns True if a
-    message was sent."""
+    message went out."""
     setting = f"problem:{slot}"
     before = get_setting(session, setting, "")
     if problem:
@@ -181,8 +187,8 @@ def problem_list(title: str, problems: list[str]) -> str | None:
     """``⚠️ title`` and one line per problem (plain text, escaped here)."""
     if not problems:
         return None
-    return "\n".join([f"⚠️ <b>{html.escape(title)}</b>"]
-                     + [f"• {html.escape(p)}" for p in problems])
+    return "\n".join([f"⚠️ <b>{esc(title)}</b>"]
+                     + [f"• {esc(p)}" for p in problems])
 
 
 def fetch_failed(session, name: str, what: str, error: str, now: datetime, *,
@@ -198,9 +204,9 @@ def fetch_failed(session, name: str, what: str, error: str, now: datetime, *,
     if now - since <= FETCH_GRACE:
         print(f"{what}: {error} (failing since {nice_time(since)})", flush=True)
         return False
-    text = (f"⚠️ Can't reach {html.escape(what)}: it has kept failing since "
-            f"{nice_time(since)}. {html.escape(meanwhile)} "
-            f"<i>({html.escape(error)})</i>").replace("  ", " ")
+    text = (f"⚠️ Can't reach {esc(what)}: it has kept failing since "
+            f"{nice_time(since)}. {esc(meanwhile)} "
+            f"<i>({esc(error)})</i>").replace("  ", " ")
     return report(session, f"{name}_fetch", text, now, key=since.isoformat())
 
 
@@ -311,7 +317,7 @@ def compare(pa: DrawResultRow, old: DrawResultRow) -> tuple[bool, str]:
     return matched, " ".join(out)
 
 
-def _latest_by_date(session, source: str, game_id: str) -> dict[str, DrawResultRow]:
+def _by_date(session, source: str, game_id: str) -> dict[str, DrawResultRow]:
     rows = session.scalars(select(DrawResultRow).filter_by(source=source, game_id=game_id))
     return {r.draw_date: r for r in rows}
 
@@ -324,8 +330,8 @@ def compare_and_switch(session, now: datetime) -> dict:
     new_checks: list[DrawCheckRow] = []
     readings = {}
     for game_id in PBMM:
-        pa = _latest_by_date(session, PA_FEED, game_id)
-        old = _latest_by_date(session, OLD_SCRAPER, game_id)
+        pa = _by_date(session, PA_FEED, game_id)
+        old = _by_date(session, OLD_SCRAPER, game_id)
         done = set(session.scalars(select(DrawCheckRow.draw_date).filter_by(game_id=game_id)))
         for draw_date in sorted((set(pa) & set(old)) - done):
             matched, detail = compare(pa[draw_date], old[draw_date])
@@ -347,10 +353,10 @@ def compare_and_switch(session, now: datetime) -> dict:
                  if in_trial else
                  "The TVs keep using PA's feed (they already switched); nothing "
                  "changes on its own.")
-        send(f"⚠️ <b>{html.escape(name)}</b>, draw of {nice_date(c.draw_date)}: PA's feed "
+        send(f"⚠️ <b>{esc(name)}</b>, draw of {nice_date(c.draw_date)}: PA's feed "
              f"and the old scraper disagree.\n"
-             f"PA's feed: {html.escape(_numbers_text(pa.numbers.split(), json.loads(pa.extras)))}\n"
-             f"Old scraper: {html.escape(_numbers_text(old.numbers.split(), json.loads(old.extras)))}\n"
+             f"PA's feed: {esc(_numbers_text(pa.numbers.split(), json.loads(pa.extras)))}\n"
+             f"Old scraper: {esc(_numbers_text(old.numbers.split(), json.loads(old.extras)))}\n"
              f"{after}")
     if mismatches and in_trial:
         set_setting(session, TRIAL_STARTED, now.isoformat(), now)
