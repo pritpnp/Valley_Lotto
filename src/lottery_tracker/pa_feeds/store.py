@@ -554,7 +554,8 @@ def advise_old_scraper(session, now: datetime) -> dict:
             # that clears and later comes back is news again.
             if set(reasons) != told:
                 set_setting(session, OLD_ON_TOLD, json.dumps(sorted(reasons)), now)
-            print(_plain(_turn_on_message(reasons)) + " (already said)", flush=True)
+            print("Turn the old scraper back ON (already said): "
+                  + " ".join(reasons[k] for k in sorted(reasons)), flush=True)
             return said
         if send(_turn_on_message(reasons)) or not telegram.configured():
             set_setting(session, OLD_ON_TOLD, json.dumps(sorted(reasons)), now)

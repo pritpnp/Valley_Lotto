@@ -415,6 +415,153 @@ def test_the_old_scraper_going_quiet_after_the_switch_is_expected(db, sent):
     assert len(sent) == n
 
 
+# --- telling the owner to turn the old scraper OFF, or back ON --------------------------------
+
+OFF_STEPS = ('GitHub → powerball-megamillion → Actions → "Daily Lottery Update" '
+             '→ ⋯ (top right) → Disable workflow')
+ON_STEPS = OFF_STEPS.replace("Disable", "Enable")
+
+
+def day(n, **kw):
+    return START + timedelta(days=n, **kw)
+
+
+def test_the_old_scraper_is_running_while_it_shows_newer_draws(db):
+    assert not store.old_scraper_running(db, T0)                    # never seen
+    store.save_draws(db, draws.parse_old_scraper(OLD), T0)
+    assert store.get_setting(db, store.OLD_LAST_NEW) == T0.isoformat()
+    store.save_draws(db, draws.parse_old_scraper(OLD), T0 + timedelta(days=2))   # same file again
+    assert store.get_setting(db, store.OLD_LAST_NEW) == T0.isoformat()
+    assert store.old_scraper_running(db, T0 + timedelta(days=4))
+    assert not store.old_scraper_running(db, T0 + timedelta(days=4, minutes=1))
+    # an older draw turning up isn't news, and PA's feed doesn't count
+    store.save_draws(db, [_pb("old_scraper", date="2026-10-20")], T0 + timedelta(days=5))
+    store.save_draws(db, [_pb("pa_feed", date="2026-10-31")], T0 + timedelta(days=5))
+    assert not store.old_scraper_running(db, T0 + timedelta(days=5))
+    store.save_draws(db, [_pb("old_scraper", date="2026-10-31")], T0 + timedelta(days=5))
+    assert store.old_scraper_running(db, T0 + timedelta(days=5))
+
+
+def test_nothing_is_advised_before_the_switch(db, sent):
+    save_fixtures(db)
+    store.note_pa_feed(db, False, T0)
+    later = T0 + timedelta(days=30)                                 # PA stale, failing, old running
+    store.save_draws(db, [_pb("old_scraper", date="2026-11-27")], later)
+    assert store.advise_old_scraper(db, later) == {"on": False, "fine": False, "off": False}
+    assert sent == []
+
+
+def test_after_the_switch_turn_it_off_once_a_week_while_it_runs(db, sent):
+    assert run_days(db, 0, 14, advise=True) == 14
+    assert len(sent) == 2 and sent[0].startswith("✅")
+    off = sent[1]
+    assert off.startswith("🔌 <b>Turn the old Powerball/Mega Millions scraper OFF</b>")
+    assert OFF_STEPS in off
+    run_days(db, 15, 20, advise=True)                               # still running: not again yet
+    assert len(sent) == 2
+    run_days(db, 21, 21, advise=True)                               # a week later: reminded
+    assert len(sent) == 3 and sent[2] == off
+    # the owner turns it off: its last new draw was day 21, so by day 28 it isn't running
+    run_days(db, 22, 40, old=False, advise=True)
+    assert len(sent) == 3
+
+
+def test_no_turn_off_message_once_it_has_stopped(db, sent):
+    save_fixtures(db, T0)                                           # the old scraper's last news
+    store.set_setting(db, store.PBMM_SOURCE, "pa_feed", T0)
+    later = T0 + timedelta(days=4, minutes=10)
+    store.save_draws(db, [_pb("pa_feed", date="2026-10-31"), _mm("pa_feed", "2026-10-30")], later)
+    assert store.advise_old_scraper(db, later) == {"on": False, "fine": False, "off": False}
+    assert sent == []
+    store.save_draws(db, [_pb("old_scraper", date="2026-10-31")], later)   # it's back
+    assert store.advise_old_scraper(db, later)["off"]
+    assert sent[0].startswith("🔌")
+
+
+def test_pa_falling_behind_says_turn_it_back_on_once_per_problem(db, sent):
+    run_days(db, 0, 14, advise=True)
+    n = len(sent)                                                   # the switch, then "OFF"
+    # PA's feed stops; the old scraper keeps going. PA's newest Mega Millions is
+    # Fri day 11, its newest Powerball Mon day 14.
+    run_days(db, 15, 15, pa=False, advise=True)                     # Mega Millions 4 days old: fine
+    assert len(sent) == n
+    run_days(db, 16, 16, pa=False, advise=True)                     # 5 days: draws missed
+    assert len(sent) == n + 1
+    on = sent[-1]
+    assert on.startswith("⚠️ <b>Turn the old scraper back ON</b>")
+    assert "Mega Millions draw is from Fri Nov 13, 2026, 5 days ago" in on
+    assert "Powerball" not in on.split("\n")[2]
+    assert ON_STEPS in on and "leave it on" in on
+    run_days(db, 17, 18, pa=False, advise=True)                     # same problem: not again
+    assert len(sent) == n + 1
+    run_days(db, 19, 19, pa=False, advise=True)                     # now Powerball too: new problem
+    assert len(sent) == n + 2 and "Powerball draw is from Mon Nov 16, 2026" in sent[-1]
+
+    # the TVs show the old scraper's newer draws meanwhile
+    games = {g["id"]: g for g in display.build_payload(db, now=day(19))["games"]}
+    assert (games["12"]["source"], games["12"]["draw_date"]) == ("old_scraper", "2026-11-21")
+    assert (games["15"]["source"], games["15"]["draw_date"]) == ("old_scraper", "2026-11-20")
+
+    run_days(db, 20, 21, advise=True)                               # PA's Powerball is back,
+    assert len(sent) == n + 2                                       # Mega Millions not yet: quiet
+    run_days(db, 22, 22, advise=True)                               # all caught up
+    assert len(sent) == n + 3
+    assert sent[-1] == store.FIXED["old_on"]
+    assert sent[-1].startswith("✅ PA's feed is fine again, you can turn the old scraper OFF again")
+    assert OFF_STEPS in sent[-1]
+    games = {g["id"]: g for g in display.build_payload(db, now=day(22))["games"]}
+    assert games["12"]["source"] == games["15"]["source"] == "pa_feed"
+
+    run_days(db, 23, 28, advise=True)                               # the weekly reminder restarts
+    assert len(sent) == n + 3                                       # from the "fine again" note
+    run_days(db, 29, 29, advise=True)
+    assert sent[-1].startswith("🔌")
+
+
+def test_a_problem_that_clears_and_comes_back_is_news_again(db, sent):
+    run_days(db, 0, 14, advise=True)
+    n = len(sent)
+    run_days(db, 15, 19, pa=False, advise=True)                     # PA stops: Mega Millions late,
+    assert len(sent) == n + 2                                       # then Powerball late too
+    # PA's Powerball comes back but no Mega Millions draw arrives: still a
+    # problem, nothing new to say
+    run_days(db, 20, 26, only="12", advise=True)
+    assert len(sent) == n + 2
+    # Powerball falls behind again: that's news again
+    run_days(db, 27, 31, pa=False, advise=True)
+    assert len(sent) == n + 3
+    assert "Powerball draw is from Sat Nov 28, 2026" in sent[-1] and "Mega Millions" in sent[-1]
+
+
+def test_a_mismatch_after_the_switch_says_turn_it_back_on(db, sent):
+    run_days(db, 0, 14, advise=True)
+    n = len(sent)
+    run_days(db, 15, 16, mismatch_on={16}, advise=True)             # Wed day 16: Powerball differs
+    assert len(sent) == n + 2
+    assert "disagree" in sent[-2] and "already switched" in sent[-2]
+    assert sent[-1].startswith("⚠️ <b>Turn the old scraper back ON</b>")
+    assert "disagree on Powerball, draw of Wed Nov 18, 2026" in sent[-1]
+    run_days(db, 17, 18, advise=True)                               # Mega Millions matching
+    assert len(sent) == n + 2                                       # doesn't clear Powerball's
+    run_days(db, 19, 19, advise=True)                               # Sat: Powerball matches again
+    assert sent[-1] == store.FIXED["old_on"]
+    assert store.pbmm_source(db) == "pa_feed"                       # never switched back
+
+
+def test_a_turn_on_message_telegram_didnt_take_is_tried_again(db, monkeypatch):
+    tries = []
+    monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "t")
+    monkeypatch.setenv("TELEGRAM_CHAT_ID", "c")
+    monkeypatch.setattr(telegram, "send", lambda text, formatted=False: tries.append(text) or True)
+    run_days(db, 0, 14, advise=True)
+    monkeypatch.setattr(telegram, "send", lambda text, formatted=False: tries.append(text) and False)
+    run_days(db, 15, 16, pa=False, advise=True)
+    monkeypatch.setattr(telegram, "send", lambda text, formatted=False: tries.append(text) or True)
+    run_days(db, 17, 18, pa=False, advise=True)
+    on = [t for t in tries if "back ON" in t]
+    assert len(on) == 2                                             # failed once, then delivered
+
+
 # --- the TV feed ------------------------------------------------------------------------------
 
 SPEC_POWERBALL = {
@@ -724,6 +871,62 @@ def test_after_the_switch_the_old_scraper_stopping_is_not_a_problem(monkeypatch,
     for hours in range(0, 6):
         job.run(["numbers"], now=T0 + timedelta(hours=hours))
     assert sent == []
+
+
+def switched_db(url):
+    e = create_engine(url)
+    store.create_tables(e)
+    with Session(e) as s:
+        store.set_setting(s, store.PBMM_SOURCE, "pa_feed", T0)
+        store.set_setting(s, store.SWITCHED_AT, T0.isoformat(), T0)
+        s.commit()
+    e.dispose()
+
+
+@pytest.mark.parametrize("bad", ["down", "not the feed", "Powerball unreadable"])
+def test_after_the_switch_pa_failing_for_over_6_hours_says_turn_it_back_on(monkeypatch, tmp_path,
+                                                                           sent, bad):
+    import requests
+    url = f"sqlite:///{tmp_path / 'job.db'}"
+    monkeypatch.setenv("DATABASE_URL", url)
+    switched_db(url)
+    web = everything(monkeypatch)
+    job.run(["numbers"], now=T0)
+    assert len(sent) == 1 and sent[0].startswith("🔌")             # it still runs: turn it OFF
+    web.pages[job.FEED_URL] = {
+        "down": requests.ConnectTimeout("slow"),
+        "not the feed": b"<html>We'll be right back</html>",
+        "Powerball unreadable": FEED.replace(b"PB: 01 PP: 03", b"PB 01 PP: 03"),
+    }[bad]
+    first = T0 + timedelta(minutes=10)
+    for minutes in (0, 60, 120, 240, 360):                          # 6 hours exactly: not yet
+        assert job.run(["numbers"], now=first + timedelta(minutes=minutes)) == 0
+    assert not any("back ON" in m for m in sent)
+    job.run(["numbers"], now=first + timedelta(minutes=370))
+    job.run(["numbers"], now=first + timedelta(minutes=380))
+    on = [m for m in sent if "back ON" in m]
+    assert len(on) == 1
+    assert "PA's number feed has been failing since Oct 28, 8:20 PM (over 6 hours)" in on[0]
+    web.pages[job.FEED_URL] = FEED
+    job.run(["numbers"], now=first + timedelta(minutes=390))
+    assert sent[-1] == store.FIXED["old_on"]
+
+
+def test_after_the_switch_a_short_pa_outage_says_nothing_about_the_old_scraper(monkeypatch, tmp_path,
+                                                                               sent):
+    import requests
+    url = f"sqlite:///{tmp_path / 'job.db'}"
+    monkeypatch.setenv("DATABASE_URL", url)
+    switched_db(url)
+    web = everything(monkeypatch)
+    job.run(["numbers"], now=T0)
+    web.pages[job.FEED_URL] = requests.ConnectTimeout("slow")
+    for minutes in range(10, 371, 30):                              # failing for 6 hours
+        job.run(["numbers"], now=T0 + timedelta(minutes=minutes))
+    web.pages[job.FEED_URL] = FEED
+    job.run(["numbers"], now=T0 + timedelta(minutes=380))
+    assert not any("back ON" in m or "fine again" in m for m in sent)
+    assert any("Can't reach PA's number feed" in m for m in sent)   # the outage itself was told
 
 
 def test_a_dry_run_reads_and_prints_but_saves_and_sends_nothing(monkeypatch, tmp_path, sent, capsys):

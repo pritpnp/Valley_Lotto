@@ -96,8 +96,11 @@ def build_payload(session, now: datetime | None = None) -> dict:
         old = {g: r for g, r in old.items()
                if g not in pa or r.draw_date > pa[g].draw_date}
     order = feed_order(session)
-    # Before PA's feed has ever been read, the old scraper's games still show.
-    order += [g for g in PBMM if g in old and g not in order]
+    # A game PA's order doesn't list (e.g. the old scraper's, before PA's feed
+    # was ever read) still shows, after the ones it does.
+    for g in [*PBMM, *sorted(pa)]:
+        if (g in pa or g in old) and g not in order:
+            order.append(g)
 
     games = []
     for position, game_id in enumerate(order):
