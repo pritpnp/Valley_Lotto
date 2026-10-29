@@ -69,3 +69,36 @@ def test_render_markdown_smoke():
     assert "Daily scratch-off sales" in md
     assert "A1" in md and "A2" in md
     assert "morning:010" in md   # count positions shown
+
+
+def test_a_resolver_agrees_with_no_resolver_when_a_count_hits_the_last_ticket():
+    """Ticket 029 is the last one of a 30-ticket $30 pack (000-029). The pack
+    size the scans prove is 30, with or without a resolver, never 31."""
+    from lottery_tracker.packs import PackSizeResolver
+    log = ScanLog(scans=[
+        _scan("1750", "0091798", 25, "A1", "morning", "08:00Z"),
+        _scan("1750", "0091798", 29, "A1", "midday",  "13:00Z"),   # the last ticket
+        _scan("1750", "0091799", 10, "A1", "night",   "21:00Z"),   # the next pack
+    ])
+    plain = daily_report(log, "2026-08-08", prices=PRICES)
+    for resolver in (PackSizeResolver(), PackSizeResolver(by_game={"1750": 30}),
+                     PackSizeResolver(by_price={30: 30})):
+        rep = daily_report(log, "2026-08-08", prices=PRICES, resolver=resolver)
+        a1 = rep.rows[0]
+        # 25 -> 29 = 4, then 1 more (029 itself) and 10 from the new pack = 15
+        assert (a1.total_sold, a1.pack_size_used, a1.revenue) == (15, 30, 450.0)
+        assert (rep.total_tickets, rep.total_revenue) == (plain.total_tickets, plain.total_revenue)
+
+
+def test_a_resolver_still_grows_a_pack_a_scan_proves_bigger():
+    """A configured 30 that a scan contradicts (ticket 034) is corrected to 35,
+    not 36."""
+    from lottery_tracker.packs import PackSizeResolver
+    log = ScanLog(scans=[
+        _scan("1750", "0091798", 30, "A1", "morning", "08:00Z"),
+        _scan("1750", "0091798", 34, "A1", "midday",  "13:00Z"),
+        _scan("1750", "0091799", 2,  "A1", "night",   "21:00Z"),
+    ])
+    rep = daily_report(log, "2026-08-08", prices=PRICES,
+                       resolver=PackSizeResolver(by_game={"1750": 30}))
+    assert (rep.rows[0].total_sold, rep.rows[0].pack_size_used) == (4 + 1 + 2, 35)

@@ -1,0 +1,38 @@
+# Netlify settings for the store TV page.
+# In Netlify set "Base directory" to  tv  (everything below is relative to it).
+# Netlify needs one environment variable: APP_URL = the store app's address,
+# for example https://valley-lotto.onrender.com (no slash at the end needed).
+
+[build]
+  publish = "."
+
+  # Writes _redirects so the page's /api/numbers is passed through to the app.
+  # Stops with a plain message when APP_URL is missing or not a web address.
+  # Also publishes app-url.sha256, a fingerprint of APP_URL (not the address
+  # itself), so the next deploy can tell whether APP_URL has changed since.
+  command = 'if [ -z "$APP_URL" ]; then echo "STOPPED: APP_URL is not set. In Netlify open Site configuration > Environment variables, add APP_URL with your store app address (like https://your-app.onrender.com), then deploy again."; exit 1; fi; case "$APP_URL" in http://*|https://*) ;; *) echo "STOPPED: APP_URL must start with https:// (it is now: $APP_URL)"; exit 1;; esac; printf "/api/numbers  %s/api/numbers  200!\n" "${APP_URL%/}" > _redirects; printf "%s" "${APP_URL%/}" | sha256sum | cut -d" " -f1 > app-url.sha256; echo "OK: the TV page will read its numbers from ${APP_URL%/}/api/numbers"'
+
+  # Only rebuild when something in tv/ changed, or APP_URL did. Exit 1 = build,
+  # exit 0 = skip. It builds when the live site's app-url.sha256 doesn't match
+  # APP_URL now (APP_URL changed, or the live site can't say), on a first deploy,
+  # on a re-deploy of the same commit, and when anything in tv/ changed since
+  # the last build. So after changing APP_URL, Deploys > Trigger deploy builds.
+  ignore = 'want=$(printf "%s" "${APP_URL%/}" | sha256sum | cut -d" " -f1); have=$(curl -fsS --max-time 20 "${URL%/}/app-url.sha256" 2>/dev/null); if [ "$have" != "$want" ]; then echo "Building: APP_URL changed, or the live site did not say which one it uses."; exit 1; fi; if [ -z "$CACHED_COMMIT_REF" ] || [ "$CACHED_COMMIT_REF" = "$COMMIT_REF" ]; then exit 1; fi; git diff --quiet "$CACHED_COMMIT_REF" "$COMMIT_REF" -- .'
+
+# Netlify already makes browsers re-check the page, its script and games.json
+# on every load, so the hourly reload picks up any change.
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Robots-Tag = "noindex"
+
+# Fonts and logos rarely change: let the TV keep them for a day.
+[[headers]]
+  for = "/fonts/*"
+  [headers.values]
+    Cache-Control = "public, max-age=86400"
+
+[[headers]]
+  for = "/logos/*"
+  [headers.values]
+    Cache-Control = "public, max-age=86400"

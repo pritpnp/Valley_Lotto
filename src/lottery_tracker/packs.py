@@ -1,32 +1,29 @@
 """How many tickets are in a physical pack (a.k.a. "book"), by ticket price.
 
-PA builds packs to a fixed *dollar value*, not a fixed ticket count, so::
+Pennsylvania prints the real number on its weekly retailer list, "Scratch-Offs
+Available for Ordering", which gives tickets per pack ("Tix/Pack") for every
+game you can order. The list as of 10/26/26 (55 games) says, by price:
 
-    tickets_per_pack = pack_value / ticket_price
+    $1, $2, $3       -> 100 tickets
+    $5, $10          -> 60 tickets
+    $20, $30         -> 30 tickets
+    $50              -> 50 tickets
 
-Documented value tiers (from retailer/community sources; see the research notes
-in the commit that added this file):
-
-    $1, $2, $3, $5   -> $300 book
-    $10, $20         -> $600 book
-    $50              -> $2,500 book
-    $30, $40         -> UNRESOLVED (fall in the gap; no reliable source)
+Every game at each price agrees. So packs are NOT a fixed dollar value, as was
+once assumed: a $1 pack is $100 of tickets, a $2 pack $200, a $30 pack $900.
+There are no $40 games, so $40 keeps an old placeholder until one appears.
 
 Ticket numbering within a pack is **0-indexed**: tickets run ``000 .. N-1`` and
 the printed number counts *up* as tickets sell. Our real sample confirms it —
 game 1750 ($30) carried ticket ``010`` in pack ``0091798``, so a $30 pack holds
 more than 10 tickets.
 
-Confidence, straight from the research:
-  * HIGH:   $2, $5, $10, $20  (directly stated and/or corroborated)
-  * MEDIUM: $1, $3, $50       (unanimous but largely arithmetic from the value rule)
-  * LOW:    $30, $40          (conflicting/absent sources — treat as placeholders)
-
-Because the risky numbers ($30/$40) are exactly the ones we can't source, the
-design does **not** trust the table blindly: :func:`pack_size_for` will override a
-default the moment real scan data proves a game's pack is bigger than we assumed.
-That makes each game self-correcting — a $30 game whose pack is really 30 (not
-20) fixes itself once a clerk scans past ticket 020.
+These per-price numbers are a fallback. The web app reads each game's own
+tickets per pack from the saved order lists (see ``web/app.py``), and
+``config.yaml`` can set any game exactly. The design still does **not** trust
+any number blindly: :func:`pack_size_for` overrides a default the moment real
+scan data proves a game's pack is bigger than we assumed, so a game PA prints
+differently one day fixes itself once a clerk scans past the end.
 """
 
 from __future__ import annotations
@@ -51,20 +48,19 @@ class PackSizeInfo:
 
 
 # Built-in tickets-per-pack by ticket price (dollars), keyed by float price.
-# This is an UNVERIFIED FALLBACK only — see the caveats in this module's docstring.
-# The source of truth is ``config.yaml`` (``pack_sizes:``); anything you set there
-# overrides these. Prefer to confirm the real numbers from the PA retailer
-# "Settled Packs" report and put them in config.
+# Taken from PA's own order list as of 10/26/26 (every game at each price agrees),
+# so confidence is high. ``config.yaml`` (``pack_sizes:``) overrides these, and
+# the web app overrides both with each game's number from the latest order list.
 DEFAULT_PACK_SIZE_BY_PRICE: dict[float, PackSizeInfo] = {
-    1.0:  PackSizeInfo(300, "medium", "$300 book / $1 (derived)"),
-    2.0:  PackSizeInfo(150, "high",   "$300 book / $2 (stated)"),
-    3.0:  PackSizeInfo(100, "medium", "$300 book / $3 (derived)"),
-    5.0:  PackSizeInfo(60,  "high",   "$300 book / $5 (stated)"),
-    10.0: PackSizeInfo(60,  "high",   "$600 book / $10 (stated)"),
-    20.0: PackSizeInfo(30,  "high",   "$600 book / $20 (stated + corroborated)"),
-    30.0: PackSizeInfo(20,  "low",    "$30 unresolved; $600/$30=20 best guess — verify from scans"),
-    40.0: PackSizeInfo(15,  "low",    "$40 undocumented; $600/$40=15 placeholder — verify from scans"),
-    50.0: PackSizeInfo(50,  "medium", "$2,500 book / $50 (stated)"),
+    1.0:  PackSizeInfo(100, "high", "PA order list as of 10/26/26 ($1: 100 a pack)"),
+    2.0:  PackSizeInfo(100, "high", "PA order list as of 10/26/26 ($2: 100 a pack)"),
+    3.0:  PackSizeInfo(100, "high", "PA order list as of 10/26/26 ($3: 100 a pack)"),
+    5.0:  PackSizeInfo(60,  "high", "PA order list as of 10/26/26 ($5: 60 a pack)"),
+    10.0: PackSizeInfo(60,  "high", "PA order list as of 10/26/26 ($10: 60 a pack)"),
+    20.0: PackSizeInfo(30,  "high", "PA order list as of 10/26/26 ($20: 30 a pack)"),
+    30.0: PackSizeInfo(30,  "high", "PA order list as of 10/26/26 ($30: 30 a pack)"),
+    40.0: PackSizeInfo(15,  "low",  "no $40 games to check; 15 is a placeholder — verify from scans"),
+    50.0: PackSizeInfo(50,  "high", "PA order list as of 10/26/26 ($50: 50 a pack)"),
 }
 
 
@@ -136,7 +132,7 @@ class PackSizeResolver:
          per-price number *upward* if the pack is demonstrably bigger (you can't
          have ticket 028 in a 20-ticket pack). It never shrinks a configured size.
       3. ``by_price`` — your per-price default from config.
-      4. the built-in fallback table (unverified), if enabled.
+      4. the built-in per-price table (PA's order list as of 10/26/26), if enabled.
     """
 
     def __init__(self, by_price: dict | None = None, by_game: dict | None = None,

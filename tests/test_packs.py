@@ -14,33 +14,35 @@ def _scan(pack, ticket):
                             scanned_at="2026-08-07T08:00:00Z")
 
 
-def test_price_defaults_match_research():
-    # spot-check the high-confidence ones
-    assert DEFAULT_PACK_SIZE_BY_PRICE[5.0].size == 60
-    assert DEFAULT_PACK_SIZE_BY_PRICE[10.0].size == 60
-    assert DEFAULT_PACK_SIZE_BY_PRICE[20.0].size == 30
-    assert DEFAULT_PACK_SIZE_BY_PRICE[2.0].size == 150
-    # $30 is a low-confidence placeholder
-    assert DEFAULT_PACK_SIZE_BY_PRICE[30.0].confidence == "low"
+def test_price_defaults_match_pas_order_list():
+    # PA's "Scratch-Offs Available for Ordering" as of 10/26/26, every price
+    expected = {1.0: 100, 2.0: 100, 3.0: 100, 5.0: 60, 10.0: 60,
+                20.0: 30, 30.0: 30, 50.0: 50}
+    for price, size in expected.items():
+        assert DEFAULT_PACK_SIZE_BY_PRICE[price].size == size, price
+        assert DEFAULT_PACK_SIZE_BY_PRICE[price].confidence == "high", price
+    # No $40 games exist, so $40 stays a low-confidence placeholder
+    assert DEFAULT_PACK_SIZE_BY_PRICE[40.0].size == 15
+    assert DEFAULT_PACK_SIZE_BY_PRICE[40.0].confidence == "low"
 
 
 def test_pack_size_for_accepts_various_price_forms():
     for p in (30, 30.0, "30", "$30"):
-        assert pack_size_for(p).size == 20
+        assert pack_size_for(p).size == 30
 
 
 def test_observed_scan_corrects_a_too_small_default_up():
-    # $30 default is 20, but a clerk scanned ticket 028 -> pack must hold >= 29
-    info = pack_size_for(30.0, observed_max=28)
-    assert info.size == 29
+    # $30 default is 30, but a clerk scanned ticket 038 -> pack must hold >= 39
+    info = pack_size_for(30.0, observed_max=38)
+    assert info.size == 39
     assert info.confidence == "observed"
 
 
 def test_observed_below_default_keeps_default():
-    # seeing ticket 010 doesn't shrink the $30 default of 20
+    # seeing ticket 010 doesn't shrink the $30 default of 30
     info = pack_size_for(30.0, observed_max=10)
-    assert info.size == 20
-    assert info.confidence == "low"
+    assert info.size == 30
+    assert info.confidence == "high"
 
 
 def test_override_always_wins():
@@ -60,11 +62,11 @@ def test_observed_max_ticket_helper():
 
 
 def test_rollover_bridge_with_pack_size():
-    # $30 pack of 20 (tickets 000..019). Open at 015, close on the NEXT pack at 004.
-    # Old pack sold 015..019 = 5, new pack sold 000..003 = 4  -> 9 tickets, $270.
-    o = _scan("0091798", 15)
+    # $30 pack of 30 (tickets 000..029). Open at 025, close on the NEXT pack at 004.
+    # Old pack sold 025..029 = 5, new pack sold 000..003 = 4  -> 9 tickets, $270.
+    o = _scan("0091798", 25)
     c = _scan("0091799", 4)
-    res = compute_sold(o, c, price=30.0, pack_size=20)
+    res = compute_sold(o, c, price=30.0, pack_size=30)
     assert res.same_pack is False
     assert res.tickets_sold == 9
     assert res.revenue == 270.0
@@ -82,9 +84,9 @@ def test_rollover_without_pack_size_still_flags():
 # --- config-driven resolver -------------------------------------------------
 
 def test_resolver_by_price_config_overrides_builtin():
-    r = PackSizeResolver(by_price={30: 30})   # user says $30 packs are 30, not the 20 guess
+    r = PackSizeResolver(by_price={30: 40})   # config says 40, the built-in table 30
     info = r.size_for(30.0)
-    assert info.size == 30
+    assert info.size == 40
     assert info.confidence == "config-price"
 
 
@@ -112,7 +114,8 @@ def test_resolver_falls_back_to_builtin_when_enabled_and_unknown_when_not():
 def test_config_yaml_pack_sizes_load_and_resolve():
     cfg = Config.load("config.yaml")
     r = cfg.pack_resolver()
-    assert r.size_for(5.0).size == 60
-    assert r.size_for(20.0).size == 30
-    # the $30 row is present but flagged unverified in the file
-    assert r.size_for(30.0).size == 20
+    # PA's order list as of 10/26/26, every price it sells at
+    expected = {1: 100, 2: 100, 3: 100, 5: 60, 10: 60, 20: 30, 30: 30, 50: 50}
+    for price, size in expected.items():
+        assert r.size_for(float(price)).size == size, price
+    assert r.size_for(40.0).size == 15        # no $40 games; left as it was

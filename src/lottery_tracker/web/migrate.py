@@ -100,7 +100,14 @@ def backfill(engine, default_slug: str, default_name: str,
     return out
 
 
-def enable_rls(engine) -> list:
+# How long turning on RLS may wait for a table someone is using. ALTER TABLE
+# takes the strongest lock there is, and while it waits every other query on
+# that table queues behind it, so a busy table is skipped (the next boot or
+# feed run tries again) rather than stalling the app.
+RLS_LOCK_WAIT = "3s"
+
+
+def enable_rls(engine, tables=None) -> list:
     """Turn on Row Level Security for our tables, on Postgres only.
 
     Why this matters on Supabase: every table in the ``public`` schema is also
@@ -118,18 +125,43 @@ def enable_rls(engine) -> list:
     no policies defined — would cut the app off from its own data.
 
     Runs on every boot so a table added later can't be left unprotected.
+    ``tables`` limits it to those table names (the PA feed job passes its own
+    five); by default it's every table the app defines.
+
+    ALTER TABLE locks the whole table even when RLS is already on, so each
+    table's flag is read first (reading it takes no lock) and only a table that
+    exists with RLS still off is changed, waiting at most ``RLS_LOCK_WAIT`` for
+    it. Returns the tables it turned RLS on for.
     """
     if engine.dialect.name != "postgresql":
         return []
     done = []
-    for table in sorted(Base.metadata.tables):
+    for table in sorted(Base.metadata.tables if tables is None else tables):
+        try:
+            with engine.connect() as conn:
+                on = conn.execute(text(
+                    "SELECT relrowsecurity FROM pg_class "
+                    "WHERE oid = to_regclass(quote_ident(:name))"), {"name": table}).scalar()
+        except Exception as e:  # noqa: BLE001 — never block boot on this
+            log.warning("could not check RLS on %s: %s", table, _kind(e))
+            continue
+        if on is None or on:
+            continue          # not created (yet), or already protected
         try:
             with engine.begin() as conn:
+                conn.execute(text(f"SET LOCAL lock_timeout = '{RLS_LOCK_WAIT}'"))
                 conn.execute(text(f'ALTER TABLE "{table}" ENABLE ROW LEVEL SECURITY'))
             done.append(table)
         except Exception as e:  # noqa: BLE001 — never block boot on this
-            log.warning("could not enable RLS on %s: %s", table, e)
+            log.warning("could not enable RLS on %s (tried again next time): %s",
+                        table, _kind(e))
     return done
+
+
+def _kind(e: Exception) -> str:
+    """The kind of database error (e.g. LockNotAvailable), never its full text:
+    the feed job's log is public, and full messages can name the server."""
+    return type(getattr(e, "orig", None) or e).__name__
 
 
 def clear_invented_open_dates(engine) -> int:

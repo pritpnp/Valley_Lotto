@@ -21,6 +21,7 @@ from datetime import datetime, timezone
 from typing import Optional
 from zoneinfo import ZoneInfo
 
+from .packs import TICKET_INDEX_BASE
 from .scans import ScanLog, compute_sold, sold_over_sequence, learn_pack_size, _slot_sort_key
 
 # The three named counts of a day, in the order they happen, and how hard each
@@ -225,7 +226,12 @@ def daily_report(log: ScanLog, date: str, *, prices: dict | None = None,
         # learn from this game's entire history in the log.
         observed = learn_pack_size(log.for_game(game))
         if resolver is not None:
-            size = resolver.size_for(price, game_number=game, observed_max=observed).size
+            # learn_pack_size gives a pack SIZE; the resolver wants the highest
+            # ticket NUMBER the scans prove (a 100-ticket pack's last is 099).
+            # Handing it the size would add a ticket to every pack once a count
+            # catches one on its last ticket.
+            last_ticket = None if observed is None else observed - 1 + TICKET_INDEX_BASE
+            size = resolver.size_for(price, game_number=game, observed_max=last_ticket).size
         else:
             size = observed
 

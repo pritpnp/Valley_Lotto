@@ -23,6 +23,11 @@
   .chev { color:var(--muted); font-size:18px; flex:none; }
   .mine { font-size:11px; font-weight:700; color:var(--ok); background:var(--ok-bg);
           padding:2px 7px; border-radius:999px; margin-left:6px; white-space:nowrap; }
+  /* From PA's weekly order list: can this game be ordered right now? */
+  .ord { font-size:11px; font-weight:700; color:var(--muted); background:var(--panel2);
+         border:1px solid var(--line); padding:1px 7px; border-radius:999px;
+         margin-left:6px; white-space:nowrap; }
+  .ord.no { color:var(--warn); background:var(--warn-bg); border-color:transparent; }
   .legend { font-size:12.5px; color:var(--muted); line-height:1.6; }
 </style>
 
@@ -45,6 +50,14 @@
     <b>{{ '%.0f'|format(cutoff) }} or more is worth carrying</b>. Tap any game to see
     exactly how it was worked out.
   </p>
+  {% if order and order.as_of %}
+  <p class="legend" style="margin-top:6px">
+    <span class="ord" style="margin-left:0">can order</span> games are on PA's
+    order list as of {{ order.as_of_text }}.
+    <span class="ord no" style="margin-left:0">can't order</span> games aren't,
+    so PA won't ship them.
+  </p>
+  {% endif %}
 </div>
 
 {% for price, rows in by_price.items() %}
@@ -60,7 +73,10 @@
                             else 'keep' if r.rating is not none and r.rating >= 50
                             else 'mid' }}">{{ r.rating_str }}</span>
       <span class="gmid">
-        <span class="gname">{{ r.name }}{% if r.carried %}<span class="mine">you carry it</span>{% endif %}</span>
+        <span class="gname">{{ r.name }}{% if r.carried %}<span class="mine">you carry it</span>{% endif %}
+          {#- The space before each pill lets it drop to the next line on a phone. #}
+          {%- if r.orderable == true %} <span class="ord">can order</span>
+          {%- elif r.orderable == false %} <span class="ord no">{{ 'PA no longer ships this' if r.carried else "can't order" }}</span>{% endif %}</span>
         <span class="gsub">
           #{{ r.game_number }}
           {%- if r.sales_per_day is not none %} · sells {{ r.sales_str }}{% endif %}

@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<script>
+/* Backstop for the hourly reload: app.js reloads at 60 minutes; this reloads
+   at 62 minutes even if app.js has stopped. Like app.js it only reloads when
+   the site answers, so an internet outage never swaps the numbers on screen
+   for an error page. */
+(function () {
+  function tryReload() {
+    if (location.protocol === 'file:') { location.reload(); return; }
+    var x = new XMLHttpRequest();
+    function later() { setTimeout(tryReload, 60000); }
+    try {
+      x.open('GET', location.pathname + '?alive=' + new Date().getTime(), true);
+      x.timeout = 15000;
+      x.onload = function () { if (x.status >= 200 && x.status < 400) location.reload(); else later(); };
+      x.onerror = later; x.ontimeout = later;
+      x.send();
+    } catch (e) { later(); }
+  }
+  setTimeout(tryReload, 62 * 60 * 1000);
+})();
+</script>
+<title>Winning Numbers</title>
+<link rel="preload" href="fonts/montserrat-latin-900-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/anton-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div id="stage">
+  <div id="slides"></div>
+  <div id="divider"></div>
+  <div id="divider-flash"></div>
+
+  <div id="ticker">
+    <div class="tk-label"><div class="tk-label-in">
+      <span class="tk-l1">Latest</span>
+      <span class="tk-l2">Draws &amp; Jackpots</span>
+      <span class="tk-upd" id="updated"></span>
+    </div></div>
+    <div class="tk-view"><div class="tk-track" id="track"></div></div>
+  </div>
+
+  <div id="empty" class="hidden">
+    <div class="half-rays"></div>
+    <div class="empty-in">
+      <div class="empty-balls"><span class="empty-ball"></span><span class="empty-ball"></span><span class="empty-ball"></span><span class="empty-ball"></span><span class="empty-ball"></span></div>
+      <h1 class="empty-h">Today&rsquo;s numbers<br>are on their way</h1>
+      <p class="empty-p">The latest Pennsylvania Lottery results will appear here automatically.</p>
+    </div>
+  </div>
+
+  <div id="demo-flag">DEMO DATA</div>
+</div>
+<script src="app.js"></script>
+</body>
+</html>

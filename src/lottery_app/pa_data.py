@@ -94,12 +94,18 @@ def _row(g: Game, th: Thresholds, weights: RatingWeights, own=None) -> dict:
 
 
 def store_rows(catalog: Catalog, inventory: set[str], th: Thresholds,
-               weights: RatingWeights | None = None, own: dict | None = None) -> list[dict]:
+               weights: RatingWeights | None = None, own: dict | None = None,
+               *, orderable: set[str] | None = None) -> list[dict]:
     """Dashboard rows for the games a store carries.
 
     Includes inventory games even if they've vanished from the catalog (so the
     store still sees "this ended / was removed"). Sorted SEND BACK first (the
     things needing action), then by worst rating.
+
+    ``orderable``: the game numbers on PA's latest order list, or None when no
+    list has been saved yet. With a list, a carried game that isn't on it is
+    marked ``no_longer_shipped`` (its boxes will run dry), and replacements
+    only come from the list. None changes nothing.
     """
     weights = weights or RatingWeights()
     rows = []
@@ -121,7 +127,8 @@ def store_rows(catalog: Catalog, inventory: set[str], th: Thresholds,
             })
         else:
             rows.append(_row(g, th, weights, (own or {}).get(num)))
-    _assign_swaps(rows, catalog, inventory, th, weights)
+        rows[-1]["no_longer_shipped"] = orderable is not None and num not in orderable
+    _assign_swaps(rows, catalog, inventory, th, weights, orderable=orderable)
     rows.sort(key=lambda r: (r["action"] != "send_back",
                              r["rating"] if r["rating"] is not None else 999,
                              r["sales_per_day"] or 0))
@@ -129,7 +136,8 @@ def store_rows(catalog: Catalog, inventory: set[str], th: Thresholds,
 
 
 def _assign_swaps(rows: list[dict], catalog: Catalog, inventory: set[str],
-                  th: Thresholds, weights: RatingWeights) -> None:
+                  th: Thresholds, weights: RatingWeights,
+                  orderable: set[str] | None = None) -> None:
     """Give each SEND BACK at most one replacement, never the same one twice.
 
     Within each price, the worst game gets the best replacement, the next-worst
@@ -148,17 +156,20 @@ def _assign_swaps(rows: list[dict], catalog: Catalog, inventory: set[str],
         # Worst first: lowest rating, then slowest PA-wide.
         sending.sort(key=lambda r: (r["rating"] if r["rating"] is not None else -1,
                                     r["sales_per_day"] if r["sales_per_day"] is not None else -1))
-        best_first = swap_targets(catalog, inventory, price, th, weights, n=len(sending))
+        best_first = swap_targets(catalog, inventory, price, th, weights, n=len(sending),
+                                  orderable=orderable)
         for r, swap in zip(sending, best_first):
             r["swap_to"] = [swap]
 
 
 def catalog_rankings(
     catalog: Catalog, th: Thresholds, weights: RatingWeights | None = None,
-    *, inventory: set[str] | None = None,
+    *, inventory: set[str] | None = None, orderable: set[str] | None = None,
 ) -> list[dict]:
     """Every active game, rated and ranked best-first. Marks which ones the store
-    already carries so the UI can show "carried" vs "available to bring in"."""
+    already carries so the UI can show "carried" vs "available to bring in", and,
+    once PA's order list is saved (``orderable``), which ones can be ordered
+    (``orderable`` on each row: True/False, or None with no list yet)."""
     weights = weights or RatingWeights()
     inv = inventory or set()
     rows = []
@@ -167,6 +178,7 @@ def catalog_rankings(
             continue
         row = _row(g, th, weights)
         row["carried"] = g.game_number in inv
+        row["orderable"] = None if orderable is None else g.game_number in orderable
         rows.append(row)
     rows.sort(key=lambda r: (r["rating"] if r["rating"] is not None else -1,
                              r["sales_per_day"] or 0), reverse=True)
@@ -176,18 +188,24 @@ def catalog_rankings(
 def swap_targets(
     catalog: Catalog, inventory: set[str], price: float | None, th: Thresholds,
     weights: RatingWeights | None = None, *, n: int = 3,
+    orderable: set[str] | None = None,
 ) -> list[dict]:
     """Best replacement games at the SAME price as something you're sending back:
     active, not already carried, and KEEP-worthy (rating above the cutoff), highest
     first. Freshness is already baked into the rating, so we don't double-gate it —
     if nothing clears the cutoff, there simply isn't a good same-price swap (a useful
-    signal that the price point itself may be picked over)."""
+    signal that the price point itself may be picked over).
+
+    ``orderable``: with PA's order list saved, only games on it — a replacement
+    you can't order is no replacement. None (no list yet) filters nothing."""
     weights = weights or RatingWeights()
     if price is None:
         return []
     cands = []
     for g in catalog.games.values():
         if g.status != "active" or g.game_number in inventory or g.price != price:
+            continue
+        if orderable is not None and g.game_number not in orderable:
             continue
         row = _row(g, th, weights)
         if row["rating"] is None or row["rating"] < weights.cutoff:
@@ -208,15 +226,20 @@ def store_summary(rows: list[dict]) -> dict:
 def bring_in_candidates(
     catalog: Catalog, inventory: set[str], th: Thresholds,
     *, weights: RatingWeights | None = None, min_left: float = 0.6, per_price: int = 4,
+    orderable: set[str] | None = None,
 ) -> dict[float, list[dict]]:
     """Best games to BRING IN, grouped by price point: games on sale that you
     don't carry, rated at or above the cutoff, best sellers first.
     Returns {price: [rows]}, dearest price first. ``min_left`` is no longer
-    used (selling decides) and is accepted so older callers keep working."""
+    used (selling decides) and is accepted so older callers keep working.
+    ``orderable``: with PA's order list saved, only games on it; None (no list
+    yet) filters nothing."""
     weights = weights or RatingWeights()
     by_price: dict[float, list[dict]] = {}
     for g in catalog.games.values():
         if g.status != "active" or g.game_number in inventory or g.price is None:
+            continue
+        if orderable is not None and g.game_number not in orderable:
             continue
         row = _row(g, th, weights)
         if row["rating"] is None or row["rating"] < weights.cutoff:

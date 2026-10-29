@@ -1,0 +1,18 @@
+{# A game PA's latest order list leaves out: whatever packs you have are the
+   last of it. Expects `detail` (app._game_detail) and `order`
+   (app._order_lists); shows nothing until PA's first order list is saved.
+   `flag_carried` says whether the store carries it, which decides the wording.
+   Shared by the box screen and the game screen so they say the same thing. #}
+{% if detail and detail.no_longer_shipped and order and order.as_of %}
+<div class="card flash warn" style="display:block">
+  {% if flag_carried %}
+    <b>PA no longer ships this.</b>
+    PA's order list as of {{ order.as_of_text }} doesn't include it, so its
+    boxes will run dry.
+  {% else %}
+    <b>Not on PA's order list.</b>
+    PA's order list as of {{ order.as_of_text }} doesn't include it, so it
+    can't be ordered.
+  {% endif %}
+</div>
+{% endif %}
