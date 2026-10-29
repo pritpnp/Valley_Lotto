@@ -74,8 +74,9 @@
                             else 'mid' }}">{{ r.rating_str }}</span>
       <span class="gmid">
         <span class="gname">{{ r.name }}{% if r.carried %}<span class="mine">you carry it</span>{% endif %}
-          {%- if r.orderable == true %}<span class="ord">can order</span>
-          {%- elif r.orderable == false %}<span class="ord no">{{ 'PA no longer ships this' if r.carried else "can't order" }}</span>{% endif %}</span>
+          {#- The space before each pill lets it drop to the next line on a phone. #}
+          {%- if r.orderable == true %} <span class="ord">can order</span>
+          {%- elif r.orderable == false %} <span class="ord no">{{ 'PA no longer ships this' if r.carried else "can't order" }}</span>{% endif %}</span>
         <span class="gsub">
           #{{ r.game_number }}
           {%- if r.sales_per_day is not none %} · sells {{ r.sales_str }}{% endif %}

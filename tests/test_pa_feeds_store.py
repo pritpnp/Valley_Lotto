@@ -311,9 +311,12 @@ START = datetime(2026, 11, 2, 12, 0, tzinfo=timezone.utc)      # a Monday
 PB_DAYS, MM_DAYS = {0, 2, 5}, {1, 4}                          # Mon Wed Sat / Tue Fri
 
 
-def run_days(db, first, last, *, mismatch_on=(), skip_mm=(), only=None):
+def run_days(db, first, last, *, mismatch_on=(), skip_mm=(), only=None,
+             pa=True, old=True, advise=False):
     """Each day from ``first`` to ``last`` (days after START): that day's real
-    draws from both sources, then the check. Returns the day it switched on."""
+    draws from both sources (``pa``/``old`` False: that source sent nothing),
+    then the check, and with ``advise`` the old scraper's on/off advice.
+    Returns the day it switched on."""
     switched_on = None
     for n in range(first, last + 1):
         now = START + timedelta(days=n)
@@ -326,11 +329,15 @@ def run_days(db, first, last, *, mismatch_on=(), skip_mm=(), only=None):
         for game, d in both:
             make = (lambda s, **kw: _pb(s, date=d, **kw)) if game == "12" else \
                    (lambda s, **kw: _mm(s, d, **kw))
-            store.save_draws(db, [make("pa_feed")], now)
-            store.save_draws(db, [make("old_scraper", numbers="01 02 03 04 05")
-                                  if n in mismatch_on else make("old_scraper")], now)
+            if pa:
+                store.save_draws(db, [make("pa_feed")], now)
+            if old:
+                store.save_draws(db, [make("old_scraper", numbers="01 02 03 04 05")
+                                      if n in mismatch_on else make("old_scraper")], now)
         if store.compare_and_switch(db, now)["switched"] and switched_on is None:
             switched_on = n
+        if advise:
+            store.advise_old_scraper(db, now)
     return switched_on
 
 

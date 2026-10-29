@@ -16,6 +16,10 @@ Three jobs live here:
 * **The side-by-side check.** Powerball and Mega Millions are read from PA's
   feed and from the old scraper; every draw is compared. After 14 days of exact
   matches (at least 4 draws of each game) the TVs switch to PA's feed, for good.
+* **The old scraper's on/off switch.** Its workflow lives in another repo, so the
+  owner turns it on or off by hand. After the switch he's told to turn it OFF
+  while it still looks like it's running, and to turn it back ON if PA's feed
+  stops being trustworthy for Powerball or Mega Millions.
 """
 
 from __future__ import annotations
@@ -45,6 +49,10 @@ TRIAL_STARTED = "trial_started_at"     # first comparison; reset by any mismatch
 SWITCHED_AT = "switched_at"
 FEED_ORDER = "feed_order"              # PA's game ids, in the feed's order (JSON)
 ORDERS_LAST_URL = "orders_last_url"    # the last order-list link read through
+OLD_LAST_NEW = "old_last_new_at"       # the last time the old scraper showed a newer draw
+OLD_OFF_TOLD = "old_off_told_at"       # the last "turn the old scraper OFF" message
+OLD_ON_TOLD = "old_on_told"            # why "turn it back ON" was last sent (JSON list)
+PA_FAILING_SINCE = "pa_failing_since"  # PA's feed gave no Powerball/Mega Millions since
 
 # The games both sources cover: id -> (name, bonus ball code).
 PBMM = {POWERBALL: ("Powerball", "PB"), MEGA_MILLIONS: ("Mega Millions", "MB")}
@@ -53,6 +61,14 @@ TRIAL_DAYS = 14
 TRIAL_DRAWS = 4                        # matched draws of EACH game during the trial
 OLD_SCRAPER_QUIET = timedelta(days=3)
 FETCH_GRACE = timedelta(hours=1)
+OLD_RUNNING = timedelta(days=4)        # a newer draw within this: the old scraper is running
+OFF_REMINDER = timedelta(days=7)       # "turn it OFF" at most this often
+PA_STALE_DAYS = 4                      # PA's newest Powerball/Mega Millions older than this
+PA_FAILING = timedelta(hours=6)        # PA's feed failing for longer than this
+
+# Where the owner turns the old scraper's daily run on or off.
+OLD_SCRAPER_STEPS = ('GitHub → powerball-megamillion → Actions → "Daily Lottery Update" '
+                     '→ ⋯ (top right) → {action} workflow')
 
 # What the owner is told when a problem clears. None: it clears quietly.
 FIXED = {
@@ -66,6 +82,8 @@ FIXED = {
     "orders_format": "✅ PA's order list reads normally again.",
     "orders_check": None,
     "orders_conflict": None,
+    "old_on": ("✅ PA's feed is fine again, you can turn the old scraper OFF again: "
+               + OLD_SCRAPER_STEPS.format(action="Disable") + "."),
 }
 
 
@@ -229,11 +247,16 @@ def save_draws(session, draws: list[Draw], now: datetime) -> list[str]:
     numbers now read differently from what was first saved (the first reading is
     kept, and the owner is told, since which one is right can't be guessed)."""
     notes = []
+    old_news = False
     for d in draws:
         row = session.scalar(select(DrawResultRow).filter_by(
             source=d.source, game_id=d.game_id, draw_date=d.draw_date))
         numbers = " ".join(d.numbers)
         if row is None:
+            if d.source == OLD_SCRAPER:
+                newest = session.scalar(select(func.max(DrawResultRow.draw_date))
+                                        .filter_by(source=OLD_SCRAPER, game_id=d.game_id))
+                old_news = old_news or newest is None or d.draw_date > newest
             session.add(DrawResultRow(
                 source=d.source, game_id=d.game_id, title=d.title, draw_date=d.draw_date,
                 numbers=numbers, extras=json.dumps(d.extras), raw=d.raw,
@@ -250,6 +273,9 @@ def save_draws(session, draws: list[Draw], now: datetime) -> list[str]:
         row.jackpot_date = d.jackpot_date
         row.jackpot_text, row.jackpot_amount = d.jackpot_text, d.jackpot_amount
         row.cash_value_text, row.cash_value_amount = d.cash_value_text, d.cash_value_amount
+    if old_news:
+        # How "is the old scraper still running?" is told: from its data alone.
+        set_setting(session, OLD_LAST_NEW, now.isoformat(), now)
     session.flush()
     return notes
 
@@ -405,8 +431,7 @@ def check_old_scraper(session, now: datetime) -> None:
     it. (Between them the two games draw five days a week.)"""
     if pbmm_source(session) != OLD_SCRAPER or not get_setting(session, TRIAL_STARTED):
         return
-    last = aware(session.scalar(select(func.max(DrawResultRow.first_seen_at))
-                                .filter_by(source=OLD_SCRAPER)))
+    last = old_last_new(session)
     if last is None:
         return
     if now - last > OLD_SCRAPER_QUIET:
@@ -416,6 +441,139 @@ def check_old_scraper(session, now: datetime) -> None:
                now, key=last.isoformat())
     else:
         report(session, "old_quiet", None, now)
+
+
+# --------------------------------------------------------------------------- #
+# Telling the owner to turn the old scraper OFF, or back ON
+# --------------------------------------------------------------------------- #
+#
+# The old scraper's daily run lives in another repo, which this job can't
+# change, so the owner flips it by hand. Whether it's running is told from its
+# data alone: a draw newer than any it showed before, within the last 4 days.
+# (Powerball draws Mon/Wed/Sat and Mega Millions Tue/Fri, so a daily scraper
+# always has something new within 4 days.)
+
+def _today_eastern(now: datetime):
+    try:
+        from zoneinfo import ZoneInfo
+        return aware(now).astimezone(ZoneInfo("America/New_York")).date()
+    except Exception:  # noqa: BLE001 — no time zone data: UTC's date is close enough
+        return aware(now).date()
+
+
+def old_last_new(session) -> datetime | None:
+    """The last time the old scraper showed a draw newer than any before it."""
+    last = _from_iso(get_setting(session, OLD_LAST_NEW))
+    if last is None:   # saved before this was remembered: its newest row will do
+        last = aware(session.scalar(select(func.max(DrawResultRow.first_seen_at))
+                                    .filter_by(source=OLD_SCRAPER)))
+    return last
+
+
+def old_scraper_running(session, now: datetime) -> bool:
+    last = old_last_new(session)
+    return last is not None and now - last <= OLD_RUNNING
+
+
+def note_pa_feed(session, ok: bool, now: datetime) -> None:
+    """Remember since when PA's feed has failed to give Powerball and Mega
+    Millions (couldn't be reached, couldn't be read, or either game left out);
+    a good read clears it."""
+    if ok:
+        set_setting(session, PA_FAILING_SINCE, "", now)
+    elif get_setting(session, PA_FAILING_SINCE) is None:
+        set_setting(session, PA_FAILING_SINCE, now.isoformat(), now)
+
+
+def pa_trouble(session, now: datetime) -> dict[str, str]:
+    """Why PA's feed can't be trusted for Powerball/Mega Millions right now, in
+    plain words, keyed by what kind of problem it is (empty: it's fine)."""
+    out: dict[str, str] = {}
+    today = _today_eastern(now)
+    for game_id, (name, _) in PBMM.items():
+        newest = session.scalar(select(func.max(DrawResultRow.draw_date))
+                                .filter_by(source=PA_FEED, game_id=game_id))
+        if newest is None:
+            out[f"stale:{game_id}"] = f"PA's feed has no {name} draw at all."
+            continue
+        age = (today - datetime.strptime(newest, "%Y-%m-%d").date()).days
+        if age > PA_STALE_DAYS:
+            out[f"stale:{game_id}"] = (f"PA's newest {name} draw is from {nice_date(newest)}, "
+                                       f"{age} days ago: draws have been missed.")
+    since = _from_iso(get_setting(session, PA_FAILING_SINCE))
+    if since is not None and now - since > PA_FAILING:
+        out["failing"] = (f"PA's number feed has been failing since {nice_time(since)} "
+                          f"(over {int(PA_FAILING.total_seconds() // 3600)} hours).")
+    switched_at = _from_iso(get_setting(session, SWITCHED_AT))
+    for game_id, (name, _) in PBMM.items():
+        latest = session.scalar(select(DrawCheckRow).filter_by(game_id=game_id)
+                                .order_by(DrawCheckRow.draw_date.desc()).limit(1))
+        if latest is None or latest.matched:
+            continue
+        if switched_at is not None and aware(latest.checked_at) < switched_at:
+            continue
+        out[f"mismatch:{game_id}"] = (f"PA's feed and the old scraper disagree on {name}, "
+                                      f"draw of {nice_date(latest.draw_date)}.")
+    return out
+
+
+def _turn_on_message(reasons: dict[str, str]) -> str:
+    return "\n".join(
+        ["⚠️ <b>Turn the old scraper back ON</b>",
+         "PA's feed can't be trusted for Powerball/Mega Millions right now:"]
+        + [f"• {esc(reasons[k])}" for k in sorted(reasons)]
+        + ["", OLD_SCRAPER_STEPS.format(action="Enable") + ". (If it's still on, leave it on.)",
+           "While it runs, the TVs show its Powerball/Mega Millions numbers whenever "
+           "they're newer than PA's. A note follows when PA's feed is fine again."])
+
+
+def _turn_off_message() -> str:
+    return "\n".join(
+        ["🔌 <b>Turn the old Powerball/Mega Millions scraper OFF</b>",
+         "The TVs use PA's own feed now, so it isn't needed any more.",
+         OLD_SCRAPER_STEPS.format(action="Disable") + ".",
+         "(A reminder comes once a week while it still looks like it's running.)"])
+
+
+def advise_old_scraper(session, now: datetime) -> dict:
+    """After the switch: tell the owner to turn the old scraper back ON when PA's
+    feed can't be trusted (once per distinct problem, and a note when it's fine
+    again), otherwise to turn it OFF while it still looks like it's running (at
+    most once a week). Returns what was said (for the log and tests)."""
+    said = {"on": False, "fine": False, "off": False}
+    if pbmm_source(session) != PA_FEED:
+        return said
+    reasons = pa_trouble(session, now)
+    try:
+        told = set(json.loads(get_setting(session, OLD_ON_TOLD, "[]")))
+    except ValueError:
+        told = set()
+    if reasons:
+        if set(reasons) <= told:
+            # Nothing new. Remember only what's still wrong, so a problem
+            # that clears and later comes back is news again.
+            if set(reasons) != told:
+                set_setting(session, OLD_ON_TOLD, json.dumps(sorted(reasons)), now)
+            print(_plain(_turn_on_message(reasons)) + " (already said)", flush=True)
+            return said
+        if send(_turn_on_message(reasons)) or not telegram.configured():
+            set_setting(session, OLD_ON_TOLD, json.dumps(sorted(reasons)), now)
+        said["on"] = True
+        return said
+    if told:
+        set_setting(session, OLD_ON_TOLD, "", now)
+        send(FIXED["old_on"])
+        # That note says to turn it OFF again: the weekly reminder starts from here.
+        set_setting(session, OLD_OFF_TOLD, now.isoformat(), now)
+        said["fine"] = True
+        return said
+    last_told = _from_iso(get_setting(session, OLD_OFF_TOLD))
+    if old_scraper_running(session, now) and (last_told is None
+                                              or now - last_told >= OFF_REMINDER):
+        if send(_turn_off_message()) or not telegram.configured():
+            set_setting(session, OLD_OFF_TOLD, now.isoformat(), now)
+        said["off"] = True
+    return said
 
 
 # --------------------------------------------------------------------------- #

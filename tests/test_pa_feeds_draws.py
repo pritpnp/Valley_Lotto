@@ -94,7 +94,7 @@ def test_raw_keeps_the_game_entry_as_published():
 def test_the_byte_order_mark_is_handled():
     assert FEED.startswith(b"\xef\xbb\xbf")                    # the real file has one
     text = FEED.decode("utf-8")                                # BOM kept as
-    assert text.startswith("﻿")
+    assert text.startswith("\ufeff")
     assert [d.game_id for d in draws.parse_feed(text)] == [g[0] for g in EXPECTED]
     assert len(draws.parse_feed(FEED.decode("utf-8-sig"))) == 16    # and without it
 
@@ -264,7 +264,7 @@ def test_the_old_scraper_agrees_with_pa_on_the_same_draws():
 
 
 def test_the_old_scrapers_file_with_a_bom():
-    assert len(draws.parse_old_scraper("﻿" + OLD)) == 2
+    assert len(draws.parse_old_scraper("\ufeff" + OLD)) == 2
     assert len(draws.parse_old_scraper(b"\xef\xbb\xbf" + OLD.encode())) == 2
 
 

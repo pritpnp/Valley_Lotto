@@ -206,7 +206,7 @@ def read_feed(xml_text: str | bytes) -> Reading:
     not a list of games, or no games at all).
     """
     if isinstance(xml_text, str):
-        xml_text = xml_text.lstrip("﻿")   # a BOM left in decoded text
+        xml_text = xml_text.lstrip("\ufeff")   # a BOM left in decoded text
     else:
         xml_text = xml_text.lstrip(b"\xef\xbb\xbf")
     try:
@@ -323,7 +323,7 @@ def read_old_scraper(json_text: str | bytes) -> Reading:
     two digits wide, like PA's feed (3 -> "03").
     """
     if isinstance(json_text, str):
-        json_text = json_text.lstrip("﻿")
+        json_text = json_text.lstrip("\ufeff")
     try:
         data = json.loads(json_text)
     except ValueError as e:

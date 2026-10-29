@@ -107,6 +107,7 @@ def _db_url(url: str) -> str:
 
 def numbers(session, now: datetime) -> None:
     switched = store.pbmm_source(session) == draws_.PA_FEED
+    pa_ok = False      # PA's feed gave both Powerball and Mega Millions this time
 
     try:
         body = download(FEED_URL)
@@ -127,14 +128,18 @@ def numbers(session, now: datetime) -> None:
             store.report(session, "numbers_format", store.problem_list(
                 "PA's number feed needs a look", reading.problems + changed), now)
             print(f"PA's number feed: {len(reading.draws)} games read.", flush=True)
+            pa_ok = set(store.PBMM) <= {d.game_id for d in reading.draws}
+    store.note_pa_feed(session, pa_ok, now)
 
     # The old scraper. Once the TVs have switched to PA's feed it's expected to
-    # stop, so from then on its silence isn't a problem.
+    # stop, so from then on its silence isn't a problem. It's still read: whether
+    # it's running decides the "turn it OFF" reminder, and if the owner turns it
+    # back on while PA's feed is stale, the TVs show its newer draws.
     try:
         body = download(OLD_SCRAPER_URL)
     except FetchError as e:
         if switched:
-            print(f"Old scraper's file not read ({e}); not needed any more.", flush=True)
+            print(f"Old scraper's file not read ({e}); the TVs use PA's feed now.", flush=True)
         else:
             store.fetch_failed(session, "old", "the old Powerball/Mega Millions scraper's "
                                "file", str(e), now,
@@ -154,6 +159,7 @@ def numbers(session, now: datetime) -> None:
 
     result = store.compare_and_switch(session, now)
     store.check_old_scraper(session, now)
+    store.advise_old_scraper(session, now)
     print(f"Compared {result['checked']} new draw(s) with the old scraper; "
           f"TVs use {store.pbmm_source(session)} for Powerball and Mega Millions.", flush=True)
 

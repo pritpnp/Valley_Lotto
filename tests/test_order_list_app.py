@@ -205,6 +205,28 @@ def test_every_report_in_the_app_adds_the_same_day_up_the_same(app, client, monk
     assert {c[3] for c in on_day} == {20}
 
 
+def test_every_report_uses_the_games_own_size_from_the_list(app, client, monkeypatch):
+    """Same day, but this week's list prints 150 tickets a pack for the $1 game,
+    unlike config.yaml's 100 for $1. Every page must use PA's 150:
+    (150 - 90) + 10 = 70 tickets."""
+    _save_list(app, "2026-10-26", [("1806", 1.0, 150)])
+    day = _changeover_day(app)
+    totals = {}
+    real = appmod.daily_report
+
+    def spy(log, date, **kw):
+        rep = real(log, date, **kw)
+        if date == day:
+            from flask import request
+            totals.setdefault(request.path, set()).add(rep.total_tickets)
+        return rep
+    monkeypatch.setattr(appmod, "daily_report", spy)
+    for path in ("/dashboard", f"/report?date={day}", "/history", "/overview"):
+        assert client.get(path).status_code == 200, path
+    assert totals == {"/report": {70}, "/history": {70}, "/overview": {70},
+                      "/dashboard": {70}}
+
+
 def test_the_same_day_agrees_before_any_order_list_too(app, client, monkeypatch):
     day = _changeover_day(app)
     totals = {}

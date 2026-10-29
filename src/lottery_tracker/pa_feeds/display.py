@@ -5,10 +5,14 @@ store data in it). One entry per game, its latest draw, in PA's own order.
 
 Powerball and Mega Millions come from the old scraper until PA's feed has
 matched it for the trial (see ``store.compare_and_switch``), then from PA's
-feed only. While the old scraper is in charge, PA's extras it doesn't have
-(Power Play, cash value) are added only when PA's reading of that same draw
-matched it. (If the old scraper has never sent a game at all, PA's reading is
-shown rather than nothing; ``source`` says which one it is.)
+feed. While the old scraper is in charge, PA's extras it doesn't have (Power
+Play, cash value) are added only when PA's reading of that same draw matched
+it. (If the old scraper has never sent a game at all, PA's reading is shown
+rather than nothing; ``source`` says which one it is.)
+
+After the switch there's one fallback: if the old scraper has a newer draw of
+Powerball or Mega Millions than PA's feed (PA has fallen behind and the owner
+turned the old scraper back on), that draw is shown until PA catches up.
 """
 
 from __future__ import annotations
@@ -86,7 +90,11 @@ def build_payload(session, now: datetime | None = None) -> dict:
     """The TV feed (see docs/pa-feeds-spec.md, "TV feed")."""
     source = pbmm_source(session)
     pa = _latest(session, PA_FEED)
-    old = _latest(session, OLD_SCRAPER) if source == OLD_SCRAPER else {}
+    old = _latest(session, OLD_SCRAPER)
+    if source != OLD_SCRAPER:
+        # Switched: the old scraper only fills in a draw PA's feed doesn't have yet.
+        old = {g: r for g, r in old.items()
+               if g not in pa or r.draw_date > pa[g].draw_date}
     order = feed_order(session)
     # Before PA's feed has ever been read, the old scraper's games still show.
     order += [g for g in PBMM if g in old and g not in order]
