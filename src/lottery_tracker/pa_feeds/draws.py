@@ -209,6 +209,13 @@ def read_feed(xml_text: str | bytes) -> Reading:
         xml_text = xml_text.lstrip("\ufeff")   # a BOM left in decoded text
     else:
         xml_text = xml_text.lstrip(b"\xef\xbb\xbf")
+    # PA's feed has no DOCTYPE. One would be the only way in for entities that
+    # expand into huge text or pull in other files, so it's refused before
+    # parsing, whichever XML library is installed.
+    head = xml_text if isinstance(xml_text, str) else xml_text.decode("utf-8", "replace")
+    if re.search(r"<!\s*(DOCTYPE|ENTITY)", head, re.IGNORECASE):
+        raise FeedError("PA's number feed changed shape: it now declares a document type, "
+                        "which it never did, so it isn't read.")
     try:
         root = fromstring(xml_text)
     except Exception as e:  # noqa: BLE001 — any parse failure means "not readable"

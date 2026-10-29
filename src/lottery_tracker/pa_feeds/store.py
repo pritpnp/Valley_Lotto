@@ -11,8 +11,8 @@ Three jobs live here:
   once per "As of" date.
 * **Telling the owner, once.** A problem goes to Telegram the first time it's
   seen, not every ten minutes; a short "fixed" note follows when it clears. A
-  website that doesn't answer is only mentioned once it has kept failing for
-  over an hour.
+  website that doesn't answer, or answers with something that isn't the page at
+  all, is only mentioned once it has kept failing for over an hour.
 * **The side-by-side check.** Powerball and Mega Millions are read from PA's
   feed and from the old scraper; every draw is compared. After 14 days of exact
   matches (at least 4 draws of each game) the TVs switch to PA's feed, for good.
@@ -29,6 +29,7 @@ import html
 import json
 import re
 from collections import Counter
+from dataclasses import replace
 from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import func, select
@@ -64,6 +65,8 @@ FETCH_GRACE = timedelta(hours=1)
 OLD_RUNNING = timedelta(days=4)        # a newer draw within this: the old scraper is running
 OFF_REMINDER = timedelta(days=7)       # "turn it OFF" at most this often
 PA_STALE_DAYS = 4                      # PA's newest Powerball/Mega Millions older than this
+DRAW_NIGHT = timedelta(hours=6)        # a night's draws are posted after midnight: for
+                                       # "days old", a day starts at 6am Eastern
 PA_FAILING = timedelta(hours=6)        # PA's feed failing for longer than this
 
 # Where the owner turns the old scraper's daily run on or off.
@@ -72,12 +75,12 @@ OLD_SCRAPER_STEPS = ('GitHub → powerball-megamillion → Actions → "Daily Lo
 
 # What the owner is told when a problem clears. None: it clears quietly.
 FIXED = {
-    "numbers_fetch": "✅ PA's number feed is answering again.",
+    "numbers_fetch": "✅ PA's number feed can be read again.",
     "numbers_format": "✅ PA's number feed reads normally again.",
     "old_fetch": "✅ The old Powerball/Mega Millions scraper's file can be read again.",
     "old_format": "✅ The old Powerball/Mega Millions scraper's file reads normally again.",
     "old_quiet": "✅ The old scraper is sending Powerball/Mega Millions draws again.",
-    "orders_page_fetch": "✅ PA's retailer page is answering again.",
+    "orders_page_fetch": "✅ PA's retailer page can be read again.",
     "orders_pdf_fetch": "✅ PA's order list downloads again.",
     "orders_format": "✅ PA's order list reads normally again.",
     "orders_check": None,
@@ -211,9 +214,10 @@ def problem_list(title: str, problems: list[str]) -> str | None:
 
 def fetch_failed(session, name: str, what: str, error: str, now: datetime, *,
                  meanwhile: str = "") -> bool:
-    """A download failed. Remember when the failures started; only tell the
-    owner once they've gone on for over an hour (a blip isn't news).
-    ``meanwhile`` says what happens in the meantime, in plain words."""
+    """A download failed, or what came back wasn't the page at all. Remember
+    when the failures started; only tell the owner once they've gone on for
+    over an hour (a blip isn't news). ``meanwhile`` says what happens in the
+    meantime, in plain words."""
     since = _from_iso(get_setting(session, f"failing_since:{name}"))
     if since is None:
         set_setting(session, f"failing_since:{name}", now.isoformat(), now)
@@ -222,7 +226,7 @@ def fetch_failed(session, name: str, what: str, error: str, now: datetime, *,
     if now - since <= FETCH_GRACE:
         print(f"{what}: {error} (failing since {nice_time(since)})", flush=True)
         return False
-    text = (f"⚠️ Can't reach {esc(what)}: it has kept failing since "
+    text = (f"⚠️ Can't read {esc(what)}: it has kept failing since "
             f"{nice_time(since)}. {esc(meanwhile)} "
             f"<i>({esc(error)})</i>").replace("  ", " ")
     return report(session, f"{name}_fetch", text, now, key=since.isoformat())
@@ -241,14 +245,46 @@ def _bare(extras) -> list[tuple]:
     return [(e.get("code"), e.get("value")) for e in extras]
 
 
+def _too_long(column: str, value: str | None) -> bool:
+    """Longer than its column holds. Postgres refuses such text, and the whole
+    run would be lost with it (SQLite, in the tests, doesn't check)."""
+    limit = DrawResultRow.__table__.c[column].type.length
+    return value is not None and limit is not None and len(value) > limit
+
+
+def _fit(d: Draw) -> tuple[Draw | None, list[str]]:
+    """The draw as it can be saved, and a note for each thing left out because
+    it's longer than the database holds. None when that's the game itself (its
+    id, name or numbers); a jackpot or cash value is left out on its own."""
+    if (_too_long("game_id", d.game_id) or _too_long("title", d.title)
+            or _too_long("numbers", " ".join(d.numbers))):
+        name = d.title if len(d.title) <= 60 else d.title[:60] + "…"
+        return None, [f"{name}: its id, name or numbers are longer than the database "
+                      f"can hold; left out."]
+    notes = []
+    for text, amount, label in (("jackpot_text", "jackpot_amount", "jackpot"),
+                                ("cash_value_text", "cash_value_amount", "cash value")):
+        value = getattr(d, text)
+        if _too_long(text, value):
+            notes.append(f"{d.title}: the {label} “{value[:40]}…” is longer than the "
+                         f"database can hold; left out.")
+            d = replace(d, **{text: None, amount: None})
+    return d, notes
+
+
 def save_draws(session, draws: list[Draw], now: datetime) -> list[str]:
     """Save each draw once per source; later readings of the same draw refresh
     ``last_seen_at`` and the jackpot fields. Returns a note for each draw whose
     numbers now read differently from what was first saved (the first reading is
-    kept, and the owner is told, since which one is right can't be guessed)."""
+    kept, and the owner is told, since which one is right can't be guessed), and
+    for anything left out because it's too long to save."""
     notes = []
     old_news = False
     for d in draws:
+        d, too_long = _fit(d)
+        notes += too_long
+        if d is None:
+            continue
         row = session.scalar(select(DrawResultRow).filter_by(
             source=d.source, game_id=d.game_id, draw_date=d.draw_date))
         numbers = " ".join(d.numbers)
@@ -426,10 +462,12 @@ def trial_passed(session, now: datetime) -> tuple[bool, Counter]:
 
 
 def check_old_scraper(session, now: datetime) -> None:
-    """During the trial, say so (once) if the old scraper hasn't sent a new
+    """Until the switch, say so (once) if the old scraper hasn't sent a new
     Powerball/Mega Millions draw for over 3 days: the check can't finish without
-    it. (Between them the two games draw five days a week.)"""
-    if pbmm_source(session) != OLD_SCRAPER or not get_setting(session, TRIAL_STARTED):
+    it, and the TVs still show its numbers. (Between them the two games draw five
+    days a week.) That includes before the first comparison: a file that was
+    already stuck when PA's feed was first read never gives one."""
+    if pbmm_source(session) != OLD_SCRAPER:
         return
     last = old_last_new(session)
     if last is None:
@@ -461,6 +499,15 @@ def _today_eastern(now: datetime):
         return aware(now).date()
 
 
+def _draw_day(now: datetime):
+    """Today, for counting how old a draw is. Powerball and Mega Millions draw
+    around 11pm Eastern and PA posts the numbers after that, often after
+    midnight, so until 6am it's still the night before. (Otherwise Friday's Mega
+    Millions draw would be "5 days old" at midnight on Tuesday night, before
+    PA had a chance to post Tuesday's, and the owner would get a false alarm.)"""
+    return _today_eastern(aware(now) - DRAW_NIGHT)
+
+
 def old_last_new(session) -> datetime | None:
     """The last time the old scraper showed a draw newer than any before it."""
     last = _from_iso(get_setting(session, OLD_LAST_NEW))
@@ -489,7 +536,7 @@ def pa_trouble(session, now: datetime) -> dict[str, str]:
     """Why PA's feed can't be trusted for Powerball/Mega Millions right now, in
     plain words, keyed by what kind of problem it is (empty: it's fine)."""
     out: dict[str, str] = {}
-    today = _today_eastern(now)
+    today = _draw_day(now)
     for game_id, (name, _) in PBMM.items():
         newest = session.scalar(select(func.max(DrawResultRow.draw_date))
                                 .filter_by(source=PA_FEED, game_id=game_id))

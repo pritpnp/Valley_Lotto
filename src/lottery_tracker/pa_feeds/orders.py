@@ -96,6 +96,16 @@ def _ymd(month: str, day: str, year: str) -> str | None:
 _AS_OF = re.compile(r"\bAs\s+of\s*:?\s*(\d{1,2})/(\d{1,2})/(\d{4}|\d{2})(?!\d)", re.IGNORECASE)
 _ROW = re.compile(r"(\d+)\s+(\$\S+)\s+(\d+)\s+(\S.*)")
 _HEADINGS = ("Price", "Tix/Pack", "GAMES AVAILABLE TO ORDER")
+# The database's column sizes (``OrderGameRow`` in web/models.py). Postgres
+# refuses anything longer, so a row like that isn't one this list can hold.
+LONGEST_NUMBER, LONGEST_NAME = 16, 255
+# The whole heading line, word for word (the "As of" date shares its line). A
+# column added between these would still give rows that read as game number,
+# price, tickets per pack and name, with the new column glued onto the name,
+# so any other wording on the line means the list has changed.
+_HEADING_LINE = re.compile(r"(?:(?:As\s+of\s*:?\s*)?\d{1,2}/\d{1,2}/(?:\d{4}|\d{2})\s+)?"
+                           r"Price\s+(?:#\s*)?Tix/Pack\s+GAMES\s+AVAILABLE\s+TO\s+ORDER",
+                           re.IGNORECASE)
 
 
 def _heading_at(line: str) -> list[int]:
@@ -137,7 +147,8 @@ def parse_order_pdf(pdf_bytes: bytes) -> OrderList:
             price = money_amount(m.group(2))
             if not heading_seen:
                 raise OrderListError("PA's order list has games above its heading.")
-            if price is None or int(m.group(3)) <= 0:
+            if (price is None or int(m.group(3)) <= 0 or len(m.group(1)) > LONGEST_NUMBER
+                    or len(m.group(4)) > LONGEST_NAME):
                 raise OrderListError(f"PA's order list has a line that isn't game number, "
                                      f"price, tickets per pack and name: “{line}”.")
             games.append(OrderGame(game_number=m.group(1), price=price,
@@ -145,8 +156,9 @@ def parse_order_pdf(pdf_bytes: bytes) -> OrderList:
             continue
         at = _heading_at(line)
         if any(i >= 0 for i in at):
-            # The heading: all three, in this order, or the columns have moved.
-            if min(at) < 0 or not at[0] < at[1] < at[2]:
+            # The heading: all three, in this order, and nothing else, or the
+            # columns have changed.
+            if not _HEADING_LINE.fullmatch(line):
                 raise OrderListError(f"PA's order list heading changed: “{line}” "
                                      f"(expected Price, Tix/Pack, GAMES AVAILABLE TO ORDER).")
             heading_seen = True

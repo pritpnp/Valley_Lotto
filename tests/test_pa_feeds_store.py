@@ -144,6 +144,34 @@ def test_a_draw_that_reads_differently_later_keeps_the_first_reading_and_says_so
     assert rows(db, source="pa_feed", game_id="12")[0].numbers == "18 26 49 50 54"
 
 
+def test_text_longer_than_the_database_holds_is_left_out_with_a_note(db):
+    # Postgres refuses text longer than its column (SQLite here doesn't check),
+    # and that would lose the whole run, every run. So it's left out instead.
+    long_jackpot = "$52,000 " + "plus a bonus prize " * 7                 # over 128
+    long_title = "Cash 5 " + "with Quick Cash " * 9
+    feed = (FEED.replace(b"<jackpotamount>$52,000</jackpotamount>",
+                         f"<jackpotamount>{long_jackpot}</jackpotamount>".encode())
+                .replace(b"<title>Cash 5</title>", f"<title>{long_title}</title>".encode()))
+    reading = draws.read_feed(feed)
+    assert reading.problems == []
+    notes = store.save_draws(db, reading.draws, T0)
+    assert len(notes) == 2
+    assert notes[0].startswith("Treasure Hunt: the jackpot") and "left out" in notes[0]
+    assert "name" in notes[1] and "left out" in notes[1]
+    th = rows(db, source="pa_feed", game_id="7")[0]                  # the numbers are still saved
+    assert th.numbers == "08 09 19 20 23" and th.jackpot_text is None and th.jackpot_amount is None
+    assert rows(db, source="pa_feed", game_id="8") == []             # no name that fits: left out
+    assert len(rows(db, source="pa_feed")) == 15
+    # a draw already saved whose jackpot grows too long: the same note (so it's
+    # told once), and nothing too long reaches the database
+    save_fixtures(db, T0 + timedelta(minutes=10))
+    assert store.save_draws(db, reading.draws, T0 + timedelta(minutes=20)) == notes
+    for row in db.scalars(select(DrawResultRow)):
+        for col in ("game_id", "title", "numbers", "jackpot_text", "cash_value_text"):
+            value = getattr(row, col)
+            assert value is None or len(value) <= DrawResultRow.__table__.c[col].type.length
+
+
 def test_the_feeds_order_is_remembered(db):
     save_fixtures(db)
     assert store.feed_order(db) == ["31", "27", "32", "28", "33", "29", "34", "30",
@@ -408,6 +436,23 @@ def test_the_old_scraper_going_quiet_is_reported_once_during_the_trial(db, sent)
     assert sent[-1] == store.FIXED["old_quiet"]
 
 
+def test_an_old_scraper_already_stuck_before_any_comparison_is_reported(db, sent):
+    # Its file stopped changing before PA's feed was first read: no draw date is
+    # in both, so the side-by-side check never starts, and the TVs keep its old
+    # numbers. That's the same "waiting on it" news, not silence.
+    store.save_draws(db, [_pb("old_scraper", date="2026-10-19"),
+                          _mm("old_scraper", "2026-10-20")], T0)
+    for days in range(0, 6):
+        now = T0 + timedelta(days=days)
+        store.save_draws(db, [_pb("pa_feed", date="2026-10-26"), _mm("pa_feed", "2026-10-27")], now)
+        store.save_draws(db, [_pb("old_scraper", date="2026-10-19"),
+                              _mm("old_scraper", "2026-10-20")], now)
+        store.compare_and_switch(db, now)
+        store.check_old_scraper(db, now)
+    assert store.get_setting(db, store.TRIAL_STARTED) is None
+    assert len(sent) == 1 and "hasn't sent a new draw since Oct 28, 8:10 PM" in sent[0]
+
+
 def test_the_old_scraper_going_quiet_after_the_switch_is_expected(db, sent):
     run_days(db, 0, 14)
     n = len(sent)
@@ -516,6 +561,28 @@ def test_pa_falling_behind_says_turn_it_back_on_once_per_problem(db, sent):
     assert len(sent) == n + 3                                       # from the "fine again" note
     run_days(db, 29, 29, advise=True)
     assert sent[-1].startswith("🔌")
+
+
+def test_a_draw_pa_posts_after_midnight_is_not_a_missed_draw(db, sent):
+    # Mega Millions draws Tuesday 11pm Eastern. Friday's draw turns "5 days old"
+    # at midnight, which can be before PA has posted Tuesday's: no false alarm.
+    run_days(db, 0, 14, advise=True)                # switched; PA's newest Mega Millions
+    n = len(sent)                                   # is Fri Nov 13 (day 11)
+    wed_after_midnight = datetime(2026, 11, 18, 5, 30, tzinfo=timezone.utc)   # 12:30am Eastern
+    assert store.advise_old_scraper(db, wed_after_midnight) == \
+        {"on": False, "fine": False, "off": False}
+    store.save_draws(db, [_mm("pa_feed", "2026-11-17")], wed_after_midnight + timedelta(minutes=40))
+    assert store.advise_old_scraper(db, wed_after_midnight + timedelta(minutes=40))["on"] is False
+    assert len(sent) == n
+
+
+def test_a_draw_still_missing_the_next_morning_is_a_missed_draw(db, sent):
+    run_days(db, 0, 14, advise=True)
+    n = len(sent)
+    wed_morning = datetime(2026, 11, 18, 11, 10, tzinfo=timezone.utc)          # 6:10am Eastern
+    assert store.advise_old_scraper(db, wed_morning)["on"]
+    assert len(sent) == n + 1
+    assert "Mega Millions draw is from Fri Nov 13, 2026, 5 days ago" in sent[-1]
 
 
 def test_a_problem_that_clears_and_comes_back_is_news_again(db, sent):
@@ -724,6 +791,27 @@ def test_a_game_pa_adds_shows_up_by_itself(db):
     assert len(games) == 17 and games[16]["title"] == "Cash Pop" and games[16]["position"] == 16
 
 
+def test_a_game_pa_drops_from_its_feed_leaves_the_tvs(db):
+    # Its last draw would otherwise stay on the TVs for good, as if current.
+    save_fixtures(db)
+    gone = FEED.replace(FEED[FEED.index(b'<game id="38">'):FEED.index(b"</games>")], b"")
+    reading = draws.read_feed(gone)
+    assert [d.game_id for d in reading.draws][-1] == "36"
+    store.save_draws(db, reading.draws, T0 + timedelta(days=1))
+    store.remember_feed_order(db, reading.order, T0 + timedelta(days=1))
+    for source in ("old_scraper", "pa_feed"):
+        store.set_setting(db, store.PBMM_SOURCE, source, T0)
+        games = display.build_payload(db, now=T0 + timedelta(days=1))["games"]
+        assert [g["id"] for g in games] == store.feed_order(db)
+        assert "38" not in [g["id"] for g in games] and len(games) == 15
+
+
+def test_without_a_saved_order_every_game_pa_has_still_shows(db):
+    store.save_draws(db, draws.parse_feed(FEED), T0)               # order not remembered
+    store.set_setting(db, store.PBMM_SOURCE, "pa_feed", T0)
+    assert len(display.build_payload(db, now=T0)["games"]) == 16
+
+
 def test_a_game_that_cant_be_read_keeps_its_last_good_draw_on_the_tvs(db):
     save_fixtures(db)
     broken = FEED.replace(b"05 11 15 18 35", b"05 11 15 18 3S")       # Cash 5
@@ -762,6 +850,24 @@ def test_without_a_database_link_it_says_so_plainly_and_succeeds(monkeypatch, ca
     assert job.run(["orders"]) == 0
 
 
+@pytest.mark.parametrize("url", [
+    "postgres://postgres.abc:s3cret-pw@127.0.0.1:1/postgres",     # nothing listening there
+    "sqlite:////no/such/folder/s3cret-pw.db",
+])
+def test_a_database_that_cant_be_reached_is_a_warning_not_a_failed_run(monkeypatch, capsys, sent, url):
+    # A failed run emails the owner, and at every ten minutes a database outage
+    # would be dozens of emails. (The daily keepalive check reports a database
+    # that stays down.) The log is public: no password, server or user in it.
+    monkeypatch.setenv("DATABASE_URL", url)
+    web = everything(monkeypatch)
+    assert job.run(["numbers"], now=T0) == 0
+    out = capsys.readouterr()
+    assert out.out.startswith("::warning::") and "database couldn't be reached" in out.out
+    assert "s3cret-pw" not in out.out + out.err and "127.0.0.1" not in out.out + out.err
+    assert "postgres.abc" not in out.out + out.err
+    assert web.asked == [] and sent == []
+
+
 def everything(monkeypatch, **override):
     pages = {job.FEED_URL: FEED, job.OLD_SCRAPER_URL: OLD,
              job.RETAILERS_URL: PAGE, PDF_URL: PDF}
@@ -793,15 +899,32 @@ def test_all_runs_both(monkeypatch, tmp_path, sent):
     assert len(sent) == 1 and "55 games" in sent[0]
 
 
-def test_a_broken_feed_is_reported_once_then_fixed(monkeypatch, tmp_path, sent):
+def test_a_page_that_isnt_the_feed_is_reported_once_after_an_hour_then_fixed(monkeypatch, tmp_path,
+                                                                              sent):
+    # Like a site that doesn't answer: a busy page or a robot check in the
+    # feed's place is only news once it has kept up for over an hour.
     monkeypatch.setenv("DATABASE_URL", f"sqlite:///{tmp_path / 'job.db'}")
     web = everything(monkeypatch, **{job.FEED_URL: b"<html>We'll be right back</html>"})
-    assert job.run(["numbers"], now=T0) == 0
-    assert job.run(["numbers"], now=T0 + timedelta(minutes=10)) == 0
-    assert len(sent) == 1 and "nothing from it was saved" in sent[0]
+    for minutes in (0, 10, 30, 60):
+        assert job.run(["numbers"], now=T0 + timedelta(minutes=minutes)) == 0
+    assert sent == []
+    assert job.run(["numbers"], now=T0 + timedelta(minutes=70)) == 0
+    assert job.run(["numbers"], now=T0 + timedelta(minutes=80)) == 0
+    assert len(sent) == 1
+    assert "Can't read PA's number feed" in sent[0] and "starts with &lt;html&gt;" in sent[0]
+    assert "The TVs keep showing the last numbers read" in sent[0]
     web.pages[job.FEED_URL] = FEED
-    assert job.run(["numbers"], now=T0 + timedelta(minutes=20)) == 0
-    assert sent[1] == store.FIXED["numbers_format"]
+    assert job.run(["numbers"], now=T0 + timedelta(minutes=90)) == 0
+    assert sent[1] == store.FIXED["numbers_fetch"]
+
+
+def test_a_page_that_comes_and_goes_is_not_a_message_every_ten_minutes(monkeypatch, tmp_path, sent):
+    monkeypatch.setenv("DATABASE_URL", f"sqlite:///{tmp_path / 'job.db'}")
+    web = everything(monkeypatch)
+    for n in range(24):                         # four hours; every other run isn't the feed
+        web.pages[job.FEED_URL] = FEED if n % 2 else b"<html>Checking your browser...</html>"
+        assert job.run(["numbers"], now=T0 + timedelta(minutes=10 * n)) == 0
+    assert sent == []
 
 
 def test_one_unreadable_game_is_reported_and_the_rest_saved(monkeypatch, tmp_path, sent):
@@ -926,7 +1049,7 @@ def test_after_the_switch_a_short_pa_outage_says_nothing_about_the_old_scraper(m
     web.pages[job.FEED_URL] = FEED
     job.run(["numbers"], now=T0 + timedelta(minutes=380))
     assert not any("back ON" in m or "fine again" in m for m in sent)
-    assert any("Can't reach PA's number feed" in m for m in sent)   # the outage itself was told
+    assert any("Can't read PA's number feed" in m for m in sent)    # the outage itself was told
 
 
 def test_a_dry_run_reads_and_prints_but_saves_and_sends_nothing(monkeypatch, tmp_path, sent, capsys):

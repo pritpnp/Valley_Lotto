@@ -208,10 +208,21 @@ def test_a_hand_made_pdf_reads_like_the_real_one():
     "Price # Tix/Pack GAMES",                            # title cut
     "# Tix/Pack Price GAMES AVAILABLE TO ORDER",         # columns swapped
     "GAMES AVAILABLE TO ORDER Price # Tix/Pack",
+    "Price # Tix/Pack Top Prize GAMES AVAILABLE TO ORDER",   # a column added
+    "Price # Tix/Pack Launch GAMES AVAILABLE TO ORDER",
+    "Game Price # Tix/Pack GAMES AVAILABLE TO ORDER",
+    "Price # Tix/Pack GAMES AVAILABLE TO ORDER Notes",
 ])
 def test_a_pdf_with_a_changed_header_is_rejected(heading):
+    # The rows read the same either way ("1806 $1 100 $5,000 CASH GRAB" would
+    # pass as a game called "$5,000 CASH GRAB"), so the heading is what tells.
     with pytest.raises(OrderListError, match="heading"):
-        orders.parse_order_pdf(order_pdf(heading=heading))
+        orders.parse_order_pdf(order_pdf(heading=heading, rows=("1806 $1 100 $5,000 CASH GRAB",)))
+
+
+def test_the_heading_may_carry_its_as_of_words_on_the_same_line():
+    got = orders.parse_order_pdf(make_pdf([f"As of 10/26/26 {HEADING}", "1806 $1 100 CASH GRAB"]))
+    assert (got.as_of, [g.name for g in got.games]) == ("2026-10-26", ["CASH GRAB"])
 
 
 @pytest.mark.parametrize("row", [
@@ -222,10 +233,18 @@ def test_a_pdf_with_a_changed_header_is_rejected(heading):
     "18O6 $1 100 CASH GRAB",              # letter O, not zero
     "1806 $1 100",                        # no name
     "Page 1 of 2",                        # anything else
+    "18061806180618061 $1 100 CASH GRAB",     # a game number longer than the database holds
+    "1806 $1 100 " + "CASH GRAB " * 26,       # a name longer than the database holds
 ])
 def test_one_bad_row_rejects_the_whole_list(row):
     with pytest.raises(OrderListError):
         orders.parse_order_pdf(order_pdf(rows=("1801 $1 100 GLINDA", row, "1717 $50 50 LION")))
+
+
+def test_the_longest_row_allowed_is_what_the_database_holds():
+    cols = OrderGameRow.__table__.c
+    assert (orders.LONGEST_NUMBER, orders.LONGEST_NAME) == (cols.game_number.type.length,
+                                                            cols.name.type.length)
 
 
 def test_zero_rows_is_rejected():
@@ -449,11 +468,43 @@ def test_a_changed_pdf_is_reported_once_and_fixed_when_it_reads_again(db, sent, 
     assert "reads normally again" in sent[1] and "2 games" in sent[2]
 
 
-def test_a_missing_link_is_reported_once(db, sent, monkeypatch):
-    Web(monkeypatch, {job.RETAILERS_URL: b"<html>redesigned</html>"})
+def test_a_missing_link_is_reported_once_after_an_hour(db, sent, monkeypatch):
+    # A page without the link may be a busy page or a robot check rather than a
+    # redesign, so it's treated like a page that didn't answer.
+    web = Web(monkeypatch, {job.RETAILERS_URL: b"<html>redesigned</html>"})
     job.orders(db, T0)
-    job.orders(db, T0 + timedelta(hours=1))
-    assert len(sent) == 1 and "couldn't be found" in sent[0]
+    job.orders(db, T0 + timedelta(minutes=59))
+    assert sent == []
+    job.orders(db, T0 + timedelta(minutes=61))
+    job.orders(db, T0 + timedelta(minutes=121))
+    assert len(sent) == 1 and "Can't read PA's retailer page" in sent[0]
+    assert "no longer has a “Scratch-Offs Available for Ordering” link" in sent[0]
+    assert web.asked == [job.RETAILERS_URL] * 4
+    web.pages = {job.RETAILERS_URL: PAGE, PDF_URL: PDF}
+    job.orders(db, T0 + timedelta(minutes=181))
+    assert sent[1] == store.FIXED["orders_page_fetch"] and "55 games" in sent[2]
+
+
+def test_a_retailer_page_that_comes_and_goes_is_not_a_message_every_hour(db, sent, monkeypatch,
+                                                                         no_tracker):
+    web = Web(monkeypatch, {PDF_URL: PDF})
+    for hours in range(12):
+        web.pages[job.RETAILERS_URL] = PAGE if hours % 2 else b"<html>Checking your browser</html>"
+        job.orders(db, T0 + timedelta(hours=hours))
+    assert len(sent) == 1 and "55 games" in sent[0]             # just the list itself
+
+
+def test_a_pdf_link_that_answers_with_a_web_page_is_like_no_answer(db, sent, monkeypatch, no_tracker):
+    web = Web(monkeypatch, {job.RETAILERS_URL: PAGE, PDF_URL: b"<html>Checking your browser</html>"})
+    job.orders(db, T0)
+    job.orders(db, T0 + timedelta(minutes=59))
+    assert sent == []
+    web.pages[PDF_URL] = PDF                                     # next try: the real PDF
+    job.orders(db, T0 + timedelta(minutes=119))
+    assert len(sent) == 1 and "55 games" in sent[0]
+    web.pages[PDF_URL] = b"<html>Checking your browser</html>"   # never asked again
+    job.orders(db, T0 + timedelta(minutes=179))
+    assert web.asked.count(PDF_URL) == 3
 
 
 def test_the_retailer_page_being_down_is_only_mentioned_after_an_hour(db, sent, monkeypatch):
@@ -467,7 +518,7 @@ def test_the_retailer_page_being_down_is_only_mentioned_after_an_hour(db, sent, 
     assert len(sent) == 1 and "retailer page" in sent[0] and "ConnectionError" in sent[0]
     web.pages = {job.RETAILERS_URL: PAGE, PDF_URL: PDF}
     job.orders(db, T0 + timedelta(minutes=181))
-    assert "answering again" in sent[1] and "55 games" in sent[2]
+    assert sent[1] == store.FIXED["orders_page_fetch"] and "55 games" in sent[2]
 
 
 def test_cross_check_notes_are_sent_with_the_new_list(db, sent, monkeypatch, no_tracker):

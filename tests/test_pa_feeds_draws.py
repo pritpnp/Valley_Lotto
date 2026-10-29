@@ -197,6 +197,25 @@ def test_a_document_that_isnt_the_feed_fails_loudly(text):
         draws.read_feed(text)
 
 
+@pytest.mark.parametrize("doctype", [
+    # Entities that expand into each other (a "billion laughs", kept small here)
+    '<!DOCTYPE games [<!ENTITY a "aaaaaaaaaa"><!ENTITY b "&a;&a;&a;&a;&a;&a;&a;&a;&a;&a;">]>',
+    '<!DOCTYPE games [<!ENTITY x SYSTEM "file:///etc/passwd">]>',   # a file from the machine
+    '<!doctype games SYSTEM "http://example.com/games.dtd">',
+])
+def test_a_feed_that_declares_entities_is_refused_not_expanded(doctype):
+    # PA's feed has no DOCTYPE. One showing up is refused before any entity
+    # in it is expanded, whatever XML library is installed.
+    text = ('<?xml version="1.0" encoding="utf-8"?>' + doctype
+            + "<games>" + _game(title="&b;" if "ENTITY a" in doctype else "Test") + "</games>")
+    with pytest.raises(FeedError, match="document type"):
+        draws.read_feed(text)
+    with pytest.raises(FeedError, match="document type"):
+        draws.read_feed("﻿" + text)
+    with pytest.raises(FeedError, match="document type"):
+        draws.read_feed(text.encode("utf-8"))
+
+
 # --- strict money ----------------------------------------------------------------
 
 @pytest.mark.parametrize("text,amount", [

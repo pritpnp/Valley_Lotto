@@ -97,8 +97,10 @@ def build_payload(session, now: datetime | None = None) -> dict:
                if g not in pa or r.draw_date > pa[g].draw_date}
     order = feed_order(session)
     # A game PA's order doesn't list (e.g. the old scraper's, before PA's feed
-    # was ever read) still shows, after the ones it does.
-    for g in [*PBMM, *sorted(pa)]:
+    # was ever read) still shows, after the ones it does. Once there is an
+    # order, a game PA has dropped from its feed doesn't: its last draw would
+    # otherwise stay on the TVs for good, as if it were current.
+    for g in [*PBMM, *([] if order else sorted(pa))]:
         if (g in pa or g in old) and g not in order:
             order.append(g)
 

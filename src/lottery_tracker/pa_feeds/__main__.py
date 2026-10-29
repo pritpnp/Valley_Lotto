@@ -11,8 +11,10 @@ Supabase link the app uses), TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID.
 
 Anything PA or the network can cause (a page that doesn't answer, a format
 change) is told to Telegram once and the run still ends normally (exit 0), so a
-problem doesn't turn into a failure email every ten minutes. Only a real crash,
-a bug in this code, ends with an error.
+problem doesn't turn into a failure email every ten minutes. A database that
+can't be reached is a warning in the log, for the same reason (the daily
+keepalive check reports one that stays down). Only a real crash, a bug in this
+code, ends with an error.
 """
 
 from __future__ import annotations
@@ -110,25 +112,22 @@ def numbers(session, now: datetime) -> None:
     pa_ok = False      # PA's feed gave both Powerball and Mega Millions this time
 
     try:
-        body = download(FEED_URL)
-    except FetchError as e:
+        reading = draws_.read_feed(download(FEED_URL))
+    except (FetchError, draws_.FeedError) as e:
+        # Something that isn't the feed at all (a busy page, a robot check) is
+        # treated like no answer: PA's site gives one now and then, and each
+        # flip between it and the feed isn't news. Nothing from it is saved, and
+        # if it keeps up for over an hour the owner is told once, with the reason.
         store.fetch_failed(session, "numbers", "PA's number feed", str(e), now,
                            meanwhile="The TVs keep showing the last numbers read.")
     else:
         store.fetch_worked(session, "numbers", now)
-        try:
-            reading = draws_.read_feed(body)
-        except draws_.FeedError as e:
-            store.report(session, "numbers_format", store.problem_list(
-                "PA's number feed changed, so nothing from it was saved. The TVs keep "
-                "the last numbers read.", [str(e)]), now)
-        else:
-            changed = store.save_draws(session, reading.draws, now)
-            store.remember_feed_order(session, reading.order, now)
-            store.report(session, "numbers_format", store.problem_list(
-                "PA's number feed needs a look", reading.problems + changed), now)
-            print(f"PA's number feed: {len(reading.draws)} games read.", flush=True)
-            pa_ok = set(store.PBMM) <= {d.game_id for d in reading.draws}
+        changed = store.save_draws(session, reading.draws, now)
+        store.remember_feed_order(session, reading.order, now)
+        store.report(session, "numbers_format", store.problem_list(
+            "PA's number feed needs a look", reading.problems + changed), now)
+        print(f"PA's number feed: {len(reading.draws)} games read.", flush=True)
+        pa_ok = set(store.PBMM) <= {d.game_id for d in reading.draws}
     store.note_pa_feed(session, pa_ok, now)
 
     # The old scraper. Once the TVs have switched to PA's feed it's expected to
@@ -189,20 +188,16 @@ def _already_have(session, url: str) -> bool:
 
 
 def orders(session, now: datetime) -> None:
+    # A page without the link may be a busy page or a robot check rather than a
+    # redesign, so it's treated like a page that didn't answer: only news once
+    # it has kept up for over an hour.
     try:
-        page = download(RETAILERS_URL)
-    except FetchError as e:
+        url = orders_.find_order_link(download(RETAILERS_URL), RETAILERS_URL)
+    except (FetchError, orders_.OrderListError) as e:
         store.fetch_failed(session, "orders_page", "PA's retailer page", str(e), now,
                            meanwhile="The last order list read is still in use.")
         return
     store.fetch_worked(session, "orders_page", now)
-
-    try:
-        url = orders_.find_order_link(page, RETAILERS_URL)
-    except orders_.OrderListError as e:
-        store.report(session, "orders_format", store.problem_list(
-            "PA's order list couldn't be found", [str(e)]), now)
-        return
     if _already_have(session, url):
         store.report(session, "orders_format", None, now)
         print(f"Order list already saved: {url}", flush=True)
@@ -210,6 +205,9 @@ def orders(session, now: datetime) -> None:
 
     try:
         pdf = download(url)
+        if b"%PDF-" not in pdf[:1024]:
+            # A web page in the PDF's place: like no answer, not a changed list.
+            raise FetchError("the answer wasn't a PDF")
     except FetchError as e:
         store.fetch_failed(session, "orders_pdf", "PA's order list", str(e), now,
                            meanwhile="The last order list read is still in use.")
@@ -304,10 +302,24 @@ def run(argv: list[str] | None = None, *, now: datetime | None = None) -> int:
         print(NO_DATABASE)
         return 0
     from sqlalchemy import create_engine
+    from sqlalchemy.exc import OperationalError
     from sqlalchemy.orm import Session
 
     engine = create_engine(_db_url(url), future=True)
     try:
+        try:
+            with engine.connect():
+                pass
+        except OperationalError as e:
+            # Supabase down or paused, or a network blip: not a bug, so not a
+            # failed run (every ten minutes, that would be dozens of emails; the
+            # daily keepalive check reports a database that stays down). Only
+            # the kind of error is shown: the full message names the database's
+            # server and user, and this log is public.
+            print(f"::warning::The database couldn't be reached "
+                  f"({type(e.orig or e).__name__}), so nothing was read or saved this "
+                  f"time. The next run tries again.", flush=True)
+            return 0
         store.create_tables(engine)
         now = now or store.utcnow()
         with Session(engine) as session:
