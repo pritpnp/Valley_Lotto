@@ -1174,7 +1174,8 @@ def _register_routes(app: Flask):
 
     def _backstock_view() -> dict:
         """Everything the backstock page needs: what's held, what's short, what
-        should go back."""
+        should go back. A game PA's order list leaves out is never "short":
+        it can't be reordered, so it's flagged instead."""
         held = _held_by_game()
         boxes = _box_map()
         on_floor: dict = {}
@@ -1194,6 +1195,8 @@ def _register_routes(app: Flask):
             packs = held.get(game, [])
             info = rated.get(game) or {}
             g = cat.games.get(game)
+            no_spare = on_floor.get(game, 0) > 0 and len(packs) == 0
+            gone = _not_shipped(game)
             rows.append({
                 "game": game,
                 "name": (g.name if g else info.get("name") or "—"),
@@ -1205,17 +1208,23 @@ def _register_routes(app: Flask):
                 "rating_str": info.get("rating_str", "—"),
                 "reason": info.get("reason", ""),
                 # Short = it's out on the floor with nothing behind it. That's the
-                # moment to reorder, not when the box finally runs dry.
-                "short": on_floor.get(game, 0) > 0 and len(packs) == 0,
+                # moment to reorder, not when the box finally runs dry...
+                "short": no_spare and not gone,
+                # ...unless PA's order list leaves it out: then it can't be
+                # reordered, and its boxes will run dry.
+                "no_longer_shipped": gone,
+                "short_gone": no_spare and gone,
                 # Holding stock of a game that's rated send-back is money sitting
                 # in the back room; those packs can be returned unopened.
                 "return_unopened": bool(packs) and info.get("action") == "send_back",
             })
-        rows.sort(key=lambda r: (not r["return_unopened"], not r["short"], r["game"]))
+        rows.sort(key=lambda r: (not r["return_unopened"],
+                                 not (r["short"] or r["short_gone"]), r["game"]))
         return {
             "rows": rows,
             "total_packs": sum(r["held"] for r in rows),
             "short": [r for r in rows if r["short"]],
+            "short_gone": [r for r in rows if r["short_gone"]],
             "send_back": [r for r in rows if r["return_unopened"]],
         }
 
@@ -1231,7 +1240,7 @@ def _register_routes(app: Flask):
         return render_template("backstock.html", view=view, shipments=recent,
                                settled=settled, reasons=SETTLE_REASONS,
                                reason_text=dict(SETTLE_REASONS),
-                               today=_today(_store_tz()))
+                               today=_today(_store_tz()), order=_order_lists())
 
     # --- receiving a shipment ---------------------------------------------
     @app.route("/backstock/receive", methods=["GET", "POST"])

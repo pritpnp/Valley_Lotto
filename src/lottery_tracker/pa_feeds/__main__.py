@@ -128,8 +128,10 @@ def numbers(session, now: datetime) -> None:
         store.fetch_worked(session, "numbers", now)
         changed = store.save_draws(session, reading.draws, now)
         store.remember_feed_order(session, reading.order, now)
+        problems = reading.problems + changed
         store.report(session, "numbers_format", store.problem_list(
-            "PA's number feed needs a look", reading.problems + changed), now)
+            "PA's number feed needs a look", problems), now,
+            key=store.problem_key(problems))
         print(f"PA's number feed: {len(reading.draws)} games read.", flush=True)
         pa_ok = set(store.PBMM) <= {d.game_id for d in reading.draws}
     store.note_pa_feed(session, pa_ok, now)
@@ -155,9 +157,10 @@ def numbers(session, now: datetime) -> None:
             reading = draws_.Reading([], [str(e)], complete=False)
         changed = store.save_draws(session, reading.draws, now)
         if not switched:
+            problems = reading.problems + changed
             store.report(session, "old_format", store.problem_list(
-                "The old Powerball/Mega Millions scraper's file needs a look",
-                reading.problems + changed), now)
+                "The old Powerball/Mega Millions scraper's file needs a look", problems),
+                now, key=store.problem_key(problems))
         print(f"Old scraper: {len(reading.draws)} games read.", flush=True)
 
     result = store.compare_and_switch(session, now)

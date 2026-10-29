@@ -245,6 +245,38 @@ def test_the_same_day_agrees_before_any_order_list_too(app, client, monkeypatch)
     assert totals == {"/report": 20, "/history": 20, "/overview": 20, "/dashboard": 20}
 
 
+def test_a_count_on_a_packs_last_ticket_doesnt_add_a_ticket_to_the_pack(app, client,
+                                                                         monkeypatch):
+    """The morning count catches 1806's pack on its last ticket, 099 (PA prints
+    100 a pack: 000-099), and the night count finds the next pack on 010. That's
+    1 + 10 = 11 tickets on a 100-ticket pack, on every page, not 12 on a
+    101-ticket pack."""
+    _save_list(app, "2026-10-26", _pa_list())
+    day = _yesterday()
+    with app.config["SESSION_FACTORY"]() as db:
+        db.add(ScanRow(store="t", game_number="1806", pack="0400001", ticket=99,
+                       slot="1", session="morning", scanned_at=_utc(day, 9)))
+        db.add(ScanRow(store="t", game_number="1806", pack="0400002", ticket=10,
+                       slot="1", session="night", scanned_at=_utc(day, 19, 30)))
+        db.commit()
+    day = day.isoformat()
+    seen = {}
+    real = appmod.daily_report
+
+    def spy(log, date, **kw):
+        rep = real(log, date, **kw)
+        if date == day:
+            from flask import request
+            row = [r for r in rep.rows if r.game_number == "1806"][0]
+            seen.setdefault(request.path, set()).add((rep.total_tickets, row.pack_size_used))
+        return rep
+    monkeypatch.setattr(appmod, "daily_report", spy)
+    for path in ("/dashboard", f"/report?date={day}", "/history", "/overview"):
+        assert client.get(path).status_code == 200, path
+    assert seen == {"/report": {(11, 100)}, "/history": {(11, 100)},
+                    "/overview": {(11, 100)}, "/dashboard": {(11, 100)}}
+
+
 def test_the_order_list_is_read_once_until_a_new_one_arrives(app, client):
     _save_list(app, "2026-10-19", [("1806", 1.0, 100)])
     engine = app.config["SESSION_FACTORY"].kw["bind"]
@@ -446,6 +478,35 @@ def test_a_carried_game_pa_dropped_is_flagged_everywhere(app, client):
     game = _plain(client.get("/catalog/1744").data.decode())
     assert FLAG + "." in game and SENTENCE in game
     assert FLAG not in _plain(client.get("/catalog/1750").data.decode())
+
+    # The backstock page tells the clerk what to order: never a game PA won't ship.
+    back = _plain(client.get("/backstock").data.decode())
+    running_out = back[back.index("Running out"):back.index("Held by game")]
+    order_now = running_out[running_out.index("Order before the box runs dry"):]
+    order_now = order_now[:order_now.index("</ul>")]
+    assert "1750" in order_now and "1744" not in order_now
+    gone = running_out[running_out.index("</ul>"):]
+    assert "1744" in gone and FLAG in gone and "1750" not in gone
+    assert ("PA's order list as of Oct 26 doesn't include it, so its boxes will run dry; "
+            "it can't be reordered.") in gone
+    held = back[back.index("Held by game"):]
+    assert held.count(FLAG) == 1                          # 1744's row; 1750 isn't flagged
+
+
+def test_backstock_without_an_order_list_says_order_as_before(app, client):
+    client.post("/inventory/box/1", data={"game_number": "1744"})
+    back = _plain(client.get("/backstock").data.decode())
+    order_now = back[back.index("Order before the box runs dry"):]
+    assert "1744" in order_now[:order_now.index("</ul>")]
+    assert "no longer ships" not in back.lower() and "order list" not in back
+
+
+def test_backstock_only_flags_games_pa_dropped_when_only_those_run_out(app, client):
+    client.post("/inventory/box/1", data={"game_number": "1744"})
+    _save_list(app, "2026-10-26", _pa_list())
+    back = _plain(client.get("/backstock").data.decode())
+    assert "Running out" in back and FLAG in back
+    assert "Order before the box runs dry" not in back
 
 
 def test_a_carried_game_without_a_box_is_flagged_too(app, client):

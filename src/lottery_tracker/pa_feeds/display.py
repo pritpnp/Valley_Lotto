@@ -6,9 +6,10 @@ store data in it). One entry per game, its latest draw, in PA's own order.
 Powerball and Mega Millions come from the old scraper until PA's feed has
 matched it for the trial (see ``store.compare_and_switch``), then from PA's
 feed. While the old scraper is in charge, PA's extras it doesn't have (Power
-Play, cash value) are added only when PA's reading of that same draw matched
-it. (If the old scraper has never sent a game at all, PA's reading is shown
-rather than nothing; ``source`` says which one it is.)
+Play, cash value, and the jackpot when it had none to read) are added only when
+PA's reading of that same draw matched it. (If the old scraper has never sent a
+game at all, PA's reading is shown rather than nothing; ``source`` says which
+one it is.)
 
 After the switch there's one fallback: if the old scraper has a newer draw of
 Powerball or Mega Millions than PA's feed (PA has fallen behind and the owner
@@ -73,7 +74,8 @@ def _entry(row: DrawResultRow, position: int, title: str | None = None) -> dict:
 
 def _from_old_scraper(session, old: DrawResultRow, position: int, title: str | None) -> dict:
     """Powerball/Mega Millions before the switch: the old scraper's reading,
-    plus PA's extras only if PA's reading of that same draw matched it."""
+    plus PA's extras (and PA's jackpot, if the old scraper had none) only if
+    PA's reading of that same draw matched it."""
     entry = _entry(old, position, title)
     pa = session.scalar(select(DrawResultRow).filter_by(
         source=PA_FEED, game_id=old.game_id, draw_date=old.draw_date))
@@ -83,6 +85,11 @@ def _from_old_scraper(session, old: DrawResultRow, position: int, title: str | N
         have = {e.get("code") for e in entry["extras"]}
         entry["extras"] += [e for e in json.loads(pa.extras or "[]") if e.get("code") not in have]
         entry["cash_value"] = _dollars(pa.cash_value_text, pa.cash_value_amount)
+        if entry["jackpot"] is None:
+            # The old scraper had no jackpot this time (it writes "Unavailable"
+            # when powerball.com doesn't show one): PA's reading of the very same
+            # draw stands in, rather than an empty box.
+            entry["jackpot"] = _dollars(pa.jackpot_text, pa.jackpot_amount)
     return entry
 
 

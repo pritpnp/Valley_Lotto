@@ -11,6 +11,8 @@
  *   ?now=...   (demo only) pretend it is this ISO time, for TONIGHT checks.
  *   reload:    the whole page reloads once an hour (backstop in index.html),
  *              only when the site answers, so an outage keeps the numbers up.
+ *   offline:   sw.js keeps a copy of the page itself, so a TV that starts
+ *              with no internet still opens it and shows the saved numbers.
  *   logos:     PA's official game logos (logos/, named in games.json) on white
  *              plates, sized to the same visual area whatever their shape.
  */
@@ -1206,6 +1208,18 @@
     setTimeout(go, 2500);
   }
 
+  // A saved copy of the page (sw.js), so a TV that starts while the internet is
+  // down (after a power cut the stick boots before the modem) still opens it
+  // and shows the last numbers saved here, instead of the browser's error page.
+  function keepOfflineCopy() {
+    try {
+      if ('serviceWorker' in navigator && window.location.protocol !== 'file:') {
+        navigator.serviceWorker.register('sw.js').catch(function () { /* not allowed here: the live page still works */ });
+      }
+    } catch (e) { /* an old WebView without it: the live page still works */ }
+  }
+
+  keepOfflineCopy();
   fitStage();
   window.addEventListener('resize', fitStage);
   // games.json (logos, colours, prices); the last good copy is kept so a

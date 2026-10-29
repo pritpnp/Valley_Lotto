@@ -87,17 +87,116 @@ def rows(db, **kw):
 
 # --- tables ------------------------------------------------------------------------
 
+PA_TABLE_NAMES = {"pa_draw_results", "pa_draw_checks", "pa_feed_settings", "pa_order_lists",
+                  "pa_order_games"}
+
+
 def test_only_the_pa_tables_are_created_and_protected(tmp_path, monkeypatch):
     from lottery_tracker.web import migrate
     protected = []
-    monkeypatch.setattr(migrate, "enable_rls", lambda e: protected.append(e) or [])
+    monkeypatch.setattr(migrate, "enable_rls",
+                        lambda e, tables=None: protected.append((e, tables)) or [])
     e = create_engine(f"sqlite:///{tmp_path / 'x.db'}")
     store.create_tables(e)
-    assert set(inspect(e).get_table_names()) == {
-        "pa_draw_results", "pa_draw_checks", "pa_feed_settings", "pa_order_lists", "pa_order_games"}
-    assert protected == [e]
+    assert set(inspect(e).get_table_names()) == PA_TABLE_NAMES
+    # Row-level security for its own five tables only: the job never touches
+    # the store app's tables (users, scans, ...), which the app protects itself.
+    assert len(protected) == 1 and protected[0][0] is e
+    assert set(protected[0][1]) == PA_TABLE_NAMES
     store.create_tables(e)                              # safe to run every time
     e.dispose()
+
+
+class FakePostgres:
+    """Just enough of a Postgres engine to see what enable_rls asks of it.
+    ``rls``: table -> whether row-level security is already on (a table that
+    isn't listed doesn't exist). ``busy``: tables a waiting lock times out on."""
+
+    class dialect:
+        name = "postgresql"
+
+    def __init__(self, rls, busy=()):
+        self.rls, self.busy = dict(rls), set(busy)
+        self.log = []                                    # (transaction no., sql)
+        self.transactions = 0
+
+    def connect(self):
+        return self._Conn(self)
+
+    begin = connect
+
+    class _Conn:
+        def __init__(self, pg):
+            self.pg = pg
+
+        def __enter__(self):
+            self.pg.transactions += 1
+            self.n = self.pg.transactions
+            return self
+
+        def __exit__(self, *exc):
+            return False
+
+        def execute(self, stmt, params=None):
+            sql = " ".join(str(stmt).split())
+            self.pg.log.append((self.n, sql))
+            pg = self.pg
+
+            class Result:
+                def scalar(self_):
+                    return pg.rls.get((params or {}).get("name"))
+
+                def all(self_):
+                    names = (params or {}).get("names") or []
+                    return [(n, pg.rls[n]) for n in names if n in pg.rls]
+            if sql.startswith("ALTER TABLE"):
+                table = sql.split('"')[1]
+                if table in pg.busy:
+                    raise RuntimeError("canceling statement due to lock timeout")
+                pg.rls[table] = True
+            return Result()
+
+
+def _alters(pg):
+    return [sql.split('"')[1] for _, sql in pg.log if sql.startswith("ALTER TABLE")]
+
+
+def test_rls_is_only_turned_on_where_it_is_still_off():
+    # ALTER TABLE ... ENABLE ROW LEVEL SECURITY locks the whole table, even
+    # when it's already on: a table that's protected already is left alone.
+    from lottery_tracker.web import migrate
+    pg = FakePostgres({"pa_draw_results": True, "pa_feed_settings": False, "scans": False})
+    done = migrate.enable_rls(pg, tables=["pa_draw_results", "pa_feed_settings",
+                                          "pa_order_lists"])
+    assert done == ["pa_feed_settings"]
+    assert _alters(pg) == ["pa_feed_settings"]          # never scans; pa_order_lists is missing
+    assert migrate.enable_rls(pg, tables=["pa_draw_results", "pa_feed_settings"]) == []
+    assert _alters(pg) == ["pa_feed_settings"]          # a second run takes no lock at all
+
+
+def test_rls_waits_only_briefly_for_a_busy_table():
+    # A short lock wait in the same transaction as the ALTER: a table the app is
+    # using is skipped this time (and tried again next run), rather than the
+    # ALTER queueing and every app query on that table queueing behind it.
+    from lottery_tracker.web import migrate
+    pg = FakePostgres({"pa_draw_results": False, "pa_feed_settings": False},
+                      busy={"pa_draw_results"})
+    assert migrate.enable_rls(pg, tables=["pa_draw_results", "pa_feed_settings"]) == [
+        "pa_feed_settings"]
+    for table in ("pa_draw_results", "pa_feed_settings"):
+        n = [n for n, sql in pg.log if sql.startswith("ALTER") and f'"{table}"' in sql][0]
+        in_that_transaction = [sql for m, sql in pg.log if m == n]
+        assert in_that_transaction[0].startswith("SET LOCAL lock_timeout")
+    assert pg.rls == {"pa_draw_results": False, "pa_feed_settings": True}
+
+
+def test_the_app_still_protects_every_one_of_its_tables_on_boot():
+    from lottery_tracker.web import migrate
+    from lottery_tracker.web.models import Base
+    pg = FakePostgres({t: False for t in Base.metadata.tables})
+    assert migrate.enable_rls(pg) == sorted(Base.metadata.tables)
+    assert all(pg.rls.values())
+    assert migrate.enable_rls(pg) == []                 # the next boot: nothing to do
 
 
 # --- saving draws --------------------------------------------------------------------
@@ -721,6 +820,50 @@ def test_before_the_switch_powerball_and_mega_millions_come_from_the_old_scraper
     assert payload["games"][14]["source"] == "pa_feed"            # Double Play is PA's own
 
 
+def test_before_the_switch_an_old_scraper_with_no_jackpot_shows_pas_for_that_draw(db, sent):
+    # powerball.com loaded slowly: the old scraper wrote "Unavailable" for the
+    # jackpot, and the same numbers. The TV must not show "Unavailable" in the
+    # jackpot box when PA's matching reading of that draw has the real amount.
+    save_fixtures(db)
+    bad = json.loads(OLD)
+    bad["powerball"]["nextJackpot"] = "Unavailable"
+    store.save_draws(db, draws.read_old_scraper(json.dumps(bad)).draws, T0)
+    store.compare_and_switch(db, T0)
+    pb = display.build_payload(db, now=T0)["games"][11]
+    assert pb["source"] == "old_scraper" and pb["numbers"] == ["18", "26", "49", "50", "54"]
+    assert pb["jackpot"] == {"text": "$716,000,000", "amount": 716000000}
+    assert pb["cash_value"] == {"text": "$307,200,000", "amount": 307200000}
+    # The old scraper's own jackpot still wins whenever it has one.
+    store.save_draws(db, draws.read_old_scraper(OLD).draws, T0 + timedelta(minutes=10))
+    pb = display.build_payload(db, now=T0)["games"][11]
+    assert pb["jackpot"] == {"text": "$716 Million", "amount": 716000000}
+
+
+def test_before_the_switch_an_old_scraper_with_no_jackpot_and_no_match_shows_none(db, sent):
+    bad = json.loads(OLD)
+    bad["powerball"]["nextJackpot"] = "Unavailable"
+    store.save_draws(db, draws.read_old_scraper(json.dumps(bad)).draws, T0)
+    pb = display.build_payload(db, now=T0)["games"][0]           # PA never read
+    assert pb["id"] == "12" and pb["jackpot"] is None
+
+
+def test_an_old_scraper_with_no_jackpot_is_reported_once(monkeypatch, tmp_path, sent):
+    monkeypatch.setenv("DATABASE_URL", f"sqlite:///{tmp_path / 'job.db'}")
+    bad = json.loads(OLD)
+    bad["powerball"]["nextJackpot"] = "Unavailable"
+    everything(monkeypatch, **{job.OLD_SCRAPER_URL: json.dumps(bad).encode()})
+    for minutes in (0, 10, 20):
+        assert job.run(["numbers"], now=T0 + timedelta(minutes=minutes)) == 0
+    assert len(sent) == 1
+    assert "old Powerball/Mega Millions scraper" in sent[0] and "Unavailable" in sent[0]
+    e = create_engine(f"sqlite:///{tmp_path / 'job.db'}")
+    with Session(e) as s:
+        pb = display.build_payload(s, now=T0)["games"][11]
+        assert pb["source"] == "old_scraper"
+        assert pb["jackpot"] == {"text": "$716,000,000", "amount": 716000000}
+    e.dispose()
+
+
 def test_before_the_switch_pa_extras_need_a_matched_reading_of_that_draw(db):
     save_fixtures(db)
     pb = display.build_payload(db, now=T0)["games"][11]           # not compared yet
@@ -1004,6 +1147,72 @@ def test_an_unknown_extras_label_is_reported_once(monkeypatch, tmp_path, sent):
     for minutes in (0, 10, 20):
         job.run(["numbers"], now=T0 + timedelta(minutes=minutes))
     assert len(sent) == 1 and "Life Ball" in sent[0]
+
+
+def _pick2_day(feed, numbers, drawdate):
+    return feed.replace(b"<title>PICK 2 (Day)</title><drawdate>10/28/2026</drawdate>"
+                        b"<numbers>7 3 WB: 7</numbers>",
+                        b"<title>PICK 2 (Day)</title><drawdate>" + drawdate +
+                        b"</drawdate><numbers>" + numbers + b"</numbers>")
+
+
+def test_a_lasting_format_change_is_reported_once_not_at_every_new_draw(monkeypatch, tmp_path,
+                                                                        sent):
+    # PA starts writing the Wild Ball as "WB 7" instead of "WB: 7". The note
+    # quotes the numbers and dates it couldn't read, which change at every
+    # draw, but it's still the one problem: one message, then "fixed".
+    monkeypatch.setenv("DATABASE_URL", f"sqlite:///{tmp_path / 'job.db'}")
+    web = everything(monkeypatch)
+    days = [(b"7 3 WB 7", b"10/28/2026"), (b"4 4 WB 6", b"10/29/2026"),
+            (b"0 9 WB 2", b"10/30/2026"), (b"1 1 WB 13", b"10/31/2026")]
+    for n, (numbers, drawdate) in enumerate(days):
+        web.pages[job.FEED_URL] = _pick2_day(FEED, numbers, drawdate)
+        assert job.run(["numbers"], now=T0 + timedelta(days=n)) == 0
+        assert job.run(["numbers"], now=T0 + timedelta(days=n, minutes=10)) == 0
+    web.pages[job.FEED_URL] = FEED
+    assert job.run(["numbers"], now=T0 + timedelta(days=5)) == 0
+    # (The old scraper's file never changes here, so it's also reported quiet.)
+    about_the_feed = [m for m in sent if "PA's number feed" in m]
+    assert len(about_the_feed) == 2
+    first = about_the_feed[0]
+    assert "PICK 2 (Day)" in first and "WB 7" in first and "left out" in first
+    assert about_the_feed[1] == store.FIXED["numbers_format"]
+
+
+def test_a_lasting_bad_date_in_every_game_is_reported_once(monkeypatch, tmp_path, sent):
+    monkeypatch.setenv("DATABASE_URL", f"sqlite:///{tmp_path / 'job.db'}")
+    web = everything(monkeypatch)
+    for n, when in enumerate((b"2026-10-28", b"2026-10-29", b"2026-10-30")):
+        web.pages[job.FEED_URL] = FEED.replace(b"<drawdate>10/28/2026</drawdate>",
+                                               b"<drawdate>" + when + b"</drawdate>")
+        assert job.run(["numbers"], now=T0 + timedelta(days=n)) == 0
+    assert len(sent) == 1 and "2026-10-28" in sent[0]
+
+
+def test_a_lasting_change_in_the_old_scrapers_file_is_reported_once(monkeypatch, tmp_path, sent):
+    monkeypatch.setenv("DATABASE_URL", f"sqlite:///{tmp_path / 'job.db'}")
+    web = everything(monkeypatch)
+    for n, (date_text, nums) in enumerate((("October 26, 2026", [18, 26, 49, 50, 54]),
+                                           ("October 29, 2026", [3, 9, 12, 40, 61]),
+                                           ("November 2, 2026", [1, 2, 3, 4, 5]))):
+        bad = json.loads(OLD)
+        bad["powerball"]["date"] = date_text                   # " Drawing" dropped
+        bad["megaMillions"]["numbers"] = nums                  # no Mega Ball any more
+        web.pages[job.OLD_SCRAPER_URL] = json.dumps(bad).encode()
+        assert job.run(["numbers"], now=T0 + timedelta(days=n)) == 0
+    assert len(sent) == 1
+    assert "October 26, 2026" in sent[0] and "Mega Millions" in sent[0]
+
+
+def test_a_different_new_extra_ball_in_the_same_game_is_news(monkeypatch, tmp_path, sent):
+    monkeypatch.setenv("DATABASE_URL", f"sqlite:///{tmp_path / 'job.db'}")
+    web = everything(monkeypatch, **{job.FEED_URL: FEED.replace(b"Mill Ball: 03",
+                                                                b"Life Ball: 03")})
+    job.run(["numbers"], now=T0)
+    web.pages[job.FEED_URL] = FEED.replace(b"Mill Ball: 03", b"Lucky Ball: 03")
+    job.run(["numbers"], now=T0 + timedelta(minutes=10))
+    job.run(["numbers"], now=T0 + timedelta(minutes=20))
+    assert len(sent) == 2 and "Life Ball" in sent[0] and "Lucky Ball" in sent[1]
 
 
 def test_pa_being_down_is_reported_only_after_an_hour(monkeypatch, tmp_path, sent):

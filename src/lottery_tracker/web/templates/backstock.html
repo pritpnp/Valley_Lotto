@@ -18,6 +18,7 @@
           text-transform:uppercase; letter-spacing:.4px; }
   .pill.short { background:var(--warn-bg); color:var(--warn); }
   .pill.back  { background:var(--err-bg);  color:var(--err); }
+  .pill.gone  { background:var(--warn-bg); color:var(--warn); white-space:normal; }
   .packline { font-size:13px; color:var(--muted); margin-top:6px; }
   .line { display:flex; gap:12px; align-items:flex-start; padding:11px 4px;
           border-top:1px solid var(--line); }
@@ -39,7 +40,7 @@
 
   <div class="acts">
     <div class="stat"><div class="n">{{ view.total_packs }}</div><div class="l">unopened packs</div></div>
-    <div class="stat warn"><div class="n">{{ view.short|length }}</div><div class="l">nothing behind them</div></div>
+    <div class="stat warn"><div class="n">{{ view.short|length + view.short_gone|length }}</div><div class="l">nothing behind them</div></div>
     <div class="stat send"><div class="n">{{ view.send_back|length }}</div><div class="l">should go back</div></div>
   </div>
 
@@ -53,9 +54,10 @@
   </div>
 </div>
 
-{% if view.short %}
+{% if view.short or view.short_gone %}
 <div class="card">
   <b>Running out</b>
+  {% if view.short %}
   <p class="muted" style="font-size:13px">
     On the floor with no spare pack behind it. Order before the box runs dry, not after.
   </p>
@@ -66,19 +68,39 @@
         — in {{ r.boxes }} box{{ '' if r.boxes == 1 else 'es' }}, none in back</li>
     {% endfor %}
   </ul>
+  {% endif %}
+  {% if view.short_gone %}
+  {# Never "order it": PA's order list leaves these out, so they can't be. #}
+  {% set one = view.short_gone|length == 1 %}
+  <p class="muted" style="font-size:13px">
+    On the floor with no spare pack behind {{ 'it' if one else 'them' }}.
+    {% if order and order.as_of %}PA's order list as of {{ order.as_of_text }} doesn't
+    include {{ 'it' if one else 'them' }}, so {{ 'its' if one else 'their' }} boxes will
+    run dry; {{ 'it' if one else 'they' }} can't be reordered.{% endif %}
+  </p>
+  <ul style="margin:6px 0 0 18px">
+    {% for r in view.short_gone %}
+      <li><b>{{ r.game }}</b> {{ r.name }}
+        {% if r.price %}(${{ '%.0f'|format(r.price) }}){% endif %}
+        — in {{ r.boxes }} box{{ '' if r.boxes == 1 else 'es' }}, none in back
+        <span class="pill gone">PA no longer ships this</span></li>
+    {% endfor %}
+  </ul>
+  {% endif %}
 </div>
 {% endif %}
 
 <div class="card">
   <b>Held by game ({{ view.rows|length }})</b>
   {% for r in view.rows %}
-    <div class="g {% if r.return_unopened %}back{% elif r.short %}short{% endif %}">
+    <div class="g {% if r.return_unopened %}back{% elif r.short or r.short_gone %}short{% endif %}">
       <div class="ghead">
         <span class="gname">{{ r.game }} · {{ r.name }}
           {% if r.price %}<span class="muted">${{ '%.0f'|format(r.price) }}</span>{% endif %}</span>
         <span>
           {% if r.return_unopened %}<span class="pill back">send back</span>{% endif %}
           {% if r.short %}<span class="pill short">no spare</span>{% endif %}
+          {% if r.no_longer_shipped %}<span class="pill gone">PA no longer ships this</span>{% endif %}
         </span>
       </div>
       <div class="packline">

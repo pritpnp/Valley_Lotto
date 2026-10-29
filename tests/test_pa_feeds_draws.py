@@ -342,6 +342,32 @@ def test_an_old_scraper_jackpot_that_isnt_millions_keeps_its_text():
     assert pb.jackpot_text == "$20 Million Annuity" and pb.jackpot_amount is None
 
 
+@pytest.mark.parametrize("jackpot", ["Unavailable", "Cash Value", "Next Drawing", "Estimated"])
+def test_an_old_scraper_jackpot_that_isnt_an_amount_is_left_out_and_reported(jackpot):
+    # The old scraper writes "Unavailable" when powerball.com has no "estimated
+    # jackpot" line, and still writes the file. That's no jackpot, not one to show.
+    reading = draws.read_old_scraper(_old(nextJackpot=jackpot))
+    pb = [d for d in reading.draws if d.game_id == "12"][0]
+    assert pb.jackpot_text is None and pb.jackpot_amount is None
+    assert pb.numbers == ["18", "26", "49", "50", "54"]          # the draw itself is kept
+    assert pb.jackpot_date == "2026-10-28"
+    assert not reading.complete
+    assert len(reading.problems) == 1
+    assert "Powerball" in reading.problems[0] and "jackpot" in reading.problems[0]
+    assert jackpot in reading.problems[0]
+    with pytest.raises(FeedError):
+        draws.parse_old_scraper(_old(nextJackpot=jackpot))
+
+
+def test_an_old_scraper_jackpot_that_is_an_amount_is_kept():
+    for text, amount in (("$716 Million", 716e6), ("$1.2 Billion", 1.2e9),
+                         ("$20 Million Annuity", None)):
+        reading = draws.read_old_scraper(_old(nextJackpot=text))
+        pb = [d for d in reading.draws if d.game_id == "12"][0]
+        assert (pb.jackpot_text, pb.jackpot_amount) == (text, amount)
+        assert reading.complete and reading.problems == []
+
+
 def test_an_old_scraper_file_that_isnt_json_fails_loudly():
     with pytest.raises(FeedError):
         draws.read_old_scraper("<html>404</html>")

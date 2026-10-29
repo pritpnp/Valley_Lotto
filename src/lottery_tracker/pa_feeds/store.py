@@ -92,9 +92,12 @@ FIXED = {
 
 def create_tables(engine) -> None:
     """Create the five ``pa_`` tables if missing (nothing else), and turn on
-    row-level security so Supabase's public API can't reach them."""
+    row-level security so Supabase's public API can't reach them. Only these
+    five: the store app's own tables (scans, users, ...) are the app's to
+    protect, on its boot, and this runs every ten minutes. Once a table is
+    protected, this takes no lock on it at all."""
     Base.metadata.create_all(engine, tables=PA_TABLES)
-    migrate.enable_rls(engine)
+    migrate.enable_rls(engine, tables=[t.name for t in PA_TABLES])
 
 
 def utcnow() -> datetime:
@@ -202,6 +205,18 @@ def report(session, slot: str, problem: str | None, now: datetime, *,
             send(FIXED[slot])
             return True
     return False
+
+
+_QUOTED = re.compile(r"“[^”]*”")
+
+
+def problem_key(problems: list[str]) -> str:
+    """What makes a list of format problems "the same" from one run to the next:
+    the lines with the values they quote (“…”) taken out. Those are the numbers,
+    dates and amounts PA or the old scraper wrote, which change at every draw;
+    without this, a format change that lasts would be news again at each new
+    draw. (The message itself still quotes them.)"""
+    return "\n".join(_QUOTED.sub("“…”", p) for p in problems)
 
 
 def problem_list(title: str, problems: list[str]) -> str | None:

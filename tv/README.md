@@ -23,8 +23,13 @@ The game logos are PA's official game logos, as palottery.pa.gov shows them.
 5. Click **Deploy**.
 
 If the deploy stops with "STOPPED: APP_URL is not set", go back to step 4, add
-it, then **Deploys > Trigger deploy**. Netlify only rebuilds when something in
-this folder changes (or when you trigger a deploy yourself).
+it, then **Deploys > Trigger deploy**.
+
+Netlify rebuilds the TV page when something in this folder changes, or when
+`APP_URL` has changed. Changes elsewhere in the repository (the store app) don't
+rebuild it. **If the store app moves to a new address:** change `APP_URL` in
+Netlify (step 4), then **Deploys > Trigger deploy**. The TVs pick up the new
+address at their next hourly reload.
 
 **Check it:** open your Netlify address (it looks like
 `https://something.netlify.app`). You should see the numbers within a few
@@ -51,7 +56,12 @@ clicked.
   numbers.
 * **Keeps the last numbers through internet outages.** If the internet or the
   store app is down, the TV keeps the numbers it already has and keeps
-  trying. After a power cut it shows the last saved numbers straight away.
+  trying. The TV also keeps a copy of the page itself, so after a power cut it
+  opens and shows the last saved numbers straight away, even if the internet
+  isn't back yet. (That works once the TV has shown the page with the internet
+  working at least once. A brand new TV needs the internet the first time.) If
+  a TV ever shows a "no internet" page instead, restart it once the internet
+  is back.
 * **Never makes up numbers.** If it has never received any (a brand new TV
   with no internet yet), it shows "Today's numbers are on their way" until
   real ones arrive.

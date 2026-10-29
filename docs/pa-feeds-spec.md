@@ -45,7 +45,10 @@ Real samples of all three inputs are in `tests/fixtures/pa/` (fetched
 (`ensure_schema`) and turns on row-level security for every table
 (`migrate.enable_rls`). The feed job must also create *only these* tables if
 missing (`Base.metadata.create_all(engine, tables=[...])`) and then call
-`migrate.enable_rls(engine)`, so they're never left exposed to Supabase's API.
+`migrate.enable_rls(engine, tables=[...the same five...])`, so they're never
+left exposed to Supabase's API. `enable_rls` only alters a table whose RLS is
+still off, waiting at most a few seconds for its lock: `ALTER TABLE` locks the
+whole table, and the job runs every ten minutes beside the live app.
 Postgres in production (Supabase, via `DATABASE_URL`), SQLite in tests.
 
 ## Package: `src/lottery_tracker/pa_feeds/`
@@ -72,7 +75,10 @@ Postgres in production (Supabase, via `DATABASE_URL`), SQLite in tests.
     2026 Drawing", `nextDrawing` "Friday, October 30, 2026", `nextJackpot`
     "$463 Million"). Map to game ids 15 (Mega Millions, bonus code MB) and 12
     (Powerball, bonus code PB). Bonus value zero-padded to 2 digits like PA.
-    "$463 Million" → 463000000 (strict: number + Million/Billion only).
+    "$463 Million" → 463000000 (strict: number + Million/Billion only). A
+    `nextJackpot` that isn't an amount at all (the old scraper writes
+    "Unavailable" when powerball.com has no jackpot line) is left out and
+    reported; one that starts with a `$` amount keeps its text.
 * `orders.py`
   * `find_order_link(html, base_url) -> url`: the `<a>` whose text, with
     `&nbsp;`/whitespace collapsed, is "Scratch-Offs Available for Ordering"
@@ -167,7 +173,8 @@ Public data. Headers: `Access-Control-Allow-Origin: *`,
 * Powerball (12) and Mega Millions (15) while `pbmm_source` is `old_scraper`:
   numbers, bonus ball, draw date, next draw and jackpot come from the old
   scraper's latest draw. PA's extras that the old scraper lacks (Power Play,
-  cash value) are added only when PA's reading of that same draw matched.
+  cash value, and the jackpot when it had none) are added only when PA's
+  reading of that same draw matched.
   After the switch: PA's feed only.
 
 ## TV page: `tv/` (Netlify; shown by AbleSign)
@@ -179,7 +186,9 @@ Public data. Headers: `Access-Control-Allow-Origin: *`,
   proxying `/api/numbers` → `$APP_URL/api/numbers` (200, forced) from the
   `APP_URL` Netlify environment variable, failing the build with a plain
   message if it's missing. Also a `[build] ignore` so Netlify only rebuilds
-  when `tv/` changes. Allow `?api=<url>` to override for testing.
+  when `tv/` or `APP_URL` changes (the build publishes a fingerprint of
+  `APP_URL`, `app-url.sha256`, which the next deploy compares). Allow
+  `?api=<url>` to override for testing.
 * 1920×1080 stage, scaled to fit any screen (also works at 1280×720 and 4K),
   letterboxed, no scrollbars, cursor hidden, nothing to click.
 * Cycles through every game in the feed, all 16 today. Grouping a game's Day
@@ -221,7 +230,10 @@ Public data. Headers: `Access-Control-Allow-Origin: *`,
   Wild Ball doubles the cost of a PICK play. A game PA adds later has no
   price until one is put in `games.json`, and shows none.
 * Data: fetch `/api/numbers` every 2 minutes; keep the last good data in
-  localStorage and show it at once on load; if a fetch fails, keep showing the
+  localStorage and show it at once on load (a small service worker, `sw.js`,
+  keeps a copy of the page's own files, fresh from the network first, so the
+  page also opens with no internet after a power cut; it never keeps
+  `/api/numbers`); if a fetch fails, keep showing the
   last data and retry; a small, discreet "last updated" note. **Reload the
   whole page once an hour no matter what** (so the screen always ends up
   current even if the script stalls), keeping the cached data on screen

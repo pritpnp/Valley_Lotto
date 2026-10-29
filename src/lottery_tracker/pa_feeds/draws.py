@@ -279,7 +279,9 @@ def read_feed(xml_text: str | bytes) -> Reading:
             complete = False
             continue
         for code in unknown:
-            problems.append(f"{name}: a new kind of extra ball, “{code}”. "
+            # The label is what's new, so it's written outside the quotes: a
+            # problem is told apart from the next one with quoted values left out.
+            problems.append(f"{name}: a new kind of extra ball, {code}. "
                             f"It's shown as “{code}” until it's given a name.")
         jackpot_date = None
         if _text(el, "jackpotdate") is not None:
@@ -350,11 +352,20 @@ def _next_drawing(text) -> str | None:
     return iso if date.fromisoformat(iso).strftime("%A").lower() == weekday else None
 
 
+def _shown(value) -> str:
+    """A value from the old scraper's file, as a note quotes it."""
+    if value is None:
+        return ""
+    return value if isinstance(value, str) else json.dumps(value)
+
+
 def read_old_scraper(json_text: str | bytes) -> Reading:
     """Powerball (12) and Mega Millions (15) from the old scraper's file.
 
     ``numbers`` is five main numbers then the bonus ball. Numbers are written
-    two digits wide, like PA's feed (3 -> "03").
+    two digits wide, like PA's feed (3 -> "03"). A jackpot is kept only when it
+    is an amount: the old scraper writes "Unavailable" when powerball.com has no
+    jackpot line for it to read, and still writes the file.
     """
     if isinstance(json_text, str):
         json_text = json_text.lstrip("\ufeff")
@@ -376,14 +387,14 @@ def read_old_scraper(json_text: str | bytes) -> Reading:
         nums = entry.get("numbers")
         if (not isinstance(nums, list) or len(nums) != 6
                 or not all(type(n) is int and 1 <= n <= 99 for n in nums)):
-            problems.append(f"{title}: the old scraper's numbers {nums!r} aren't "
+            problems.append(f"{title}: the old scraper's numbers “{_shown(nums)}” aren't "
                             f"five numbers and a bonus ball; left out.")
             complete = False
             continue
         draw_date = _drawing_date(entry.get("date"))
         if draw_date is None:
             problems.append(f"{title}: can't read the old scraper's draw date "
-                            f"{entry.get('date')!r}; left out.")
+                            f"“{_shown(entry.get('date'))}”; left out.")
             complete = False
             continue
         next_date = None
@@ -391,10 +402,17 @@ def read_old_scraper(json_text: str | bytes) -> Reading:
             next_date = _next_drawing(entry.get("nextDrawing"))
             if next_date is None:
                 problems.append(f"{title}: can't read the old scraper's next draw "
-                                f"{entry.get('nextDrawing')!r}; left out.")
+                                f"“{_shown(entry.get('nextDrawing'))}”; left out.")
                 complete = False
         jackpot = entry.get("nextJackpot")
         jackpot = " ".join(jackpot.split()) if isinstance(jackpot, str) and jackpot.strip() else None
+        if (jackpot is not None and millions_amount(jackpot) is None
+                and not re.match(r"\$\d", jackpot)):
+            # "Unavailable", or whatever line it landed on after a page change:
+            # not a jackpot, so never one to put on the TVs.
+            problems.append(f"{title}: the old scraper has no jackpot (“{jackpot}”); left out.")
+            complete = False
+            jackpot = None
         draws.append(Draw(
             game_id=game_id, title=title, draw_date=draw_date,
             numbers=[f"{n:02d}" for n in nums[:5]],
