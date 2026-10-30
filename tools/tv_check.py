@@ -337,5 +337,47 @@ with sync_playwright() as p:
         check("no page errors", not errors, "; ".join(errors))
         browser.close()
 
+    # 6. Right after a drawing PA posts the numbers before it moves the next
+    #    draw date on, so the feed sends none for a while. The panel works it
+    #    out from the game's draw days (Cash 5 drawn tonight: TOMORROW; Mega
+    #    Millions drawn Friday: TUESDAY, NOV 3), and the lines under it stay
+    #    level with the other game's on every slide.
+    LEVEL = """() => Array.prototype.map.call(document.querySelectorAll('#slides .slide.is-in'), function (s) {
+        return Array.prototype.map.call(s.querySelectorAll('.half'), function (h) {
+          function top(sel) { var e = h.querySelector(sel); return e ? Math.round(e.getBoundingClientRect().top) : null; }
+          var row = h.querySelector('.next-row'), out = [], w, n;
+          if (row) { w = document.createTreeWalker(row, NodeFilter.SHOW_TEXT, null, false); while ((n = w.nextNode())) out.push(n.nodeValue); }
+          return { name: h.querySelector('.h-logo img').alt, next: out.join(' ').replace(/\\s+/g, ' ').trim(),
+                   days: top('.days'), times: top('.next .times') };
+        });
+      })[0]"""
+    for start, changes, want in (
+            ("2026-10-29T23:30:00Z", {"8": "2026-10-29"}, {"Cash 5": "Next Drawing: Tomorrow"}),               # Thu 7:30 PM
+            ("2026-10-31T03:30:00Z", {"15": "2026-10-30"}, {"Mega Millions": "Next Drawing: Tuesday, Nov 3"})):  # Fri 11:30 PM
+        api = Api()
+        data = feed("2026-10-29T23:20:00Z", start)
+        for g in data["games"]:
+            if g["id"] in changes:
+                g["draw_date"], g["next_draw_date"] = changes[g["id"]], None
+        api.answer = data
+        browser, page, errors = open_page(p, api, start)
+        settle(page)
+        seen, uneven = {}, []
+        for i in range(page.evaluate("__tv.count()")):
+            page.evaluate("__tv.go(%d)" % i)
+            page.wait_for_timeout(3000)
+            halves = page.evaluate(LEVEL)
+            for h in halves:
+                seen[h["name"]] = h
+            jack = [h for h in halves if h["days"] is not None]
+            if len(jack) == 2 and (jack[0]["days"] != jack[1]["days"] or jack[0]["times"] != jack[1]["times"]):
+                uneven.append("%s %s/%s vs %s %s/%s" % (jack[0]["name"], jack[0]["days"], jack[0]["times"],
+                                                        jack[1]["name"], jack[1]["days"], jack[1]["times"]))
+        for name, text in want.items():
+            check("no next date from PA after the drawing: %s reads '%s'" % (name, text), seen[name]["next"] == text, seen[name]["next"])
+        check("lines under Next Drawing level across each slide (%s)" % start, not uneven, "; ".join(uneven))
+        check("no page errors", not errors, "; ".join(errors))
+        browser.close()
+
 print("%d/%d passed" % (sum(results), len(results)))
 sys.exit(0 if all(results) else 1)

@@ -615,18 +615,43 @@
     return 'every ' + names.map(function (x) { return x.charAt(0).toUpperCase() + x.slice(1); }).join(' · ');
   }
 
+  // When the next drawing is: PA's date, or, in the time after a drawing
+  // before PA moves its date on (the feed then sends none), the first of the
+  // game's draw days after the drawing just held. Null when neither says.
+  var DAY_KEYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+  function nextDrawDate(game, look) {
+    if (dayInfo(game.next_draw_date)) return game.next_draw_date;
+    var last = /^\d{4}-\d{2}-\d{2}/.exec(game.draw_date || '');
+    var d = look.drawDays, want = null;
+    if (!last || !dayInfo(last[0])) return null;
+    if (Array.isArray(d)) {
+      want = d.map(function (x) { return DAY_KEYS.indexOf(String(x).slice(0, 3).toLowerCase()); }).filter(function (i) { return i >= 0; });
+      if (!want.length) return null;
+    } else if (d !== 'daily') {
+      return null;
+    }
+    for (var i = 1; i <= 7; i++) {
+      var iso = addDays(last[0], i);
+      if (!want || want.indexOf(DAYS.indexOf(dayInfo(iso).weekday)) >= 0) return iso;
+    }
+    return null;
+  }
+
   // "Next Drawing:" and when, on one row: TONIGHT! (the starburst), TOMORROW,
   // or from the day after on the weekday and date ("SATURDAY, OCT 31").
-  // Under it the game's draw days, then the sales-end and drawing times.
+  // Under it the game's draw days, then the sales-end and drawing times. The
+  // row is always there (empty if nothing says when), so the lines under it
+  // stay level with the other game's on the slide.
   function buildNext(game, look) {
-    var iso = game.next_draw_date;
+    var iso = nextDrawDate(game, look);
     var info = dayInfo(iso);
     var times = buildTimes(look);
     var daysText = drawDaysText(look);
     if (!info && !times && !daysText) return null;
     var next = el('div', 'next');
+    var row = el('div', 'next-row');
+    next.appendChild(row);
     if (info) {
-      var row = el('div', 'next-row');
       row.appendChild(el('div', 'next-label', 'Next Drawing:'));
       var today = todayNY();
       if (iso === today) {
@@ -640,7 +665,6 @@
       } else {
         row.appendChild(el('div', 'next-val', info.weekday + ', ' + info.mon + ' ' + info.d));
       }
-      next.appendChild(row);
     }
     var days = null;
     if (daysText) {
@@ -878,7 +902,7 @@
     if (half._parts.next) {
       var nx = half._parts.next;
       var row = nx.querySelector('.next-row');
-      if (row) {
+      if (row && row.lastChild) {
         // the row's last item (the date, or TONIGHT!) gets the width the
         // label leaves
         var last = row.lastChild, used = outerSides(last);
@@ -1115,11 +1139,12 @@
       if (!main && g.cash_value) { main = money(g.cash_value); label = u.look.cashLabel; }
       if (!main) return;
       var when = '';
-      var info = dayInfo(g.next_draw_date);
+      var nextIso = nextDrawDate(g, u.look);
+      var info = dayInfo(nextIso);
       var at = u.look.drawTime ? ' · ' + u.look.drawTime : '';
-      if (info && g.next_draw_date === today) when = 'Drawing tonight' + at;
-      else if (info && g.next_draw_date === addDays(today, 1)) when = 'Next drawing tomorrow' + at;
-      else if (info && g.next_draw_date > today) when = 'Next drawing ' + info.wd + ', ' + info.mon + ' ' + info.d + at;
+      if (info && nextIso === today) when = 'Drawing tonight' + at;
+      else if (info && nextIso === addDays(today, 1)) when = 'Next drawing tomorrow' + at;
+      else if (info && nextIso > today) when = 'Next drawing ' + info.wd + ', ' + info.mon + ' ' + info.d + at;
       items.push({
         type: 'jackpot', color: u.look.color, name: u.look.tickerName, look: u.look, label: label, value: moneyText(main), when: when,
         t1: (u.look.logoLabel || label).toUpperCase(), t2: u.look.logoLabel ? label.toUpperCase() : ''
