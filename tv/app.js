@@ -1013,7 +1013,7 @@
 
   function holdSeconds(plan) {
     var s = config.settings;
-    return plan.hero ? (s.heroSeconds || 21) : (s.slideSeconds || 17);
+    return plan.hero ? (s.heroSeconds || 18) : (s.slideSeconds || 14);
   }
 
   function showSlide(i) {

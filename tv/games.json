@@ -2,8 +2,8 @@
   "_about": "How each PA game looks on the store TV, keyed by PA's feed game id. name: shown when there is no logo; color: the game's colour block (picked to suit its official logo); logo: PA's official game logo in logos/ with its pixel size (logoSize) so it can be sized before it loads; logoLabel: a label shown with the logo (Double Play uses the Powerball logo); price: the yellow ticket-price callout, shown only when set (from PA's Game Guide, 2026-04-07); drawTime/salesEnd: when the drawing is and when sales for it end, Eastern time, shown big on the game's panel; drawDays: the days it is drawn (daily, or a list of days such as Mon, Wed, Sat), shown on the panel (from PA's own game pages, checked 2026-10-30; Treasure Hunt and the PICK Day drawings are posted after 1:35 PM, Millionaire for Life after 11:15 PM, Double Play after 11:30 PM); group/draw: the Day and Evening draws of a PICK game share one panel. A game PA adds later shows up automatically with a styled name, a stock colour and no price until it gets an entry here.",
 
   "settings": {
-    "slideSeconds": 17,
-    "heroSeconds": 21,
+    "slideSeconds": 14,
+    "heroSeconds": 18,
     "heroEvery": 3,
     "tickerPixelsPerSecond": 60
   },
