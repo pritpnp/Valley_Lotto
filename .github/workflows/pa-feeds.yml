@@ -11,8 +11,8 @@ name: PA numbers and order list
 # GitHub's schedule is best-effort: it starts runs late, and drops many, most
 # of all around the top of the hour, when everyone's runs are due (on one day
 # it ran the numbers 6 times in 18 hours). Hence the odd minutes. So the TVs
-# don't depend on it: the store app reads PA's numbers itself whenever a TV (or
-# Netlify's check every 10 minutes) asks and its copy is over 5 minutes old.
+# don't depend on it: the store app reads PA's numbers itself whenever a TV
+# asks and its copy is over 5 minutes old.
 # Only one of the two reads them at a time. The app sends no Telegram messages
 # (Render has no Telegram settings): they wait in the database, and every run
 # here sends them first. These runs still read the numbers too, as a backup,

@@ -2,11 +2,9 @@
 
 GitHub's scheduler is best-effort: on a busy day it ran the "every 10 minutes"
 numbers job 6 times in 18 hours, and the store TVs showed numbers hours old
-after a draw. So the app reads PA too. When ``/api/numbers`` is asked for (by a
-TV, or by Netlify's scheduled check every 10 minutes, which also keeps Render's
-free plan from putting the app to sleep) and no numbers run, the app's or
-GitHub's, has started or finished in the last 5 minutes, one starts in the
-background. The TV is answered at once with what's saved and never waits for
+after a draw. So the app reads PA too. When a TV asks for ``/api/numbers``
+and no numbers run, the app's or GitHub's, has started or finished in the last
+5 minutes, one starts in the background. The TV is answered at once with what's saved and never waits for
 PA; the new numbers are there for its next check.
 
 * **One run at a time.** In this app, a lock in memory; across the app and the

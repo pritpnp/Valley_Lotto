@@ -41,7 +41,8 @@ html, body {
 #slides { position: absolute; left: 0; top: 0; width: 1920px; height: 956px; overflow: hidden; }
 
 .slide { position: absolute; left: 0; top: 0; width: 1920px; height: 956px; }
-.slide.is-out { -webkit-animation: slideOut .55s ease-in both; animation: slideOut .55s ease-in both; }
+.slide.is-out { z-index: 0; }   /* the new halves slam in over it; it goes once covered (no full-screen fade: the costliest frame on a TV stick) */
+.slide.is-in { z-index: 1; }
 
 #divider {
   position: absolute; left: 952px; top: 0; width: 16px; height: 956px;
@@ -92,7 +93,7 @@ html, body {
 
 /* header: official logo (or a styled name) + yellow price callout */
 .h-head {
-  height: 206px; margin-top: -6px; -webkit-flex: none; flex: none;
+  height: 196px; margin-top: -6px; -webkit-flex: none; flex: none;
   display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center;
   -webkit-justify-content: center; justify-content: center;
 }
@@ -101,7 +102,7 @@ html, body {
 .half--right .h-head { -webkit-flex-direction: row-reverse; flex-direction: row-reverse; }
 .half--solo .h-price { margin-left: 90px; }
 
-.h-logo { height: 206px; display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; -webkit-justify-content: center; justify-content: center; }
+.h-logo { height: 196px; display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; -webkit-justify-content: center; justify-content: center; }
 
 /* the white logo plate: PA's logos exactly as palottery.pa.gov shows them,
    so dark lettering (Mega Millions, Cash 5, Power Play, Match 6) always reads */
@@ -180,8 +181,8 @@ html, body {
 
 /* WINNING NUMBERS */
 .h-title {
-  -webkit-flex: none; flex: none; margin: 0; height: 82px;
-  font: 900 78px/82px var(--sans); text-transform: uppercase; text-align: center; white-space: nowrap;
+  -webkit-flex: none; flex: none; margin: 0; height: 74px;
+  font: 900 72px/74px var(--sans); text-transform: uppercase; text-align: center; white-space: nowrap;
   letter-spacing: .005em;
   text-shadow: 0 5px 0 rgba(0,0,0,.25);
 }
@@ -189,7 +190,7 @@ html, body {
 /* dark band carrying the balls */
 .band {
   -webkit-flex: none; flex: none; position: relative;
-  margin: 10px -30px 0; height: 250px; overflow: hidden;
+  margin: 10px -30px 0; height: 244px; overflow: hidden;
   background: linear-gradient(180deg, #423d47 0, var(--band) 22%, var(--band) 78%, var(--band-dark) 100%);
   box-shadow: 0 -4px 0 rgba(0,0,0,.18), 0 6px 0 rgba(0,0,0,.22);
   text-align: center;
@@ -234,38 +235,57 @@ html, body {
   font: 400 26px/30px var(--tall); letter-spacing: .02em; vertical-align: top;
 }
 
-/* next drawing */
-.next { -webkit-flex: none; flex: none; min-height: 150px; margin-top: auto; text-align: center; position: relative; }
-.next-label { font: 600 40px/44px var(--sans); letter-spacing: .005em; }
+/* next drawing: "Next Drawing:" and when on one row, the times under it */
+.next { -webkit-flex: none; flex: none; margin: auto 0 28px; text-align: center; position: relative; }   /* 28px: clear of the jackpot's tab */
+.next-row {
+  height: 100px; white-space: nowrap;
+  display: -webkit-box; display: -webkit-flex; display: flex;
+  -webkit-align-items: center; align-items: center; -webkit-justify-content: center; justify-content: center;
+}
+.next-label { -webkit-flex: none; flex: none; margin: 4px 22px 0 0; font: 600 40px/44px var(--sans); letter-spacing: .005em; }
 .next-val {
-  margin-top: 2px; white-space: nowrap;
+  -webkit-flex: none; flex: none; white-space: nowrap;
   font: 400 84px/96px var(--tall); text-transform: uppercase; letter-spacing: .01em;
   text-shadow: 0 5px 0 rgba(0,0,0,.28);
 }
 .next-val small { font: 800 36px/1 var(--sans); vertical-align: 16px; margin-left: 14px; letter-spacing: .02em; opacity: .92; }
 
-/* TONIGHT starburst: "Next Drawing:" and the burst share one row, so the
-   burst keeps its size (and its pulse) clear of the jackpot tab below */
-.next.is-tonight {
-  height: 150px; min-height: 0;
-  display: -webkit-box; display: -webkit-flex; display: flex;
-  -webkit-align-items: center; align-items: center; -webkit-justify-content: center; justify-content: center;
-}
-.next.is-tonight .next-label { -webkit-flex: none; flex: none; margin: -12px 20px 0 0; }
-.tonight { position: relative; -webkit-flex: none; flex: none; width: 466px; height: 126px; margin-top: -14px; }
-.tonight-in { position: absolute; left: 50%; top: 50%; width: 466px; height: 126px; margin: -63px 0 0 -233px;
+/* TONIGHT starburst, beside "Next Drawing:" */
+.next-row.is-tonight { height: 112px; }
+.next-row.is-tonight .next-label { margin: -8px 16px 0 0; }
+.tonight { position: relative; -webkit-flex: none; flex: none; width: 430px; height: 116px; }
+.tonight-in { position: absolute; left: 50%; top: 50%; width: 430px; height: 116px; margin: -58px 0 0 -215px;
   -webkit-transform: rotate(-3deg); transform: rotate(-3deg); }
-.tonight svg { position: absolute; left: 0; top: 0; width: 466px; height: 126px; overflow: visible; }
+.tonight svg { position: absolute; left: 0; top: 0; width: 430px; height: 116px; overflow: visible; }
 .tonight-word {
-  position: absolute; left: 0; right: 0; top: 50%; margin-top: -47px; text-align: center;
-  font: 400 78px/94px var(--tall); color: var(--c); letter-spacing: .03em; text-transform: uppercase;
+  position: absolute; left: 0; right: 0; top: 50%; margin-top: -43px; text-align: center;
+  font: 400 72px/86px var(--tall); color: var(--c); letter-spacing: .03em; text-transform: uppercase;
 }
-.tonight-pulse { position: absolute; left: 0; top: 0; width: 466px; height: 126px; }
+.tonight-pulse { position: absolute; left: 0; top: 0; width: 430px; height: 116px; }
+
+/* drawing time and sales cut-off: two big pills, sized in em so app.js can
+   shrink a row that would not fit by its font size alone */
+.times { position: relative; margin-top: 10px; text-align: center; white-space: nowrap; font-size: 50px; line-height: 0; }
+.tm {
+  display: inline-block; vertical-align: top; position: relative; white-space: nowrap;
+  height: 1.24em; line-height: 1.24em; padding: 0 .42em 0 .3em; border-radius: .2em;
+  background: #fff; color: var(--ink);
+  box-shadow: 0 .1em 0 rgba(0,0,0,.30);
+}
+.tm + .tm { margin-left: .36em; }
+.tm--sales { background: var(--yellow); }
+.tm-i { display: inline-block; vertical-align: middle; width: .7em; height: .7em; margin: -.1em .2em 0 0; color: var(--c); }
+.tm--sales .tm-i { color: #c3201f; }
+.tm-l { display: inline-block; vertical-align: middle; margin: -.12em .36em 0 0; font: 900 .42em/1 var(--sans); letter-spacing: .06em; text-transform: uppercase; color: var(--cd); }
+.tm--sales .tm-l { color: var(--ink); }
+.tm-t { display: inline-block; vertical-align: middle; margin-top: -.08em; font: 400 1em/1 var(--tall); letter-spacing: .01em; }
+/* a PICK draw's times, along the foot of its band */
+.times--band { position: absolute; left: 0; right: 0; bottom: 16px; margin: 0; font-size: 46px; }
 
 /* the jackpot point-out box */
-.jp-wrap { -webkit-flex: none; flex: none; position: relative; height: 188px; margin-top: auto; }
+.jp-wrap { -webkit-flex: none; flex: none; position: relative; height: 174px; margin-top: auto; }
 .jp {
-  position: relative; width: 820px; height: 188px; margin: 0 auto;
+  position: relative; width: 820px; height: 174px; margin: 0 auto;
   background: linear-gradient(180deg, var(--green-light) 0, var(--green) 46%, #146a28 100%);
   border: 11px solid var(--yellow);
   box-shadow: 0 10px 0 rgba(0,0,0,.28), inset 0 0 0 3px rgba(0,0,0,.18);
@@ -314,10 +334,11 @@ html, body {
 .odo-strip { position: absolute; left: 0; right: 0; top: 0; text-align: center; }
 .odo-strip i { display: block; font-style: normal; height: 1.12em; }
 
-/* pick halves: two bands (Day and Evening) */
-.kind-pick .band { height: 296px; margin-top: 16px; }
-.kind-pick .band + .band { margin-top: 24px; }
-.kind-pick .band-date { height: 74px; padding-top: 20px; }
+/* pick halves: two bands (Day and Evening), each with its own times */
+.kind-pick .band { height: 318px; margin-top: 10px; }
+.kind-pick .band + .band { margin-top: 14px; }
+.kind-pick .band-date { height: 62px; padding-top: 14px; }
+.kind-pick .ball-label { margin-top: 9px; }
 
 /* slide timer */
 .timer {
@@ -346,6 +367,7 @@ html, body {
 .slide.is-in .jp-wrap  { -webkit-animation: punch .6s cubic-bezier(.3,1.6,.5,1) both; animation: punch .6s cubic-bezier(.3,1.6,.5,1) both; }
 .slide.is-in .jp-glint { -webkit-animation: glint 4.5s ease-in-out infinite; animation: glint 4.5s ease-in-out infinite; }
 .slide.is-in .jp-sub   { -webkit-animation: fadeIn .5s ease-out both; animation: fadeIn .5s ease-out both; }
+.slide.is-in .tm       { -webkit-animation: pop .55s cubic-bezier(.3,1.5,.5,1) both; animation: pop .55s cubic-bezier(.3,1.5,.5,1) both; }
 .slide.is-in .timer    { -webkit-animation-name: timer; animation-name: timer; -webkit-animation-timing-function: linear; animation-timing-function: linear; -webkit-animation-fill-mode: both; animation-fill-mode: both; }
 .odo-strip { -webkit-transition: -webkit-transform 1.5s cubic-bezier(.12,.6,.2,1); transition: transform 1.5s cubic-bezier(.12,.6,.2,1); }
 
@@ -355,8 +377,6 @@ html, body {
 @keyframes slamR { 0% { transform: translateX(102%); } 62% { transform: translateX(-2.2%); } 80% { transform: translateX(.8%); } 100% { transform: translateX(0); } }
 @-webkit-keyframes slamUp { 0% { -webkit-transform: translateY(102%); } 62% { -webkit-transform: translateY(-2%); } 80% { -webkit-transform: translateY(.7%); } 100% { -webkit-transform: translateY(0); } }
 @keyframes slamUp { 0% { transform: translateY(102%); } 62% { transform: translateY(-2%); } 80% { transform: translateY(.7%); } 100% { transform: translateY(0); } }
-@-webkit-keyframes slideOut { 0% { opacity: 1; -webkit-transform: scale(1); } 100% { opacity: 0; -webkit-transform: scale(.94); } }
-@keyframes slideOut { 0% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: scale(.94); } }
 @-webkit-keyframes flash { 0% { opacity: 0; } 25% { opacity: 1; } 100% { opacity: 0; } }
 @keyframes flash { 0% { opacity: 0; } 25% { opacity: 1; } 100% { opacity: 0; } }
 @-webkit-keyframes pop { 0% { opacity: 0; -webkit-transform: scale(.4); } 100% { opacity: 1; -webkit-transform: scale(1); } }
@@ -443,11 +463,18 @@ html, body {
 }
 .tk-time { display: block; font: italic 900 50px/54px var(--sans); letter-spacing: -.01em; white-space: nowrap; }
 .tk-date { display: block; font: 900 18px/22px var(--sans); text-transform: uppercase; letter-spacing: .06em; margin-top: 6px; white-space: nowrap; }
-.tk-track { position: absolute; left: 0; top: 0; height: 118px; white-space: nowrap; font-size: 0; }
+/* The moving bar is its own GPU layer from the start (drawn once, then only
+   slid), moved by the compositor, so it keeps gliding while a slide is built.
+   Its speed is set by app.js to a whole number of screen pixels a frame. */
+.tk-track {
+  position: absolute; left: 0; top: 0; height: 118px; white-space: nowrap; font-size: 0;
+  will-change: transform; -webkit-backface-visibility: hidden; backface-visibility: hidden;
+  -webkit-transform: translate3d(0, 0, 0); transform: translate3d(0, 0, 0);
+}
 .tk-track.run { -webkit-animation: tk 60s linear infinite; animation: tk 60s linear infinite; }
 .tk-set { display: inline-block; height: 118px; white-space: nowrap; vertical-align: top; }
-@-webkit-keyframes tk { 0% { -webkit-transform: translateX(0); } 100% { -webkit-transform: translateX(-50%); } }
-@keyframes tk { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+@-webkit-keyframes tk { 0% { -webkit-transform: translate3d(0, 0, 0); } 100% { -webkit-transform: translate3d(-50%, 0, 0); } }
+@keyframes tk { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-50%, 0, 0); } }
 
 .tk-item { display: inline-block; height: 118px; vertical-align: top; padding: 17px 0 0 0; }
 .tk-chip {

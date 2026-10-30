@@ -1,9 +1,10 @@
 """The store TV page, run in a real browser with a fake clock and a fake
 numbers feed (tools/tv_check.py): the 'Updated' note says when PA's numbers
 were last read, says plainly when they're old, never misleads across
-midnight, the page doesn't grow over hours offline, and the slide rotation
-stays on course when new numbers arrive. Skipped where no browser is
-installed."""
+midnight, the page doesn't grow over hours offline, the slide rotation
+stays on course when new numbers arrive, every panel shows its drawing and
+sales-end times big and clear of everything else, and the ticker moves a whole
+number of screen pixels a frame. Skipped where no browser is installed."""
 
 import pathlib
 import subprocess

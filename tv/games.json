@@ -1,11 +1,11 @@
 {
-  "_about": "How each PA game looks on the store TV, keyed by PA's feed game id. name: shown when there is no logo; color: the game's colour block (picked to suit its official logo); logo: PA's official game logo in logos/ with its pixel size (logoSize) so it can be sized before it loads; logoLabel: a label shown with the logo (Double Play uses the Powerball logo); price: the yellow ticket-price callout, shown only when set (from PA's Game Guide, 2026-04-07); group/draw: the Day and Evening draws of a PICK game share one panel. A game PA adds later shows up automatically with a styled name, a stock colour and no price until it gets an entry here.",
+  "_about": "How each PA game looks on the store TV, keyed by PA's feed game id. name: shown when there is no logo; color: the game's colour block (picked to suit its official logo); logo: PA's official game logo in logos/ with its pixel size (logoSize) so it can be sized before it loads; logoLabel: a label shown with the logo (Double Play uses the Powerball logo); price: the yellow ticket-price callout, shown only when set (from PA's Game Guide, 2026-04-07); drawTime/salesEnd: when the drawing is and when sales for it end, Eastern time, shown big on the game's panel (from PA's own game pages, checked 2026-10-30; Treasure Hunt and the PICK Day drawings are posted after 1:35 PM, Millionaire for Life after 11:15 PM, Double Play after 11:30 PM); group/draw: the Day and Evening draws of a PICK game share one panel. A game PA adds later shows up automatically with a styled name, a stock colour and no price until it gets an entry here.",
 
   "settings": {
     "slideSeconds": 17,
     "heroSeconds": 21,
     "heroEvery": 3,
-    "tickerPixelsPerSecond": 130
+    "tickerPixelsPerSecond": 60
   },
 
   "extras": {
@@ -21,54 +21,62 @@
       "name": "Mega Millions", "color": "#234090", "rank": 1, "hero": true,
       "logo": "logos/mega-millions.png", "logoSize": [785, 380],
       "price": { "big": "$5", "small": "Ticket" },
+      "drawTime": "11:00 PM", "salesEnd": "9:59 PM",
       "jackpotLabel": "Estimated Jackpot"
     },
     "12": {
       "name": "Powerball", "color": "#ab1e2c", "rank": 2, "hero": true,
       "logo": "logos/powerball.png", "logoSize": [1000, 212],
       "price": { "big": "$2", "small": "Ticket", "note": "Power Play +$1" },
+      "drawTime": "10:59 PM", "salesEnd": "9:59 PM",
       "jackpotLabel": "Estimated Jackpot"
     },
     "37": {
       "name": "Millionaire for Life", "color": "#0c5f3a", "rank": 3,
       "logo": "logos/millionaire-for-life.png", "logoSize": [1000, 324], "logoScale": 0.94,
       "price": { "big": "$5", "small": "Ticket" },
+      "drawTime": "11:15 PM", "salesEnd": "10:15 PM",
       "jackpotLabel": "Top Prize"
     },
     "8": {
       "name": "Cash 5", "color": "#007f74", "rank": 4, "ticker": true,
       "logo": "logos/cash-5.png", "logoSize": [1000, 359],
-      "price": { "big": "$2", "small": "Ticket", "note": "Includes Quick Cash" }
+      "price": { "big": "$2", "small": "Ticket", "note": "Includes Quick Cash" },
+      "drawTime": "6:59 PM", "salesEnd": "6:57 PM"
     },
     "36": {
       "name": "Powerball Double Play", "color": "#7c1636", "rank": 5,
       "logo": "logos/powerball.png", "logoSize": [1000, 212], "logoLabel": "Double Play",
       "price": { "big": "+$1", "small": "Add-on", "note": "to Powerball" },
+      "drawTime": "11:30 PM", "salesEnd": "9:59 PM",
       "cashLabel": "Cash Value"
     },
     "38": {
       "name": "Powerball Xs & Os", "color": "#16346e", "rank": 6,
       "logo": "logos/powerball-xs-os.png", "logoSize": [656, 560],
-      "price": { "big": "$5", "small": "Ticket" }
+      "price": { "big": "$5", "small": "Ticket" },
+      "drawTime": "10:00 PM", "salesEnd": "8:59 PM"
     },
     "11": {
       "name": "Match 6", "color": "#0a73b8", "rank": 7, "ticker": true,
       "logo": "logos/match-6.png", "logoSize": [551, 560],
-      "price": { "big": "$2", "small": "Ticket" }
+      "price": { "big": "$2", "small": "Ticket" },
+      "drawTime": "6:59 PM", "salesEnd": "6:57 PM"
     },
     "7": {
       "name": "Treasure Hunt", "color": "#7a4410", "rank": 8, "ticker": true,
       "logo": "logos/treasure-hunt.png", "logoSize": [930, 560],
-      "price": { "big": "$1", "small": "Ticket" }
+      "price": { "big": "$1", "small": "Ticket" },
+      "drawTime": "1:35 PM", "salesEnd": "1:05 PM"
     },
 
-    "31": { "name": "Pick 2", "group": "pick2", "draw": "Day",     "color": "#13843f", "rank": 10, "ticker": true, "logo": "logos/pick-2.png", "logoSize": [1000, 489], "price": { "big": "$1", "small": "Play" } },
-    "27": { "name": "Pick 2", "group": "pick2", "draw": "Evening", "color": "#13843f", "rank": 10, "ticker": true, "logo": "logos/pick-2.png", "logoSize": [1000, 489], "price": { "big": "$1", "small": "Play" } },
-    "32": { "name": "Pick 3", "group": "pick3", "draw": "Day",     "color": "#3d2d99", "rank": 11, "ticker": true, "logo": "logos/pick-3.png", "logoSize": [1000, 489], "price": { "big": "50¢ or $1", "small": "Play" } },
-    "28": { "name": "Pick 3", "group": "pick3", "draw": "Evening", "color": "#3d2d99", "rank": 11, "ticker": true, "logo": "logos/pick-3.png", "logoSize": [1000, 489], "price": { "big": "50¢ or $1", "small": "Play" } },
-    "33": { "name": "Pick 4", "group": "pick4", "draw": "Day",     "color": "#c01277", "rank": 12, "ticker": true, "logo": "logos/pick-4.png", "logoSize": [1000, 489], "price": { "big": "50¢ or $1", "small": "Play" } },
-    "29": { "name": "Pick 4", "group": "pick4", "draw": "Evening", "color": "#c01277", "rank": 12, "ticker": true, "logo": "logos/pick-4.png", "logoSize": [1000, 489], "price": { "big": "50¢ or $1", "small": "Play" } },
-    "34": { "name": "Pick 5", "group": "pick5", "draw": "Day",     "color": "#e0600e", "rank": 13, "ticker": true, "logo": "logos/pick-5.png", "logoSize": [1000, 489], "price": { "big": "$1", "small": "Play" } },
-    "30": { "name": "Pick 5", "group": "pick5", "draw": "Evening", "color": "#e0600e", "rank": 13, "ticker": true, "logo": "logos/pick-5.png", "logoSize": [1000, 489], "price": { "big": "$1", "small": "Play" } }
+    "31": { "name": "Pick 2", "group": "pick2", "draw": "Day",     "color": "#13843f", "rank": 10, "ticker": true, "logo": "logos/pick-2.png", "logoSize": [1000, 489], "price": { "big": "$1", "small": "Play" }, "drawTime": "1:35 PM", "salesEnd": "1:05 PM" },
+    "27": { "name": "Pick 2", "group": "pick2", "draw": "Evening", "color": "#13843f", "rank": 10, "ticker": true, "logo": "logos/pick-2.png", "logoSize": [1000, 489], "price": { "big": "$1", "small": "Play" }, "drawTime": "6:59 PM", "salesEnd": "6:57 PM" },
+    "32": { "name": "Pick 3", "group": "pick3", "draw": "Day",     "color": "#3d2d99", "rank": 11, "ticker": true, "logo": "logos/pick-3.png", "logoSize": [1000, 489], "price": { "big": "50¢ or $1", "small": "Play" }, "drawTime": "1:35 PM", "salesEnd": "1:05 PM" },
+    "28": { "name": "Pick 3", "group": "pick3", "draw": "Evening", "color": "#3d2d99", "rank": 11, "ticker": true, "logo": "logos/pick-3.png", "logoSize": [1000, 489], "price": { "big": "50¢ or $1", "small": "Play" }, "drawTime": "6:59 PM", "salesEnd": "6:57 PM" },
+    "33": { "name": "Pick 4", "group": "pick4", "draw": "Day",     "color": "#c01277", "rank": 12, "ticker": true, "logo": "logos/pick-4.png", "logoSize": [1000, 489], "price": { "big": "50¢ or $1", "small": "Play" }, "drawTime": "1:35 PM", "salesEnd": "1:05 PM" },
+    "29": { "name": "Pick 4", "group": "pick4", "draw": "Evening", "color": "#c01277", "rank": 12, "ticker": true, "logo": "logos/pick-4.png", "logoSize": [1000, 489], "price": { "big": "50¢ or $1", "small": "Play" }, "drawTime": "6:59 PM", "salesEnd": "6:57 PM" },
+    "34": { "name": "Pick 5", "group": "pick5", "draw": "Day",     "color": "#e0600e", "rank": 13, "ticker": true, "logo": "logos/pick-5.png", "logoSize": [1000, 489], "price": { "big": "$1", "small": "Play" }, "drawTime": "1:35 PM", "salesEnd": "1:05 PM" },
+    "30": { "name": "Pick 5", "group": "pick5", "draw": "Evening", "color": "#e0600e", "rank": 13, "ticker": true, "logo": "logos/pick-5.png", "logoSize": [1000, 489], "price": { "big": "$1", "small": "Play" }, "drawTime": "6:59 PM", "salesEnd": "6:57 PM" }
   }
 }
