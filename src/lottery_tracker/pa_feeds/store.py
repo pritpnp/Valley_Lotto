@@ -23,6 +23,12 @@ Three jobs live here:
   owner turns it on or off by hand. After the switch he's told to turn it OFF
   while it still looks like it's running, and to turn it back ON if PA's feed
   stops being trustworthy for Powerball or Mega Millions.
+
+The numbers are read by the GitHub job and, whenever the TVs ask and they're
+over 5 minutes old, by the app itself (``in_app.py``). Two things here keep the
+two from getting in each other's way: one run at a time (``numbers_lock``), and
+quiet runs (``quiet``): the app's runs never send a message, they put it on the
+waiting list for the next GitHub run to deliver.
 """
 
 from __future__ import annotations
@@ -32,10 +38,11 @@ import html
 import json
 import re
 from collections import Counter
+from contextlib import contextmanager
 from dataclasses import replace
 from datetime import datetime, timedelta, timezone
 
-from sqlalchemy import func, select
+from sqlalchemy import func, select, text
 
 from .. import telegram
 from ..web import migrate
@@ -58,6 +65,8 @@ OLD_OFF_TOLD = "old_off_told_at"       # the last "turn the old scraper OFF" mes
 OLD_ON_TOLD = "old_on_told"            # why "turn it back ON" was last sent (JSON list)
 PA_FAILING_SINCE = "pa_failing_since"  # PA's feed gave no Powerball/Mega Millions since
 PENDING = "pending:"                   # + what happened: a message still to be delivered
+NUMBERS_LAST_ATTEMPT = "numbers_last_attempt_at"   # a numbers run (the app's or GitHub's) last started
+NUMBERS_LAST_RUN = "numbers_last_run_at"           # ... and last got to the end
 
 # The games both sources cover: id -> (name, bonus ball code).
 PBMM = {POWERBALL: ("Powerball", "PB"), MEGA_MILLIONS: ("Mega Millions", "MB")}
@@ -72,6 +81,11 @@ PA_STALE_DAYS = 4                      # PA's newest Powerball/Mega Millions old
 DRAW_NIGHT = timedelta(hours=6)        # a night's draws are posted after midnight: for
                                        # "days old", a day starts at 6am Eastern
 PA_FAILING = timedelta(hours=6)        # PA's feed failing for longer than this
+NUMBERS_FRESH = timedelta(minutes=5)   # the app reads PA again once its numbers are older
+
+# The numbers job's lock in Postgres (see numbers_lock). Any number will do, as
+# long as the app and the GitHub job use the same one.
+NUMBERS_LOCK = 0x50414E55              # "PANU"
 
 # Where the owner turns the old scraper's daily run on or off.
 OLD_SCRAPER_STEPS = ('GitHub → powerball-megamillion → Actions → "Daily Lottery Update" '
@@ -166,6 +180,77 @@ def pbmm_source(session) -> str:
 
 
 # --------------------------------------------------------------------------- #
+# The numbers job: when it last ran, and one run at a time
+# --------------------------------------------------------------------------- #
+
+def numbers_started(session, now: datetime) -> None:
+    """A numbers run (the app's or GitHub's) is starting. Saved at once, so the
+    app doesn't start another while this one waits on PA, and a PA site that
+    keeps failing is tried again every 5 minutes, not at every TV's check."""
+    set_setting(session, NUMBERS_LAST_ATTEMPT, now.isoformat(), now)
+    session.commit()
+
+
+def numbers_finished(session, now: datetime) -> None:
+    """A numbers run got to the end (whatever PA answered). Saved with the rest
+    of the run."""
+    set_setting(session, NUMBERS_LAST_RUN, now.isoformat(), now)
+
+
+def numbers_due(session, now: datetime) -> bool:
+    """No numbers run has started or finished in the last 5 minutes, so the app
+    should read PA again. One small query, made at every TV's check.
+
+    A time more than 5 minutes ahead of ``now`` doesn't count either: the
+    GitHub runner's clock and the app's never quite agree, but a time that far
+    off would otherwise stop the app reading PA until it came round."""
+    rows = session.execute(select(FeedSettingRow.value).where(
+        FeedSettingRow.key.in_([NUMBERS_LAST_ATTEMPT, NUMBERS_LAST_RUN]))).scalars()
+    for value in rows:
+        at = _from_iso(value)
+        if at is not None and abs(now - at) < NUMBERS_FRESH:
+            return False
+    return True
+
+
+def try_numbers_lock(conn) -> bool:
+    """Take the numbers job's lock on ``conn`` (inside the transaction that's
+    open on it), unless another run already has it. Postgres only: SQLite (the
+    tests, a laptop) has no such lock and is only ever used by one app, so
+    there the answer is always yes."""
+    if conn.dialect.name != "postgresql":
+        return True
+    return bool(conn.execute(text("SELECT pg_try_advisory_xact_lock(:key)"),
+                             {"key": NUMBERS_LOCK}).scalar())
+
+
+@contextmanager
+def numbers_lock(engine):
+    """One numbers run at a time, across the app and the GitHub job. Gives True
+    when this run may go ahead, False when another run has the lock (the caller
+    then skips its numbers quietly: the other run is reading them).
+
+    The lock belongs to a transaction kept open on a connection of its own until
+    the run is over, then ended. Why not ``pg_try_advisory_lock`` and an unlock:
+    Supabase's pooler, in transaction mode, can hand each transaction a
+    different database connection, so the unlock could land on one that
+    doesn't hold the lock. The lock would then be held for good, and every
+    later run would skip. A transaction keeps its one connection to the end
+    through any pooler, and when it ends (or the connection drops, or the app
+    is stopped part way) the lock always goes with it."""
+    conn = engine.connect()
+    try:
+        yield try_numbers_lock(conn)
+    finally:
+        try:
+            conn.rollback()            # ends the transaction, and with it the lock
+            conn.close()
+        except Exception:  # noqa: BLE001 — a connection that broke: closing it frees the lock
+            conn.invalidate()
+            conn.close()
+
+
+# --------------------------------------------------------------------------- #
 # Telling the owner, once
 # --------------------------------------------------------------------------- #
 
@@ -184,6 +269,46 @@ def send(text: str) -> bool:
     return telegram.send(text, formatted=True)
 
 
+# A quiet run: the app's own numbers runs (see in_app.py). Render, where the app
+# lives, has no Telegram settings, so these never send a message, or drop one
+# for want of Telegram. Each message is put on the waiting list instead (see
+# tell), in the same save as what it's about, and the next GitHub run delivers
+# it, once. Kept on the run's own database session, so nothing else is quiet.
+QUIET = "pa_feeds.quiet"
+
+
+def quiet(session) -> None:
+    """Make the run on ``session`` a quiet one."""
+    session.info[QUIET] = 0                # how many messages it has queued
+
+
+def is_quiet(session) -> bool:
+    return QUIET in session.info
+
+
+def _queue(session, what: str, text: str, now: datetime) -> None:
+    """Put a quiet run's message on the waiting list. Its name starts with the
+    run's moment and a count, so the messages go out in the order they were
+    said (a run's settings all carry the same time) and one never takes the
+    place of another still waiting."""
+    session.info[QUIET] += 1
+    key = f"{PENDING}{now:%Y%m%d%H%M%S%f}.{session.info[QUIET]:03d} {what}"
+    set_setting(session, key[:64], text, now)
+    print(f"{_plain(text)} (waiting for the next GitHub run to send it)", flush=True)
+
+
+def _say(session, what: str, text: str, now: datetime) -> bool:
+    """Save all the run has done so far, then send ``text``. On a quiet run it's
+    put on the waiting list instead, in that same save. Returns True if it was
+    delivered now."""
+    if is_quiet(session):
+        _queue(session, what, text, now)
+        session.commit()
+        return False
+    session.commit()
+    return send(text)
+
+
 def _send_and_remember(session, key: str, value: str, text: str, now: datetime) -> bool:
     """Send ``text``, remembering that it went by setting ``key`` to ``value``.
 
@@ -193,13 +318,13 @@ def _send_and_remember(session, key: str, value: str, text: str, now: datetime) 
     later in the run can undo it and have the same message sent again at every
     run. If Telegram doesn't take the message, ``key`` is put back as it was, so
     the next run tries again. (With no Telegram set up, it stays: there's nothing
-    to try again.) Returns True if the message was delivered."""
+    to try again.) On a quiet run the message waits, saved with ``key``, for the
+    next GitHub run. Returns True if the message was delivered."""
     before = get_setting(session, key, "")
     set_setting(session, key, value, now)
-    session.commit()
-    if send(text):
+    if _say(session, key, text, now):
         return True
-    if telegram.configured():
+    if telegram.configured() and not is_quiet(session):
         set_setting(session, key, before, now)
         session.commit()
     return False
@@ -225,10 +350,10 @@ def report(session, slot: str, problem: str | None, now: datetime, *,
         return True
     if before:
         set_setting(session, setting, "", now)
-        session.commit()            # saved before the note goes, as above
         if FIXED.get(slot):
-            send(FIXED[slot])
+            _say(session, setting, FIXED[slot], now)   # saved before the note goes, as above
             return True
+        session.commit()
     return False
 
 
@@ -238,7 +363,11 @@ def tell(session, event: str, text: str, now: datetime) -> None:
     pa_feed_settings until Telegram takes it, so one lost to a Telegram outage
     goes out at a later run instead of never. Only the message is tried again:
     what it's about was dealt with, and saved, when it happened. ``event`` names
-    it (one message per event)."""
+    it (one message per event). On a quiet run it only waits: it's saved with
+    what it's about, and the next GitHub run sends it."""
+    if is_quiet(session):
+        _queue(session, event, text, now)
+        return
     set_setting(session, PENDING + event, text, now)
     deliver_pending(session, now)
 
@@ -247,7 +376,10 @@ def deliver_pending(session, now: datetime) -> int:
     """Send the messages still waiting (see :func:`tell`), oldest first. Each is
     taken off the list for good before it goes (as in :func:`_send_and_remember`);
     one Telegram doesn't take goes back on, and the rest wait for the next run,
-    since Telegram is likely down. Returns how many went out."""
+    since Telegram is likely down. Returns how many went out. A quiet run sends
+    nothing, so it leaves them all waiting."""
+    if is_quiet(session):
+        return 0
     waiting = session.scalars(select(FeedSettingRow)
                               .where(FeedSettingRow.key.startswith(PENDING))
                               .order_by(FeedSettingRow.updated_at, FeedSettingRow.key)).all()
@@ -711,8 +843,8 @@ def advise_old_scraper(session, now: datetime) -> dict:
         set_setting(session, OLD_ON_TOLD, "", now)
         # That note says to turn it OFF again: the weekly reminder starts from here.
         set_setting(session, OLD_OFF_TOLD, now.isoformat(), now)
-        session.commit()            # saved before the note goes (see _send_and_remember)
-        send(FIXED["old_on"])
+        # Saved before the note goes (see _send_and_remember).
+        _say(session, OLD_ON_TOLD, FIXED["old_on"], now)
         said["fine"] = True
         return said
     last_told = _from_iso(get_setting(session, OLD_OFF_TOLD))

@@ -156,14 +156,66 @@ Postgres in production (Supabase, via `DATABASE_URL`), SQLite in tests.
   (download only if the URL/date is new) → parse → save → Telegram the change
   (first list: count only; later lists: games added and dropped, with names
   and prices).
-* Workflow `.github/workflows/pa-feeds.yml`: `*/10 * * * *` runs `numbers`;
-  `7 * * * *` (hourly) runs `orders`; `workflow_dispatch` runs `all`.
+* Workflow `.github/workflows/pa-feeds.yml`: `4,14,24,34,44,54 * * * *` runs
+  `numbers`; `37 * * * *` (hourly) runs `orders`; `workflow_dispatch` runs
+  `all`. Off the top of the hour, where GitHub drops the most scheduled runs.
+  (The numbers don't depend on it: see "Where fresh numbers come from".)
   `concurrency: pa-feeds`. Secrets: `DATABASE_URL`, `TELEGRAM_BOT_TOKEN`,
   `TELEGRAM_CHAT_ID`. Installs `requirements.txt` + `requirements-app.txt`
   (SQLAlchemy, psycopg) + `requirements-feeds.txt` (pdfplumber). A failed run
   must not email-storm: the job itself reports problems via Telegram with
   de-duplication, and exits 0 for known data problems; it exits non-zero only
   for real crashes (bugs).
+
+## Where fresh numbers come from, and why
+
+GitHub's schedule is best-effort. On 2026-10-29 it ran the "every 10 minutes"
+numbers job 6 times in 18 hours (gaps of 1 to 3 hours), so after a draw the
+TVs could show numbers hours old. So the app reads PA's numbers itself
+(`pa_feeds/in_app.py`):
+
+* **When.** Each `/api/numbers` request makes one small query (the settings
+  `numbers_last_attempt_at` and `numbers_last_run_at`, written by every
+  numbers run, the app's and GitHub's, at its start and at its end). If
+  neither is within the last 5 minutes, a numbers run starts in a background
+  thread with its own database session, and the request is answered at once
+  with what's saved: a TV never waits for PA. A run that fails still wrote its
+  start, so a PA site that's down is tried again every 5 minutes, not at every
+  TV's check. One that failed before it could write it (Supabase gone
+  read-only, no connection to be had) is held back the same 5 minutes by the
+  app itself. PA's numbers are saved before the old scraper's file is asked
+  for, so a slow old-scraper site never holds the database for writing (on
+  SQLite that would hold up a clerk's save).
+* **Who asks.** The TVs (every 2 minutes, through Netlify), and Netlify's
+  scheduled function `tv/netlify/functions/refresh-numbers.mts` every 10
+  minutes, which runs on time. That also keeps Render's free plan from putting
+  the app to sleep (it sleeps after 15 minutes without a visitor). So PA is
+  read about every 5 to 10 minutes, day and night, TVs on or off.
+* **One run at a time.** In the app, a lock in memory (gunicorn runs one
+  worker). Across the app and the GitHub job (and two copies of the app while
+  Render swaps in a new one), a Postgres advisory lock (`store.numbers_lock`):
+  a run that finds it taken skips its numbers quietly, since the other run is
+  reading the same feeds. The lock is a transaction lock
+  (`pg_try_advisory_xact_lock`) held by a transaction kept open on a
+  connection of its own for the whole run, then ended in `finally`: through
+  Supabase's pooler in transaction mode, a session lock's unlock can land on a
+  different database connection and leave the lock held for good. Nothing to
+  lock on SQLite (tests).
+* **Quiet.** Render has no Telegram settings, so a run in the app never sends a
+  message, or drops one: every message it has (a mismatch, the switch, a
+  problem or its "fixed" note, "turn the old scraper off/on") goes on the
+  waiting list (`pending:...` in `pa_feed_settings`), saved together with what
+  it's about and in the order it was said. The next GitHub run delivers the
+  list first, once. The side-by-side check, the trial and the switch work as
+  in a GitHub run: each draw is compared once, and saved with its message. The
+  daily "the database has a problem" message is the GitHub job's alone.
+* **Turned off** with `PA_FEED_IN_APP=0` on Render (then only the GitHub job
+  reads PA). Off in the tests unless a test turns it on.
+
+GitHub's runs go on as before (now at 4, 14, 24... past the hour): they read
+the numbers too, as a backup, and deliver what's waiting. A Telegram message
+the app queued goes out at the next GitHub run that starts, which is usually
+within the hour but can be a few hours on GitHub's bad days.
 
 ## TV feed: `GET /api/numbers` (the app, no login)
 
