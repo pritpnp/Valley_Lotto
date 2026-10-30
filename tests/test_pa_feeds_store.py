@@ -1624,7 +1624,8 @@ def test_the_workflow_runs_each_job_on_its_schedule():
     import yaml
     wf = yaml.safe_load(Path(".github/workflows/pa-feeds.yml").read_text())
     on = wf.get("on") or wf.get(True)                              # YAML reads "on" as True
-    assert [s["cron"] for s in on["schedule"]] == ["*/10 * * * *", "7 * * * *"]
+    # Off the top of the hour, when GitHub drops the most scheduled runs.
+    assert [s["cron"] for s in on["schedule"]] == ["4,14,24,34,44,54 * * * *", "37 * * * *"]
     assert "workflow_dispatch" in on
     assert wf["concurrency"]["group"] == "pa-feeds"
     steps = wf["jobs"]["read"]["steps"]
@@ -1633,6 +1634,7 @@ def test_the_workflow_runs_each_job_on_its_schedule():
         assert req in install and Path(req).exists()
     run = next(s for s in steps if "pa_feeds" in s.get("run", ""))
     assert set(run["env"]) >= {"DATABASE_URL", "TELEGRAM_BOT_TOKEN", "TELEGRAM_CHAT_ID"}
-    assert '"*/10 * * * *") what=numbers' in run["run"] and '"7 * * * *")    what=orders' in run["run"]
+    assert '"4,14,24,34,44,54 * * * *") what=numbers' in run["run"]
+    assert '"37 * * * *")               what=orders' in run["run"]
     assert "what=all" in run["run"]
     assert "pdfplumber" in Path("requirements-feeds.txt").read_text()

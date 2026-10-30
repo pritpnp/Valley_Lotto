@@ -1,6 +1,6 @@
 """Read PA's feeds and save them. Run on a schedule by .github/workflows/pa-feeds.yml.
 
-    python -m lottery_tracker.pa_feeds numbers     # winning numbers (every 10 minutes)
+    python -m lottery_tracker.pa_feeds numbers     # winning numbers (4, 14, 24... past the hour)
     python -m lottery_tracker.pa_feeds orders      # the weekly order list (hourly)
     python -m lottery_tracker.pa_feeds all         # both
     python -m lottery_tracker.pa_feeds all --dry-run   # read and print only:
@@ -8,6 +8,12 @@
 
 Settings, kept as GitHub secrets and never in the code: DATABASE_URL (the same
 Supabase link the app uses), TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID.
+
+GitHub's schedule is best-effort (it has skipped hours at a time), so the app
+also reads the numbers itself whenever the TVs ask and they're over 5 minutes
+old: ``numbers`` below, run quietly (see ``in_app.py``). One run at a time
+across the two (``store.numbers_lock``). The app's runs send no messages: they
+wait in the database, and each run here delivers them first.
 
 Anything PA or the network can cause (a page that doesn't answer, a format
 change) is told to Telegram once and the run still ends normally (exit 0), so a
@@ -87,8 +93,12 @@ READ_ONLY = "\n".join([
     MEANWHILE])
 
 # The daily run: the one that starts in these ten minutes, Eastern time. The
-# numbers run every ten minutes, so about one run a day falls in them.
+# numbers runs are set for 4, 14, 24... minutes past the hour, so one a day
+# (9:04) falls in them, when GitHub starts it on time.
 DAILY_HOUR, DAILY_MINUTES = 9, 10
+
+BUSY = ("PA's numbers: another run (most likely the app's own) is reading them right "
+        "now, so this one leaves them to it.")
 
 # PA's site turns away anything that doesn't look like a browser.
 HEADERS = {
@@ -219,6 +229,12 @@ def numbers(session, now: datetime) -> None:
         print(f"PA's number feed: {len(reading.draws)} games read.", flush=True)
         pa_ok = set(store.PBMM) <= {d.game_id for d in reading.draws}
     store.note_pa_feed(session, pa_ok, now)
+    # PA's numbers are saved before the old scraper's file is asked for. That
+    # can take a minute when its site is slow, and on SQLite (a laptop, or the
+    # app with no DATABASE_URL) the run would hold the whole database for
+    # writing meanwhile: the app reads PA itself now, so a clerk saving a count
+    # would wait, then fail. It also keeps PA's numbers if the rest goes wrong.
+    session.commit()
 
     # The old scraper. Once the TVs have switched to PA's feed it's expected to
     # stop, so from then on its silence isn't a problem. It's still read: whether
@@ -445,10 +461,20 @@ def run(argv: list[str] | None = None, *, now: datetime | None = None) -> int:
         try:
             store.create_tables(engine)
             with Session(engine) as session:
-                store.deliver_pending(session, now)     # what earlier runs couldn't get through
+                # What earlier runs couldn't get through, and what the app's own
+                # runs left waiting (they never send).
+                store.deliver_pending(session, now)
                 if args.what in ("numbers", "all"):
-                    numbers(session, now)
-                    session.commit()
+                    # One numbers run at a time, this or the app's. If the app is
+                    # at it, it's reading the same feeds: nothing is missed.
+                    with store.numbers_lock(engine) as mine:
+                        if mine:
+                            store.numbers_started(session, now)
+                            numbers(session, now)
+                            store.numbers_finished(session, now)
+                            session.commit()
+                        else:
+                            print(BUSY, flush=True)
                 if args.what in ("orders", "all"):
                     orders(session, now)
                     session.commit()

@@ -1,11 +1,22 @@
 name: PA numbers and order list
 
 # Reads what Pennsylvania publishes and saves it in the app's database:
-#   * every 10 minutes, the winning numbers of every draw game (for the store
-#     TVs), plus the old Powerball/Mega Millions scraper while the two are
-#     checked side by side;
-#   * every hour, the weekly "Scratch-Offs Available for Ordering" list.
+#   * at 4, 14, 24, 34, 44 and 54 minutes past each hour, the winning numbers
+#     of every draw game (for the store TVs), plus the old Powerball/Mega
+#     Millions scraper while the two are checked side by side;
+#   * at 37 minutes past each hour, the weekly "Scratch-Offs Available for
+#     Ordering" list.
 # "Run workflow" in the Actions tab does both.
+#
+# GitHub's schedule is best-effort: it starts runs late, and drops many, most
+# of all around the top of the hour, when everyone's runs are due (on one day
+# it ran the numbers 6 times in 18 hours). Hence the odd minutes. So the TVs
+# don't depend on it: the store app reads PA's numbers itself whenever a TV (or
+# Netlify's check every 10 minutes) asks and its copy is over 5 minutes old.
+# Only one of the two reads them at a time. The app sends no Telegram messages
+# (Render has no Telegram settings): they wait in the database, and every run
+# here sends them first. These runs still read the numbers too, as a backup,
+# and are the ones that say on Telegram when the database itself has a problem.
 #
 # Problems (PA's site down for over an hour, a format change) go to Telegram
 # once, and the run still ends green: a red X here means a bug in the code,
@@ -17,8 +28,8 @@ name: PA numbers and order list
 # it: that checks the app, which has its own copy of the link on Render.)
 on:
   schedule:
-    - cron: "*/10 * * * *"   # numbers
-    - cron: "7 * * * *"      # order list (GitHub's schedule is UTC and can start late)
+    - cron: "4,14,24,34,44,54 * * * *"   # numbers (GitHub's schedule is UTC)
+    - cron: "37 * * * *"                 # order list
   workflow_dispatch: {}
 
 permissions:
@@ -56,8 +67,8 @@ jobs:
           PYTHONPATH: src
         run: |
           case "$SCHEDULE" in
-            "*/10 * * * *") what=numbers ;;
-            "7 * * * *")    what=orders ;;
-            *)              what=all ;;
+            "4,14,24,34,44,54 * * * *") what=numbers ;;
+            "37 * * * *")               what=orders ;;
+            *)                          what=all ;;
           esac
           python -m lottery_tracker.pa_feeds "$what"

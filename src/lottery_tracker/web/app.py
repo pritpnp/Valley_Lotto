@@ -9,6 +9,8 @@ Environment variables (all optional in dev; see SETUP.md for prod):
   REGISTER_CODE  if set, new users must enter this code to register (owner-controlled)
   DEFAULT_STORE  store id new counts belong to (default "valley")
   SLOTS          box layout, default "A:24,B:24" (two 24-count units = 48 boxes)
+  PA_FEED_IN_APP 0 stops the app reading PA's winning numbers itself when the
+                 TVs ask and they're over 5 minutes old (on unless it says 0)
 """
 
 from __future__ import annotations
@@ -43,6 +45,7 @@ from .models import (Base, User, Store, ScanRow, ActiveCount, InventoryRow,
                      OrderListRow, OrderGameRow)
 from .migrate import ensure_schema
 from . import permissions as perms
+from ..pa_feeds import in_app as pa_in_app
 
 # The KEEP/SEND-BACK engine. pa_data is framework-neutral (it imports only from
 # lottery_tracker), so the dashboard math is shared with the FastAPI app and the
@@ -198,6 +201,10 @@ def create_app(config: dict | None = None) -> Flask:
         # morning count to night count — is local. Without this a 9pm PA count
         # (1am UTC) files under tomorrow and splits the day in two.
         TIMEZONE=cfg.get("TIMEZONE", _env("TIMEZONE", "America/New_York")),
+        # The TVs' numbers stay fresh without GitHub's timer: /api/numbers reads
+        # PA in the background when they're over 5 minutes old. See
+        # pa_feeds/in_app.py. PA_FEED_IN_APP=0 turns that off.
+        PA_FEED_IN_APP=pa_in_app.wanted(cfg.get("PA_FEED_IN_APP", _env("PA_FEED_IN_APP"))),
     )
 
     app.permanent_session_lifetime = timedelta(days=90)   # keep the device signed in
@@ -217,6 +224,8 @@ def create_app(config: dict | None = None) -> Flask:
                   # silently gets 48 boxes regardless of SLOTS.
                   slots=str(cfg.get("SLOTS") or _env("SLOTS") or "48"))
     app.config["SESSION_FACTORY"] = sessionmaker(bind=engine, expire_on_commit=False)
+    app.extensions["pa_numbers"] = pa_in_app.Refresher(app.config["SESSION_FACTORY"],
+                                                       app.logger)
 
     _register_routes(app)
     return app
@@ -539,6 +548,10 @@ def _register_routes(app: Flask):
         No login, on purpose: it's PA's public data and nothing else, never
         store data. No session cookie either, because Netlify and the TVs may
         cache it for a minute and share it. See ``pa_feeds.display``.
+
+        When the saved numbers are over 5 minutes old, being asked also starts
+        a read of PA's feed in the background (``pa_feeds.in_app``). This answer
+        never waits for it: it has what's saved, and the next one has the new.
         """
         from ..pa_feeds.display import build_payload
         try:
@@ -549,6 +562,9 @@ def _register_routes(app: Flask):
             resp = jsonify({"error": "The numbers aren't available right now."})
             resp.status_code = 503
             resp.headers["Cache-Control"] = "no-store"
+        else:
+            if app.config.get("PA_FEED_IN_APP"):
+                app.extensions["pa_numbers"].maybe_start(_db())   # never raises
         resp.headers["Access-Control-Allow-Origin"] = "*"
         return resp
 

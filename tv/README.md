@@ -67,12 +67,17 @@ clicked.
   real ones arrive.
 * Shows **TONIGHT!** on a game's draw day (Pennsylvania time).
 * A small "Updated 8:20 PM" note in the bottom-left corner says when the
-  numbers were last refreshed from PA (the feed job checks PA every 10
-  minutes). It gives the day too when that wasn't today ("Updated Oct 28,
-  11:50 PM"). If the numbers haven't been refreshed for more than 2 hours, it
-  says "Numbers from 6:40 PM" instead, in dark red: the TV still shows the
-  numbers it has, but the feed job has stopped (check **PA numbers and order
-  list** in the repository's **Actions** tab) or the TV has lost the internet.
+  numbers were last refreshed from PA. The store app reads PA's site about
+  every 5 to 10 minutes: whenever it's asked for the numbers (by a TV, or by
+  Netlify every 10 minutes, see below) and its copy is over 5 minutes old. It
+  gives the day too when that wasn't today ("Updated Oct 28, 11:50 PM"). If the
+  numbers haven't been refreshed for more than 2 hours, it says "Numbers from
+  6:40 PM" instead, in dark red: the TV still shows the numbers it has, but
+  the TV has lost the internet, or the store app can't read PA's site or its
+  database right now (Telegram says so when PA's site keeps failing).
+* **Netlify asks the store app for the numbers every 10 minutes**
+  (`netlify/functions/refresh-numbers.mts`), TVs on or off. That keeps the
+  numbers fresh, and keeps the app awake on Render's free plan.
 * If PA adds a new game, it appears by itself with its name (no logo or price
   until one is added to `games.json`).
 
