@@ -1,5 +1,6 @@
 """Checks for the store TV page (tv/): the 'Updated' note, the slide rotation,
-the drawing and sales-end times on every panel, and the ticker's smooth speed.
+the sales-end and drawing times, the next drawing and the draw days on every panel,
+and the ticker's smooth speed.
 
     python tools/tv_check.py tv [screenshot dir]
 
@@ -235,8 +236,9 @@ with sync_playwright() as p:
     check("no page errors", not errors, "; ".join(errors))
     browser.close()
 
-    # 4. Every panel shows its drawing time and when sales end, big (not a
-    #    footnote), inside the panel and clear of the balls and the jackpot.
+    # 4. Every panel shows when sales end and then its drawing time, big (not
+    #    a footnote), inside the panel and clear of the balls and the jackpot;
+    #    when the next drawing is; and the days the game is drawn.
     api = Api()
     api.answer = feed("2026-10-29T14:00:00Z", "2026-10-29T14:00:30Z")
     browser, page, errors = open_page(p, api, "2026-10-29T14:00:30Z")
@@ -248,9 +250,15 @@ with sync_playwright() as p:
         page.wait_for_timeout(3600)      # entrance animations finish (real time)
         for h in page.evaluate("""() => Array.prototype.map.call(document.querySelectorAll('#slides .slide.is-in .half'), function (h) {
             function r(e) { var b = e.getBoundingClientRect(); return [b.left, b.top, b.right, b.bottom]; }
-            function txt(e) { return e ? e.textContent.replace(/\\s+/g, ' ').trim() : ''; }
+            function txt(e) {   // the text of each piece, one space between pieces
+              if (!e) return '';
+              var w = document.createTreeWalker(e, NodeFilter.SHOW_TEXT, null, false), out = [], n;
+              while ((n = w.nextNode())) out.push(n.nodeValue);
+              return out.join(' ').replace(/\\s+/g, ' ').trim();
+            }
             return {
               name: h.querySelector('.h-logo img').alt, half: r(h),
+              next: txt(h.querySelector('.next-row')), days: txt(h.querySelector('.days')),
               rows: Array.prototype.map.call(h.querySelectorAll('.times'), function (t) {
                 var band = t.parentNode.classList.contains('band') ? t.parentNode : null;
                 var labels = band ? band.querySelectorAll('.ball-label span') : [];
@@ -269,7 +277,8 @@ with sync_playwright() as p:
           })"""):
             seen[h["name"]] = h
     for gid, g in config.items():
-        want = [("Drawing", g["drawTime"]), ("Sales End", g["salesEnd"])]
+        daily = g["drawDays"] == "daily"
+        want = [("Sales End", g["salesEnd"]), ("Drawing Daily" if "draw" in g and daily else "Drawing", g["drawTime"])]
         h = seen.get(g["name"])
         if h is None:
             check("times shown for " + g["name"], False, "panel not found")
@@ -280,7 +289,18 @@ with sync_playwright() as p:
             ok = len(rows) == 2 and rows[idx] == want
         else:
             ok = want in rows
-        check("%s %s: drawing %s, sales end %s" % (g["name"], g.get("draw", ""), g["drawTime"], g["salesEnd"]), ok, str(rows))
+        check("%s %s: sales end %s, then drawing %s" % (g["name"], g.get("draw", ""), g["salesEnd"], g["drawTime"]), ok, str(rows))
+        if "draw" not in g:
+            names = {"Sun": "Sunday", "Mon": "Mon", "Tue": "Tue", "Wed": "Wed", "Thu": "Thu", "Fri": "Fri", "Sat": "Sat"}
+            days = "Drawn every day" if daily else "Drawn every " + " · ".join(names[d] for d in g["drawDays"]) \
+                if len(g["drawDays"]) > 1 else "Drawn every " + names[g["drawDays"][0]]
+            check("%s: '%s'" % (g["name"], days), h["days"] == days, h["days"])
+    # the sample's next drawings, seen on Thu Oct 29 (10 AM): Cash 5 tonight
+    # (TONIGHT! only), Mega Millions tomorrow (TOMORROW only), Xs & Os on
+    # Sunday (the weekday, then the date)
+    for name, want in (("Mega Millions", "Next Drawing: Tomorrow"), ("Cash 5", "Next Drawing: Tonight!"),
+                       ("Powerball Xs & Os", "Next Drawing: Sunday, Nov 1")):
+        check("%s next drawing reads '%s'" % (name, want), seen[name]["next"] == want, seen[name]["next"])
     smallest = min(m["px"] for h in seen.values() for r in h["rows"] for m in r["pills"])
     check("times are big (time text at least 44px of 1080)", smallest >= 44, "%spx" % smallest)
     clear = []
@@ -314,6 +334,48 @@ with sync_playwright() as p:
         check("ticker at %dx%d: %.2f screen px a frame (whole), about 60 px a second" % (vw, vh, screen),
               abs(screen - round(screen)) < 0.01 and round(screen) >= 1 and 55 <= speed * vw / 1920 <= 65
               and t["sets"] == 2 and t["styleW"] == "%dpx" % t["setW"] and t["name"] == "tk", str(t))
+        check("no page errors", not errors, "; ".join(errors))
+        browser.close()
+
+    # 6. Right after a drawing PA posts the numbers before it moves the next
+    #    draw date on, so the feed sends none for a while. The panel works it
+    #    out from the game's draw days (Cash 5 drawn tonight: TOMORROW; Mega
+    #    Millions drawn Friday: TUESDAY, NOV 3), and the lines under it stay
+    #    level with the other game's on every slide.
+    LEVEL = """() => Array.prototype.map.call(document.querySelectorAll('#slides .slide.is-in'), function (s) {
+        return Array.prototype.map.call(s.querySelectorAll('.half'), function (h) {
+          function top(sel) { var e = h.querySelector(sel); return e ? Math.round(e.getBoundingClientRect().top) : null; }
+          var row = h.querySelector('.next-row'), out = [], w, n;
+          if (row) { w = document.createTreeWalker(row, NodeFilter.SHOW_TEXT, null, false); while ((n = w.nextNode())) out.push(n.nodeValue); }
+          return { name: h.querySelector('.h-logo img').alt, next: out.join(' ').replace(/\\s+/g, ' ').trim(),
+                   days: top('.days'), times: top('.next .times') };
+        });
+      })[0]"""
+    for start, changes, want in (
+            ("2026-10-29T23:30:00Z", {"8": "2026-10-29"}, {"Cash 5": "Next Drawing: Tomorrow"}),               # Thu 7:30 PM
+            ("2026-10-31T03:30:00Z", {"15": "2026-10-30"}, {"Mega Millions": "Next Drawing: Tuesday, Nov 3"})):  # Fri 11:30 PM
+        api = Api()
+        data = feed("2026-10-29T23:20:00Z", start)
+        for g in data["games"]:
+            if g["id"] in changes:
+                g["draw_date"], g["next_draw_date"] = changes[g["id"]], None
+        api.answer = data
+        browser, page, errors = open_page(p, api, start)
+        settle(page)
+        seen, uneven = {}, []
+        for i in range(page.evaluate("__tv.count()")):
+            page.evaluate("__tv.go(%d)" % i)
+            page.wait_for_timeout(3000)
+            halves = page.evaluate(LEVEL)
+            for h in halves:
+                seen[h["name"]] = h
+            jack = [h for h in halves if h["days"] is not None]
+            if len(jack) == 2 and (jack[0]["days"] != jack[1]["days"] or jack[0]["times"] != jack[1]["times"]):
+                uneven.append("%s %s/%s vs %s %s/%s" % (jack[0]["name"], jack[0]["days"], jack[0]["times"],
+                                                        jack[1]["name"], jack[1]["days"], jack[1]["times"]))
+        for name, text in want.items():
+            check("no next date from PA after the drawing: %s reads '%s'" % (name, text), seen[name]["next"] == text, seen[name]["next"])
+        check("lines under Next Drawing level across each slide (%s)" % start, not uneven, "; ".join(uneven))
         check("no page errors", not errors, "; ".join(errors))
         browser.close()
 

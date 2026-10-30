@@ -218,7 +218,8 @@
       jackpotLabel: c.jackpotLabel || 'Jackpot',
       cashLabel: c.cashLabel || 'Cash Value',
       drawTime: c.drawTime ? String(c.drawTime) : '',
-      salesEnd: c.salesEnd ? String(c.salesEnd) : ''
+      salesEnd: c.salesEnd ? String(c.salesEnd) : '',
+      drawDays: c.drawDays || null
     };
   }
 
@@ -583,8 +584,9 @@
   }
 
   // When the drawing is and when sales for it end (games.json, from PA's game
-  // pages), as two big pills a customer reads from across the store:
-  // "DRAWING 10:59 PM" and "SALES END 9:59 PM".
+  // pages), as two big pills a customer reads from across the store, in the
+  // order they happen: "SALES END 9:59 PM", then "DRAWING 10:59 PM". On a
+  // PICK draw (no line of draw days there) the drawing pill says "daily".
   function buildTimes(look, cls) {
     if (!look.drawTime && !look.salesEnd) return null;
     var row = el('div', 'times' + (cls ? ' ' + cls : ''));
@@ -595,21 +597,61 @@
       p.appendChild(el('span', 'tm-t', time));
       row.appendChild(p);
     }
-    if (look.drawTime) pill('draw', 'Drawing', look.drawTime);
     if (look.salesEnd) pill('sales', 'Sales End', look.salesEnd);
+    if (look.drawTime) pill('draw', cls && look.drawDays === 'daily' ? 'Drawing Daily' : 'Drawing', look.drawTime);
     return row;
   }
 
-  // "Next Drawing:" and when, on one row, with the drawing and sales-end
-  // times under it.
+  // The days a game is drawn (games.json drawDays): "every day", "every
+  // Sunday", "every Mon · Wed · Sat". Empty when games.json doesn't say.
+  var DAY_NAMES = { sun: 'Sunday', mon: 'Monday', tue: 'Tuesday', wed: 'Wednesday', thu: 'Thursday', fri: 'Friday', sat: 'Saturday' };
+  function drawDaysText(look) {
+    var d = look.drawDays;
+    if (d === 'daily') return 'every day';
+    if (!Array.isArray(d) || !d.length) return '';
+    var names = d.map(function (x) { return String(x).slice(0, 3).toLowerCase(); }).filter(function (x) { return DAY_NAMES[x]; });
+    if (!names.length) return '';
+    if (names.length === 1) return 'every ' + DAY_NAMES[names[0]];
+    return 'every ' + names.map(function (x) { return x.charAt(0).toUpperCase() + x.slice(1); }).join(' · ');
+  }
+
+  // When the next drawing is: PA's date, or, in the time after a drawing
+  // before PA moves its date on (the feed then sends none), the first of the
+  // game's draw days after the drawing just held. Null when neither says.
+  var DAY_KEYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+  function nextDrawDate(game, look) {
+    if (dayInfo(game.next_draw_date)) return game.next_draw_date;
+    var last = /^\d{4}-\d{2}-\d{2}/.exec(game.draw_date || '');
+    var d = look.drawDays, want = null;
+    if (!last || !dayInfo(last[0])) return null;
+    if (Array.isArray(d)) {
+      want = d.map(function (x) { return DAY_KEYS.indexOf(String(x).slice(0, 3).toLowerCase()); }).filter(function (i) { return i >= 0; });
+      if (!want.length) return null;
+    } else if (d !== 'daily') {
+      return null;
+    }
+    for (var i = 1; i <= 7; i++) {
+      var iso = addDays(last[0], i);
+      if (!want || want.indexOf(DAYS.indexOf(dayInfo(iso).weekday)) >= 0) return iso;
+    }
+    return null;
+  }
+
+  // "Next Drawing:" and when, on one row: TONIGHT! (the starburst), TOMORROW,
+  // or from the day after on the weekday and date ("SATURDAY, OCT 31").
+  // Under it the game's draw days, then the sales-end and drawing times. The
+  // row is always there (empty if nothing says when), so the lines under it
+  // stay level with the other game's on the slide.
   function buildNext(game, look) {
-    var iso = game.next_draw_date;
+    var iso = nextDrawDate(game, look);
     var info = dayInfo(iso);
     var times = buildTimes(look);
-    if (!info && !times) return null;
+    var daysText = drawDaysText(look);
+    if (!info && !times && !daysText) return null;
     var next = el('div', 'next');
+    var row = el('div', 'next-row');
+    next.appendChild(row);
     if (info) {
-      var row = el('div', 'next-row');
       row.appendChild(el('div', 'next-label', 'Next Drawing:'));
       var today = todayNY();
       if (iso === today) {
@@ -618,20 +660,22 @@
         next._tonight = true;
       } else if (iso < today) {
         row.appendChild(el('div', 'next-val', 'Results coming soon'));
+      } else if (iso === addDays(today, 1)) {
+        row.appendChild(el('div', 'next-val', 'Tomorrow'));
       } else {
-        var v = el('div', 'next-val');
-        if (iso === addDays(today, 1)) {
-          v.appendChild(document.createTextNode('Tomorrow'));
-          v.appendChild(el('small', null, info.wd + ', ' + info.mon + ' ' + info.d));
-        } else {
-          v.appendChild(document.createTextNode(info.weekday + ', ' + info.mon + ' ' + info.d));
-        }
-        row.appendChild(v);
+        row.appendChild(el('div', 'next-val', info.weekday + ', ' + info.mon + ' ' + info.d));
       }
-      next.appendChild(row);
+    }
+    var days = null;
+    if (daysText) {
+      days = el('div', 'days');
+      days.appendChild(el('span', null, 'Drawn '));
+      days.appendChild(el('b', null, daysText));
+      next.appendChild(days);
     }
     if (times) next.appendChild(times);
     next._times = times;
+    next._days = days;
     return next;
   }
 
@@ -748,7 +792,7 @@
       });
     } else {
       var g = unit.game;
-      var band = bandFor(g, look, { drawTag: false, short: false, maxBall: 130, avail: avail, bandHeight: 244, dateHeight: 60 });
+      var band = bandFor(g, look, { drawTag: false, short: false, maxBall: 130, avail: avail, bandHeight: 238, dateHeight: 60 });
       inner.appendChild(band);
       parts.bands.push(band);
       var next = buildNext(g, look);
@@ -781,6 +825,11 @@
       lab.style.left = Math.round(left - wraps[i].offsetLeft) + 'px';
       limit = left - 18;
     }
+  }
+
+  function outerSides(node) {
+    var cs = window.getComputedStyle(node);
+    return (parseFloat(cs.marginLeft) || 0) + (parseFloat(cs.marginRight) || 0);
   }
 
   // The time pills are sized in em, so shrinking the row's font shrinks
@@ -851,17 +900,28 @@
       fitTimes(b._times, innerW + 20);
     });
     if (half._parts.next) {
-      var nv = half._parts.next.querySelector('.next-val');
-      var nl = half._parts.next.querySelector('.next-label');
-      if (nv) fitWidth(nv, innerW - (nl ? nl.offsetWidth + 22 : 0), 30);
-      fitTimes(half._parts.next._times, innerW);
+      var nx = half._parts.next;
+      var row = nx.querySelector('.next-row');
+      if (row && row.lastChild) {
+        // the row's last item (the date, or TONIGHT!) gets the width the
+        // label leaves
+        var last = row.lastChild, used = outerSides(last);
+        for (var c = row.firstChild; c !== last; c = c.nextSibling) used += c.offsetWidth + outerSides(c);
+        fitWidth(last, innerW - used, 24);
+      }
+      if (nx._days) {
+        nx._days.style.display = 'inline-block';
+        fitWidth(nx._days, innerW, 16);
+        nx._days.style.display = '';
+      }
+      fitTimes(nx._times, innerW);
     }
     if (half._parts.jp) {
       var main = half._parts.jp.querySelector('.jp-main');
       var box = half._parts.jp.querySelector('.jp');
       var sub = half._parts.jp.querySelector('.jp-sub');
       var hasSub = !!sub;
-      if (hasSub) main.style.fontSize = '96px';
+      if (hasSub) main.style.fontSize = '92px';
       main.style.display = 'inline-block'; main.style.left = 'auto'; main.style.right = 'auto';
       fitWidth(main, 760, 40);
       if (sub) { sub.style.display = 'inline-block'; sub.style.left = 'auto'; sub.style.right = 'auto'; fitWidth(sub, 760, 14); }
@@ -907,6 +967,7 @@
       delay(half._parts.next, base + 1050);
       delay(half._parts.next.querySelector('.tonight-in'), base + 1250);
       delay(half._parts.next.querySelector('.tonight-pulse'), base + 1950);
+      delay(half._parts.next._days, base + 1300);
       pills(half._parts.next._times, base + 1500);
     }
     function pills(row, at) {
@@ -1065,7 +1126,7 @@
         type: 'draw', color: look.color, name: look.tickerName, look: look,
         sub: ((look.draw ? look.draw + ' · ' : '') + (info ? info.mon + ' ' + info.d : '')).toUpperCase(),
         t1: (look.draw || (info ? info.mon + ' ' + info.d : '')).toUpperCase(),
-        t2: (look.draw ? (info ? info.mon + ' ' + info.d : '') : (info ? info.weekday : '')).toUpperCase(),
+        t2: (look.draw ? (info ? info.wd + ', ' + info.mon + ' ' + info.d : '') : (info ? info.weekday : '')).toUpperCase(),
         numbers: g.numbers.map(ballText),
         bonus: ex.balls,
         jackpot: moneyText(money(g.jackpot))
@@ -1078,11 +1139,12 @@
       if (!main && g.cash_value) { main = money(g.cash_value); label = u.look.cashLabel; }
       if (!main) return;
       var when = '';
-      var info = dayInfo(g.next_draw_date);
+      var nextIso = nextDrawDate(g, u.look);
+      var info = dayInfo(nextIso);
       var at = u.look.drawTime ? ' · ' + u.look.drawTime : '';
-      if (info && g.next_draw_date === today) when = 'Drawing tonight' + at;
-      else if (info && g.next_draw_date === addDays(today, 1)) when = 'Next drawing tomorrow' + at;
-      else if (info && g.next_draw_date > today) when = 'Next drawing ' + info.wd + ', ' + info.mon + ' ' + info.d + at;
+      if (info && nextIso === today) when = 'Drawing tonight' + at;
+      else if (info && nextIso === addDays(today, 1)) when = 'Next drawing tomorrow' + at;
+      else if (info && nextIso > today) when = 'Next drawing ' + info.wd + ', ' + info.mon + ' ' + info.d + at;
       items.push({
         type: 'jackpot', color: u.look.color, name: u.look.tickerName, look: u.look, label: label, value: moneyText(main), when: when,
         t1: (u.look.logoLabel || label).toUpperCase(), t2: u.look.logoLabel ? label.toUpperCase() : ''

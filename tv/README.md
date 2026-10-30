@@ -65,7 +65,10 @@ clicked.
 * **Never makes up numbers.** If it has never received any (a brand new TV
   with no internet yet), it shows "Today's numbers are on their way" until
   real ones arrive.
-* Shows **TONIGHT!** on a game's draw day (Pennsylvania time).
+* **Next Drawing** says **TONIGHT!** on a game's draw day, **TOMORROW** the day
+  before, and otherwise the weekday and date ("SATURDAY, OCT 31"), in
+  Pennsylvania time. Under it, the days the game is drawn ("Drawn every Mon ·
+  Wed · Sat", "every day", "every Sunday").
 * A small "Updated 8:20 PM" note in the bottom-left corner says when the
   numbers were last refreshed from PA. While a TV is on, the store app reads
   PA's site about every 5 to 7 minutes: whenever a TV asks for the numbers and
@@ -75,9 +78,10 @@ clicked.
   6:40 PM" instead, in dark red: the TV still shows the numbers it has, but
   the TV has lost the internet, or the store app can't read PA's site or its
   database right now (Telegram says so when PA's site keeps failing).
-* **Shows each game's drawing time and when sales end**, big, under "Next
-  Drawing" (PICK games: on each Day and Evening draw). The times are in
-  `games.json` (`drawTime`, `salesEnd`), from PA's own game pages.
+* **Shows when sales end and when the drawing is**, big, in that order (sales
+  end first), under "Next Drawing" (PICK games: on each Day and Evening draw).
+  The times are in `games.json` (`salesEnd`, `drawTime`), from PA's own game
+  pages.
 * **The store app sleeps only when no TV anywhere is on.** Render's free plan
   puts it to sleep after 15 minutes with no visitors; the TVs ask every 2
   minutes, so it stays awake while any TV is on. The first TV to come on
@@ -99,6 +103,8 @@ number:
 * `logo` and `logoSize`: the logo file in `logos/` and its size in pixels.
 * `drawTime` and `salesEnd`: when the drawing is and when sales for it end,
   shown big on the game's panel.
+* `drawDays`: the days the game is drawn, `"daily"` or a list such as
+  `["Mon", "Wed", "Sat"]`.
 * `settings.tickerPixelsPerSecond`: how fast the bar along the bottom scrolls
   (60). The page adjusts it slightly so the bar moves a whole number of the
   TV's pixels every frame, which is what keeps it from stuttering.

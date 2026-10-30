@@ -181,8 +181,8 @@ html, body {
 
 /* WINNING NUMBERS */
 .h-title {
-  -webkit-flex: none; flex: none; margin: 0; height: 74px;
-  font: 900 72px/74px var(--sans); text-transform: uppercase; text-align: center; white-space: nowrap;
+  -webkit-flex: none; flex: none; margin: 0; height: 68px;
+  font: 900 66px/68px var(--sans); text-transform: uppercase; text-align: center; white-space: nowrap;
   letter-spacing: .005em;
   text-shadow: 0 5px 0 rgba(0,0,0,.25);
 }
@@ -190,7 +190,7 @@ html, body {
 /* dark band carrying the balls */
 .band {
   -webkit-flex: none; flex: none; position: relative;
-  margin: 10px -30px 0; height: 244px; overflow: hidden;
+  margin: 10px -30px 0; height: 238px; overflow: hidden;
   background: linear-gradient(180deg, #423d47 0, var(--band) 22%, var(--band) 78%, var(--band-dark) 100%);
   box-shadow: 0 -4px 0 rgba(0,0,0,.18), 0 6px 0 rgba(0,0,0,.22);
   text-align: center;
@@ -236,36 +236,42 @@ html, body {
 }
 
 /* next drawing: "Next Drawing:" and when on one row, the times under it */
-.next { -webkit-flex: none; flex: none; margin: auto 0 28px; text-align: center; position: relative; }   /* 28px: clear of the jackpot's tab */
+.next { -webkit-flex: none; flex: none; margin: auto 0 26px; text-align: center; position: relative; }   /* 26px: clear of the jackpot's tab */
 .next-row {
-  height: 100px; white-space: nowrap;
+  height: 104px; white-space: nowrap;   /* the same in every case, so the lines under it align across the two halves */
   display: -webkit-box; display: -webkit-flex; display: flex;
   -webkit-align-items: center; align-items: center; -webkit-justify-content: center; justify-content: center;
 }
 .next-label { -webkit-flex: none; flex: none; margin: 4px 22px 0 0; font: 600 40px/44px var(--sans); letter-spacing: .005em; }
 .next-val {
   -webkit-flex: none; flex: none; white-space: nowrap;
-  font: 400 84px/96px var(--tall); text-transform: uppercase; letter-spacing: .01em;
+  font: 400 84px/92px var(--tall); text-transform: uppercase; letter-spacing: .01em;
   text-shadow: 0 5px 0 rgba(0,0,0,.28);
 }
-.next-val small { font: 800 36px/1 var(--sans); vertical-align: 16px; margin-left: 14px; letter-spacing: .02em; opacity: .92; }
 
 /* TONIGHT starburst, beside "Next Drawing:" */
-.next-row.is-tonight { height: 112px; }
-.next-row.is-tonight .next-label { margin: -8px 16px 0 0; }
-.tonight { position: relative; -webkit-flex: none; flex: none; width: 430px; height: 116px; }
-.tonight-in { position: absolute; left: 50%; top: 50%; width: 430px; height: 116px; margin: -58px 0 0 -215px;
+.next-row.is-tonight .next-label { margin: -6px 12px 0 0; }
+.tonight { position: relative; -webkit-flex: none; flex: none; width: 400px; height: 108px; }
+.tonight-in { position: absolute; left: 50%; top: 50%; width: 400px; height: 108px; margin: -54px 0 0 -200px;
   -webkit-transform: rotate(-3deg); transform: rotate(-3deg); }
-.tonight svg { position: absolute; left: 0; top: 0; width: 430px; height: 116px; overflow: visible; }
+.tonight svg { position: absolute; left: 0; top: 0; width: 400px; height: 108px; overflow: visible; }
 .tonight-word {
-  position: absolute; left: 0; right: 0; top: 50%; margin-top: -43px; text-align: center;
-  font: 400 72px/86px var(--tall); color: var(--c); letter-spacing: .03em; text-transform: uppercase;
+  position: absolute; left: 0; right: 0; top: 50%; margin-top: -40px; text-align: center;
+  font: 400 66px/80px var(--tall); color: var(--c); letter-spacing: .03em; text-transform: uppercase;
 }
-.tonight-pulse { position: absolute; left: 0; top: 0; width: 430px; height: 116px; }
+.tonight-pulse { position: absolute; left: 0; top: 0; width: 400px; height: 108px; }
+
+/* the days the game is drawn: "DRAWN EVERY MON · WED · SAT" */
+.days {
+  margin-top: 2px; text-align: center; white-space: nowrap;
+  font: 900 26px/32px var(--sans); letter-spacing: .06em; text-transform: uppercase;
+  text-shadow: 0 3px 0 rgba(0,0,0,.25);
+}
+.days b { font-weight: 900; color: var(--yellow); }
 
 /* drawing time and sales cut-off: two big pills, sized in em so app.js can
    shrink a row that would not fit by its font size alone */
-.times { position: relative; margin-top: 10px; text-align: center; white-space: nowrap; font-size: 50px; line-height: 0; }
+.times { position: relative; margin-top: 8px; text-align: center; white-space: nowrap; font-size: 50px; line-height: 0; }
 .tm {
   display: inline-block; vertical-align: top; position: relative; white-space: nowrap;
   height: 1.24em; line-height: 1.24em; padding: 0 .42em 0 .3em; border-radius: .2em;
@@ -283,9 +289,9 @@ html, body {
 .times--band { position: absolute; left: 0; right: 0; bottom: 16px; margin: 0; font-size: 46px; }
 
 /* the jackpot point-out box */
-.jp-wrap { -webkit-flex: none; flex: none; position: relative; height: 174px; margin-top: auto; }
+.jp-wrap { -webkit-flex: none; flex: none; position: relative; height: 166px; margin-top: auto; }
 .jp {
-  position: relative; width: 820px; height: 174px; margin: 0 auto;
+  position: relative; width: 820px; height: 166px; margin: 0 auto;
   background: linear-gradient(180deg, var(--green-light) 0, var(--green) 46%, #146a28 100%);
   border: 11px solid var(--yellow);
   box-shadow: 0 10px 0 rgba(0,0,0,.28), inset 0 0 0 3px rgba(0,0,0,.18);
@@ -367,6 +373,7 @@ html, body {
 .slide.is-in .jp-wrap  { -webkit-animation: punch .6s cubic-bezier(.3,1.6,.5,1) both; animation: punch .6s cubic-bezier(.3,1.6,.5,1) both; }
 .slide.is-in .jp-glint { -webkit-animation: glint 4.5s ease-in-out infinite; animation: glint 4.5s ease-in-out infinite; }
 .slide.is-in .jp-sub   { -webkit-animation: fadeIn .5s ease-out both; animation: fadeIn .5s ease-out both; }
+.slide.is-in .days     { -webkit-animation: fadeIn .5s ease-out both; animation: fadeIn .5s ease-out both; }
 .slide.is-in .tm       { -webkit-animation: pop .55s cubic-bezier(.3,1.5,.5,1) both; animation: pop .55s cubic-bezier(.3,1.5,.5,1) both; }
 .slide.is-in .timer    { -webkit-animation-name: timer; animation-name: timer; -webkit-animation-timing-function: linear; animation-timing-function: linear; -webkit-animation-fill-mode: both; animation-fill-mode: both; }
 .odo-strip { -webkit-transition: -webkit-transform 1.5s cubic-bezier(.12,.6,.2,1); transition: transform 1.5s cubic-bezier(.12,.6,.2,1); }
