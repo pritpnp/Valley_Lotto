@@ -1,5 +1,6 @@
 """Checks for the store TV page (tv/): the 'Updated' note, the slide rotation,
-the drawing and sales-end times on every panel, and the ticker's smooth speed.
+the sales-end and drawing times, the next drawing and the draw days on every panel,
+and the ticker's smooth speed.
 
     python tools/tv_check.py tv [screenshot dir]
 
@@ -235,8 +236,9 @@ with sync_playwright() as p:
     check("no page errors", not errors, "; ".join(errors))
     browser.close()
 
-    # 4. Every panel shows its drawing time and when sales end, big (not a
-    #    footnote), inside the panel and clear of the balls and the jackpot.
+    # 4. Every panel shows when sales end and then its drawing time, big (not
+    #    a footnote), inside the panel and clear of the balls and the jackpot;
+    #    when the next drawing is; and the days the game is drawn.
     api = Api()
     api.answer = feed("2026-10-29T14:00:00Z", "2026-10-29T14:00:30Z")
     browser, page, errors = open_page(p, api, "2026-10-29T14:00:30Z")
@@ -248,9 +250,15 @@ with sync_playwright() as p:
         page.wait_for_timeout(3600)      # entrance animations finish (real time)
         for h in page.evaluate("""() => Array.prototype.map.call(document.querySelectorAll('#slides .slide.is-in .half'), function (h) {
             function r(e) { var b = e.getBoundingClientRect(); return [b.left, b.top, b.right, b.bottom]; }
-            function txt(e) { return e ? e.textContent.replace(/\\s+/g, ' ').trim() : ''; }
+            function txt(e) {   // the text of each piece, one space between pieces
+              if (!e) return '';
+              var w = document.createTreeWalker(e, NodeFilter.SHOW_TEXT, null, false), out = [], n;
+              while ((n = w.nextNode())) out.push(n.nodeValue);
+              return out.join(' ').replace(/\\s+/g, ' ').trim();
+            }
             return {
               name: h.querySelector('.h-logo img').alt, half: r(h),
+              next: txt(h.querySelector('.next-row')), days: txt(h.querySelector('.days')),
               rows: Array.prototype.map.call(h.querySelectorAll('.times'), function (t) {
                 var band = t.parentNode.classList.contains('band') ? t.parentNode : null;
                 var labels = band ? band.querySelectorAll('.ball-label span') : [];
@@ -269,7 +277,8 @@ with sync_playwright() as p:
           })"""):
             seen[h["name"]] = h
     for gid, g in config.items():
-        want = [("Drawing", g["drawTime"]), ("Sales End", g["salesEnd"])]
+        daily = g["drawDays"] == "daily"
+        want = [("Sales End", g["salesEnd"]), ("Drawing Daily" if "draw" in g and daily else "Drawing", g["drawTime"])]
         h = seen.get(g["name"])
         if h is None:
             check("times shown for " + g["name"], False, "panel not found")
@@ -280,7 +289,18 @@ with sync_playwright() as p:
             ok = len(rows) == 2 and rows[idx] == want
         else:
             ok = want in rows
-        check("%s %s: drawing %s, sales end %s" % (g["name"], g.get("draw", ""), g["drawTime"], g["salesEnd"]), ok, str(rows))
+        check("%s %s: sales end %s, then drawing %s" % (g["name"], g.get("draw", ""), g["salesEnd"], g["drawTime"]), ok, str(rows))
+        if "draw" not in g:
+            names = {"Sun": "Sunday", "Mon": "Mon", "Tue": "Tue", "Wed": "Wed", "Thu": "Thu", "Fri": "Fri", "Sat": "Sat"}
+            days = "Drawn every day" if daily else "Drawn every " + " · ".join(names[d] for d in g["drawDays"]) \
+                if len(g["drawDays"]) > 1 else "Drawn every " + names[g["drawDays"][0]]
+            check("%s: '%s'" % (g["name"], days), h["days"] == days, h["days"])
+    # the sample's next drawings, seen on Thu Oct 29 (10 AM): Cash 5 tonight
+    # (TONIGHT! only), Mega Millions tomorrow (TOMORROW only), Xs & Os on
+    # Sunday (the weekday, then the date)
+    for name, want in (("Mega Millions", "Next Drawing: Tomorrow"), ("Cash 5", "Next Drawing: Tonight!"),
+                       ("Powerball Xs & Os", "Next Drawing: Sunday, Nov 1")):
+        check("%s next drawing reads '%s'" % (name, want), seen[name]["next"] == want, seen[name]["next"])
     smallest = min(m["px"] for h in seen.values() for r in h["rows"] for m in r["pills"])
     check("times are big (time text at least 44px of 1080)", smallest >= 44, "%spx" % smallest)
     clear = []
