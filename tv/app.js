@@ -55,6 +55,7 @@
     index: -1,
     needsRebuild: false,
     tickerSig: '',
+    tickerSpeed: 0,      // the speed the ticker was started at
     current: null        // current slide element
   };
   var timers = { slide: 0, poll: 0, reload: 0, note: 0, clock: 0, slideJobs: [] };
@@ -215,7 +216,9 @@
       hero: !!c.hero,
       ticker: c.ticker != null ? !!c.ticker : !!draw,
       jackpotLabel: c.jackpotLabel || 'Jackpot',
-      cashLabel: c.cashLabel || 'Cash Value'
+      cashLabel: c.cashLabel || 'Cash Value',
+      drawTime: c.drawTime ? String(c.drawTime) : '',
+      salesEnd: c.salesEnd ? String(c.salesEnd) : ''
     };
   }
 
@@ -563,29 +566,72 @@
     return wrap;
   }
 
-  function buildNext(game) {
+  function clockIcon() {
+    var NS = 'http://www.w3.org/2000/svg';
+    var svg = document.createElementNS(NS, 'svg');
+    svg.setAttribute('viewBox', '0 0 40 40');
+    svg.setAttribute('class', 'tm-i');
+    var face = document.createElementNS(NS, 'circle');
+    face.setAttribute('cx', '20'); face.setAttribute('cy', '20'); face.setAttribute('r', '16.5');
+    face.setAttribute('fill', 'none'); face.setAttribute('stroke', 'currentColor'); face.setAttribute('stroke-width', '5');
+    var hands = document.createElementNS(NS, 'path');
+    hands.setAttribute('d', 'M20 10 V21 H28');
+    hands.setAttribute('fill', 'none'); hands.setAttribute('stroke', 'currentColor'); hands.setAttribute('stroke-width', '5');
+    hands.setAttribute('stroke-linecap', 'round'); hands.setAttribute('stroke-linejoin', 'round');
+    svg.appendChild(face); svg.appendChild(hands);
+    return svg;
+  }
+
+  // When the drawing is and when sales for it end (games.json, from PA's game
+  // pages), as two big pills a customer reads from across the store:
+  // "DRAWING 10:59 PM" and "SALES END 9:59 PM".
+  function buildTimes(look, cls) {
+    if (!look.drawTime && !look.salesEnd) return null;
+    var row = el('div', 'times' + (cls ? ' ' + cls : ''));
+    function pill(kind, label, time) {
+      var p = el('div', 'tm tm--' + kind);
+      p.appendChild(clockIcon());
+      p.appendChild(el('span', 'tm-l', label));
+      p.appendChild(el('span', 'tm-t', time));
+      row.appendChild(p);
+    }
+    if (look.drawTime) pill('draw', 'Drawing', look.drawTime);
+    if (look.salesEnd) pill('sales', 'Sales End', look.salesEnd);
+    return row;
+  }
+
+  // "Next Drawing:" and when, on one row, with the drawing and sales-end
+  // times under it.
+  function buildNext(game, look) {
     var iso = game.next_draw_date;
     var info = dayInfo(iso);
-    if (!info) return null;
+    var times = buildTimes(look);
+    if (!info && !times) return null;
     var next = el('div', 'next');
-    next.appendChild(el('div', 'next-label', 'Next Drawing:'));
-    var today = todayNY();
-    if (iso === today) {
-      next.className = 'next is-tonight';
-      next.appendChild(buildTonight());
-      next._tonight = true;
-    } else if (iso < today) {
-      next.appendChild(el('div', 'next-val', 'Results coming soon'));
-    } else {
-      var v = el('div', 'next-val');
-      if (iso === addDays(today, 1)) {
-        v.appendChild(document.createTextNode('Tomorrow'));
-        v.appendChild(el('small', null, info.wd + ', ' + info.mon + ' ' + info.d));
+    if (info) {
+      var row = el('div', 'next-row');
+      row.appendChild(el('div', 'next-label', 'Next Drawing:'));
+      var today = todayNY();
+      if (iso === today) {
+        row.className = 'next-row is-tonight';
+        row.appendChild(buildTonight());
+        next._tonight = true;
+      } else if (iso < today) {
+        row.appendChild(el('div', 'next-val', 'Results coming soon'));
       } else {
-        v.appendChild(document.createTextNode(info.weekday + ', ' + info.month + ' ' + info.d));
+        var v = el('div', 'next-val');
+        if (iso === addDays(today, 1)) {
+          v.appendChild(document.createTextNode('Tomorrow'));
+          v.appendChild(el('small', null, info.wd + ', ' + info.mon + ' ' + info.d));
+        } else {
+          v.appendChild(document.createTextNode(info.weekday + ', ' + info.mon + ' ' + info.d));
+        }
+        row.appendChild(v);
       }
-      next.appendChild(v);
+      next.appendChild(row);
     }
+    if (times) next.appendChild(times);
+    next._times = times;
     return next;
   }
 
@@ -661,14 +707,18 @@
       tag.appendChild(el('b', null, t.value));
       band.appendChild(tag);
     });
+    // a PICK draw's own drawing and sales-end times, along the band's foot
+    var times = opts.times ? buildTimes(look, 'times--band') : null;
+    if (times) band.appendChild(times);
     if (opts.bandHeight) {
       // centre the row in the band, always leaving room for a bonus label
       // so balls of the same size line up across the two halves
-      var free = opts.bandHeight - opts.dateHeight - balls._size - 34;
+      var free = opts.bandHeight - opts.dateHeight - balls._size - 34 - (times ? opts.timesHeight : 0);
       balls.style.paddingTop = Math.max(0, Math.floor(free / 2)) + 'px';
     }
     band._balls = balls;
     band._date = date;
+    band._times = times;
     return band;
   }
 
@@ -692,16 +742,16 @@
     var parts = { bands: [] };
     if (unit.kind === 'pick') {
       unit.draws.forEach(function (d) {
-        var b = bandFor(d.game, d.look, { drawTag: true, short: true, maxBall: 172, avail: avail, bandHeight: 296, dateHeight: 74 });
+        var b = bandFor(d.game, d.look, { drawTag: true, short: true, maxBall: 140, avail: avail, bandHeight: 318, dateHeight: 62, times: true, timesHeight: 74 });
         inner.appendChild(b);
         parts.bands.push(b);
       });
     } else {
       var g = unit.game;
-      var band = bandFor(g, look, { drawTag: false, short: false, maxBall: 130, avail: avail, bandHeight: 250, dateHeight: 60 });
+      var band = bandFor(g, look, { drawTag: false, short: false, maxBall: 130, avail: avail, bandHeight: 244, dateHeight: 60 });
       inner.appendChild(band);
       parts.bands.push(band);
-      var next = buildNext(g);
+      var next = buildNext(g, look);
       if (next) { inner.appendChild(next); parts.next = next; }
       var jp = buildJackpot(g, look);
       if (jp) { inner.appendChild(jp); parts.jp = jp; }
@@ -730,6 +780,21 @@
       if (left + tw > limit) left = limit - tw;
       lab.style.left = Math.round(left - wraps[i].offsetLeft) + 'px';
       limit = left - 18;
+    }
+  }
+
+  // The time pills are sized in em, so shrinking the row's font shrinks
+  // them together (only if a long time would not fit; the usual ones do).
+  function fitTimes(row, maxW) {
+    if (!row || !row.lastChild) return;
+    function width() { return row.lastChild.offsetLeft + row.lastChild.offsetWidth - row.firstChild.offsetLeft; }
+    var size = parseFloat(window.getComputedStyle(row).fontSize);
+    var w = width(), guard = 0;
+    while (w > maxW && size > 26 && guard < 12) {
+      size = Math.max(26, Math.floor(size * maxW / w * 0.99));
+      row.style.fontSize = size + 'px';
+      w = width();
+      guard++;
     }
   }
 
@@ -769,7 +834,7 @@
       var look = half._look;
       // plate padding: 22px each side, 11px top and bottom (30px under a
       // logo that carries a label)
-      var maxH = look.logoLabel ? 118 : 170;
+      var maxH = look.logoLabel ? 108 : 156;
       sizePlate(plate, look, 60000, Math.min(logoMax, side === 'solo' ? 760 : 580) - 44, maxH);
     }
 
@@ -783,25 +848,29 @@
       d.style.display = 'inline-block';
       fitWidth(d, innerW + 20, 20);
       d.style.display = 'block';
+      fitTimes(b._times, innerW + 20);
     });
     if (half._parts.next) {
       var nv = half._parts.next.querySelector('.next-val');
-      if (nv) { nv.style.display = 'inline-block'; fitWidth(nv, innerW, 30); }
+      var nl = half._parts.next.querySelector('.next-label');
+      if (nv) fitWidth(nv, innerW - (nl ? nl.offsetWidth + 22 : 0), 30);
+      fitTimes(half._parts.next._times, innerW);
     }
     if (half._parts.jp) {
       var main = half._parts.jp.querySelector('.jp-main');
       var box = half._parts.jp.querySelector('.jp');
       var sub = half._parts.jp.querySelector('.jp-sub');
       var hasSub = !!sub;
-      if (hasSub) main.style.fontSize = '104px';
+      if (hasSub) main.style.fontSize = '96px';
       main.style.display = 'inline-block'; main.style.left = 'auto'; main.style.right = 'auto';
       fitWidth(main, 760, 40);
       if (sub) { sub.style.display = 'inline-block'; sub.style.left = 'auto'; sub.style.right = 'auto'; fitWidth(sub, 760, 14); }
-      // centre the lines inside the box
+      // centre the lines in the box below the bottom of its tab
+      var TAB = 10;
       var boxH = box.clientHeight;
       var mh = main.offsetHeight;
       var sh = sub ? sub.offsetHeight + 8 : 0;
-      var top = Math.round((boxH - mh - sh) / 2);
+      var top = TAB + Math.round((boxH - TAB - mh - sh) / 2);
       main.style.top = top + 'px';
       main.style.left = Math.round((box.clientWidth - main.offsetWidth) / 2) + 'px';
       if (sub) {
@@ -832,11 +901,17 @@
       for (var k = 0; k < labels.length; k++) delay(labels[k], t + 600 + bi * 260 + wraps.length * 110);
       var tag = b.querySelector('.pp-tag');
       if (tag) delay(tag, t + 700 + wraps.length * 110);
+      pills(b._times, t + 650 + bi * 260 + wraps.length * 110);
     });
     if (half._parts.next) {
       delay(half._parts.next, base + 1050);
       delay(half._parts.next.querySelector('.tonight-in'), base + 1250);
       delay(half._parts.next.querySelector('.tonight-pulse'), base + 1950);
+      pills(half._parts.next._times, base + 1500);
+    }
+    function pills(row, at) {
+      if (!row) return;
+      for (var i = 0; i < row.children.length; i++) delay(row.children[i], at + i * 160);
     }
     if (half._parts.jp) {
       delay(half._parts.jp, base + 1350);
@@ -1004,9 +1079,10 @@
       if (!main) return;
       var when = '';
       var info = dayInfo(g.next_draw_date);
-      if (info && g.next_draw_date === today) when = 'Drawing tonight';
-      else if (info && g.next_draw_date === addDays(today, 1)) when = 'Next drawing tomorrow';
-      else if (info && g.next_draw_date > today) when = 'Next drawing ' + info.wd + ', ' + info.mon + ' ' + info.d;
+      var at = u.look.drawTime ? ' · ' + u.look.drawTime : '';
+      if (info && g.next_draw_date === today) when = 'Drawing tonight' + at;
+      else if (info && g.next_draw_date === addDays(today, 1)) when = 'Next drawing tomorrow' + at;
+      else if (info && g.next_draw_date > today) when = 'Next drawing ' + info.wd + ', ' + info.mon + ' ' + info.d + at;
       items.push({
         type: 'jackpot', color: u.look.color, name: u.look.tickerName, look: u.look, label: label, value: moneyText(main), when: when,
         t1: (u.look.logoLabel || label).toUpperCase(), t2: u.look.logoLabel ? label.toUpperCase() : ''
@@ -1084,13 +1160,60 @@
     // repeat the items so one set is always wider than the screen
     var copies = Math.max(1, Math.ceil(viewW / Math.max(setW, 1)));
     for (var c = 1; c < copies; c++) a.appendChild(buildTickerSet(items));
-    setW = a.offsetWidth;
+    // a whole number of pixels wide, so the loop (-50% of the track) is
+    // exactly one set and every frame lands on a whole pixel
+    setW = a.offsetWidth + 1;
+    a.style.width = setW + 'px';
     trackEl.appendChild(a.cloneNode(true));
-    var speed = config.settings.tickerPixelsPerSecond || 130;
+    var speed = tickerSpeed();
+    state.tickerSpeed = speed;
     var dur = Math.max(10, setW / speed);
-    trackEl.style.animationDuration = trackEl.style.webkitAnimationDuration = dur.toFixed(2) + 's';
+    trackEl.style.animationDuration = trackEl.style.webkitAnimationDuration = dur.toFixed(3) + 's';
     void trackEl.offsetWidth;
     trackEl.className = 'tk-track run';
+  }
+
+  // The ticker's speed in stage pixels a second: close to the speed in
+  // games.json, adjusted so the bar moves a whole number of screen pixels
+  // every frame. At any other speed its steps alternate (2, 2, 3, 2, 2, 3 px)
+  // and the text judders as it scrolls.
+  function tickerSpeed() {
+    var want = config.settings.tickerPixelsPerSecond || 60;
+    var px = stageScale * (window.devicePixelRatio || 1);   // screen pixels per stage pixel
+    if (!(px > 0)) px = 1;
+    var perFrame = Math.max(1, Math.round(want * px / frameHz));
+    return perFrame * frameHz / px;
+  }
+
+  // The screen's refresh rate (most TVs 60 a second, some 50 or 30), from
+  // the time between animation frames, so tickerSpeed() steps in time with it.
+  var frameHz = 60;
+  function measureFrameRate() {
+    var raf = window.requestAnimationFrame || window.webkitRequestAnimationFrame;
+    if (!raf) return;
+    var stamps = [];
+    function tick(t) {
+      stamps.push(t);
+      if (stamps.length < 61) { raf(tick); return; }
+      var gaps = [];
+      for (var i = 1; i < stamps.length; i++) gaps.push(stamps[i] - stamps[i - 1]);
+      gaps.sort(function (x, y) { return x - y; });
+      var hz = 1000 / gaps[gaps.length >> 1];
+      var best = 60, rates = [24, 25, 30, 48, 50, 60, 72, 75, 90, 100, 120, 144];
+      for (var r = 0; r < rates.length; r++) if (Math.abs(rates[r] - hz) < Math.abs(best - hz)) best = rates[r];
+      if (Math.abs(best - hz) > best * 0.08) return;     // unclear: keep 60
+      frameHz = best;
+      retimeTicker();
+    }
+    raf(tick);
+  }
+
+  // Start the ticker again at the right speed after the frame rate or the
+  // screen size turns out different (only ever just after the page opens).
+  function retimeTicker() {
+    if (!state.data || !state.tickerSpeed || Math.abs(tickerSpeed() - state.tickerSpeed) < 0.01) return;
+    state.tickerSig = '';
+    renderTicker(state.data);
   }
 
   // When the numbers were last read from PA: the newest seen_at (the feed
@@ -1207,10 +1330,12 @@
 
   /* -------------------------------------------------------------- stage */
 
+  var stageScale = 1;
   function fitStage() {
     var w = window.innerWidth || document.documentElement.clientWidth || STAGE_W;
     var h = window.innerHeight || document.documentElement.clientHeight || STAGE_H;
     var s = Math.min(w / STAGE_W, h / STAGE_H);
+    stageScale = s;
     var x = Math.round((w - STAGE_W * s) / 2), y = Math.round((h - STAGE_H * s) / 2);
     var t = 'translate(' + x + 'px,' + y + 'px) scale(' + s + ')';
     stage.style.transform = t; stage.style.webkitTransform = t;
@@ -1281,7 +1406,8 @@
 
   keepOfflineCopy();
   fitStage();
-  window.addEventListener('resize', fitStage);
+  window.addEventListener('resize', function () { fitStage(); retimeTicker(); });
+  measureFrameRate();
   // games.json (logos, colours, prices); the last good copy is kept so a
   // failed fetch at an hourly reload does not strip them for an hour.
   getJSON('games.json', function (err, cfg) {

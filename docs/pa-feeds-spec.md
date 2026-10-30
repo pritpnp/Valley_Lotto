@@ -186,11 +186,16 @@ TVs could show numbers hours old. So the app reads PA's numbers itself
   app itself. PA's numbers are saved before the old scraper's file is asked
   for, so a slow old-scraper site never holds the database for writing (on
   SQLite that would hold up a clerk's save).
-* **Who asks.** The TVs (every 2 minutes, through Netlify), and Netlify's
-  scheduled function `tv/netlify/functions/refresh-numbers.mts` every 10
-  minutes, which runs on time. That also keeps Render's free plan from putting
-  the app to sleep (it sleeps after 15 minutes without a visitor). So PA is
-  read about every 5 to 10 minutes, day and night, TVs on or off.
+* **Who asks.** The TVs, every 2 minutes, through Netlify. So while any TV
+  is on, PA is read about every 5 to 7 minutes, and the app stays awake
+  (Render's free plan puts it to sleep after 15 minutes without a visitor).
+  There is deliberately no scheduled "keep awake" ping: Render treats one as
+  misuse of the free plan. With no TV on anywhere the app sleeps; the GitHub
+  job still saves the numbers meanwhile, and the first TV to come on wakes the
+  app (about a minute, showing its saved numbers) and the next read follows.
+  A store with TVs on around the clock keeps the app up around the clock,
+  about 720 to 744 of the 750 free hours a month: fine while it's the only
+  free service on that Render account.
 * **One run at a time.** In the app, a lock in memory (gunicorn runs one
   worker). Across the app and the GitHub job (and two copies of the app while
   Render swaps in a new one), a Postgres advisory lock (`store.numbers_lock`):

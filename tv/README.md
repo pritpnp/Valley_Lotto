@@ -67,17 +67,24 @@ clicked.
   real ones arrive.
 * Shows **TONIGHT!** on a game's draw day (Pennsylvania time).
 * A small "Updated 8:20 PM" note in the bottom-left corner says when the
-  numbers were last refreshed from PA. The store app reads PA's site about
-  every 5 to 10 minutes: whenever it's asked for the numbers (by a TV, or by
-  Netlify every 10 minutes, see below) and its copy is over 5 minutes old. It
+  numbers were last refreshed from PA. While a TV is on, the store app reads
+  PA's site about every 5 to 7 minutes: whenever a TV asks for the numbers and
+  its copy is over 5 minutes old. It
   gives the day too when that wasn't today ("Updated Oct 28, 11:50 PM"). If the
   numbers haven't been refreshed for more than 2 hours, it says "Numbers from
   6:40 PM" instead, in dark red: the TV still shows the numbers it has, but
   the TV has lost the internet, or the store app can't read PA's site or its
   database right now (Telegram says so when PA's site keeps failing).
-* **Netlify asks the store app for the numbers every 10 minutes**
-  (`netlify/functions/refresh-numbers.mts`), TVs on or off. That keeps the
-  numbers fresh, and keeps the app awake on Render's free plan.
+* **Shows each game's drawing time and when sales end**, big, under "Next
+  Drawing" (PICK games: on each Day and Evening draw). The times are in
+  `games.json` (`drawTime`, `salesEnd`), from PA's own game pages.
+* **The store app sleeps only when no TV anywhere is on.** Render's free plan
+  puts it to sleep after 15 minutes with no visitors; the TVs ask every 2
+  minutes, so it stays awake while any TV is on. The first TV to come on
+  wakes it (about a minute) and shows its saved numbers meanwhile. A store with
+  TVs on around the clock keeps it awake around the clock: that's about 720 to
+  744 of Render's 750 free hours a month, so keep it the only free service on
+  that Render account, or move it to a paid instance (no sleeping, no limit).
 * If PA adds a new game, it appears by itself with its name (no logo or price
   until one is added to `games.json`).
 
@@ -90,6 +97,12 @@ number:
   Prices today come from PA's Game Guide (April 2026).
 * `color`: the game's colour block.
 * `logo` and `logoSize`: the logo file in `logos/` and its size in pixels.
+* `drawTime` and `salesEnd`: when the drawing is and when sales for it end,
+  shown big on the game's panel.
+* `settings.tickerPixelsPerSecond`: how fast the bar along the bottom scrolls
+  (60). The page adjusts it slightly so the bar moves a whole number of the
+  TV's pixels every frame, which is what keeps it from stuttering.
+* `settings.slideSeconds` / `heroSeconds`: how long each slide stays up.
 
 Save the change in GitHub; Netlify publishes it and the TVs pick it up at their
 next hourly reload. TVs keep logo and font files for up to a day, so to swap a
