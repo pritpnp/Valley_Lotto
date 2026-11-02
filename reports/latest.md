@@ -1,15 +1,11 @@
-# Valley Lotto report — 2026-11-02T12:13:07Z
+# Valley Lotto report — 2026-11-02T23:23:58Z
 
-## ⚠️ 6 new alert(s)
+## ⚠️ 2 new alert(s)
 
-- 🔵 🆕 New game now on sale: #1807 Festive $5,000 Second-Chance Eligible ($50, odds 1:3.47) — consider stocking it.
-- 🔵 🆕 New game now on sale: #1808 Let it Snow Second-Chance Eligible ($30, odds 1:2.85) — consider stocking it.
-- 🔵 🆕 New game now on sale: #1809 Merry & Bright Second-Chance Eligible ($30, odds 1:3.11) — consider stocking it.
-- 🔵 🆕 New game now on sale: #1810 North Pole Payout Second-Chance Eligible ($10, odds 1:3.38) — consider stocking it.
-- 🔵 🆕 New game now on sale: #1811 What’s Under the Tree ($5) — consider stocking it.
-- 🔵 🆕 New game now on sale: #1812 Jingle All the Way Second-Chance Eligible ($3, odds 1:3.69) — consider stocking it.
+- 🔵 🆕 New game now on sale: #1813 Minty Multiplier ($2) — consider stocking it.
+- 🔵 🆕 New game now on sale: #1814 Santa is Coming Second-Chance Eligible ($1, odds 1:3.48) — consider stocking it.
 
-## 🆕 New games just on sale (6)
+## 🆕 New games just on sale (8)
 
 - **#1807 Festive $5,000 Second-Chance Eligible** ($50, odds 1:3.47, on sale 11/2026)
 - **#1808 Let it Snow Second-Chance Eligible** ($30, odds 1:2.85, on sale 11/2026)
@@ -17,6 +13,8 @@
 - **#1810 North Pole Payout Second-Chance Eligible** ($10, odds 1:3.38, on sale 11/2026)
 - **#1811 What’s Under the Tree** ($5, odds —, on sale 11/2026)
 - **#1812 Jingle All the Way Second-Chance Eligible** ($3, odds 1:3.69, on sale 11/2026)
+- **#1813 Minty Multiplier** ($2, odds —, on sale 11/2026)
+- **#1814 Santa is Coming Second-Chance Eligible** ($1, odds 1:3.48, on sale 11/2026)
 
 ## Best games to bring in (fresh, by price)
 

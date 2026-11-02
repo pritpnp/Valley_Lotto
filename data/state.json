@@ -1,5 +1,5 @@
 {
-  "captured_at": "2026-11-02T12:13:07Z",
+  "captured_at": "2026-11-02T23:23:58Z",
   "games": {
     "1000": {
       "claim_deadline": null,
@@ -22029,11 +22029,11 @@
           "value": "$500"
         }
       ],
-      "sales_days": 33.6,
+      "sales_days": 34.1,
       "sales_end_date": "11/20/2026 12:00:00 AM",
-      "sales_per_day": 14385.4,
-      "sales_readings": 7,
-      "sales_uncertainty": 0.1015,
+      "sales_per_day": 13840.01,
+      "sales_readings": 8,
+      "sales_uncertainty": 0.0906,
       "sales_why": null,
       "source_pages": [
         "remaining"
@@ -22523,11 +22523,11 @@
           "value": "$100"
         }
       ],
-      "sales_days": 33.6,
+      "sales_days": 34.1,
       "sales_end_date": null,
-      "sales_per_day": 6540.64,
-      "sales_readings": 7,
-      "sales_uncertainty": 0.0938,
+      "sales_per_day": 6331.01,
+      "sales_readings": 8,
+      "sales_uncertainty": 0.0824,
       "sales_why": null,
       "source_pages": [
         "remaining"
@@ -22702,11 +22702,11 @@
           "value": "$500"
         }
       ],
-      "sales_days": 33.6,
+      "sales_days": 34.1,
       "sales_end_date": null,
-      "sales_per_day": 38066.22,
-      "sales_readings": 7,
-      "sales_uncertainty": 0.0738,
+      "sales_per_day": 36698.15,
+      "sales_readings": 8,
+      "sales_uncertainty": 0.0684,
       "sales_why": null,
       "source_pages": [
         "remaining"
@@ -23249,11 +23249,11 @@
           "value": "$200"
         }
       ],
-      "sales_days": 33.6,
+      "sales_days": 34.1,
       "sales_end_date": "11/20/2026 12:00:00 AM",
-      "sales_per_day": 8539.46,
-      "sales_readings": 7,
-      "sales_uncertainty": 0.0631,
+      "sales_per_day": 8256.54,
+      "sales_readings": 8,
+      "sales_uncertainty": 0.0591,
       "sales_why": null,
       "source_pages": [
         "remaining"
@@ -23317,11 +23317,11 @@
           "value": "$100"
         }
       ],
-      "sales_days": 33.6,
+      "sales_days": 34.1,
       "sales_end_date": null,
-      "sales_per_day": 16536.65,
-      "sales_readings": 7,
-      "sales_uncertainty": 0.0766,
+      "sales_per_day": 16006.67,
+      "sales_readings": 8,
+      "sales_uncertainty": 0.0689,
       "sales_why": null,
       "source_pages": [
         "remaining"
@@ -23811,11 +23811,11 @@
           "value": "$5,000"
         }
       ],
-      "sales_days": 33.6,
+      "sales_days": 34.1,
       "sales_end_date": null,
-      "sales_per_day": 107509.58,
-      "sales_readings": 7,
-      "sales_uncertainty": 0.0559,
+      "sales_per_day": 104629.24,
+      "sales_readings": 8,
+      "sales_uncertainty": 0.0511,
       "sales_why": null,
       "source_pages": [
         "remaining"
@@ -23934,11 +23934,11 @@
           "value": "$50"
         }
       ],
-      "sales_days": 33.6,
+      "sales_days": 34.1,
       "sales_end_date": null,
-      "sales_per_day": 36126.01,
-      "sales_readings": 7,
-      "sales_uncertainty": 0.0662,
+      "sales_per_day": 35096.49,
+      "sales_readings": 8,
+      "sales_uncertainty": 0.0596,
       "sales_why": null,
       "source_pages": [
         "remaining"
@@ -24114,11 +24114,11 @@
           "value": "$750"
         }
       ],
-      "sales_days": 33.6,
+      "sales_days": 34.1,
       "sales_end_date": null,
-      "sales_per_day": 47287.13,
-      "sales_readings": 7,
-      "sales_uncertainty": 0.0729,
+      "sales_per_day": 46266.52,
+      "sales_readings": 8,
+      "sales_uncertainty": 0.0626,
       "sales_why": null,
       "source_pages": [
         "remaining"
@@ -24181,11 +24181,11 @@
           "value": "$100"
         }
       ],
-      "sales_days": 33.6,
+      "sales_days": 34.1,
       "sales_end_date": null,
-      "sales_per_day": 33696.26,
-      "sales_readings": 7,
-      "sales_uncertainty": 0.0648,
+      "sales_per_day": 32765.46,
+      "sales_readings": 8,
+      "sales_uncertainty": 0.0582,
       "sales_why": null,
       "source_pages": [
         "remaining"
@@ -24751,11 +24751,11 @@
           "value": "$900"
         }
       ],
-      "sales_days": 33.6,
+      "sales_days": 34.1,
       "sales_end_date": null,
-      "sales_per_day": 43119.25,
-      "sales_readings": 7,
-      "sales_uncertainty": 0.0709,
+      "sales_per_day": 41862.76,
+      "sales_readings": 8,
+      "sales_uncertainty": 0.0635,
       "sales_why": null,
       "source_pages": [
         "remaining"
@@ -24819,11 +24819,11 @@
           "value": "$200"
         }
       ],
-      "sales_days": 33.6,
+      "sales_days": 34.1,
       "sales_end_date": null,
-      "sales_per_day": 57277.24,
-      "sales_readings": 7,
-      "sales_uncertainty": 0.0701,
+      "sales_per_day": 55767.03,
+      "sales_readings": 8,
+      "sales_uncertainty": 0.0619,
       "sales_why": null,
       "source_pages": [
         "remaining"
@@ -25054,11 +25054,11 @@
           "value": "$100"
         }
       ],
-      "sales_days": 33.6,
+      "sales_days": 34.1,
       "sales_end_date": null,
-      "sales_per_day": 30443.77,
-      "sales_readings": 7,
-      "sales_uncertainty": 0.0708,
+      "sales_per_day": 29560.76,
+      "sales_readings": 8,
+      "sales_uncertainty": 0.0634,
       "sales_why": null,
       "source_pages": [
         "remaining"
@@ -25121,11 +25121,11 @@
           "value": "$100"
         }
       ],
-      "sales_days": 33.6,
+      "sales_days": 34.1,
       "sales_end_date": null,
-      "sales_per_day": 16604.23,
-      "sales_readings": 7,
-      "sales_uncertainty": 0.0612,
+      "sales_per_day": 16048.84,
+      "sales_readings": 8,
+      "sales_uncertainty": 0.0579,
       "sales_why": null,
       "source_pages": [
         "remaining"
@@ -25246,11 +25246,11 @@
           "value": "$500"
         }
       ],
-      "sales_days": 33.6,
+      "sales_days": 34.1,
       "sales_end_date": null,
-      "sales_per_day": 77810.0,
-      "sales_readings": 7,
-      "sales_uncertainty": 0.0726,
+      "sales_per_day": 75735.52,
+      "sales_readings": 8,
+      "sales_uncertainty": 0.0639,
       "sales_why": null,
       "source_pages": [
         "remaining"
@@ -25358,11 +25358,11 @@
           "value": "$250"
         }
       ],
-      "sales_days": 33.6,
+      "sales_days": 34.1,
       "sales_end_date": null,
-      "sales_per_day": 47642.62,
-      "sales_readings": 7,
-      "sales_uncertainty": 0.086,
+      "sales_per_day": 45722.06,
+      "sales_readings": 8,
+      "sales_uncertainty": 0.0795,
       "sales_why": null,
       "source_pages": [
         "remaining"
@@ -25484,11 +25484,11 @@
           "value": "$200"
         }
       ],
-      "sales_days": 33.6,
+      "sales_days": 34.1,
       "sales_end_date": null,
-      "sales_per_day": 155571.91,
-      "sales_readings": 7,
-      "sales_uncertainty": 0.068,
+      "sales_per_day": 151611.9,
+      "sales_readings": 8,
+      "sales_uncertainty": 0.06,
       "sales_why": null,
       "source_pages": [
         "remaining"
@@ -25551,11 +25551,11 @@
           "value": "$150"
         }
       ],
-      "sales_days": 33.6,
+      "sales_days": 34.1,
       "sales_end_date": null,
-      "sales_per_day": 39305.11,
-      "sales_readings": 7,
-      "sales_uncertainty": 0.0624,
+      "sales_per_day": 38144.4,
+      "sales_readings": 8,
+      "sales_uncertainty": 0.0571,
       "sales_why": null,
       "source_pages": [
         "remaining"
@@ -25730,11 +25730,11 @@
           "value": "$500"
         }
       ],
-      "sales_days": 33.6,
+      "sales_days": 34.1,
       "sales_end_date": null,
-      "sales_per_day": 82772.62,
-      "sales_readings": 7,
-      "sales_uncertainty": 0.0824,
+      "sales_per_day": 80429.41,
+      "sales_readings": 8,
+      "sales_uncertainty": 0.0722,
       "sales_why": null,
       "source_pages": [
         "remaining"
@@ -25797,11 +25797,11 @@
           "value": "$50"
         }
       ],
-      "sales_days": 33.6,
+      "sales_days": 34.1,
       "sales_end_date": null,
-      "sales_per_day": 83904.8,
-      "sales_readings": 7,
-      "sales_uncertainty": 0.0656,
+      "sales_per_day": 81451.22,
+      "sales_readings": 8,
+      "sales_uncertainty": 0.0594,
       "sales_why": null,
       "source_pages": [
         "remaining"
@@ -25919,11 +25919,11 @@
           "value": "$75"
         }
       ],
-      "sales_days": 33.6,
+      "sales_days": 34.1,
       "sales_end_date": null,
-      "sales_per_day": 32668.47,
-      "sales_readings": 7,
-      "sales_uncertainty": 0.0697,
+      "sales_per_day": 31638.38,
+      "sales_readings": 8,
+      "sales_uncertainty": 0.0634,
       "sales_why": null,
       "source_pages": [
         "remaining"
@@ -26046,11 +26046,11 @@
           "value": "$300"
         }
       ],
-      "sales_days": 33.6,
+      "sales_days": 34.1,
       "sales_end_date": "11/6/2026 12:00:00 AM",
-      "sales_per_day": 7701.05,
-      "sales_readings": 7,
-      "sales_uncertainty": 0.0921,
+      "sales_per_day": 7365.14,
+      "sales_readings": 8,
+      "sales_uncertainty": 0.0856,
       "sales_why": null,
       "source_pages": [
         "remaining"
@@ -26169,11 +26169,11 @@
           "value": "$20"
         }
       ],
-      "sales_days": 33.6,
+      "sales_days": 34.1,
       "sales_end_date": "11/6/2026 12:00:00 AM",
-      "sales_per_day": 5649.73,
-      "sales_readings": 7,
-      "sales_uncertainty": 0.0813,
+      "sales_per_day": 5414.05,
+      "sales_readings": 8,
+      "sales_uncertainty": 0.0765,
       "sales_why": null,
       "source_pages": [
         "remaining"
@@ -26232,11 +26232,11 @@
           "value": "$50"
         }
       ],
-      "sales_days": 33.6,
+      "sales_days": 34.1,
       "sales_end_date": "11/6/2026 12:00:00 AM",
-      "sales_per_day": 3484.64,
-      "sales_readings": 7,
-      "sales_uncertainty": 0.0913,
+      "sales_per_day": 3334.76,
+      "sales_readings": 8,
+      "sales_uncertainty": 0.0847,
       "sales_why": null,
       "source_pages": [
         "remaining"
@@ -26466,11 +26466,11 @@
           "value": "$500"
         }
       ],
-      "sales_days": 33.6,
+      "sales_days": 34.1,
       "sales_end_date": null,
-      "sales_per_day": 159892.66,
-      "sales_readings": 7,
-      "sales_uncertainty": 0.0655,
+      "sales_per_day": 155410.57,
+      "sales_readings": 8,
+      "sales_uncertainty": 0.0589,
       "sales_why": null,
       "source_pages": [
         "remaining"
@@ -26530,11 +26530,11 @@
           "value": "$200"
         }
       ],
-      "sales_days": 33.6,
+      "sales_days": 34.1,
       "sales_end_date": null,
-      "sales_per_day": 147870.97,
-      "sales_readings": 7,
-      "sales_uncertainty": 0.0646,
+      "sales_per_day": 143678.71,
+      "sales_readings": 8,
+      "sales_uncertainty": 0.0583,
       "sales_why": null,
       "source_pages": [
         "remaining"
@@ -26597,11 +26597,11 @@
           "value": "$50"
         }
       ],
-      "sales_days": 33.6,
+      "sales_days": 34.1,
       "sales_end_date": null,
-      "sales_per_day": 91036.27,
-      "sales_readings": 7,
-      "sales_uncertainty": 0.0669,
+      "sales_per_day": 88541.66,
+      "sales_readings": 8,
+      "sales_uncertainty": 0.0598,
       "sales_why": null,
       "source_pages": [
         "remaining"
@@ -26662,11 +26662,11 @@
           "value": "$50"
         }
       ],
-      "sales_days": 33.6,
+      "sales_days": 34.1,
       "sales_end_date": null,
-      "sales_per_day": 61069.75,
-      "sales_readings": 7,
-      "sales_uncertainty": 0.0673,
+      "sales_per_day": 59285.3,
+      "sales_readings": 8,
+      "sales_uncertainty": 0.0608,
       "sales_why": null,
       "source_pages": [
         "remaining"
@@ -26783,11 +26783,11 @@
           "value": "$10"
         }
       ],
-      "sales_days": 33.6,
+      "sales_days": 34.1,
       "sales_end_date": null,
-      "sales_per_day": 7908.74,
-      "sales_readings": 7,
-      "sales_uncertainty": 0.0669,
+      "sales_per_day": 7678.54,
+      "sales_readings": 8,
+      "sales_uncertainty": 0.0604,
       "sales_why": null,
       "source_pages": [
         "remaining"
@@ -26848,11 +26848,11 @@
           "value": "$600"
         }
       ],
-      "sales_days": 33.6,
+      "sales_days": 34.1,
       "sales_end_date": null,
-      "sales_per_day": 142298.4,
-      "sales_readings": 7,
-      "sales_uncertainty": 0.0655,
+      "sales_per_day": 138523.43,
+      "sales_readings": 8,
+      "sales_uncertainty": 0.0584,
       "sales_why": null,
       "source_pages": [
         "remaining"
@@ -26916,10 +26916,10 @@
           "value": "$1,000"
         }
       ],
-      "sales_days": 33.6,
+      "sales_days": 34.1,
       "sales_end_date": null,
       "sales_per_day": null,
-      "sales_readings": 7,
+      "sales_readings": 8,
       "sales_uncertainty": null,
       "sales_why": "PA's prize counts for this game went up, which can't happen from sales, so its sales speed can't be read from them.",
       "source_pages": [
@@ -26986,10 +26986,10 @@
           "value": "$100"
         }
       ],
-      "sales_days": 33.6,
+      "sales_days": 34.1,
       "sales_end_date": null,
-      "sales_per_day": 33060.47,
-      "sales_readings": 7,
+      "sales_per_day": 32058.64,
+      "sales_readings": 8,
       "sales_uncertainty": 0.0439,
       "sales_why": null,
       "source_pages": [
@@ -27054,11 +27054,11 @@
           "value": "$90"
         }
       ],
-      "sales_days": 33.6,
+      "sales_days": 34.1,
       "sales_end_date": "11/20/2026 12:00:00 AM",
-      "sales_per_day": 4833.33,
-      "sales_readings": 7,
-      "sales_uncertainty": 0.0776,
+      "sales_per_day": 4672.98,
+      "sales_readings": 8,
+      "sales_uncertainty": 0.0702,
       "sales_why": null,
       "source_pages": [
         "remaining"
@@ -27177,11 +27177,11 @@
           "value": "$10"
         }
       ],
-      "sales_days": 33.6,
+      "sales_days": 34.1,
       "sales_end_date": null,
-      "sales_per_day": 5939.54,
-      "sales_readings": 7,
-      "sales_uncertainty": 0.0623,
+      "sales_per_day": 5759.63,
+      "sales_readings": 8,
+      "sales_uncertainty": 0.0573,
       "sales_why": null,
       "source_pages": [
         "remaining"
@@ -27239,11 +27239,11 @@
           "value": "$20"
         }
       ],
-      "sales_days": 33.6,
+      "sales_days": 34.1,
       "sales_end_date": null,
-      "sales_per_day": 204456.48,
-      "sales_readings": 7,
-      "sales_uncertainty": 0.065,
+      "sales_per_day": 198905.38,
+      "sales_readings": 8,
+      "sales_uncertainty": 0.0582,
       "sales_why": null,
       "source_pages": [
         "remaining"
@@ -27296,11 +27296,11 @@
           "value": "$10"
         }
       ],
-      "sales_days": 33.6,
+      "sales_days": 34.1,
       "sales_end_date": null,
-      "sales_per_day": 117801.37,
-      "sales_readings": 7,
-      "sales_uncertainty": 0.0652,
+      "sales_per_day": 114517.89,
+      "sales_readings": 8,
+      "sales_uncertainty": 0.0587,
       "sales_why": null,
       "source_pages": [
         "remaining"
@@ -27353,11 +27353,11 @@
           "value": "$5"
         }
       ],
-      "sales_days": 33.6,
+      "sales_days": 34.1,
       "sales_end_date": null,
-      "sales_per_day": 82276.43,
-      "sales_readings": 7,
-      "sales_uncertainty": 0.0644,
+      "sales_per_day": 80012.73,
+      "sales_readings": 8,
+      "sales_uncertainty": 0.0578,
       "sales_why": null,
       "source_pages": [
         "remaining"
@@ -27414,11 +27414,11 @@
           "value": "$250"
         }
       ],
-      "sales_days": 33.6,
+      "sales_days": 34.1,
       "sales_end_date": null,
-      "sales_per_day": 84866.31,
-      "sales_readings": 7,
-      "sales_uncertainty": 0.0654,
+      "sales_per_day": 82343.54,
+      "sales_readings": 8,
+      "sales_uncertainty": 0.0595,
       "sales_why": null,
       "source_pages": [
         "remaining"
@@ -27482,11 +27482,11 @@
           "value": "$30"
         }
       ],
-      "sales_days": 33.6,
+      "sales_days": 34.1,
       "sales_end_date": null,
-      "sales_per_day": 17899.45,
-      "sales_readings": 7,
-      "sales_uncertainty": 0.0601,
+      "sales_per_day": 17363.78,
+      "sales_readings": 8,
+      "sales_uncertainty": 0.0555,
       "sales_why": null,
       "source_pages": [
         "remaining"
@@ -27549,11 +27549,11 @@
           "value": "$20"
         }
       ],
-      "sales_days": 33.6,
+      "sales_days": 34.1,
       "sales_end_date": null,
-      "sales_per_day": 5989.14,
-      "sales_readings": 7,
-      "sales_uncertainty": 0.0681,
+      "sales_per_day": 5804.63,
+      "sales_readings": 8,
+      "sales_uncertainty": 0.0619,
       "sales_why": null,
       "source_pages": [
         "remaining"
@@ -27616,11 +27616,11 @@
           "value": "$500"
         }
       ],
-      "sales_days": 33.6,
+      "sales_days": 34.1,
       "sales_end_date": null,
-      "sales_per_day": 197111.35,
-      "sales_readings": 7,
-      "sales_uncertainty": 0.0608,
+      "sales_per_day": 191785.7,
+      "sales_readings": 8,
+      "sales_uncertainty": 0.0549,
       "sales_why": null,
       "source_pages": [
         "remaining"
@@ -27684,11 +27684,11 @@
           "value": "$150"
         }
       ],
-      "sales_days": 33.6,
+      "sales_days": 34.1,
       "sales_end_date": null,
-      "sales_per_day": 210015.03,
-      "sales_readings": 7,
-      "sales_uncertainty": 0.0655,
+      "sales_per_day": 204195.88,
+      "sales_readings": 8,
+      "sales_uncertainty": 0.0588,
       "sales_why": null,
       "source_pages": [
         "remaining"
@@ -27751,11 +27751,11 @@
           "value": "$100"
         }
       ],
-      "sales_days": 33.6,
+      "sales_days": 34.1,
       "sales_end_date": null,
-      "sales_per_day": 76858.94,
-      "sales_readings": 7,
-      "sales_uncertainty": 0.0671,
+      "sales_per_day": 74778.85,
+      "sales_readings": 8,
+      "sales_uncertainty": 0.0598,
       "sales_why": null,
       "source_pages": [
         "remaining"
@@ -27819,11 +27819,11 @@
           "value": "$10"
         }
       ],
-      "sales_days": 33.6,
+      "sales_days": 34.1,
       "sales_end_date": null,
-      "sales_per_day": 9311.79,
-      "sales_readings": 7,
-      "sales_uncertainty": 0.0615,
+      "sales_per_day": 9045.1,
+      "sales_readings": 8,
+      "sales_uncertainty": 0.0561,
       "sales_why": null,
       "source_pages": [
         "remaining"
@@ -27885,11 +27885,11 @@
           "value": "$500"
         }
       ],
-      "sales_days": 33.6,
+      "sales_days": 34.1,
       "sales_end_date": null,
-      "sales_per_day": 298918.52,
-      "sales_readings": 7,
-      "sales_uncertainty": 0.0643,
+      "sales_per_day": 290043.99,
+      "sales_readings": 8,
+      "sales_uncertainty": 0.0586,
       "sales_why": null,
       "source_pages": [
         "remaining"
@@ -27951,11 +27951,11 @@
           "value": "$250"
         }
       ],
-      "sales_days": 33.6,
+      "sales_days": 34.1,
       "sales_end_date": null,
-      "sales_per_day": 223282.03,
-      "sales_readings": 7,
-      "sales_uncertainty": 0.0672,
+      "sales_per_day": 217005.3,
+      "sales_readings": 8,
+      "sales_uncertainty": 0.0602,
       "sales_why": null,
       "source_pages": [
         "remaining"
@@ -28018,11 +28018,11 @@
           "value": "$150"
         }
       ],
-      "sales_days": 33.6,
+      "sales_days": 34.1,
       "sales_end_date": null,
-      "sales_per_day": 135395.23,
-      "sales_readings": 7,
-      "sales_uncertainty": 0.0623,
+      "sales_per_day": 131988.01,
+      "sales_readings": 8,
+      "sales_uncertainty": 0.0554,
       "sales_why": null,
       "source_pages": [
         "remaining"
@@ -28085,11 +28085,11 @@
           "value": "$50"
         }
       ],
-      "sales_days": 33.6,
+      "sales_days": 34.1,
       "sales_end_date": null,
-      "sales_per_day": 112075.02,
-      "sales_readings": 7,
-      "sales_uncertainty": 0.0638,
+      "sales_per_day": 109018.21,
+      "sales_readings": 8,
+      "sales_uncertainty": 0.0573,
       "sales_why": null,
       "source_pages": [
         "remaining"
@@ -28151,11 +28151,11 @@
           "value": "$50"
         }
       ],
-      "sales_days": 33.6,
+      "sales_days": 34.1,
       "sales_end_date": null,
-      "sales_per_day": 44033.06,
-      "sales_readings": 7,
-      "sales_uncertainty": 0.0589,
+      "sales_per_day": 42829.12,
+      "sales_readings": 8,
+      "sales_uncertainty": 0.0536,
       "sales_why": null,
       "source_pages": [
         "remaining"
@@ -28219,11 +28219,11 @@
           "value": "$17"
         }
       ],
-      "sales_days": 33.6,
+      "sales_days": 34.1,
       "sales_end_date": null,
-      "sales_per_day": 24354.9,
-      "sales_readings": 7,
-      "sales_uncertainty": 0.0621,
+      "sales_per_day": 23651.48,
+      "sales_readings": 8,
+      "sales_uncertainty": 0.0566,
       "sales_why": null,
       "source_pages": [
         "remaining"
@@ -28286,11 +28286,11 @@
           "value": "$600"
         }
       ],
-      "sales_days": 33.6,
+      "sales_days": 34.1,
       "sales_end_date": null,
-      "sales_per_day": 228177.54,
-      "sales_readings": 7,
-      "sales_uncertainty": 0.0601,
+      "sales_per_day": 221257.12,
+      "sales_readings": 8,
+      "sales_uncertainty": 0.0557,
       "sales_why": null,
       "source_pages": [
         "remaining"
@@ -28354,11 +28354,11 @@
           "value": "$150"
         }
       ],
-      "sales_days": 33.6,
+      "sales_days": 34.1,
       "sales_end_date": null,
-      "sales_per_day": 233422.87,
-      "sales_readings": 7,
-      "sales_uncertainty": 0.0663,
+      "sales_per_day": 227344.41,
+      "sales_readings": 8,
+      "sales_uncertainty": 0.0588,
       "sales_why": null,
       "source_pages": [
         "remaining"
@@ -28421,11 +28421,11 @@
           "value": "$100"
         }
       ],
-      "sales_days": 33.6,
+      "sales_days": 34.1,
       "sales_end_date": null,
-      "sales_per_day": 103116.12,
-      "sales_readings": 7,
-      "sales_uncertainty": 0.0646,
+      "sales_per_day": 100053.79,
+      "sales_readings": 8,
+      "sales_uncertainty": 0.0588,
       "sales_why": null,
       "source_pages": [
         "remaining"
@@ -28489,11 +28489,11 @@
           "value": "$250"
         }
       ],
-      "sales_days": 33.6,
+      "sales_days": 34.1,
       "sales_end_date": null,
-      "sales_per_day": 137649.13,
-      "sales_readings": 7,
-      "sales_uncertainty": 0.0584,
+      "sales_per_day": 134430.13,
+      "sales_readings": 8,
+      "sales_uncertainty": 0.0518,
       "sales_why": null,
       "source_pages": [
         "remaining"
@@ -28557,11 +28557,11 @@
           "value": "$10"
         }
       ],
-      "sales_days": 33.6,
+      "sales_days": 34.1,
       "sales_end_date": null,
-      "sales_per_day": 32624.43,
-      "sales_readings": 7,
-      "sales_uncertainty": 0.0665,
+      "sales_per_day": 31666.92,
+      "sales_readings": 8,
+      "sales_uncertainty": 0.0602,
       "sales_why": null,
       "source_pages": [
         "remaining"
@@ -28622,11 +28622,11 @@
           "value": "$20"
         }
       ],
-      "sales_days": 33.6,
+      "sales_days": 34.1,
       "sales_end_date": null,
-      "sales_per_day": 13784.29,
-      "sales_readings": 7,
-      "sales_uncertainty": 0.0656,
+      "sales_per_day": 13386.56,
+      "sales_readings": 8,
+      "sales_uncertainty": 0.0593,
       "sales_why": null,
       "source_pages": [
         "remaining"
@@ -28689,11 +28689,11 @@
           "value": "$500"
         }
       ],
-      "sales_days": 33.6,
+      "sales_days": 34.1,
       "sales_end_date": null,
-      "sales_per_day": 490160.48,
-      "sales_readings": 7,
-      "sales_uncertainty": 0.0631,
+      "sales_per_day": 475788.95,
+      "sales_readings": 8,
+      "sales_uncertainty": 0.0576,
       "sales_why": null,
       "source_pages": [
         "remaining"
@@ -28755,11 +28755,11 @@
           "value": "$250"
         }
       ],
-      "sales_days": 33.6,
+      "sales_days": 34.1,
       "sales_end_date": null,
-      "sales_per_day": 504279.97,
-      "sales_readings": 7,
-      "sales_uncertainty": 0.0677,
+      "sales_per_day": 488966.59,
+      "sales_readings": 8,
+      "sales_uncertainty": 0.0615,
       "sales_why": null,
       "source_pages": [
         "remaining"
@@ -28821,11 +28821,11 @@
           "value": "$200"
         }
       ],
-      "sales_days": 33.6,
+      "sales_days": 34.1,
       "sales_end_date": null,
-      "sales_per_day": 202259.13,
-      "sales_readings": 7,
-      "sales_uncertainty": 0.0673,
+      "sales_per_day": 196016.45,
+      "sales_readings": 8,
+      "sales_uncertainty": 0.0614,
       "sales_why": null,
       "source_pages": [
         "remaining"
@@ -28888,11 +28888,11 @@
           "value": "$50"
         }
       ],
-      "sales_days": 33.6,
+      "sales_days": 34.1,
       "sales_end_date": null,
-      "sales_per_day": 146847.12,
-      "sales_readings": 7,
-      "sales_uncertainty": 0.0655,
+      "sales_per_day": 142275.87,
+      "sales_readings": 8,
+      "sales_uncertainty": 0.0601,
       "sales_why": null,
       "source_pages": [
         "remaining"
@@ -28955,11 +28955,11 @@
           "value": "$20"
         }
       ],
-      "sales_days": 33.6,
+      "sales_days": 34.1,
       "sales_end_date": null,
-      "sales_per_day": 33142.21,
-      "sales_readings": 7,
-      "sales_uncertainty": 0.067,
+      "sales_per_day": 32114.87,
+      "sales_readings": 8,
+      "sales_uncertainty": 0.0612,
       "sales_why": null,
       "source_pages": [
         "remaining"
@@ -29021,11 +29021,11 @@
           "value": "$10"
         }
       ],
-      "sales_days": 33.6,
+      "sales_days": 34.1,
       "sales_end_date": null,
-      "sales_per_day": 20163.56,
-      "sales_readings": 7,
-      "sales_uncertainty": 0.0629,
+      "sales_per_day": 19548.59,
+      "sales_readings": 8,
+      "sales_uncertainty": 0.0579,
       "sales_why": null,
       "source_pages": [
         "remaining"
@@ -29086,11 +29086,11 @@
           "value": "$300"
         }
       ],
-      "sales_days": 33.6,
+      "sales_days": 34.1,
       "sales_end_date": null,
-      "sales_per_day": 464937.59,
-      "sales_readings": 7,
-      "sales_uncertainty": 0.0662,
+      "sales_per_day": 449550.78,
+      "sales_readings": 8,
+      "sales_uncertainty": 0.0614,
       "sales_why": null,
       "source_pages": [
         "remaining"
@@ -29153,11 +29153,11 @@
           "value": "$150"
         }
       ],
-      "sales_days": 33.6,
+      "sales_days": 34.1,
       "sales_end_date": null,
-      "sales_per_day": 237372.64,
-      "sales_readings": 7,
-      "sales_uncertainty": 0.0666,
+      "sales_per_day": 229383.61,
+      "sales_readings": 8,
+      "sales_uncertainty": 0.062,
       "sales_why": null,
       "source_pages": [
         "remaining"
@@ -29224,11 +29224,11 @@
           "value": "$100"
         }
       ],
-      "sales_days": 33.6,
+      "sales_days": 34.1,
       "sales_end_date": null,
-      "sales_per_day": 268843.1,
-      "sales_readings": 7,
-      "sales_uncertainty": 0.0676,
+      "sales_per_day": 260203.92,
+      "sales_readings": 8,
+      "sales_uncertainty": 0.062,
       "sales_why": null,
       "source_pages": [
         "remaining"
@@ -29291,11 +29291,11 @@
           "value": "$20"
         }
       ],
-      "sales_days": 33.6,
+      "sales_days": 34.1,
       "sales_end_date": null,
-      "sales_per_day": 57654.67,
-      "sales_readings": 7,
-      "sales_uncertainty": 0.068,
+      "sales_per_day": 55831.83,
+      "sales_readings": 8,
+      "sales_uncertainty": 0.0622,
       "sales_why": null,
       "source_pages": [
         "remaining"
@@ -29358,11 +29358,11 @@
           "value": "$15"
         }
       ],
-      "sales_days": 33.6,
+      "sales_days": 34.1,
       "sales_end_date": null,
-      "sales_per_day": 28268.14,
-      "sales_readings": 7,
-      "sales_uncertainty": 0.0643,
+      "sales_per_day": 27402.05,
+      "sales_readings": 8,
+      "sales_uncertainty": 0.059,
       "sales_why": null,
       "source_pages": [
         "remaining"
@@ -29424,12 +29424,12 @@
           "value": "$75"
         }
       ],
-      "sales_days": 0.0,
+      "sales_days": 0.5,
       "sales_end_date": null,
       "sales_per_day": null,
-      "sales_readings": 1,
+      "sales_readings": 2,
       "sales_uncertainty": null,
-      "sales_why": "PA has posted 1 prize count for this game in the last 35 days; it takes 3, at least 7 days apart, to measure sales.",
+      "sales_why": "PA has posted 2 prize counts for this game in the last 35 days; it takes 3, at least 7 days apart, to measure sales.",
       "source_pages": [
         "remaining"
       ],
@@ -29487,12 +29487,12 @@
           "value": "$450"
         }
       ],
-      "sales_days": 0.0,
+      "sales_days": 0.5,
       "sales_end_date": null,
       "sales_per_day": null,
-      "sales_readings": 1,
+      "sales_readings": 2,
       "sales_uncertainty": null,
-      "sales_why": "PA has posted 1 prize count for this game in the last 35 days; it takes 3, at least 7 days apart, to measure sales.",
+      "sales_why": "PA has posted 2 prize counts for this game in the last 35 days; it takes 3, at least 7 days apart, to measure sales.",
       "source_pages": [
         "remaining"
       ],
@@ -29555,12 +29555,12 @@
           "value": "$200"
         }
       ],
-      "sales_days": 0.0,
+      "sales_days": 0.5,
       "sales_end_date": null,
       "sales_per_day": null,
-      "sales_readings": 1,
+      "sales_readings": 2,
       "sales_uncertainty": null,
-      "sales_why": "PA has posted 1 prize count for this game in the last 35 days; it takes 3, at least 7 days apart, to measure sales.",
+      "sales_why": "PA has posted 2 prize counts for this game in the last 35 days; it takes 3, at least 7 days apart, to measure sales.",
       "source_pages": [
         "remaining"
       ],
@@ -29621,12 +29621,12 @@
           "value": "$150"
         }
       ],
-      "sales_days": 0.0,
+      "sales_days": 0.5,
       "sales_end_date": null,
       "sales_per_day": null,
-      "sales_readings": 1,
+      "sales_readings": 2,
       "sales_uncertainty": null,
-      "sales_why": "PA has posted 1 prize count for this game in the last 35 days; it takes 3, at least 7 days apart, to measure sales.",
+      "sales_why": "PA has posted 2 prize counts for this game in the last 35 days; it takes 3, at least 7 days apart, to measure sales.",
       "source_pages": [
         "remaining"
       ],
@@ -29718,12 +29718,12 @@
           "value": "$50"
         }
       ],
-      "sales_days": 0.0,
+      "sales_days": 0.5,
       "sales_end_date": null,
       "sales_per_day": null,
-      "sales_readings": 1,
+      "sales_readings": 2,
       "sales_uncertainty": null,
-      "sales_why": "PA has posted 1 prize count for this game in the last 35 days; it takes 3, at least 7 days apart, to measure sales.",
+      "sales_why": "PA has posted 2 prize counts for this game in the last 35 days; it takes 3, at least 7 days apart, to measure sales.",
       "source_pages": [
         "remaining"
       ],
@@ -29747,6 +29747,104 @@
       "top_prizes_remaining": 5,
       "top_prizes_total": 5,
       "total_is_estimate": false
+    },
+    "1813": {
+      "claim_deadline": null,
+      "detail_id": null,
+      "first_seen": "2026-11-02T23:23:58Z",
+      "game_number": "1813",
+      "last_changed": null,
+      "name": "Minty Multiplier",
+      "odds": null,
+      "on_sale_date": "11/2026",
+      "payout_pct": null,
+      "price": 2.0,
+      "prize_tiers": [],
+      "sales_days": 0.0,
+      "sales_end_date": null,
+      "sales_per_day": null,
+      "sales_readings": 0,
+      "sales_uncertainty": null,
+      "sales_why": "PA's printed prize list for this game couldn't be checked against its odds, so its prizes can't be turned into tickets sold.",
+      "source_pages": [
+        "remaining"
+      ],
+      "status": "active",
+      "tickets_printed": null,
+      "tier_originals": {},
+      "tier_originals_other": {},
+      "top_prize_value": null,
+      "top_prizes_remaining": null,
+      "top_prizes_total": null,
+      "total_is_estimate": true
+    },
+    "1814": {
+      "claim_deadline": null,
+      "detail_id": "3388",
+      "first_seen": "2026-11-02T23:23:58Z",
+      "game_number": "1814",
+      "last_changed": null,
+      "name": "Santa is Coming Second-Chance Eligible",
+      "odds": "1:3.48",
+      "on_sale_date": "11/2026",
+      "payout_pct": 65.61,
+      "price": 1.0,
+      "prize_tiers": [
+        {
+          "remaining": 10,
+          "value": "$2,500"
+        },
+        {
+          "remaining": 20,
+          "value": "$500"
+        },
+        {
+          "remaining": 25,
+          "value": "$250"
+        },
+        {
+          "remaining": 782,
+          "value": "$100"
+        },
+        {
+          "remaining": 1444,
+          "value": "$50"
+        },
+        {
+          "remaining": 24877,
+          "value": "$25"
+        }
+      ],
+      "sales_days": 0.0,
+      "sales_end_date": null,
+      "sales_per_day": null,
+      "sales_readings": 0,
+      "sales_uncertainty": null,
+      "sales_why": "PA's printed prize list for this game couldn't be checked against its odds, so its prizes can't be turned into tickets sold.",
+      "source_pages": [
+        "remaining"
+      ],
+      "status": "active",
+      "tickets_printed": 7800000,
+      "tier_originals": {
+        "1.0": 1014000,
+        "10.0": 78000,
+        "100.0": 780,
+        "15.0": 6500,
+        "2.0": 171600,
+        "25.0": 24700,
+        "250.0": 25,
+        "2500.0": 10,
+        "4.0": 343200,
+        "5.0": 140400,
+        "50.0": 1430,
+        "500.0": 20
+      },
+      "tier_originals_other": {},
+      "top_prize_value": "$2,500",
+      "top_prizes_remaining": 10,
+      "top_prizes_total": null,
+      "total_is_estimate": true
     }
   }
 }
