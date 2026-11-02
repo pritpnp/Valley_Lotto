@@ -1,1 +1,80 @@
-[]
+[
+  {
+    "kind": "new",
+    "game_number": "1807",
+    "name": "Festive $5,000 Second-Chance Eligible",
+    "severity": "info",
+    "message": "\ud83c\udd95 New game now on sale: #1807 Festive $5,000 Second-Chance Eligible ($50, odds 1:3.47) \u2014 consider stocking it.",
+    "owned": false,
+    "details": {
+      "price": 50.0,
+      "odds": "1:3.47",
+      "on_sale_date": "11/2026"
+    }
+  },
+  {
+    "kind": "new",
+    "game_number": "1808",
+    "name": "Let it Snow Second-Chance Eligible",
+    "severity": "info",
+    "message": "\ud83c\udd95 New game now on sale: #1808 Let it Snow Second-Chance Eligible ($30, odds 1:2.85) \u2014 consider stocking it.",
+    "owned": false,
+    "details": {
+      "price": 30.0,
+      "odds": "1:2.85",
+      "on_sale_date": "11/2026"
+    }
+  },
+  {
+    "kind": "new",
+    "game_number": "1809",
+    "name": "Merry & Bright Second-Chance Eligible",
+    "severity": "info",
+    "message": "\ud83c\udd95 New game now on sale: #1809 Merry & Bright Second-Chance Eligible ($30, odds 1:3.11) \u2014 consider stocking it.",
+    "owned": false,
+    "details": {
+      "price": 30.0,
+      "odds": "1:3.11",
+      "on_sale_date": "11/2026"
+    }
+  },
+  {
+    "kind": "new",
+    "game_number": "1810",
+    "name": "North Pole Payout Second-Chance Eligible",
+    "severity": "info",
+    "message": "\ud83c\udd95 New game now on sale: #1810 North Pole Payout Second-Chance Eligible ($10, odds 1:3.38) \u2014 consider stocking it.",
+    "owned": false,
+    "details": {
+      "price": 10.0,
+      "odds": "1:3.38",
+      "on_sale_date": "11/2026"
+    }
+  },
+  {
+    "kind": "new",
+    "game_number": "1811",
+    "name": "What\u2019s Under the Tree",
+    "severity": "info",
+    "message": "\ud83c\udd95 New game now on sale: #1811 What\u2019s Under the Tree ($5) \u2014 consider stocking it.",
+    "owned": false,
+    "details": {
+      "price": 5.0,
+      "odds": null,
+      "on_sale_date": "11/2026"
+    }
+  },
+  {
+    "kind": "new",
+    "game_number": "1812",
+    "name": "Jingle All the Way Second-Chance Eligible",
+    "severity": "info",
+    "message": "\ud83c\udd95 New game now on sale: #1812 Jingle All the Way Second-Chance Eligible ($3, odds 1:3.69) \u2014 consider stocking it.",
+    "owned": false,
+    "details": {
+      "price": 3.0,
+      "odds": "1:3.69",
+      "on_sale_date": "11/2026"
+    }
+  }
+]
