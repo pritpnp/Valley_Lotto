@@ -18,7 +18,7 @@ from __future__ import annotations
 import json
 import os
 import re
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from functools import wraps
 from pathlib import Path
 
@@ -69,6 +69,27 @@ def _today(tz=None) -> str:
     if zone is not None:
         now = now.astimezone(zone)
     return now.strftime("%Y-%m-%d")
+
+
+def _sales_end(text: str | None, today: str) -> dict | None:
+    """PA's end-of-sales date ("11/20/2026 12:00:00 AM" as PA writes it) in a
+    form a page can tell in the right tense: {"date": "Nov 20, 2026", "days":
+    15}, days being how many until it (0 on the day, negative once passed).
+    None when the text isn't a date."""
+    m = re.match(r"\s*(\d{1,2})/(\d{1,2})/(\d{4})\b", text or "")
+    if m:
+        mo, d, y = int(m.group(1)), int(m.group(2)), int(m.group(3))
+    else:
+        m = re.match(r"\s*(\d{4})-(\d{2})-(\d{2})\b", text or "")
+        if not m:
+            return None
+        y, mo, d = int(m.group(1)), int(m.group(2)), int(m.group(3))
+    try:
+        end = date(y, mo, d)
+        now = date.fromisoformat(today)
+    except ValueError:
+        return None
+    return {"date": f"{end:%b} {end.day}, {end.year}", "days": (end - now).days}
 
 
 def _normalize_db_url(url: str) -> str:
@@ -2578,7 +2599,7 @@ def _register_routes(app: Flask):
                     "status": "unknown", "sell_through": None,
                     "top_prize_value": None, "top_prizes_remaining": None,
                     "jackpot_density": None, "jackpot_significant": False,
-                    "sales_end_date": None,
+                    "sales_end_date": None, "sales_end": None,
                     "no_longer_shipped": _not_shipped(game_number)}
 
         own = _own_sales().get(game_number)
@@ -2613,6 +2634,8 @@ def _register_routes(app: Flask):
             "jackpot_density": g.jackpot_density,
             "jackpot_significant": g.jackpot_density_significant,
             "sales_end_date": g.sales_end_date,
+            # told in the right tense: PA announces the date weeks ahead
+            "sales_end": _sales_end(g.sales_end_date, _today(_store_tz())),
             # Not on PA's latest order list: once its packs are gone, they're gone.
             "no_longer_shipped": _not_shipped(game_number),
         }
