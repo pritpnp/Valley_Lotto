@@ -18,7 +18,11 @@
   </div>
   <p class="muted" style="font-size:13.5px;margin:6px 0 0">
     Game #{{ game_number }}{% if detail.price %} · ${{ '%g'|format(detail.price) }} a ticket{% endif %}
-    {%- if detail.sales_end_date %} · PA stopped selling this on {{ detail.sales_end_date }}{% endif %}
+    {%- set se = detail.sales_end %}
+    {%- if se and se.days < 0 %} · PA stopped selling this on {{ se.date }}
+    {%- elif se and se.days == 0 %} · <b>PA stops selling this today</b>
+    {%- elif se %} · <b>PA stops selling this on {{ se.date }}</b> (in {{ se.days }} day{{ '' if se.days == 1 else 's' }})
+    {%- elif detail.sales_end_date %} · PA's end of sales: {{ detail.sales_end_date }}{% endif %}
   </p>
 
   <div class="facts">
