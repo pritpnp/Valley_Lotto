@@ -1,8 +1,10 @@
-# Valley Lotto report — 2026-11-06T11:58:02Z
+# Valley Lotto report — 2026-11-06T21:25:20Z
 
-## ✅ No new alerts
+## ⚠️ 3 new alert(s)
 
-Nothing ended and nothing crossed your low-prize threshold since the last run.
+- 🔵 A game ENDED sales: #1755 Merry Money Match (ended 11/06/2026). Started 11/2025.
+- 🔵 A game ENDED sales: #1757 $2,500 Festive Frenzy (ended 11/06/2026). Started 11/2025.
+- 🔵 A game ENDED sales: #1758 ELF (ended 11/06/2026). Started 11/2025.
 
 ## 🆕 New games just on sale (8)
 
@@ -38,7 +40,7 @@ Nothing ended and nothing crossed your low-prize threshold since the last run.
 | $5 | THE WIZARD OF OZ™ YELLOW BRICK ROAD | 1799 | 1:3.92 | 1.04 | 67% |
 | $3 | Lights, Camera, Crossword | 1788 | 1:3.57 | 0.88 | 68% |
 | $3 | Jingle All the Way Second-Chance Eligible | 1812 | 1:3.69 | 0.99 | 100% |
-| $2 | Ghostbusters™ Second-Chance Eligible | 1805 | 1:3.61 | 1.01 | 69% |
+| $2 | Ghostbusters™ | 1805 | 1:3.61 | 1.01 | 69% |
 | $2 | Winner Winner Chicken Dinner | 1800 | 1:4.05 | 0.91 | 66% |
 | $1 | THE WIZARD OF OZ™ GLINDA THE GOOD WITCH | 1801 | 1:4.13 | 1.04 | 77% |
 | $1 | Bright Buck$ | 1795 | 1:4.25 | 0.86 | 69% |
