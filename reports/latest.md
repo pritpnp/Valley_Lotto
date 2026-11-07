@@ -1,10 +1,8 @@
-# Valley Lotto report — 2026-11-06T21:25:20Z
+# Valley Lotto report — 2026-11-07T10:58:06Z
 
-## ⚠️ 3 new alert(s)
+## ✅ No new alerts
 
-- 🔵 A game ENDED sales: #1755 Merry Money Match (ended 11/06/2026). Started 11/2025.
-- 🔵 A game ENDED sales: #1757 $2,500 Festive Frenzy (ended 11/06/2026). Started 11/2025.
-- 🔵 A game ENDED sales: #1758 ELF (ended 11/06/2026). Started 11/2025.
+Nothing ended and nothing crossed your low-prize threshold since the last run.
 
 ## 🆕 New games just on sale (8)
 
