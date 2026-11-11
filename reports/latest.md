@@ -1,8 +1,8 @@
-# Valley Lotto report — 2026-11-10T21:44:31Z
+# Valley Lotto report — 2026-11-11T11:46:25Z
 
-## ⚠️ 1 new alert(s)
+## ✅ No new alerts
 
-- 🔵 A game is running low — consider swapping it for a fresh game: #1777 Money Box Bingo (only 30% of top prizes left (3/10)).
+Nothing ended and nothing crossed your low-prize threshold since the last run.
 
 ## 🆕 New games just on sale (8)
 
