@@ -1,17 +1,11 @@
-# Valley Lotto report — 2026-11-13T12:01:41Z
+# Valley Lotto report — 2026-11-13T21:53:14Z
 
 ## ✅ No new alerts
 
 Nothing ended and nothing crossed your low-prize threshold since the last run.
 
-## 🆕 New games just on sale (8)
+## 🆕 New games just on sale (2)
 
-- **#1807 Festive $5,000 Second-Chance Eligible** ($50, odds 1:3.47, on sale 11/2026)
-- **#1808 Let it Snow Second-Chance Eligible** ($30, odds 1:2.85, on sale 11/2026)
-- **#1809 Merry & Bright Second-Chance Eligible** ($20, odds 1:3.11, on sale 11/2026)
-- **#1810 North Pole Payout Second-Chance Eligible** ($10, odds 1:3.38, on sale 11/2026)
-- **#1811 What’s Under the Tree** ($5, odds —, on sale 11/2026)
-- **#1812 Jingle All the Way Second-Chance Eligible** ($3, odds 1:3.69, on sale 11/2026)
 - **#1813 Minty Multiplier** ($2, odds —, on sale 11/2026)
 - **#1814 Santa is Coming Second-Chance Eligible** ($1, odds 1:3.48, on sale 11/2026)
 
