@@ -1,13 +1,8 @@
-# Valley Lotto report — 2026-11-13T21:53:14Z
+# Valley Lotto report — 2026-11-14T11:20:14Z
 
 ## ✅ No new alerts
 
 Nothing ended and nothing crossed your low-prize threshold since the last run.
-
-## 🆕 New games just on sale (2)
-
-- **#1813 Minty Multiplier** ($2, odds —, on sale 11/2026)
-- **#1814 Santa is Coming Second-Chance Eligible** ($1, odds 1:3.48, on sale 11/2026)
 
 ## Best games to bring in (fresh, by price)
 
